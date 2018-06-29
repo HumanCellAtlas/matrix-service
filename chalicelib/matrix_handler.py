@@ -6,10 +6,9 @@ import hca
 
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
+from chalicelib.constants import MERGED_MTX_BUCKET_NAME, MERGED_REQUEST_STATUS_BUCKET_NAME
 from loompy import loompy
 from chalicelib import logger
-
-BUCKET_NAME = "hca-dcp-matrix-service"
 
 
 class MatrixHandler(ABC):
@@ -73,11 +72,11 @@ class MatrixHandler(ABC):
         Upload a matrix file into an s3 bucket
         :param path: Path of the merged matrix
         """
-        logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path), BUCKET_NAME))
+        logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path), MERGED_MTX_BUCKET_NAME))
         s3 = boto3.resource("s3")
         key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
-            s3.Bucket(BUCKET_NAME).put_object(Key=key, Body=merged_matrix)
+            s3.Bucket(MERGED_MTX_BUCKET_NAME).put_object(Key=key, Body=merged_matrix)
         logger.info("Done uploading.")
 
     def run_merge_request(self, bundle_uuids, request_id):
@@ -104,7 +103,7 @@ class MatrixHandler(ABC):
         key = request_id + ".json"
 
         try:
-            response = s3.Object(bucket_name=BUCKET_NAME, key=key).get()
+            response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
             body = json.loads(response['Body'].read())
             return body["url"]
         except ClientError as e:

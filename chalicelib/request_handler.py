@@ -4,8 +4,7 @@ import boto3
 
 from enum import Enum
 from botocore.exceptions import ClientError
-
-BUCKET_NAME = "hca-dcp-matrix-service-request-status"
+from chalicelib.constants import MERGED_REQUEST_STATUS_BUCKET_NAME
 
 
 class RequestStatus(Enum):
@@ -41,7 +40,7 @@ class RequestHandler:
         key = request_id + ".json"
 
         try:
-            response = s3.Object(bucket_name=BUCKET_NAME, key=key).get()
+            response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
             body = json.loads(response['Body'].read())
             return RequestStatus(body["status"])
 
