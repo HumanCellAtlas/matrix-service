@@ -1,10 +1,13 @@
-from chalice import Chalice
+import traceback
 
-from util.matrix_handler import LoomMatrixHandler
+from botocore.exceptions import ClientError
+from chalice import Chalice, BadRequestError, NotFoundError
+from chalicelib.matrix_handler import LoomMatrixHandler
+from chalicelib.request_handler import RequestHandler, RequestStatus
 
 app = Chalice(app_name='matrix-service')
 
-matrixHandler = LoomMatrixHandler()
+mtx_handler = LoomMatrixHandler()
 
 
 @app.route('/')
@@ -20,7 +23,19 @@ def check_request_status(request_id):
 
     :param request_id: <string> Matrices concatenation request ID
     """
-    pass
+    try:
+        request_status = RequestHandler.check_request_status(request_id)
+
+        if request_status == RequestStatus.UNINITIALIZED:
+            raise NotFoundError("Request ID: \"{}\" does not exist."
+                                .format(request_id))
+        else:
+            return {
+                "status": request_status.name,
+                "url": mtx_handler.get_mtx_url(request_id)
+            }
+    except ClientError:
+        raise BadRequestError(traceback.print_exc())
 
 
 @app.route('/matrices/concat', methods=['POST'])
