@@ -6,7 +6,7 @@ import hca
 
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
-from chalicelib.constants import MERGED_MTX_BUCKET_NAME, MERGED_REQUEST_STATUS_BUCKET_NAME
+from chalicelib.constants import MERGED_MTX_BUCKET_NAME, MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
 from loompy import loompy
 from chalicelib import logger
 
@@ -100,12 +100,12 @@ class MatrixHandler(ABC):
         :return: URL of the matrix file
         """
         s3 = boto3.resource("s3")
-        key = request_id + ".json"
+        key = request_id + JSON_EXTENSION
 
         try:
             response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
             body = json.loads(response['Body'].read())
-            return body["url"]
+            return body["merged_mtx_url"]
         except ClientError as e:
             raise e
 
