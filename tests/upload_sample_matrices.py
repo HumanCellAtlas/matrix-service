@@ -3,10 +3,8 @@ import os
 import sys
 import hca
 
-from chalicelib.constants import BUNDLE_UUIDS_PATH
+from chalicelib.constants import BUNDLE_UUIDS_PATH, STAGING_BUCKET
 from test import logger
-
-STAGING_BUCKET = "matrix-service-test"
 
 
 def upload_sample_matrices(dir_path):
