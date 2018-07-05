@@ -48,7 +48,7 @@ else:
 
 def has_attribute(ob, attribute):
     """
-    :func:`hasattr` swallows exceptions. :func:`has_attribute` tests a Python object for the
+    :func:`hasattr` swallows exceptions. :func:`has_attribute` test a Python object for the
     presence of an attribute.
 
     :param ob:

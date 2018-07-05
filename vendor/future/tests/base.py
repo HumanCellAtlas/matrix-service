@@ -368,7 +368,7 @@ class CodeHandler(unittest.TestCase):
         return output
 
 
-# Decorator to skip some tests on Python 2.6 ...
+# Decorator to skip some test on Python 2.6 ...
 skip26 = unittest.skipIf(PY26, "this test is known to fail on Py2.6")
 
 
@@ -451,7 +451,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertWarns* methods."""
 
     def __enter__(self):
-        # The __warningregistry__'s need to be in a pristine state for tests
+        # The __warningregistry__'s need to be in a pristine state for test
         # to work properly.
         for v in sys.modules.values():
             if getattr(v, '__warningregistry__', None):

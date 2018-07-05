@@ -965,7 +965,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         If any exception is raised, the caller should assume that
         self.path was rejected as invalid and act accordingly.
 
-        The default implementation tests whether the normalized url
+        The default implementation test whether the normalized url
         path begins with one of the strings in self.cgi_directories
         (and the next character is a '/' or the end of the string).
 

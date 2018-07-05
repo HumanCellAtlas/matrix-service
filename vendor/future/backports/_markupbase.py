@@ -7,18 +7,18 @@ test_htmlparser.py.  The test failures look like this:
 
     ======================================================================
 
-ERROR: test_attr_entity_replacement (future.tests.test_htmlparser.AttributesStrictTestCase)
+ERROR: test_attr_entity_replacement (future.test.test_htmlparser.AttributesStrictTestCase)
 
 ----------------------------------------------------------------------
 
 Traceback (most recent call last):
-  File "/home/travis/build/edschofield/python-future/future/tests/test_htmlparser.py", line 661, in test_attr_entity_replacement
+  File "/home/travis/build/edschofield/python-future/future/test/test_htmlparser.py", line 661, in test_attr_entity_replacement
     [("starttag", "a", [("b", "&><\"'")])])
-  File "/home/travis/build/edschofield/python-future/future/tests/test_htmlparser.py", line 93, in _run_check
+  File "/home/travis/build/edschofield/python-future/future/test/test_htmlparser.py", line 93, in _run_check
     collector = self.get_collector()
-  File "/home/travis/build/edschofield/python-future/future/tests/test_htmlparser.py", line 617, in get_collector
+  File "/home/travis/build/edschofield/python-future/future/test/test_htmlparser.py", line 617, in get_collector
     return EventCollector(strict=True)
-  File "/home/travis/build/edschofield/python-future/future/tests/test_htmlparser.py", line 27, in __init__
+  File "/home/travis/build/edschofield/python-future/future/test/test_htmlparser.py", line 27, in __init__
     html.parser.HTMLParser.__init__(self, *args, **kw)
   File "/home/travis/build/edschofield/python-future/future/backports/html/parser.py", line 135, in __init__
     self.reset()

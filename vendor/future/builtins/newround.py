@@ -19,7 +19,7 @@ def newround(number, ndigits=None):
     0 digits). This returns an int when called with one argument,
     otherwise the same type as the number. ndigits may be negative.
  
-    See the test_round method in future/tests/test_builtins.py for
+    See the test_round method in future/test/test_builtins.py for
     examples.
     """
     return_int = False

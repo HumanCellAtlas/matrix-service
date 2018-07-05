@@ -1316,7 +1316,7 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
 
 # XXX these need to become classes and used as instances so
 # that a program can't change them in a parse tree and screw
-# up other parse trees.  Maybe should have  tests for that, too.
+# up other parse trees.  Maybe should have  test for that, too.
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')

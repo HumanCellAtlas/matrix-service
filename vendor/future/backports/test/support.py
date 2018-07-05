@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Supporting definitions for the Python regression tests.
+"""Supporting definitions for the Python regression test.
 
 Backported for python-future from Python 3.3 test/support.py.
 """
@@ -239,7 +239,7 @@ def get_attribute(obj, name):
 
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None     # Flag set to [] by regrtest.py
-max_memuse = 0           # Disable bigmem tests (they will still be run with
+max_memuse = 0           # Disable bigmem test (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
 failfast = False
@@ -293,7 +293,7 @@ if sys.platform.startswith("win"):
             # Increase the timeout and try again
             time.sleep(timeout)
             timeout *= 2
-        warnings.warn('tests may fail, delete still pending for ' + pathname,
+        warnings.warn('test may fail, delete still pending for ' + pathname,
                       RuntimeWarning, stacklevel=4)
 
     def _unlink(filename):
@@ -512,7 +512,7 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     eliciting an unused ephemeral port from the OS.  The temporary socket is
     then closed and deleted, and the ephemeral port is returned.
 
-    Either this method or bind_port() should be used for any tests where a
+    Either this method or bind_port() should be used for any test where a
     server socket needs to be bound to a particular port for the duration of
     the test.  Which one to use depends on whether the calling code is creating
     a python socket, or if an unused port needs to be provided in a constructor
@@ -569,7 +569,7 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
 def bind_port(sock, host=HOST):
     """Bind the socket to a free port and return the port number.  Relies on
     ephemeral ports in order to ensure we are using an unbound port.  This is
-    important as many tests may be running simultaneously, especially in a
+    important as many test may be running simultaneously, especially in a
     buildbot environment.  This method raises an exception if the sock.family
     is AF_INET and sock.type is SOCK_STREAM, *and* the socket has SO_REUSEADDR
     or SO_REUSEPORT set on it.  Tests should *never* set these socket options
@@ -584,12 +584,12 @@ def bind_port(sock, host=HOST):
     if sock.family == socket.AF_INET and sock.type == socket.SOCK_STREAM:
         if hasattr(socket, 'SO_REUSEADDR'):
             if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR) == 1:
-                raise TestFailed("tests should never set the SO_REUSEADDR "   \
+                raise TestFailed("test should never set the SO_REUSEADDR "   \
                                  "socket option on TCP/IP sockets!")
         if hasattr(socket, 'SO_REUSEPORT'):
             try:
                 if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 1:
-                    raise TestFailed("tests should never set the SO_REUSEPORT "   \
+                    raise TestFailed("test should never set the SO_REUSEPORT "   \
                                      "socket option on TCP/IP sockets!")
             except socket.error:
                 # Python's socket module was compiled using modern headers
@@ -635,7 +635,7 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 # for a discussion of this number).
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
-# # decorator for skipping tests on non-IEEE 754 platforms
+# # decorator for skipping test on non-IEEE 754 platforms
 # requires_IEEE_754 = unittest.skipUnless(
 #     float.__getformat__("double").startswith("IEEE"),
 #     "test requires IEEE 754 doubles")
@@ -729,7 +729,7 @@ TESTFN = "{0}_{1}_tmp".format(TESTFN, os.getpid())
 #             pass
 #         else:
 #             print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
-#                   'Unicode filename tests may not be effective'
+#                   'Unicode filename test may not be effective'
 #                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
 #             TESTFN_UNENCODABLE = None
 # # Mac OS X denies unencodable filenames (invalid utf-8)
@@ -743,7 +743,7 @@ TESTFN = "{0}_{1}_tmp".format(TESTFN, os.getpid())
 #             + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
 #     else:
 #         # File system encoding (eg. ISO-8859-* encodings) can encode
-#         # the byte 0xff. Skip some unicode filename tests.
+#         # the byte 0xff. Skip some unicode filename test.
 #         pass
 # 
 # # TESTFN_UNDECODABLE is a filename (bytes type) that should *not* be able to be
@@ -807,14 +807,14 @@ def temp_cwd(name='tempcwd', quiet=False, path=None):
         except OSError:
             if not quiet:
                 raise
-            warnings.warn('tests may fail, unable to create temp CWD ' + name,
+            warnings.warn('test may fail, unable to create temp CWD ' + name,
                           RuntimeWarning, stacklevel=3)
     try:
         os.chdir(path)
     except OSError:
         if not quiet:
             raise
-        warnings.warn('tests may fail, unable to change the CWD to ' + path,
+        warnings.warn('test may fail, unable to change the CWD to ' + path,
                       RuntimeWarning, stacklevel=3)
     try:
         yield os.getcwd()
@@ -1402,7 +1402,7 @@ def run_with_tz(tz):
 # should be configurable.
 
 # Some handy shorthands. Note that these are used for byte-limits as well
-# as size-limits, in the various bigmem tests
+# as size-limits, in the various bigmem test
 _1M = 1024*1024
 _1G = 1024 * _1M
 _2G = 2 * _1G
@@ -1462,7 +1462,7 @@ class _MemoryWatchdog(object):
 
 
 def bigmemtest(size, memuse, dry_run=True):
-    """Decorator for bigmem tests.
+    """Decorator for bigmem test.
 
     'minsize' is the minimum useful size for the test (in arbitrary,
     test-interpreted units.) 'memuse' is the number of 'bytes per size' for
@@ -1507,7 +1507,7 @@ def bigmemtest(size, memuse, dry_run=True):
     return decorator
 
 def bigaddrspacetest(f):
-    """Decorator for tests that fill the address space."""
+    """Decorator for test that fill the address space."""
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
             if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
@@ -1543,7 +1543,7 @@ def requires_resource(resource):
 
 def cpython_only(test):
     """
-    Decorator for tests only applicable on CPython.
+    Decorator for test only applicable on CPython.
     """
     return impl_detail(cpython=True)(test)
 
@@ -1568,7 +1568,7 @@ def _parse_guards(guards):
     assert list(guards.values()) == [is_true] * len(guards)   # all True or all False
     return (guards, not is_true)
 
-# Use the following check to guard CPython's implementation-specific tests --
+# Use the following check to guard CPython's implementation-specific test --
 # or to run them only on the implementation(s) guarded by the arguments.
 def check_impl_detail(**guards):
     """This function returns True or False depending on the host platform.
@@ -1598,7 +1598,7 @@ def no_tracing(func):
 
 
 def refcount_test(test):
-    """Decorator for tests which involve reference counting.
+    """Decorator for test which involve reference counting.
 
     To start, the decorator does not run the test if is not run by CPython.
     After that, any trace function is unset during the test to prevent
@@ -1621,7 +1621,7 @@ def _filter_suite(suite, pred):
     suite._tests = newtests
 
 def _run_suite(suite):
-    """Run tests from a unittest.TestSuite-derived class."""
+    """Run test from a unittest.TestSuite-derived class."""
     if verbose:
         runner = unittest.TextTestRunner(sys.stdout, verbosity=2,
                                          failfast=failfast)
@@ -1641,7 +1641,7 @@ def _run_suite(suite):
 
 
 def run_unittest(*classes):
-    """Run tests from unittest.TestCase-derived classes."""
+    """Run test from unittest.TestCase-derived classes."""
     valid_types = (unittest.TestSuite, unittest.TestCase)
     suite = unittest.TestSuite()
     for cls in classes:
@@ -1680,7 +1680,7 @@ def run_unittest(*classes):
 # doctest driver.
 
 def run_doctest(module, verbosity=None, optionflags=0):
-    """Run doctest on the given module.  Return (#failures, #tests).
+    """Run doctest on the given module.  Return (#failures, #test).
 
     If optional argument verbosity is not specified (or is None), pass
     support's belief about verbosity on to doctest.  Else doctest's
@@ -1698,7 +1698,7 @@ def run_doctest(module, verbosity=None, optionflags=0):
     if f:
         raise TestFailed("%d of %d doctests failed" % (f, t))
     if verbose:
-        print('doctest (%s) ... %d tests with zero failures' %
+        print('doctest (%s) ... %d test with zero failures' %
               (module.__name__, t))
     return f, t
 
@@ -1951,7 +1951,7 @@ def can_symlink():
     return can
 
 def skip_unless_symlink(test):
-    """Skip decorator for tests that require functional symlink"""
+    """Skip decorator for test that require functional symlink"""
     ok = can_symlink()
     msg = "Requires functional symlink implementation"
     return test if ok else unittest.skip(msg)(test)
@@ -1985,7 +1985,7 @@ def can_xattr():
     return can
 
 def skip_unless_xattr(test):
-    """Skip decorator for tests that require functional extended attributes"""
+    """Skip decorator for test that require functional extended attributes"""
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
