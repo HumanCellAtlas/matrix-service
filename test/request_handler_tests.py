@@ -1,8 +1,10 @@
 import unittest
 from random import shuffle
 
+from botocore.exceptions import ClientError
+
 from chalicelib import rand_uuid
-from chalicelib.request_handler import RequestHandler
+from chalicelib.request_handler import RequestHandler, RequestStatus
 
 
 class TestRequestHandler(unittest.TestCase):
@@ -31,7 +33,12 @@ class TestRequestHandler(unittest.TestCase):
         )
 
     def test_check_request_status(self):
-        pass
+        """
+        Check status for an non-existing request should return UNINITIALIZED
+        """
+        non_existing_uuid = rand_uuid()
+        status = RequestHandler.check_request_status(non_existing_uuid)
+        self.assertEqual(status, RequestStatus.UNINITIALIZED)
 
     def test_update_request(self):
         pass
