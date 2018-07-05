@@ -1,3 +1,4 @@
+import multiprocessing
 import traceback
 
 from botocore.exceptions import ClientError
@@ -7,7 +8,7 @@ from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
 app = Chalice(app_name='matrix-service')
-app.debug = True
+# app.debug = True
 
 mtx_handler = LoomMatrixHandler()
 
@@ -53,10 +54,28 @@ def concat_matrices():
     """
     request = app.current_request
     bundle_uuids = request.json_body
+    request_id = RequestHandler.generate_request_id(bundle_uuids)
 
-    # TODO: Query DSS GET /v1/bundles for bundle manifest of each (async)
+    try:
+        request_status = RequestHandler.check_request_status(request_id)
 
-    # TODO: Filter for the matrix files and concat them to a new file (async)
+        # Launch the matrix creation job in the background if the request
+        # has not been made before
+        if request_status == RequestStatus.UNINITIALIZED:
+            RequestHandler.update_request(
+                bundle_uuids,
+                request_id,
+                RequestStatus.RUNNING.name
+            )
 
-    # TODO: Return a request ID
-    pass
+            proc = multiprocessing.Process(
+                target=mtx_handler.run_merge_request,
+                args=(bundle_uuids, request_id)
+            )
+            proc.daemon = True
+            proc.start()
+    except ClientError:
+        error_msg = traceback.format_exc()
+        raise BadRequestError(error_msg)
+
+    return {"request_id": request_id}
