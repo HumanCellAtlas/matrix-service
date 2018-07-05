@@ -1,9 +1,11 @@
+import json
+import multiprocessing
 import unittest
+import boto3
+
 from random import shuffle
-
-from botocore.exceptions import ClientError
-
-from chalicelib import rand_uuid
+from chalicelib import rand_uuid, rand_uuids
+from chalicelib.constants import JSON_EXTENSION, MERGED_REQUEST_STATUS_BUCKET_NAME
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
 
@@ -13,12 +15,7 @@ class TestRequestHandler(unittest.TestCase):
         Request ids generated on uuids with different order should always
         be same.
         """
-        bundle_uuids = []
-
-        # Generate 10 random uuids
-        for _ in range(10):
-            bundle_uuids.append(rand_uuid())
-
+        bundle_uuids = rand_uuids(10)
         bundle_uuids_copy = bundle_uuids.copy()
         shuffle(bundle_uuids_copy)
 
@@ -41,7 +38,37 @@ class TestRequestHandler(unittest.TestCase):
         self.assertEqual(status, RequestStatus.UNINITIALIZED)
 
     def test_update_request(self):
-        pass
+        """
+        Make sure update_request() function can successfully update the
+        status json file stored in s3
+        """
+        bundle_uuids = rand_uuids(10)
+        request_id = RequestHandler.generate_request_id(bundle_uuids)
+        status = RequestStatus.RUNNING.name
+        RequestHandler.update_request(bundle_uuids, request_id, status)
+
+        # Load request status file(just uploaded) from s3
+        s3 = boto3.resource("s3")
+        key = request_id + JSON_EXTENSION
+        response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
+        body = json.loads(response['Body'].read())
+
+        self.assertEqual(bundle_uuids, body["bundle_uuids"])
+        self.assertEqual(request_id, body["request_id"])
+        self.assertEqual(status, body["status"])
+
+        # Merged matrix url for running request should be an empty string
+        self.assertEqual(body["merged_mtx_url"], "")
+
+        status = RequestStatus.DONE.name
+        RequestHandler.update_request(bundle_uuids, request_id, status)
+
+        # Reload latest request status json file from s3
+        response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
+        body = json.loads(response['Body'].read())
+
+        # Merged matrix url for done request should not be an empty string
+        self.assertNotEqual(body["merged_mtx_url"], "")
 
 
 if __name__ == '__main__':
