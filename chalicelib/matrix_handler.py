@@ -7,6 +7,7 @@ import hca
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
+from chalicelib.request_handler import RequestHandler, RequestStatus
 from loompy import loompy
 from chalicelib import logger
 
@@ -91,7 +92,12 @@ class MatrixHandler(ABC):
         merged_mtx_path = self._concat_mtx(mtx_paths, request_id)
         self._upload_mtx(merged_mtx_path)
 
-        # TODO: Update the request status
+        # Update the request status
+        RequestHandler.update_request(
+            bundle_uuids,
+            request_id,
+            RequestStatus.DONE.name
+        )
 
     def get_mtx_url(self, request_id):
         """
