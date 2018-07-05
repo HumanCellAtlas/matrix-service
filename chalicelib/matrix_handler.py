@@ -18,6 +18,26 @@ class MatrixHandler(ABC):
     """
     def __init__(self, extension):
         self._extension = extension
+        self.hca_client = hca.dss.DSSClient()
+
+    def _filter_mtx(self, bundle_uuids):
+        """
+        Filter only matrix files from a list of DSS bundles.
+        :param bundle_uuids: A list of bundle uuids.
+        :return: A list of matrices uuids.
+        """
+        mtx_uuids = []
+
+        # Iterate uuids to query DSS for bundle manifest of each
+        for uuid in bundle_uuids:
+            bundle_manifest = self.hca_client.get_bundle(replica="aws", uuid=uuid)
+
+            # Gather up uuids of all the matrix files we are going to merge
+            for file in bundle_manifest["bundle"]["files"]:
+                if file["name"].endswith(self._extension):
+                    mtx_uuids.append(file["uuid"])
+
+        return mtx_uuids
 
     def _download_mtx(self, bundle_uuids):
         """
@@ -29,19 +49,8 @@ class MatrixHandler(ABC):
         """
         logger.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
 
-        client = hca.dss.DSSClient()
-
-        mtx_uuids = []
-
-        # Iterate uuids to query DSS for bundle manifest of each
-        for uuid in bundle_uuids:
-            bundle_manifest = client.get_bundle(replica="aws", uuid=uuid)
-
-            # Gather up uuids of all the matrix files we are going to merge
-            for file in bundle_manifest["bundle"]["files"]:
-                if file["name"].endswith(self._extension):
-                    mtx_uuids.append(file["uuid"])
-                    logger.info("Adding %s to merge.", file["name"])
+        # Filter uuids of matrix files within each bundle
+        mtx_uuids = self._filter_mtx(bundle_uuids)
 
         # Create a temp directory for storing s3 matrix files
         temp_dir = tempfile.mkdtemp()
@@ -52,7 +61,7 @@ class MatrixHandler(ABC):
         for uuid in mtx_uuids:
             path = os.path.join(temp_dir, uuid + self._extension)
             with open(path, "wb") as mtx:
-                mtx.write(client.get_file(uuid=uuid, replica="aws"))
+                mtx.write(self.hca_client.get_file(uuid=uuid, replica="aws"))
             local_mtx_paths.append(path)
 
         logger.info("Done downloading %d matrix files.", len(local_mtx_paths))
