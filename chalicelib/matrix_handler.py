@@ -93,7 +93,7 @@ class MatrixHandler(ABC):
         self._upload_mtx(merged_mtx_path)
 
         # Update the request status
-        RequestHandler.update_request(
+        RequestHandler.update_request_status(
             bundle_uuids,
             request_id,
             RequestStatus.DONE.name

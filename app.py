@@ -62,7 +62,7 @@ def concat_matrices():
         # Launch the matrix creation job in the background if the request
         # has not been made before
         if request_status == RequestStatus.UNINITIALIZED:
-            RequestHandler.update_request(
+            RequestHandler.update_request_status(
                 bundle_uuids,
                 request_id,
                 RequestStatus.RUNNING.name

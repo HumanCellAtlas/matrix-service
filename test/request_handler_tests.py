@@ -37,7 +37,7 @@ class TestRequestHandler(unittest.TestCase):
         status = RequestHandler.check_request_status(non_existing_uuid)
         self.assertEqual(status, RequestStatus.UNINITIALIZED)
 
-    def test_update_request(self):
+    def test_update_request_status(self):
         """
         Make sure update_request() function can successfully update the
         status json file stored in s3
@@ -45,7 +45,7 @@ class TestRequestHandler(unittest.TestCase):
         bundle_uuids = rand_uuids(10)
         request_id = RequestHandler.generate_request_id(bundle_uuids)
         status = RequestStatus.RUNNING.name
-        RequestHandler.update_request(bundle_uuids, request_id, status)
+        RequestHandler.update_request_status(bundle_uuids, request_id, status)
 
         # Load request status file(just uploaded) from s3
         s3 = boto3.resource("s3")
@@ -61,7 +61,7 @@ class TestRequestHandler(unittest.TestCase):
         self.assertEqual(body["merged_mtx_url"], "")
 
         status = RequestStatus.DONE.name
-        RequestHandler.update_request(bundle_uuids, request_id, status)
+        RequestHandler.update_request_status(bundle_uuids, request_id, status)
 
         # Reload latest request status json file from s3
         response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()

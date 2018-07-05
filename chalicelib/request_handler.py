@@ -54,9 +54,11 @@ class RequestHandler:
                 raise e
 
     @staticmethod
-    def update_request(bundle_uuids, request_id, status):
+    def update_request_status(bundle_uuids, request_id, status):
         """
-        Create a request status json file in s3 bucket.
+        Update the request status json file in s3 bucket if exists. Otherwise,
+        create a new status file.
+
         :param bundle_uuids: A list of bundle uuids.
         :param request_id: Matrices concatenation request id.
         :param status: Request status to update.
