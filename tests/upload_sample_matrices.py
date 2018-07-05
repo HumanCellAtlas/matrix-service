@@ -4,7 +4,7 @@ import sys
 import hca
 
 from chalicelib.constants import BUNDLE_UUIDS_PATH
-from tests import logger
+from test import logger
 
 STAGING_BUCKET = "matrix-service-test"
 
