@@ -7,7 +7,7 @@ MERGED_MTX_BUCKET_NAME = "hca-dcp-matrix-service"
 MERGED_REQUEST_STATUS_BUCKET_NAME = "hca-dcp-matrix-service-request-status"
 
 # S3 Bucket for staging sample matrices
-STAGING_BUCKET = "matrix-service-test"
+STAGING_BUCKET_NAME = "matrix-service-test"
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
