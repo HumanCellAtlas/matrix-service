@@ -6,7 +6,8 @@ import boto3
 
 from enum import Enum
 from botocore.exceptions import ClientError
-from chalicelib.constants import MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION, REQUEST_TEMPLATE_PATH
+from chalicelib.constants import MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION, REQUEST_TEMPLATE_PATH, \
+    MERGED_MTX_BUCKET_NAME
 
 
 class RequestStatus(Enum):
@@ -53,18 +54,29 @@ class RequestHandler:
                 raise e
 
     @staticmethod
-    def create_request(bundle_uuids, request_id):
+    def update_request(bundle_uuids, request_id, status):
         """
         Create a request status json file in s3 bucket.
         :param bundle_uuids: A list of bundle uuids.
         :param request_id: Matrices concatenation request id.
+        :param status: Request status to update.
         """
         with open(REQUEST_TEMPLATE_PATH) as f:
             # Create a request based on a template json file
             request = json.load(f)
             request["bundle_uuids"] = bundle_uuids
-            request["status"] = RequestStatus.RUNNING.name
+            request["status"] = status
             request["request_id"] = request_id
+
+            if status == RequestStatus.DONE.name:
+                # Key for merged matrix stored in s3 bucket
+                key = request_id + ".loom"
+
+                mtx_url = "s3://{}/{}".format(
+                    MERGED_MTX_BUCKET_NAME,
+                    key
+                )
+                request["merged_mtx_url"] = mtx_url
 
         # Create a temp file for storing the request
         fd, temp_file = tempfile.mkstemp(suffix=JSON_EXTENSION)
@@ -74,10 +86,9 @@ class RequestHandler:
 
         os.close(fd)
 
-        # Key for request storing in s3 bucket
+        # Key for request stored in s3 bucket
         key = request_id + JSON_EXTENSION
 
         s3 = boto3.resource("s3")
         s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key)\
             .put(Body=open(temp_file, "rb"))
-
