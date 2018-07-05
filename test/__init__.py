@@ -7,4 +7,3 @@ stream_handler.setFormatter(formatter)
 
 logger = logging.getLogger("hca-matrix-service-testcase")
 logger.addHandler(stream_handler)
-logger.setLevel(logging.INFO)
