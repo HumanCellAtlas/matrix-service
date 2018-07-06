@@ -1,5 +1,4 @@
 import json
-import multiprocessing
 import unittest
 import boto3
 
@@ -44,7 +43,7 @@ class TestRequestHandler(unittest.TestCase):
         """
         bundle_uuids = rand_uuids(ub=11)
         request_id = RequestHandler.generate_request_id(bundle_uuids)
-        status = RequestStatus.RUNNING.name
+        status = RequestStatus.RUNNING
         RequestHandler.update_request_status(bundle_uuids, request_id, status)
 
         # Load request status file(just uploaded) from s3
@@ -55,12 +54,12 @@ class TestRequestHandler(unittest.TestCase):
 
         self.assertEqual(bundle_uuids, body["bundle_uuids"])
         self.assertEqual(request_id, body["request_id"])
-        self.assertEqual(status, body["status"])
+        self.assertEqual(status.name, body["status"])
 
         # Merged matrix url for running request should be an empty string
         self.assertEqual(body["merged_mtx_url"], "")
 
-        status = RequestStatus.DONE.name
+        status = RequestStatus.DONE
         RequestHandler.update_request_status(bundle_uuids, request_id, status)
 
         # Reload latest request status json file from s3

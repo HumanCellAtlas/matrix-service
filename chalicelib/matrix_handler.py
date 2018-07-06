@@ -115,7 +115,7 @@ class MatrixHandler(ABC):
         RequestHandler.update_request_status(
             bundle_uuids,
             request_id,
-            RequestStatus.DONE.name
+            RequestStatus.DONE
         )
 
     def get_mtx_url(self, request_id):
