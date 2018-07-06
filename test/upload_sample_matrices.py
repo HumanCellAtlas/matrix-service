@@ -4,7 +4,6 @@ import sys
 import hca
 
 from chalicelib.constants import BUNDLE_UUIDS_PATH, STAGING_BUCKET_NAME
-from test import logger
 
 
 def upload_sample_matrices(dir_path):
@@ -21,7 +20,7 @@ def upload_sample_matrices(dir_path):
         if not os.path.isdir(file_path):
             continue
 
-        logger.info("Uploading {} to DSS.".format(path))
+        print("Uploading {} to DSS.".format(path))
 
         response = client.upload(src_dir=file_path, replica="aws", staging_bucket=STAGING_BUCKET_NAME)
         bundle_uuids.append(response["bundle_uuid"])
@@ -30,7 +29,7 @@ def upload_sample_matrices(dir_path):
     with open(BUNDLE_UUIDS_PATH, "w") as f:
         json.dump(bundle_uuids, f)
 
-    logger.info("Done.")
+    print().info("Done.")
 
 
 if __name__ == "__main__":

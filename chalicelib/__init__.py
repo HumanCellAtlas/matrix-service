@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import random
 import tempfile
@@ -8,14 +7,6 @@ import boto3
 
 from botocore.exceptions import ClientError
 from chalicelib.constants import BUNDLE_UUIDS_PATH
-
-formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-
-logger = logging.getLogger("hca-matrix-service")
-logger.addHandler(stream_handler)
 
 
 def rand_uuid():
