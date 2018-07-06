@@ -241,7 +241,7 @@ class newbytes(with_metaclass(BaseNewBytes, _builtin_bytes)):
         #             b = _unichr(c).decode(encoding=encoding)
         #         else:
         #             # # It may be a bad byte
-        #             # FIXME: What to do in this case? See the Py3 docs / test.
+        #             # FIXME: What to do in this case? See the Py3 docs / tests.
         #             # # Try swallowing it.
         #             # continue
         #             # print("RAISE!")

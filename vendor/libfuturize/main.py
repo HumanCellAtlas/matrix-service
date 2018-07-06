@@ -26,7 +26,7 @@ The ``futurize`` script can also be called in two separate stages. First:
   $ futurize --stage1 mypython2script.py
 
 This produces more modern Python 2 code that is not yet compatible with Python
-3. The test should still run and the diff should be uncontroversial to apply to
+3. The tests should still run and the diff should be uncontroversial to apply to
 most Python projects that are willing to drop support for Python 2.5 and lower.
 
 After this, the recommended approach is to explicitly mark all strings that must

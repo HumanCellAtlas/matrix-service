@@ -142,7 +142,7 @@ WATCHDOG_KQ_FFLAGS = (
     select.KQ_NOTE_REVOKE
 )
 
-# Flag test.
+# Flag tests.
 
 
 def is_deleted(kev):

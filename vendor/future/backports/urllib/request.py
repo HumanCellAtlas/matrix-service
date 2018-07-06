@@ -2429,7 +2429,7 @@ def proxy_bypass_environment(host):
     return 0
 
 
-# This code test an OSX specific data structure but is testable on all
+# This code tests an OSX specific data structure but is testable on all
 # platforms
 def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     """

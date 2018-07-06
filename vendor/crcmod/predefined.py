@@ -45,7 +45,7 @@ NON_REVERSE = False
 
 # The following table defines the parameters of well-known CRC algorithms.
 # The "Check" value is the CRC for the ASCII byte sequence b"123456789". It
-# can be used for unit test.
+# can be used for unit tests.
 _crc_definitions_table = [
 #       Name                Identifier-name,    Poly            Reverse         Init-value      XOR-out     Check
     [   'crc-8',            'Crc8',             0x107,          NON_REVERSE,    0x00,           0x00,       0xF4,       ],
