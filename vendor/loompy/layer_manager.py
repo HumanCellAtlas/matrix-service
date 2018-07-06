@@ -1,7 +1,6 @@
 from typing import *
 import numpy as np
-import loompy
-import logging
+from vendor import loompy
 
 
 class LayerManager:

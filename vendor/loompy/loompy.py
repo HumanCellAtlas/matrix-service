@@ -31,8 +31,8 @@ import scipy.sparse
 from shutil import copyfile
 import logging
 import time
-import loompy
-from loompy import deprecated, timestamp
+from vendor import loompy
+from vendor.loompy import deprecated, timestamp
 
 
 class LoomConnection:

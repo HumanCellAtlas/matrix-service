@@ -1,7 +1,7 @@
 import numpy as np
 from typing import *
 import scipy
-from loompy import timestamp
+from vendor.loompy import timestamp
 
 
 class MemoryLoomLayer():

@@ -1,5 +1,5 @@
 from typing import *
-import loompy
+from vendor import loompy
 import numpy as np
 
 

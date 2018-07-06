@@ -1,7 +1,7 @@
 from typing import *
 import numpy as np
-import loompy
-from loompy import timestamp
+from vendor import loompy
+from vendor.loompy import timestamp
 
 
 class AttributeManager:
