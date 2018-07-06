@@ -3,12 +3,12 @@ import os
 import tempfile
 import boto3
 import hca
+import loompy
 
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
 from chalicelib.request_handler import RequestHandler, RequestStatus
-from loompy import loompy
 from chalicelib import logger
 
 
