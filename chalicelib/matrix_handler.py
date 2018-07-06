@@ -33,9 +33,9 @@ class MatrixHandler(ABC):
             bundle_manifest = self.hca_client.get_bundle(replica="aws", uuid=uuid)
 
             # Gather up uuids of all the matrix files we are going to merge
-            for file in bundle_manifest["bundle"]["files"]:
-                if file["name"].endswith(self._extension):
-                    mtx_uuids.append(file["uuid"])
+            for file_ in bundle_manifest["bundle"]["files"]:
+                if file_["name"].endswith(self._extension):
+                    mtx_uuids.append(file_["uuid"])
 
         return mtx_uuids
 
