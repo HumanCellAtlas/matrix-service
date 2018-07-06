@@ -65,7 +65,7 @@ def concat_matrices():
             RequestHandler.update_request_status(
                 bundle_uuids,
                 request_id,
-                RequestStatus.RUNNING.name
+                RequestStatus.RUNNING
             )
 
             # TODO: Send the request to another async service(SQS queue)

@@ -63,14 +63,15 @@ class RequestHandler:
         :param request_id: Matrices concatenation request id.
         :param status: Request status to update.
         """
+        assert isinstance(status, RequestStatus)
 
         # Create a request based on a template dict
         request = REQUEST_TEMPLATE.copy()
         request["bundle_uuids"] = bundle_uuids
-        request["status"] = status
+        request["status"] = status.name
         request["request_id"] = request_id
 
-        if status == RequestStatus.DONE.name:
+        if status == RequestStatus.DONE:
             # Key for merged matrix stored in s3 bucket
             key = request_id + ".loom"
 
@@ -80,13 +81,10 @@ class RequestHandler:
             )
             request["merged_mtx_url"] = mtx_url
 
-        # Create a temp file for storing the request
-        fd, temp_file = tempfile.mkstemp(suffix=JSON_EXTENSION)
+        _, temp_file = tempfile.mkstemp(suffix=JSON_EXTENSION)
 
         with open(temp_file, "w") as f:
             json.dump(request, f)
-
-        os.close(fd)
 
         # Key for request stored in s3 bucket
         key = request_id + JSON_EXTENSION
@@ -94,3 +92,5 @@ class RequestHandler:
         s3 = boto3.resource("s3")
         s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key)\
             .put(Body=open(temp_file, "rb"))
+
+        os.remove(temp_file)
