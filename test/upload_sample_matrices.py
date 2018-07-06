@@ -13,6 +13,7 @@ def upload_sample_matrices(dir_path):
     :param dir_path: Directory that contains directories of matrices
     """
     bundle_uuids = []
+    client = hca.dss.DSSClient()
 
     for path in os.listdir(dir_path):
         file_path = os.path.join(dir_path, path)
@@ -22,7 +23,6 @@ def upload_sample_matrices(dir_path):
 
         logger.info("Uploading {} to DSS.".format(path))
 
-        client = hca.dss.DSSClient()
         response = client.upload(src_dir=file_path, replica="aws", staging_bucket=STAGING_BUCKET_NAME)
         bundle_uuids.append(response["bundle_uuid"])
 

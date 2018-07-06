@@ -15,7 +15,7 @@ class TestRequestHandler(unittest.TestCase):
         Request ids generated on uuids with different order should always
         be same.
         """
-        bundle_uuids = rand_uuids(10)
+        bundle_uuids = rand_uuids()
         bundle_uuids_copy = bundle_uuids.copy()
         shuffle(bundle_uuids_copy)
 
@@ -42,7 +42,7 @@ class TestRequestHandler(unittest.TestCase):
         Make sure update_request() function can successfully update the
         status json file stored in s3
         """
-        bundle_uuids = rand_uuids(10)
+        bundle_uuids = rand_uuids()
         request_id = RequestHandler.generate_request_id(bundle_uuids)
         status = RequestStatus.RUNNING.name
         RequestHandler.update_request_status(bundle_uuids, request_id, status)
