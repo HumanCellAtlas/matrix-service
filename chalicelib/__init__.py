@@ -5,6 +5,9 @@ import random
 import tempfile
 import uuid
 
+import boto3
+from botocore.exceptions import ClientError
+
 from chalicelib.constants import BUNDLE_UUIDS_PATH
 
 formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
@@ -87,3 +90,20 @@ def get_random_existing_bundle_uuids():
     bundle_uuids_subset = random.sample(sample_bundle_uuids, n)
 
     return bundle_uuids_subset
+
+
+def check_s3key_existence(key, bucket_name):
+    """
+    Check the existence of a key in s3 bucket.
+    :param key: Key to check for existence.
+    :param bucket_name: S3 bucket name.
+    :return: True if the key exists in the bucket; Otherwise, return false.
+    """
+    s3 = boto3.resource("s3")
+
+    try:
+        s3.Object(bucket_name=bucket_name, key=key).get()
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == "NoSuchKey":
+            return False
