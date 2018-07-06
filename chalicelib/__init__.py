@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 import tempfile
 import uuid
@@ -47,6 +48,25 @@ def mk_temp_dirs():
 
         # Generate k random files within each directory
         for _ in range(k):
-            tempfile.mktemp(suffix=random.choice(suffices), dir=temp_dir)
+            tempfile.mkstemp(suffix=random.choice(suffices), dir=temp_dir)
 
     return temp_dirs
+
+
+def scan_dirs(dirs, file_format):
+    """
+    Scan a list of directories to get the number of a specific file format
+    within them.
+
+    :param dirs: A list of directories paths.
+    :param file_format: The file format specified.
+    :return: The number of file satisfying the file formats.
+    """
+    result = 0
+
+    for dir_path in dirs:
+        for path in os.listdir(dir_path):
+            if path.endswith(file_format):
+                result += 1
+
+    return result
