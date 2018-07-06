@@ -18,7 +18,7 @@ def health():
     return {'status': 'OK'}
 
 
-@app.route('/matrices/concat/{request_id}')
+@app.route('/matrices/concat/{request_id}', methods=['GET'])
 def check_request_status(request_id):
     """
     Check the status of a matrices concatenation request based on
