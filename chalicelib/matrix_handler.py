@@ -6,12 +6,12 @@ import boto3
 import hca
 import loompy
 
+from app import app
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
     MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
 from chalicelib.request_handler import RequestHandler, RequestStatus
-from chalicelib import logger
 
 
 class MatrixHandler(ABC):
@@ -49,7 +49,7 @@ class MatrixHandler(ABC):
         :param bundle_uuids: A list of bundle uuids
         :return: A list of downloaded local matrix files paths and their directory
         """
-        logger.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
+        app.log.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
 
         # Filter uuids of matrix files within each bundle
         mtx_uuids = self._filter_mtx(bundle_uuids)
@@ -67,7 +67,7 @@ class MatrixHandler(ABC):
                 mtx.write(self.hca_client.get_file(uuid=uuid, replica="aws"))
             local_mtx_paths.append(path)
 
-        logger.info("Done downloading %d matrix files.", len(local_mtx_paths))
+        app.log.info("Done downloading %d matrix files.", len(local_mtx_paths))
         return temp_dir, local_mtx_paths
 
     @abstractmethod
@@ -87,12 +87,12 @@ class MatrixHandler(ABC):
         :param path: Path of the merged matrix.
         :return: S3 bucket key for uploading file.
         """
-        logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path), MERGED_MTX_BUCKET_NAME))
+        app.log.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path), MERGED_MTX_BUCKET_NAME))
         s3 = boto3.resource("s3")
         key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
             s3.Bucket(MERGED_MTX_BUCKET_NAME).put_object(Key=key, Body=merged_matrix)
-        logger.info("Done uploading.")
+        app.log.info("Done uploading.")
 
         # Remove local merged mtx after uploading it to s3
         shutil.rmtree(os.path.dirname(path))
@@ -146,9 +146,9 @@ class LoomMatrixHandler(MatrixHandler):
         try:
             merged_mtx_dir = tempfile.mkdtemp()
             out_file = os.path.join(merged_mtx_dir, request_id + self._extension)
-            logger.info("Combining matrices to %s.", out_file)
+            app.log.info("Combining matrices to %s.", out_file)
             loompy.combine(mtx_paths, out_file)
-            logger.info("Done combining.")
+            app.log.info("Done combining.")
 
         finally:
             shutil.rmtree(mtx_dir)
