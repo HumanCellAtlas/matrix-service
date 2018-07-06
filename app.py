@@ -13,9 +13,9 @@ app = Chalice(app_name='matrix-service')
 mtx_handler = LoomMatrixHandler()
 
 
-@app.route('/')
-def index():
-    return {'hello': 'world'}
+@app.route('/matrices/health')
+def health():
+    return {'status': 'OK'}
 
 
 @app.route('/matrices/concat/{request_id}')
@@ -68,6 +68,7 @@ def concat_matrices():
                 RequestStatus.RUNNING.name
             )
 
+            # TODO: Send the request to another async service(SQS queue)
             proc = multiprocessing.Process(
                 target=mtx_handler.run_merge_request,
                 args=(bundle_uuids, request_id)
