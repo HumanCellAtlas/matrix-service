@@ -1,8 +1,11 @@
+import json
 import logging
 import os
 import random
 import tempfile
 import uuid
+
+from chalicelib.constants import BUNDLE_UUIDS_PATH
 
 formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
 
@@ -31,13 +34,13 @@ def rand_uuids():
     return uuids
 
 
-def mk_temp_dirs():
+def mk_rand_dirs():
     """
     Generate a random list of temp directories containing some random files.
     :return: A list of temp directories.
     """
     temp_dirs = []
-    n = random.randint(1, 11)
+    n = random.randint(1, 5)
     suffices = ('.json', '.loom', '.cvs', '',)
 
     # Generate n directories
@@ -55,8 +58,8 @@ def mk_temp_dirs():
 
 def scan_dirs(dirs, file_format):
     """
-    Scan a list of directories to get the number of a specific file format
-    within them.
+    Scan a list of directories to get the number of files that satisfies
+    a specific file format within them.
 
     :param dirs: A list of directories paths.
     :param file_format: The file format specified.
@@ -70,3 +73,17 @@ def scan_dirs(dirs, file_format):
                 result += 1
 
     return result
+
+
+def get_random_existing_bundle_uuids():
+    """
+    Get a random subset of existing bundle uuids stored in bundle_uuids.json.
+    """
+    # Get a random subset of bundle_uuids from sample bundle uuids
+    with open(BUNDLE_UUIDS_PATH, "r") as f:
+        sample_bundle_uuids = json.loads(f.read())
+
+    n = random.randint(1, 5)
+    bundle_uuids_subset = random.sample(sample_bundle_uuids, n)
+
+    return bundle_uuids_subset
