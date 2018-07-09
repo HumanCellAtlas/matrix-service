@@ -1,45 +1,12 @@
 import shutil
 import unittest
-import hca
 
 from chalicelib import *
-from chalicelib.constants import SAMPLE_MATRICES_BUCKET_NAME, MERGED_MTX_BUCKET_NAME
+from chalicelib.constants import MERGED_MTX_BUCKET_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
 
 
 class TestMatrixHandler(unittest.TestCase):
-    def test_filter_mtx(self):
-        """
-        Make sure _filter_mtx() always filters correct number of mtx from
-        DSS bundles.
-        """
-        # Generate a random number of temp directories containing some
-        # random files
-        temp_dirs = mk_rand_dirs(5, 10)
-
-        # Get the number of ".loom" matrix files within the directories
-        local_mtx_num = scan_dirs(temp_dirs, ".loom")
-
-        client = hca.dss.DSSClient()
-        bundle_uuids = []
-
-        # Upload all temp directories into DSS as bundles
-        try:
-            for temp_dir in temp_dirs:
-                response = client.upload(
-                    src_dir=temp_dir,
-                    replica="aws",
-                    staging_bucket=SAMPLE_MATRICES_BUCKET_NAME
-                )
-                bundle_uuids.append(response["bundle_uuid"])
-
-            mtx_handler = LoomMatrixHandler()
-            remote_mtx_num = len(mtx_handler._filter_mtx(bundle_uuids))
-            self.assertEqual(local_mtx_num, remote_mtx_num)
-        finally:
-            for temp_dir in temp_dirs:
-                shutil.rmtree(temp_dir)
-
     def test_download_mtx(self):
         """
         Make sure that mtx file paths returned from _download_mtx() exist.

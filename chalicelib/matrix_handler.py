@@ -8,6 +8,7 @@ import loompy
 
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
+from chalicelib import get_mtx_paths
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
     REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
 from chalicelib.request_handler import RequestHandler, RequestStatus
@@ -17,54 +18,35 @@ class MatrixHandler(ABC):
     """
     A generic matrix handler for matrices concatenation
     """
-    def __init__(self, extension):
-        self._extension = extension
+    def __init__(self, suffix):
+        self._suffix = suffix
         self.hca_client = hca.dss.DSSClient()
-
-    def _filter_mtx(self, bundle_uuids):
-        """
-        Filter only matrix files from a list of DSS bundles.
-        :param bundle_uuids: A list of bundle uuids.
-        :return: A list of matrices uuids.
-        """
-        mtx_uuids = []
-
-        # Iterate uuids to query DSS for bundle manifest of each
-        for uuid in bundle_uuids:
-            bundle_manifest = self.hca_client.get_bundle(replica="aws", uuid=uuid)
-
-            # Gather up uuids of all the matrix files we are going to merge
-            for file_ in bundle_manifest["bundle"]["files"]:
-                if file_["name"].endswith(self._extension):
-                    mtx_uuids.append(file_["uuid"])
-
-        return mtx_uuids
 
     def _download_mtx(self, bundle_uuids):
         """
         Filter for the matrix files within bundles, and download them locally
-        TODO: Is there a way to directly connect to a s3 file instead of downloading it locally?
 
         :param bundle_uuids: A list of bundle uuids
         :return: A list of downloaded local matrix files paths and their directory
         """
         # app.logger.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
 
-        # Filter uuids of matrix files within each bundle
-        mtx_uuids = self._filter_mtx(bundle_uuids)
-
-        # List to store downloaded mtx file paths
-        local_mtx_paths = []
-
         # Create a temp directory for storing s3 matrix files
         temp_dir = tempfile.mkdtemp()
 
-        # Download matrices from cloud to a local temp directory
-        for uuid in mtx_uuids:
-            _, path = tempfile.mkstemp(suffix=self._extension, dir=temp_dir)
-            with open(path, "wb") as mtx:
-                mtx.write(self.hca_client.get_file(uuid=uuid, replica="aws"))
-            local_mtx_paths.append(path)
+        # Filter and download only matrices file that satisfies a specific suffix within bundles
+        for bundle_uuid in bundle_uuids:
+            dest_name = os.path.join(temp_dir, bundle_uuid)
+            self.hca_client.download(
+                bundle_uuid=bundle_uuid,
+                replica="aws",
+                dest_name=dest_name,
+                metadata_files=(),
+                data_files=("*{}".format(self._suffix),)
+            )
+
+        # Get all downloaded mtx paths from temp_dir
+        local_mtx_paths = get_mtx_paths(temp_dir, self._suffix)
 
         # app.log.info("Done downloading %d matrix files.", len(local_mtx_paths))
         return temp_dir, local_mtx_paths
@@ -86,7 +68,8 @@ class MatrixHandler(ABC):
         :param path: Path of the merged matrix.
         :return: S3 bucket key for uploading file.
         """
-        # app.log.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path), MERGED_MTX_BUCKET_NAME))
+        # app.log.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path),
+        # MERGED_MTX_BUCKET_NAME))
         s3 = boto3.resource("s3")
         key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
@@ -143,7 +126,7 @@ class LoomMatrixHandler(MatrixHandler):
     def _concat_mtx(self, mtx_paths, mtx_dir, request_id):
         try:
             merged_mtx_dir = tempfile.mkdtemp()
-            out_file = os.path.join(merged_mtx_dir, request_id + self._extension)
+            out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)
             # app.log.info("Combining matrices to %s.", out_file)
             loompy.combine(mtx_paths, out_file)
             # app.log.info("Done combining.")

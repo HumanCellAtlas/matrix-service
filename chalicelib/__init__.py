@@ -115,21 +115,16 @@ def delete_s3key(key, bucket_name):
         s3.Object(bucket_name=bucket_name, key=key).delete()
 
 
-def mk_rand_loom_file(ub):
+def get_mtx_paths(dir, mtx_suffix):
     """
-    Generate a random number of loom file within a temp directory.
-    TODO: Generate valid loom file instead of empty one.
-
-    :param ub: Upper bound for the number of loom file generated.
-    :return: A list of loom file paths, and their directory.
+    Get all matrices file paths within a directory.
+    :param dir: Directory that contains matrix files.
+    :param mtx_suffix: Suffix for the matrix files.
+    :return: A list of mtx that ends with the specific suffix in the directory.
     """
-    temp_dir = tempfile.mkdtemp()
-    temp_files = []
+    mtx_paths = []
 
-    n = random.randint(1, ub)
+    for dname, _, fnames in os.walk(dir):
+        mtx_paths.extend([os.path.join(dname, fname) for fname in fnames if fname.endswith(mtx_suffix)])
 
-    for _ in range(n):
-        _, temp_file = tempfile.mkstemp(suffix=".loom", dir=temp_dir)
-        temp_files.append(temp_file)
-
-    return temp_dir, temp_files
+    return mtx_paths
