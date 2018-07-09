@@ -3,6 +3,7 @@ import os
 
 from dcplib.aws_secret import AwsSecret
 
+# Load secret for the matrix service
 secret = AwsSecret(name="dcp/matrix-service/secrets")
 secret_value = json.loads(secret.value)
 
@@ -15,6 +16,7 @@ REQUEST_STATUS_BUCKET_NAME = secret_value['request_status_bucket_name']
 # S3 Bucket for staging sample matrices
 SAMPLE_MATRICES_BUCKET_NAME = secret_value['sample_matrices_bucket_name']
 
+# Request template
 REQUEST_TEMPLATE = {
     "bundle_uuids": [],
     "status": "",
