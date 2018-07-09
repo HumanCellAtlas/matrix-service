@@ -3,7 +3,7 @@ import os
 import sys
 import hca
 
-from chalicelib.constants import BUNDLE_UUIDS_PATH, STAGING_BUCKET_NAME
+from chalicelib.constants import BUNDLE_UUIDS_PATH, SAMPLE_MATRICES_BUCKET_NAME
 
 
 def upload_sample_matrices(dir_path):
@@ -22,7 +22,7 @@ def upload_sample_matrices(dir_path):
 
         print("Uploading {} to DSS.".format(path))
 
-        response = client.upload(src_dir=file_path, replica="aws", staging_bucket=STAGING_BUCKET_NAME)
+        response = client.upload(src_dir=file_path, replica="aws", staging_bucket=SAMPLE_MATRICES_BUCKET_NAME)
         bundle_uuids.append(response["bundle_uuid"])
 
     # Store uuids for each uploaded directory into a bundle

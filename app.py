@@ -7,7 +7,7 @@ from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
 app = Chalice(app_name='matrix-service')
-# app.debug = True
+logger = app.log
 
 mtx_handler = LoomMatrixHandler()
 
