@@ -86,7 +86,7 @@ def get_random_existing_bundle_uuids(ub):
     return bundle_uuids_subset
 
 
-def check_s3key_existence(key, bucket_name):
+def s3key_exists(key, bucket_name):
     """
     Check the existence of a key in s3 bucket.
     :param key: Key to check for existence.
@@ -101,6 +101,18 @@ def check_s3key_existence(key, bucket_name):
     except ClientError as e:
         if e.response['Error']['Code'] == "NoSuchKey":
             return False
+
+
+def delete_s3key(key, bucket_name):
+    """
+    Delete a key from s3 bucket.
+    :param key: S3 bucket key.
+    :param bucket_name: S3 bucket name.
+    """
+    s3 = boto3.resource("s3")
+
+    if s3key_exists(key=key, bucket_name=bucket_name):
+        s3.Object(bucket_name=bucket_name, key=key).delete()
 
 
 def mk_rand_loom_file(ub):
