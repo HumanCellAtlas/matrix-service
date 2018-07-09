@@ -9,7 +9,7 @@ import loompy
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
-    MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
+    REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
 
@@ -48,7 +48,7 @@ class MatrixHandler(ABC):
         :param bundle_uuids: A list of bundle uuids
         :return: A list of downloaded local matrix files paths and their directory
         """
-        # app.log.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
+        # app.logger.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
 
         # Filter uuids of matrix files within each bundle
         mtx_uuids = self._filter_mtx(bundle_uuids)
@@ -126,7 +126,7 @@ class MatrixHandler(ABC):
         key = request_id + JSON_EXTENSION
 
         try:
-            response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
+            response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
             body = json.loads(response['Body'].read())
             return body["merged_mtx_url"]
         except ClientError as e:

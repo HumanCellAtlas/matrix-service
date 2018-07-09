@@ -3,7 +3,7 @@ import unittest
 import hca
 
 from chalicelib import *
-from chalicelib.constants import STAGING_BUCKET_NAME, MERGED_MTX_BUCKET_NAME
+from chalicelib.constants import SAMPLE_MATRICES_BUCKET_NAME, MERGED_MTX_BUCKET_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
 
 
@@ -29,7 +29,7 @@ class TestMatrixHandler(unittest.TestCase):
                 response = client.upload(
                     src_dir=temp_dir,
                     replica="aws",
-                    staging_bucket=STAGING_BUCKET_NAME
+                    staging_bucket=SAMPLE_MATRICES_BUCKET_NAME
                 )
                 bundle_uuids.append(response["bundle_uuid"])
 

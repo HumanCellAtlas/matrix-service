@@ -6,7 +6,7 @@ import boto3
 
 from enum import Enum
 from botocore.exceptions import ClientError
-from chalicelib.constants import MERGED_REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION, \
+from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION, \
     MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE
 
 
@@ -43,7 +43,7 @@ class RequestHandler:
         key = request_id + JSON_EXTENSION
 
         try:
-            response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
+            response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
             body = json.loads(response['Body'].read())
             return RequestStatus(body["status"])
 
@@ -90,7 +90,7 @@ class RequestHandler:
         key = request_id + JSON_EXTENSION
 
         s3 = boto3.resource("s3")
-        s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key)\
+        s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key)\
             .put(Body=open(temp_file, "rb"))
 
         os.remove(temp_file)

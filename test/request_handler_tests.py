@@ -4,7 +4,7 @@ import boto3
 
 from random import shuffle
 from chalicelib import rand_uuid, rand_uuids
-from chalicelib.constants import JSON_EXTENSION, MERGED_REQUEST_STATUS_BUCKET_NAME
+from chalicelib.constants import JSON_EXTENSION, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
 
@@ -49,7 +49,7 @@ class TestRequestHandler(unittest.TestCase):
         # Load request status file(just uploaded) from s3
         s3 = boto3.resource("s3")
         key = request_id + JSON_EXTENSION
-        response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
+        response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
         body = json.loads(response['Body'].read())
 
         self.assertEqual(bundle_uuids, body["bundle_uuids"])
@@ -63,7 +63,7 @@ class TestRequestHandler(unittest.TestCase):
         RequestHandler.update_request_status(bundle_uuids, request_id, status)
 
         # Reload latest request status json file from s3
-        response = s3.Object(bucket_name=MERGED_REQUEST_STATUS_BUCKET_NAME, key=key).get()
+        response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
         body = json.loads(response['Body'].read())
 
         # Merged matrix url for done request should not be an empty string

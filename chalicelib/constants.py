@@ -1,13 +1,19 @@
+import json
 import os
 
+from dcplib.aws_secret import AwsSecret
+
+secret = AwsSecret(name="dcp/matrix-service/secrets")
+secret_value = json.loads(secret.value)
+
 # S3 Bucket for storing merged matrices
-MERGED_MTX_BUCKET_NAME = "hca-dcp-matrix-service"
+MERGED_MTX_BUCKET_NAME = secret_value['merged_mtx_bucket_name']
 
 # S3 Bucket for storing matrices concatenation request status
-MERGED_REQUEST_STATUS_BUCKET_NAME = "hca-dcp-matrix-service-request-status"
+REQUEST_STATUS_BUCKET_NAME = secret_value['request_status_bucket_name']
 
 # S3 Bucket for staging sample matrices
-STAGING_BUCKET_NAME = "matrix-service-test"
+SAMPLE_MATRICES_BUCKET_NAME = secret_value['sample_matrices_bucket_name']
 
 REQUEST_TEMPLATE = {
     "bundle_uuids": [],
