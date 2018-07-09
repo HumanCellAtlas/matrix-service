@@ -26,7 +26,7 @@ REQUEST_TEMPLATE = {
 
 # Path configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEST_DIR = os.path.join(BASE_DIR, 'test')
-BUNDLE_UUIDS_PATH = os.path.join(TEST_DIR, "bundle_uuids.json")
+SCRIPTS_DIR = os.path.join(BASE_DIR, 'scripts')
+BUNDLE_UUIDS_PATH = os.path.join(SCRIPTS_DIR, "bundle_uuids.json")
 
 JSON_EXTENSION = ".json"
