@@ -24,7 +24,7 @@ REQUEST_TEMPLATE = {
     "merged_mtx_url": ""
 }
 
-# Paths configuration
+# Path configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_DIR = os.path.join(BASE_DIR, 'test')
 BUNDLE_UUIDS_PATH = os.path.join(TEST_DIR, "bundle_uuids.json")
