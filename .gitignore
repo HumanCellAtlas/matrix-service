@@ -4,3 +4,6 @@ __pycache__/
 .DS_Store
 chalice/.chalice/deployed/
 chalice/.chalice/deployments/
+terraform/.terraform/
+*.tfstate
+*.tfstate.backup
