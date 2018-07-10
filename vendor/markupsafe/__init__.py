@@ -11,7 +11,7 @@
 import re
 import string
 from collections import Mapping
-from vendor.markupsafe import text_type, string_types, int_types, \
+from markupsafe._compat import text_type, string_types, int_types, \
      unichr, iteritems, PY2
 
 __version__ = "1.0"
@@ -131,7 +131,7 @@ class Markup(text_type):
         >>> Markup("Main &raquo; <em>About</em>").unescape()
         u'Main \xbb <em>About</em>'
         """
-        from vendor.markupsafe import HTML_ENTITIES
+        from markupsafe._constants import HTML_ENTITIES
         def handle_match(m):
             name = m.group(1)
             if name in HTML_ENTITIES:
@@ -296,9 +296,9 @@ class _MarkupEscapeHelper(object):
 # we have to import it down here as the speedups and native
 # modules imports the markup type which is define above.
 try:
-    from vendor.markupsafe import escape, escape_silent, soft_unicode
+    from markupsafe._speedups import escape, escape_silent, soft_unicode
 except ImportError:
-    from vendor.markupsafe import escape, escape_silent, soft_unicode
+    from markupsafe._native import escape, escape_silent, soft_unicode
 
 if not PY2:
     soft_str = soft_unicode

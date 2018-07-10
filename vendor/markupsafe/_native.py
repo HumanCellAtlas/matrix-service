@@ -8,8 +8,8 @@
     :copyright: (c) 2010 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from vendor.markupsafe import Markup
-from vendor.markupsafe import text_type
+from markupsafe import Markup
+from markupsafe._compat import text_type
 
 
 def escape(s):

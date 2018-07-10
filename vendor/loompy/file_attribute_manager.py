@@ -2,7 +2,7 @@ from typing import *
 import h5py
 import scipy.sparse as sparse
 import numpy as np
-from vendor import loompy
+import loompy
 
 
 class FileAttributeManager(object):

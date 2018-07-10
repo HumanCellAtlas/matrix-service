@@ -1,7 +1,7 @@
 import scipy.sparse as sparse
 import numpy as np
 from typing import *
-from vendor.loompy import timestamp
+from loompy import timestamp
 
 
 def _renumber(a: np.ndarray, keys: np.ndarray, values: np.ndarray) -> np.ndarray:
