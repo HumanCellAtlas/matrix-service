@@ -3,7 +3,7 @@ import os
 import sys
 import hca
 
-from chalicelib.constants import BUNDLE_UUIDS_PATH, SAMPLE_MATRICES_BUCKET_NAME
+from chalice.chalicelib.constants import BUNDLE_UUIDS_PATH, SAMPLE_MATRICES_BUCKET_NAME
 
 
 def upload_sample_matrices(dir_path):
