@@ -2,5 +2,5 @@
 venv/
 __pycache__/
 .DS_Store
-.chalice/deployed/
-.chalice/deployments/
+chalice/.chalice/deployed/
+chalice/.chalice/deployments/

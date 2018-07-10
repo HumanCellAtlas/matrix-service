@@ -1,13 +1,12 @@
 import multiprocessing
 import traceback
 
+from chalice import app
 from botocore.exceptions import ClientError
-from chalice import Chalice, BadRequestError, NotFoundError
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
-app = Chalice(app_name='matrix-service')
-
+app = app.Chalice(app_name='matrix-service')
 mtx_handler = LoomMatrixHandler()
 
 
@@ -30,7 +29,7 @@ def check_request_status(request_id):
         app.log.info("Request({}) status: {}.".format(request_id, request_status))
 
         if request_status == RequestStatus.UNINITIALIZED:
-            raise NotFoundError("Request({}) does not exist.".format(request_id))
+            raise app.NotFoundError("Request({}) does not exist.".format(request_id))
         else:
             app.log.info("Fetching matrix url for request({}).".format(request_id))
             mtx_url = mtx_handler.get_mtx_url(request_id)
@@ -42,7 +41,7 @@ def check_request_status(request_id):
             }
     except ClientError:
         error_msg = traceback.format_exc()
-        raise BadRequestError(error_msg)
+        raise app.BadRequestError(error_msg)
 
 
 @app.route('/matrices/concat', methods=['POST'])
@@ -75,6 +74,6 @@ def concat_matrices():
             proc.start()
     except ClientError:
         error_msg = traceback.format_exc()
-        raise BadRequestError(error_msg)
+        raise app.BadRequestError(error_msg)
 
     return {"request_id": request_id}
