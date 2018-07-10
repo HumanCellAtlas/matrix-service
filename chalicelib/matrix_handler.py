@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import boto3
 import hca
-import loompy
+import vendor.loompy as loompy
 
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
