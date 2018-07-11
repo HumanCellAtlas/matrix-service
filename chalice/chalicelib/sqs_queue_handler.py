@@ -15,7 +15,7 @@ class SqsQueueHandler:
     ms_queue = sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)
 
     @staticmethod
-    def send_msg(msg):
+    def send_msg_to_ms_queue(msg):
         """
         Send a message to matrix service's sqs queue.
         :param msg: Msg to send.
@@ -28,3 +28,17 @@ class SqsQueueHandler:
         assert msg_md5 == response.get("MD5OfMessageBody")
 
         return response.get("MessageId")
+
+    @staticmethod
+    def msg_exists_ms_queue(msg_id):
+        """
+        Check the existence of a msg in matrix service sqs queue.
+        :param msg_id: Id of the message to check for existence.
+        :return: True if msg exists in matrix service sqs queue.
+        """
+        for queue_msg in SqsQueueHandler.ms_queue.receive_messages():
+            if queue_msg.message_id == msg_id:
+                queue_msg.delete()
+                return True
+
+        return False

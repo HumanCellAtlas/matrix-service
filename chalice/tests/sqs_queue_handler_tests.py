@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from chalicelib import get_random_existing_bundle_uuids, ms_sqs_queue_msg_exists
+from chalicelib import get_random_existing_bundle_uuids
 from chalicelib.sqs_queue_handler import SqsQueueHandler
 
 
@@ -15,10 +15,10 @@ class TestSqsQueueHandler(unittest.TestCase):
         bundle_uuids_subset = get_random_existing_bundle_uuids(ub=5)
 
         # Send a msg
-        msg_id = SqsQueueHandler.send_msg(json.dumps(bundle_uuids_subset))
+        msg_id = SqsQueueHandler.send_msg_to_ms_queue(json.dumps(bundle_uuids_subset))
 
         # Check for msg existence in the sqs queue
-        ms_sqs_queue_msg_exists(msg_id=msg_id)
+        SqsQueueHandler.msg_exists_ms_queue(msg_id=msg_id)
 
 
 if __name__ == '__main__':
