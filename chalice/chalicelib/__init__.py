@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import random
@@ -6,7 +7,7 @@ import uuid
 import boto3
 
 from botocore.exceptions import ClientError
-from chalicelib.constants import BUNDLE_UUIDS_PATH
+from chalicelib.constants import BUNDLE_UUIDS_PATH, MS_SQS_QUEUE_NAME
 
 
 def rand_uuid():
@@ -128,3 +129,29 @@ def get_mtx_paths(dir, mtx_suffix):
         mtx_paths.extend([os.path.join(dname, fname) for fname in fnames if fname.endswith(mtx_suffix)])
 
     return mtx_paths
+
+
+def generate_md5(s):
+    """
+    Generate MD5 sum of a sting.
+    :param s: Input string.
+    :return: MD5 sum of the input string.
+    """
+    return hashlib.md5(s.encode('utf-8')).hexdigest()
+
+
+def ms_sqs_queue_msg_exists(msg_id):
+    """
+    Check the existence of a msg in matrix service sqs queue.
+    :param msg_id: Id of the message to check for existence.
+    :return: True if msg exists in matrix service sqs queue.
+    """
+    sqs = boto3.resource("sqs")
+    queue = sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)
+
+    for queue_msg in queue.receive_messages():
+        if queue_msg.message_id == msg_id:
+            queue_msg.delete()
+            return True
+
+    return False
