@@ -1,8 +1,6 @@
-import json
 import os
 import shutil
 import tempfile
-import boto3
 import hca
 import vendor.loompy as loompy
 
@@ -10,8 +8,9 @@ from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from chalicelib import get_mtx_paths
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
-    REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION
+    REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX
 from chalicelib.request_handler import RequestHandler, RequestStatus
+from chalicelib.s3_handler import S3Handler
 
 
 class MatrixHandler(ABC):
@@ -29,7 +28,7 @@ class MatrixHandler(ABC):
         :param bundle_uuids: A list of bundle uuids
         :return: A list of downloaded local matrix files paths and their directory
         """
-        # app.logger.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
+        # app.log.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
 
         # Create a temp directory for storing s3 matrix files
         temp_dir = tempfile.mkdtemp()
@@ -49,6 +48,7 @@ class MatrixHandler(ABC):
         local_mtx_paths = get_mtx_paths(temp_dir, self._suffix)
 
         # app.log.info("Done downloading %d matrix files.", len(local_mtx_paths))
+
         return temp_dir, local_mtx_paths
 
     @abstractmethod
@@ -68,12 +68,19 @@ class MatrixHandler(ABC):
         :param path: Path of the merged matrix.
         :return: S3 bucket key for uploading file.
         """
-        # app.log.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(os.path.basename(path),
-        # MERGED_MTX_BUCKET_NAME))
-        s3 = boto3.resource("s3")
+        # app.log.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(
+        #     os.path.basename(path),
+        #     MERGED_MTX_BUCKET_NAME
+        # ))
+
         key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
-            s3.Bucket(MERGED_MTX_BUCKET_NAME).put_object(Key=key, Body=merged_matrix)
+            S3Handler.put_object(
+                key=key,
+                bucket_name=MERGED_MTX_BUCKET_NAME,
+                body=merged_matrix
+            )
+
         # app.log.info("Done uploading.")
 
         # Remove local merged mtx after uploading it to s3
@@ -81,12 +88,13 @@ class MatrixHandler(ABC):
 
         return key
 
-    def run_merge_request(self, bundle_uuids, request_id):
+    def run_merge_request(self, bundle_uuids, request_id, job_id):
         """
-        Merge matrices within bundles, and upload the merged matrix to an s3 bucket
+        Merge matrices within bundles, and upload the merged matrix to an s3 bucket.
 
-        :param bundle_uuids: Bundles' uuid for locating bundles in DSS
-        :param request_id: Merge request id
+        :param bundle_uuids: Bundles' uuid for locating bundles in DSS.
+        :param request_id: Merge request id.
+        :param job_id: Job id of the request.
         """
         mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
         merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
@@ -96,6 +104,7 @@ class MatrixHandler(ABC):
         RequestHandler.update_request_status(
             bundle_uuids=bundle_uuids,
             request_id=request_id,
+            job_id=job_id,
             status=RequestStatus.DONE
         )
 
@@ -105,12 +114,13 @@ class MatrixHandler(ABC):
         :param request_id: Matrices concatenation request id
         :return: URL of the matrix file
         """
-        s3 = boto3.resource("s3")
-        key = request_id + JSON_EXTENSION
+        key = request_id + JSON_SUFFIX
 
         try:
-            response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
-            body = json.loads(response['Body'].read())
+            body = S3Handler.get_object_body(
+                key=key,
+                bucket_name=REQUEST_STATUS_BUCKET_NAME
+            )
             return body["merged_mtx_url"]
         except ClientError as e:
             raise e

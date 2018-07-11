@@ -5,6 +5,7 @@ from chalicelib import *
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler
+from chalicelib.s3_handler import S3Handler
 
 
 class TestMatrixHandler(unittest.TestCase):
@@ -37,10 +38,10 @@ class TestMatrixHandler(unittest.TestCase):
         key = mtx_handler._upload_mtx(path)
 
         self.assertFalse(os.path.exists(path))
-        self.assertTrue(s3key_exists(key, MERGED_MTX_BUCKET_NAME))
+        self.assertTrue(S3Handler.object_exists(key, MERGED_MTX_BUCKET_NAME))
 
         # Delete the key after checking
-        delete_s3key(key=key, bucket_name=MERGED_MTX_BUCKET_NAME)
+        S3Handler.delete_object(key=key, bucket_name=MERGED_MTX_BUCKET_NAME)
 
     def test_run_merge_request(self):
         """
@@ -54,19 +55,21 @@ class TestMatrixHandler(unittest.TestCase):
         # Generate a request id based on bundle uuids
         request_id = RequestHandler.generate_request_id(bundle_uuids_subset)
 
+        job_id = rand_uuid()
+
         # Run merge request
         mtx_handler = LoomMatrixHandler()
-        mtx_handler.run_merge_request(bundle_uuids=bundle_uuids_subset, request_id=request_id)
+        mtx_handler.run_merge_request(bundle_uuids=bundle_uuids_subset, request_id=request_id, job_id=job_id)
 
         merged_mtx_key = request_id + ".loom"
         request_status_key = request_id + ".json"
 
-        self.assertTrue(s3key_exists(key=merged_mtx_key, bucket_name=MERGED_MTX_BUCKET_NAME))
-        self.assertTrue(s3key_exists(key=request_status_key, bucket_name=REQUEST_STATUS_BUCKET_NAME))
+        self.assertTrue(S3Handler.object_exists(key=merged_mtx_key, bucket_name=MERGED_MTX_BUCKET_NAME))
+        self.assertTrue(S3Handler.object_exists(key=request_status_key, bucket_name=REQUEST_STATUS_BUCKET_NAME))
 
         # Delete keys after checking
-        delete_s3key(key=merged_mtx_key, bucket_name=MERGED_MTX_BUCKET_NAME)
-        delete_s3key(key=request_status_key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
+        S3Handler.delete_object(key=merged_mtx_key, bucket_name=MERGED_MTX_BUCKET_NAME)
+        S3Handler.delete_object(key=request_status_key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
 
 
 if __name__ == '__main__':
