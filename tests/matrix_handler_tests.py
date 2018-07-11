@@ -1,11 +1,14 @@
+import os
 import shutil
+import tempfile
 import unittest
 
-from chalicelib import *
+from chalicelib import rand_uuid
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler
 from chalicelib.s3_handler import S3Handler
+from tests import get_random_existing_bundle_uuids
 
 
 class TestMatrixHandler(unittest.TestCase):
