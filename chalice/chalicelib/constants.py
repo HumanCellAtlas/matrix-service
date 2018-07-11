@@ -16,6 +16,9 @@ REQUEST_STATUS_BUCKET_NAME = secret_value['request_status_bucket_name']
 # S3 Bucket for staging sample matrices
 SAMPLE_MATRICES_BUCKET_NAME = secret_value['sample_matrices_bucket_name']
 
+# SQS Queue for storing matrices concatenation requests
+MS_SQS_QUEUE_NAME = secret_value['sqs_queue_name']
+
 # Request template
 REQUEST_TEMPLATE = {
     "bundle_uuids": [],
