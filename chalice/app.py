@@ -1,12 +1,16 @@
-import multiprocessing
+import json
 import traceback
 
 from chalice import app
 from botocore.exceptions import ClientError
+from chalicelib.constants import MS_SQS_QUEUE_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
+from chalicelib.sqs_queue_handler import SqsQueueHandler
 
 app = app.Chalice(app_name='matrix-service')
+
+# Replace handler here for supporting concatenation on other matrix formats
 mtx_handler = LoomMatrixHandler()
 
 
@@ -65,15 +69,23 @@ def concat_matrices():
                 RequestStatus.RUNNING
             )
 
-            # TODO: Send the request to another async service(SQS queue)
-            proc = multiprocessing.Process(
-                target=mtx_handler.run_merge_request,
-                args=(bundle_uuids, request_id)
-            )
-            proc.daemon = True
-            proc.start()
+            # Send the request as a msg to a SQS queue
+            msg = json.dumps(bundle_uuids, sort_keys=True)
+            SqsQueueHandler.send_msg(msg)
+
     except ClientError:
         error_msg = traceback.format_exc()
         raise app.BadRequestError(error_msg)
 
     return {"request_id": request_id}
+
+
+@app.on_sqs_message(queue=MS_SQS_QUEUE_NAME)
+def ms_sqs_queue_listener(event):
+    """
+    Create a lambda function that listens for the matrix service's SQS
+    queue events.
+    :param event:
+    :return:
+    """
+    pass
