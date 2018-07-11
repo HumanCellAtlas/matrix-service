@@ -4,9 +4,7 @@ import os
 import random
 import tempfile
 import uuid
-import boto3
 
-from botocore.exceptions import ClientError
 from chalicelib.constants import BUNDLE_UUIDS_PATH, MS_SQS_QUEUE_NAME
 
 
@@ -87,35 +85,6 @@ def get_random_existing_bundle_uuids(ub):
     return bundle_uuids_subset
 
 
-def s3key_exists(key, bucket_name):
-    """
-    Check the existence of a key in s3 bucket.
-    :param key: Key to check for existence.
-    :param bucket_name: S3 bucket name.
-    :return: True if the key exists in the bucket; Otherwise, return false.
-    """
-    s3 = boto3.resource("s3")
-
-    try:
-        s3.Object(bucket_name=bucket_name, key=key).get()
-        return True
-    except ClientError as e:
-        if e.response['Error']['Code'] == "NoSuchKey":
-            return False
-
-
-def delete_s3key(key, bucket_name):
-    """
-    Delete a key from s3 bucket.
-    :param key: S3 bucket key.
-    :param bucket_name: S3 bucket name.
-    """
-    s3 = boto3.resource("s3")
-
-    if s3key_exists(key=key, bucket_name=bucket_name):
-        s3.Object(bucket_name=bucket_name, key=key).delete()
-
-
 def get_mtx_paths(dir, mtx_suffix):
     """
     Get all matrices file paths within a directory.
@@ -140,18 +109,4 @@ def generate_md5(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
 
 
-def ms_sqs_queue_msg_exists(msg_id):
-    """
-    Check the existence of a msg in matrix service sqs queue.
-    :param msg_id: Id of the message to check for existence.
-    :return: True if msg exists in matrix service sqs queue.
-    """
-    sqs = boto3.resource("sqs")
-    queue = sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)
 
-    for queue_msg in queue.receive_messages():
-        if queue_msg.message_id == msg_id:
-            queue_msg.delete()
-            return True
-
-    return False

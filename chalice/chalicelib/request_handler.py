@@ -39,28 +39,27 @@ class RequestHandler:
         :param request_id: Matrices concatenation request id.
         :return: The status of the request.
         """
-        s3 = boto3.resource("s3")
-        key = request_id + JSON_EXTENSION
+        key = request_id + JSON_SUFFIX
 
         try:
-            response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
-            body = json.loads(response['Body'].read())
-            return RequestStatus(body["status"])
+            body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
 
-        except ClientError as e:
-            if e.response['Error']['Code'] == "NoSuchKey":
-                return RequestStatus("UNINITIALIZED")
+            if body:
+                return RequestStatus(body["status"])
             else:
-                raise e
+                return RequestStatus("UNINITIALIZED")
+        except ClientError as e:
+            raise e
 
     @staticmethod
-    def update_request_status(bundle_uuids, request_id, status):
+    def update_request_status(bundle_uuids, request_id, job_id, status):
         """
         Update the request status json file in s3 bucket if exists. Otherwise,
         create a new status file.
 
         :param bundle_uuids: A list of bundle uuids.
         :param request_id: Matrices concatenation request id.
+        :param job_id: Matrices concatenation job id.
         :param status: Request status to update.
         """
         assert isinstance(status, RequestStatus)
@@ -70,6 +69,7 @@ class RequestHandler:
         request["bundle_uuids"] = bundle_uuids
         request["status"] = status.name
         request["request_id"] = request_id
+        request["job_id"] = job_id
 
         if status == RequestStatus.DONE:
             # Key for merged matrix stored in s3 bucket
@@ -81,16 +81,19 @@ class RequestHandler:
             )
             request["merged_mtx_url"] = mtx_url
 
-        _, temp_file = tempfile.mkstemp(suffix=JSON_EXTENSION)
+        _, temp_file = tempfile.mkstemp(suffix=JSON_SUFFIX)
 
         with open(temp_file, "w") as f:
             json.dump(request, f)
 
         # Key for request stored in s3 bucket
-        key = request_id + JSON_EXTENSION
+        key = request_id + JSON_SUFFIX
 
-        s3 = boto3.resource("s3")
-        s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key)\
-            .put(Body=open(temp_file, "rb"))
+        with open(temp_file, "rb") as f:
+            S3Handler.put_object(
+                key=key,
+                bucket_name=REQUEST_STATUS_BUCKET_NAME,
+                body=f
+            )
 
         os.remove(temp_file)
