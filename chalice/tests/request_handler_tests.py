@@ -1,11 +1,10 @@
-import json
 import unittest
-import boto3
 
 from random import shuffle
 from chalicelib import rand_uuid, rand_uuids
-from chalicelib.constants import JSON_EXTENSION, REQUEST_STATUS_BUCKET_NAME
+from chalicelib.constants import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.request_handler import RequestHandler, RequestStatus
+from chalicelib.s3_handler import S3Handler
 
 
 class TestRequestHandler(unittest.TestCase):
@@ -44,30 +43,42 @@ class TestRequestHandler(unittest.TestCase):
         bundle_uuids = rand_uuids(ub=11)
         request_id = RequestHandler.generate_request_id(bundle_uuids)
         status = RequestStatus.RUNNING
-        RequestHandler.update_request_status(bundle_uuids, request_id, status)
+        job_id = rand_uuid()
+        RequestHandler.update_request_status(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id,
+            job_id=job_id,
+            status=status
+        )
 
         # Load request status file(just uploaded) from s3
-        s3 = boto3.resource("s3")
-        key = request_id + JSON_EXTENSION
-        response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
-        body = json.loads(response['Body'].read())
+        key = request_id + JSON_SUFFIX
+        body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
 
         self.assertEqual(bundle_uuids, body["bundle_uuids"])
         self.assertEqual(request_id, body["request_id"])
+        self.assertEqual(job_id, body["job_id"])
         self.assertEqual(status.name, body["status"])
 
         # Merged matrix url for running request should be an empty string
         self.assertEqual(body["merged_mtx_url"], "")
 
         status = RequestStatus.DONE
-        RequestHandler.update_request_status(bundle_uuids, request_id, status)
+        RequestHandler.update_request_status(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id,
+            job_id=job_id,
+            status=status
+        )
 
         # Reload latest request status json file from s3
-        response = s3.Object(bucket_name=REQUEST_STATUS_BUCKET_NAME, key=key).get()
-        body = json.loads(response['Body'].read())
+        body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
 
         # Merged matrix url for done request should not be an empty string
         self.assertNotEqual(body["merged_mtx_url"], "")
+
+        # Delete the s3 object after use
+        S3Handler.delete_object(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
 
 
 if __name__ == '__main__':

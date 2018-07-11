@@ -3,7 +3,8 @@ import traceback
 
 from chalice import app
 from botocore.exceptions import ClientError
-from chalicelib.constants import MS_SQS_QUEUE_NAME
+from chalicelib import rand_uuid
+from chalicelib.constants import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs_queue_handler import SqsQueueHandler
@@ -14,7 +15,7 @@ app = app.Chalice(app_name='matrix-service')
 mtx_handler = LoomMatrixHandler()
 
 
-@app.route('/matrices/health')
+@app.route('/matrices/health', methods=['GET'])
 def health():
     return {'status': 'OK'}
 
@@ -32,6 +33,7 @@ def check_request_status(request_id):
         request_status = RequestHandler.check_request_status(request_id)
         app.log.info("Request({}) status: {}.".format(request_id, request_status))
 
+        # TODO: There is a problem because of S3 consistency model
         if request_status == RequestStatus.UNINITIALIZED:
             raise app.NotFoundError("Request({}) does not exist.".format(request_id))
         else:
@@ -60,22 +62,32 @@ def concat_matrices():
     try:
         request_status = RequestHandler.check_request_status(request_id)
 
-        # Launch the matrix creation job in the background if the request
+        # Send the request as a message to the SQS queue if the request
         # has not been made before
         if request_status == RequestStatus.UNINITIALIZED:
+            job_id = rand_uuid()
+
             RequestHandler.update_request_status(
-                bundle_uuids,
-                request_id,
-                RequestStatus.RUNNING
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.INITIALIZED
             )
 
-            # Send the request as a msg to a SQS queue
-            msg = json.dumps(bundle_uuids, sort_keys=True)
-            SqsQueueHandler.send_msg(msg)
+            # Create message to send to the SQS Queue
+            msg = SQS_QUEUE_MSG.copy()
+            msg["bundle_uuids"] = bundle_uuids
+            msg["job_id"] = job_id
+
+            # Send the msg to the SQS queue
+            msg_str = json.dumps(msg, sort_keys=True)
+            SqsQueueHandler.send_msg_to_ms_queue(msg_str)
 
     except ClientError:
         error_msg = traceback.format_exc()
         raise app.BadRequestError(error_msg)
+    except AssertionError:
+        raise app.ChaliceViewError("Message has not been correctly sent to SQS Queue.")
 
     return {"request_id": request_id}
 
@@ -84,8 +96,45 @@ def concat_matrices():
 def ms_sqs_queue_listener(event):
     """
     Create a lambda function that listens for the matrix service's SQS
-    queue events.
-    :param event:
-    :return:
+    queue events.Once it detects an incoming message on the queue, it
+    will process it by launching a job to do the matrices concatenation
+    based on the message content.
+    :param event: SQS Queue event.
     """
-    pass
+    for record in event:
+        msg = json.loads(record.body)
+        bundle_uuids = msg["bundle_uuids"]
+        request_id = RequestHandler.generate_request_id(bundle_uuids)
+
+        """
+        Check whether job id has a corresponding match in s3:
+        If yes, then proceed the matrices concatenation.
+        If no, it means either of the following cases happens:
+          1. Message sent to SQS Queue has been corrupted; As a result,
+             the job id sent by API Gateway + Lambda is different from
+             the one received by the SQS queue + Lambda.
+          2. Before receiving the msg from SQS queue, a duplicate mtx
+             concatenation request has been initialized. As a result,
+             the job id in the status file in s3 has been updated to
+             a new value.
+        Therefore, we need to stall the matrices concatenation to avoid
+        either doing duplicate concatenation or concatenation on incorrect
+        set of matrices.
+        """
+        try:
+            job_id = RequestHandler.get_request_job_id(request_id=request_id)
+
+            # Stall concatenation process if any of these cases happens
+            if not job_id or job_id != msg["job_id"]:
+                return
+
+        except ClientError:
+            error_msg = traceback.format_exc()
+            app.log.exception(error_msg)
+            return
+
+        mtx_handler.run_merge_request(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id,
+            job_id=msg["job_id"]
+        )

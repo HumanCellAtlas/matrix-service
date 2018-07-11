@@ -2,16 +2,17 @@ import hashlib
 import json
 import os
 import tempfile
-import boto3
 
 from enum import Enum
 from botocore.exceptions import ClientError
-from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_EXTENSION, \
+from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
     MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE
+from chalicelib.s3_handler import S3Handler
 
 
 class RequestStatus(Enum):
     UNINITIALIZED = "UNINITIALIZED"
+    INITIALIZED = "INITIALIZED"
     RUNNING = "RUNNING"
     DONE = "DONE"
 
@@ -97,3 +98,23 @@ class RequestHandler:
             )
 
         os.remove(temp_file)
+
+    @staticmethod
+    def get_request_job_id(request_id):
+        """
+        Get job id from a request status file if exists.
+        :param request_id: Matrix concatenation request id.
+        :return: Job id if request exists. Otherwise, return None.
+        """
+        key = request_id + JSON_SUFFIX
+
+        try:
+            body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
+
+            if body:
+                return body["job_id"]
+            else:
+                return None
+
+        except ClientError as e:
+            raise e
