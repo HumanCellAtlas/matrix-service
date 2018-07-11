@@ -1,10 +1,11 @@
 import unittest
 
 from random import shuffle
-from chalicelib import rand_uuid, rand_uuids
+from chalicelib import rand_uuid
 from chalicelib.constants import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.s3_handler import S3Handler
+from tests import rand_uuids
 
 
 class TestRequestHandler(unittest.TestCase):
