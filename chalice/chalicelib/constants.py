@@ -24,7 +24,14 @@ REQUEST_TEMPLATE = {
     "bundle_uuids": [],
     "status": "",
     "request_id": "",
+    "job_id": "",
     "merged_mtx_url": ""
+}
+
+# SQS Queue Message template
+SQS_QUEUE_MSG = {
+    "bundle_uuids": [],
+    "job_id": ""
 }
 
 # Path configuration
@@ -32,4 +39,4 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(BASE_DIR, 'tests')
 BUNDLE_UUIDS_PATH = os.path.join(SCRIPTS_DIR, "bundle_uuids.json")
 
-JSON_EXTENSION = ".json"
+JSON_SUFFIX = ".json"
