@@ -37,6 +37,8 @@ class MatrixHandler(ABC):
         # Filter and download only matrices file that satisfies a specific suffix within bundles
         for bundle_uuid in bundle_uuids:
             dest_name = os.path.join(temp_dir, bundle_uuid)
+
+            # TODO: WHAT EXCEPTION BEING THROWN IF BUNDLE UUID IS INVALID?
             self.hca_client.download(
                 bundle_uuid=bundle_uuid,
                 replica="aws",
@@ -97,11 +99,19 @@ class MatrixHandler(ABC):
         :param request_id: Merge request id.
         :param job_id: Job id of the request.
         """
+        # Update the request status to RUNNING
+        RequestHandler.update_request_status(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id,
+            job_id=job_id,
+            status=RequestStatus.RUNNING
+        )
+
         mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
         merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
         self._upload_mtx(merged_mtx_path)
 
-        # Update the request status
+        # Update the request status to DONE
         RequestHandler.update_request_status(
             bundle_uuids=bundle_uuids,
             request_id=request_id,
