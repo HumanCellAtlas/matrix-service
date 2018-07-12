@@ -40,8 +40,7 @@ class TestRequestHandler(unittest.TestCase):
         try:
             status = RequestHandler.check_request_status(non_existing_uuid)
         except BlobStoreUnknownError:
-            error_msg = traceback.format_exc()
-            self.fail(error_msg)
+            self.fail(traceback.format_exc())
 
         self.assertEqual(status, RequestStatus.UNINITIALIZED)
 

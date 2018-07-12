@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from chalicelib.sqs_queue_handler import SqsQueueHandler
+from chalicelib.sqs import SqsQueueHandler
 from tests import get_random_existing_bundle_uuids
 
 

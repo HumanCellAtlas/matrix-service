@@ -4,7 +4,7 @@ import os
 import tempfile
 
 from enum import Enum
-from typing import Any
+from typing import Any, List
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
 from chalicelib import s3_blob_store
 from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
@@ -20,7 +20,7 @@ class RequestStatus(Enum):
 
 class RequestHandler:
     @staticmethod
-    def generate_request_id(bundle_uuids) -> str:
+    def generate_request_id(bundle_uuids: List[str]) -> str:
         """
         Generate a request id based on a list of bundle uuids.
         :param bundle_uuids: A list of bundle uuids.
@@ -35,7 +35,7 @@ class RequestHandler:
         return m.hexdigest()
 
     @staticmethod
-    def check_request_status(request_id):
+    def check_request_status(request_id: str) -> RequestStatus:
         """
         Check the status of a matrix concatenation request.
         :param request_id: Matrices concatenation request id.
@@ -52,7 +52,11 @@ class RequestHandler:
             raise e
 
     @staticmethod
-    def update_request_status(bundle_uuids, request_id, job_id, status) -> None:
+    def update_request_status(
+            bundle_uuids: List[str],
+            request_id: str,
+            job_id: str,
+            status: RequestStatus) -> None:
         """
         Update the request status json file in s3 bucket if exists. Otherwise,
         create a new status file.
@@ -99,7 +103,7 @@ class RequestHandler:
         os.remove(temp_file)
 
     @staticmethod
-    def get_request_job_id(request_id) -> Any:
+    def get_request_job_id(request_id: str):
         """
         Get job id from a request status file if exists.
         :param request_id: Matrix concatenation request id.

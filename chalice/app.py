@@ -7,7 +7,7 @@ from chalicelib import rand_uuid
 from chalicelib.constants import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
-from chalicelib.sqs_queue_handler import SqsQueueHandler
+from chalicelib.sqs import SqsQueueHandler
 
 app = app.Chalice(app_name='matrix-service')
 
