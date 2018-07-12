@@ -4,7 +4,7 @@ import os
 import tempfile
 
 from enum import Enum
-from typing import Any, List
+from typing import List
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
 from chalicelib import s3_blob_store
 from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \

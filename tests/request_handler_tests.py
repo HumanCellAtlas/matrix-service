@@ -3,7 +3,6 @@ import traceback
 import unittest
 
 from random import shuffle
-
 from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
 from chalicelib import rand_uuid, s3_blob_store
 from chalicelib.constants import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME

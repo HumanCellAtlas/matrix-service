@@ -10,6 +10,7 @@ from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
 
 app = app.Chalice(app_name='matrix-service')
+app.debug = True
 
 # Replace handler here for supporting concatenation on other matrix formats
 mtx_handler = LoomMatrixHandler()

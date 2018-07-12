@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 import hca
-import vendor.loompy as loompy
+import loompy
 
 from typing import List, Tuple
 from abc import ABC, abstractmethod
