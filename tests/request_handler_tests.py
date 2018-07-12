@@ -1,10 +1,13 @@
+import json
+import traceback
 import unittest
 
 from random import shuffle
-from chalicelib import rand_uuid
+
+from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
+from chalicelib import rand_uuid, s3_blob_store
 from chalicelib.constants import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.request_handler import RequestHandler, RequestStatus
-from chalicelib.s3_handler import S3Handler
 from tests import rand_uuids
 
 
@@ -33,7 +36,13 @@ class TestRequestHandler(unittest.TestCase):
         Check status for an non-existing request should return UNINITIALIZED
         """
         non_existing_uuid = rand_uuid()
-        status = RequestHandler.check_request_status(non_existing_uuid)
+
+        try:
+            status = RequestHandler.check_request_status(non_existing_uuid)
+        except BlobStoreUnknownError:
+            error_msg = traceback.format_exc()
+            self.fail(error_msg)
+
         self.assertEqual(status, RequestStatus.UNINITIALIZED)
 
     def test_update_request_status(self):
@@ -54,7 +63,11 @@ class TestRequestHandler(unittest.TestCase):
 
         # Load request status file(just uploaded) from s3
         key = request_id + JSON_SUFFIX
-        body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
+
+        try:
+            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
+        except (BlobNotFoundError, BlobStoreUnknownError):
+            self.fail(traceback.format_exc())
 
         self.assertEqual(bundle_uuids, body["bundle_uuids"])
         self.assertEqual(request_id, body["request_id"])
@@ -73,13 +86,16 @@ class TestRequestHandler(unittest.TestCase):
         )
 
         # Reload latest request status json file from s3
-        body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
+        try:
+            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
+        except (BlobNotFoundError, BlobStoreUnknownError):
+            self.fail(traceback.format_exc())
 
         # Merged matrix url for done request should not be an empty string
         self.assertNotEqual(body["merged_mtx_url"], "")
 
         # Delete the s3 object after use
-        S3Handler.delete_object(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
+        s3_blob_store.delete(bucket=REQUEST_STATUS_BUCKET_NAME, key=key)
 
 
 if __name__ == '__main__':
