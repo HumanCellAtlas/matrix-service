@@ -1,13 +1,20 @@
 import hashlib
 import os
 import uuid
+import boto3
+
+from typing import List
+from cloud_blobstore.s3 import S3BlobStore
 
 
-def rand_uuid():
+s3_blob_store = S3BlobStore(s3_client=boto3.client("s3"))
+
+
+def rand_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def get_mtx_paths(dir, mtx_suffix):
+def get_mtx_paths(dir, mtx_suffix) -> List[str]:
     """
     Get all matrices file paths within a directory.
     :param dir: Directory that contains matrix files.
@@ -22,7 +29,7 @@ def get_mtx_paths(dir, mtx_suffix):
     return mtx_paths
 
 
-def generate_md5(s):
+def generate_md5(s) -> str:
     """
     Generate MD5 sum of a sting.
     :param s: Input string.

@@ -2,7 +2,7 @@ import json
 import traceback
 
 from chalice import app
-from botocore.exceptions import ClientError
+from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
 from chalicelib import rand_uuid
 from chalicelib.constants import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG
 from chalicelib.matrix_handler import LoomMatrixHandler
@@ -33,7 +33,6 @@ def check_request_status(request_id):
         request_status = RequestHandler.check_request_status(request_id)
         app.log.info("Request({}) status: {}.".format(request_id, request_status))
 
-        # TODO: There is a problem because of S3 consistency model
         if request_status == RequestStatus.UNINITIALIZED:
             raise app.NotFoundError("Request({}) does not exist.".format(request_id))
         else:
@@ -45,7 +44,7 @@ def check_request_status(request_id):
                 "status": request_status.name,
                 "url": mtx_url
             }
-    except ClientError:
+    except (BlobNotFoundError, BlobStoreUnknownError):
         error_msg = traceback.format_exc()
         raise app.BadRequestError(error_msg)
 
@@ -83,7 +82,7 @@ def concat_matrices():
             msg_str = json.dumps(msg, sort_keys=True)
             SqsQueueHandler.send_msg_to_ms_queue(msg_str)
 
-    except ClientError:
+    except BlobStoreUnknownError:
         error_msg = traceback.format_exc()
         raise app.BadRequestError(error_msg)
     except AssertionError:
@@ -128,7 +127,7 @@ def ms_sqs_queue_listener(event):
             if not job_id or job_id != msg["job_id"]:
                 return
 
-        except ClientError:
+        except BlobStoreUnknownError:
             error_msg = traceback.format_exc()
             app.log.exception(error_msg)
             return

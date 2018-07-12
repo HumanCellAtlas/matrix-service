@@ -1,27 +1,28 @@
+import json
 import os
 import shutil
 import tempfile
 import hca
 import vendor.loompy as loompy
 
+from typing import List, Tuple
 from abc import ABC, abstractmethod
-from botocore.exceptions import ClientError
-from chalicelib import get_mtx_paths
+from chalicelib import get_mtx_paths, s3_blob_store
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
     REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX
 from chalicelib.request_handler import RequestHandler, RequestStatus
-from chalicelib.s3_handler import S3Handler
+from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
 
 
 class MatrixHandler(ABC):
     """
     A generic matrix handler for matrices concatenation
     """
-    def __init__(self, suffix):
+    def __init__(self, suffix) -> None:
         self._suffix = suffix
         self.hca_client = hca.dss.DSSClient()
 
-    def _download_mtx(self, bundle_uuids):
+    def _download_mtx(self, bundle_uuids) -> Tuple[str, List[str]]:
         """
         Filter for the matrix files within bundles, and download them locally
 
@@ -52,7 +53,7 @@ class MatrixHandler(ABC):
         return temp_dir, local_mtx_paths
 
     @abstractmethod
-    def _concat_mtx(self, mtx_paths, mtx_dir, request_id):
+    def _concat_mtx(self, mtx_paths, mtx_dir, request_id) -> str:
         """
         Concatenate a list of matrices, and save into a new file on disk.
 
@@ -62,7 +63,7 @@ class MatrixHandler(ABC):
         :return: New concatenated matrix file's path.
         """
 
-    def _upload_mtx(self, path):
+    def _upload_mtx(self, path) -> str:
         """
         Upload a matrix file into an s3 bucket.
         :param path: Path of the merged matrix.
@@ -75,10 +76,10 @@ class MatrixHandler(ABC):
 
         key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
-            S3Handler.put_object(
+            s3_blob_store.upload_file_handle(
+                bucket=MERGED_MTX_BUCKET_NAME,
                 key=key,
-                bucket_name=MERGED_MTX_BUCKET_NAME,
-                body=merged_matrix
+                src_file_handle=merged_matrix
             )
 
         # app.log.info("Done uploading.")
@@ -88,7 +89,7 @@ class MatrixHandler(ABC):
 
         return key
 
-    def run_merge_request(self, bundle_uuids, request_id, job_id):
+    def run_merge_request(self, bundle_uuids, request_id, job_id) -> None:
         """
         Merge matrices within bundles, and upload the merged matrix to an s3 bucket.
 
@@ -108,7 +109,7 @@ class MatrixHandler(ABC):
             status=RequestStatus.DONE
         )
 
-    def get_mtx_url(self, request_id):
+    def get_mtx_url(self, request_id) -> str:
         """
         Get url of a matrix in s3 bucket
         :param request_id: Matrices concatenation request id
@@ -117,12 +118,11 @@ class MatrixHandler(ABC):
         key = request_id + JSON_SUFFIX
 
         try:
-            body = S3Handler.get_object_body(
-                key=key,
-                bucket_name=REQUEST_STATUS_BUCKET_NAME
-            )
+            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
             return body["merged_mtx_url"]
-        except ClientError as e:
+        except BlobStoreUnknownError as e:
+            raise e
+        except BlobNotFoundError as e:
             raise e
 
 
@@ -130,10 +130,10 @@ class LoomMatrixHandler(MatrixHandler):
     """
     Matrix handler for .loom file format
     """
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(".loom")
 
-    def _concat_mtx(self, mtx_paths, mtx_dir, request_id):
+    def _concat_mtx(self, mtx_paths, mtx_dir, request_id) -> str:
         try:
             merged_mtx_dir = tempfile.mkdtemp()
             out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)

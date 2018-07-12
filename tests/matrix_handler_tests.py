@@ -1,13 +1,13 @@
 import os
 import shutil
 import tempfile
+import traceback
 import unittest
 
-from chalicelib import rand_uuid
-from chalicelib.constants import MERGED_MTX_BUCKET_NAME, REQUEST_STATUS_BUCKET_NAME
+from cloud_blobstore import BlobNotFoundError
+from chalicelib import s3_blob_store
+from chalicelib.constants import MERGED_MTX_BUCKET_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
-from chalicelib.request_handler import RequestHandler
-from chalicelib.s3_handler import S3Handler
 from tests import get_random_existing_bundle_uuids
 
 
@@ -41,38 +41,15 @@ class TestMatrixHandler(unittest.TestCase):
         key = mtx_handler._upload_mtx(path)
 
         self.assertFalse(os.path.exists(path))
-        self.assertTrue(S3Handler.object_exists(key, MERGED_MTX_BUCKET_NAME))
+
+        try:
+            s3_blob_store.get(bucket=MERGED_MTX_BUCKET_NAME, key=key)
+        except BlobNotFoundError:
+            error_msg = traceback.format_exc()
+            self.fail(error_msg)
 
         # Delete the key after checking
-        S3Handler.delete_object(key=key, bucket_name=MERGED_MTX_BUCKET_NAME)
-
-    def test_run_merge_request(self):
-        """
-        Make sure that run_merge_request() can successfully create a merged matrix and
-        a request status file in s3. (Assumption: Matrices concatenation always works
-        correctly.)
-        """
-        # Get a random subset of bundle_uuids from sample bundle uuids
-        bundle_uuids_subset = get_random_existing_bundle_uuids(ub=5)
-
-        # Generate a request id based on bundle uuids
-        request_id = RequestHandler.generate_request_id(bundle_uuids_subset)
-
-        job_id = rand_uuid()
-
-        # Run merge request
-        mtx_handler = LoomMatrixHandler()
-        mtx_handler.run_merge_request(bundle_uuids=bundle_uuids_subset, request_id=request_id, job_id=job_id)
-
-        merged_mtx_key = request_id + ".loom"
-        request_status_key = request_id + ".json"
-
-        self.assertTrue(S3Handler.object_exists(key=merged_mtx_key, bucket_name=MERGED_MTX_BUCKET_NAME))
-        self.assertTrue(S3Handler.object_exists(key=request_status_key, bucket_name=REQUEST_STATUS_BUCKET_NAME))
-
-        # Delete keys after checking
-        S3Handler.delete_object(key=merged_mtx_key, bucket_name=MERGED_MTX_BUCKET_NAME)
-        S3Handler.delete_object(key=request_status_key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
+        s3_blob_store.delete(bucket=MERGED_MTX_BUCKET_NAME, key=key)
 
 
 if __name__ == '__main__':

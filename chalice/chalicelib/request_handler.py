@@ -4,10 +4,11 @@ import os
 import tempfile
 
 from enum import Enum
-from botocore.exceptions import ClientError
+from typing import Any
+from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
+from chalicelib import s3_blob_store
 from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
     MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE
-from chalicelib.s3_handler import S3Handler
 
 
 class RequestStatus(Enum):
@@ -19,7 +20,7 @@ class RequestStatus(Enum):
 
 class RequestHandler:
     @staticmethod
-    def generate_request_id(bundle_uuids):
+    def generate_request_id(bundle_uuids) -> str:
         """
         Generate a request id based on a list of bundle uuids.
         :param bundle_uuids: A list of bundle uuids.
@@ -43,17 +44,15 @@ class RequestHandler:
         key = request_id + JSON_SUFFIX
 
         try:
-            body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
-
-            if body:
-                return RequestStatus(body["status"])
-            else:
-                return RequestStatus("UNINITIALIZED")
-        except ClientError as e:
+            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
+            return RequestStatus(body["status"])
+        except BlobNotFoundError:
+            return RequestStatus("UNINITIALIZED")
+        except BlobStoreUnknownError as e:
             raise e
 
     @staticmethod
-    def update_request_status(bundle_uuids, request_id, job_id, status):
+    def update_request_status(bundle_uuids, request_id, job_id, status) -> None:
         """
         Update the request status json file in s3 bucket if exists. Otherwise,
         create a new status file.
@@ -91,16 +90,16 @@ class RequestHandler:
         key = request_id + JSON_SUFFIX
 
         with open(temp_file, "rb") as f:
-            S3Handler.put_object(
+            s3_blob_store.upload_file_handle(
+                bucket=REQUEST_STATUS_BUCKET_NAME,
                 key=key,
-                bucket_name=REQUEST_STATUS_BUCKET_NAME,
-                body=f
+                src_file_handle=f
             )
 
         os.remove(temp_file)
 
     @staticmethod
-    def get_request_job_id(request_id):
+    def get_request_job_id(request_id) -> Any:
         """
         Get job id from a request status file if exists.
         :param request_id: Matrix concatenation request id.
@@ -109,12 +108,9 @@ class RequestHandler:
         key = request_id + JSON_SUFFIX
 
         try:
-            body = S3Handler.get_object_body(key=key, bucket_name=REQUEST_STATUS_BUCKET_NAME)
-
-            if body:
-                return body["job_id"]
-            else:
-                return None
-
-        except ClientError as e:
+            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
+            return body["job_id"]
+        except BlobNotFoundError:
+            return None
+        except BlobStoreUnknownError as e:
             raise e

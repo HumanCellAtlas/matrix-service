@@ -1,0 +1,10 @@
+dcplib==1.2.1
+chalice==1.5.0
+boto3==1.7.56
+hca==4.1.0
+h5py==2.8.0
+numpy==1.14.5
+scipy==1.1.0
+six==1.11.0
+typing==3.6.4
+cloud-blobstore==2.1.4

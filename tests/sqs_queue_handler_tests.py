@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from chalicelib import get_random_existing_bundle_uuids
 from chalicelib.sqs_queue_handler import SqsQueueHandler
+from tests import get_random_existing_bundle_uuids
 
 
 class TestSqsQueueHandler(unittest.TestCase):
