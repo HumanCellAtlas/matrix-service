@@ -5,10 +5,11 @@ import tempfile
 import hca
 import loompy
 
+from hca.util import SwaggerAPIException
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from chalicelib import get_mtx_paths, s3_blob_store
-from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
+from chalicelib import get_mtx_paths, s3_blob_store, logger
+from chalicelib.config import MERGED_MTX_BUCKET_NAME, \
     REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, TEMP_DIR
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
@@ -22,6 +23,9 @@ class MatrixHandler(ABC):
         self._suffix = suffix
         self.hca_client = hca.dss.DSSClient()
 
+        # Set this under the dev stage
+        self.hca_client.host = "https://dss.dev.data.humancellatlas.org/v1"
+
     def _download_mtx(self, bundle_uuids) -> Tuple[str, List[str]]:
         """
         Filter for the matrix files within bundles, and download them locally
@@ -29,8 +33,6 @@ class MatrixHandler(ABC):
         :param bundle_uuids: A list of bundle uuids
         :return: A list of downloaded local matrix files paths and their directory
         """
-        # app.log.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
-
         # Create a temp directory for storing s3 matrix files
         temp_dir = tempfile.mkdtemp(dir=TEMP_DIR)
 
@@ -38,19 +40,26 @@ class MatrixHandler(ABC):
         for bundle_uuid in bundle_uuids:
             dest_name = os.path.join(temp_dir, bundle_uuid)
 
-            # TODO: WHAT EXCEPTION BEING THROWN IF BUNDLE UUID IS INVALID?
-            self.hca_client.download(
-                bundle_uuid=bundle_uuid,
-                replica="aws",
-                dest_name=dest_name,
-                metadata_files=(),
-                data_files=("*{}".format(self._suffix),)
-            )
+            try:
+                logger.info("Downloading matrices from bundle, {}, into {}."
+                            .format(bundle_uuid, dest_name))
+
+                self.hca_client.download(
+                    bundle_uuid=bundle_uuid,
+                    replica="aws",
+                    dest_name=dest_name,
+                    metadata_files=(),
+                    data_files=("*{}".format(self._suffix),)
+                )
+
+            # Catch file not found exception
+            except SwaggerAPIException as e:
+                raise e
 
         # Get all downloaded mtx paths from temp_dir
         local_mtx_paths = get_mtx_paths(temp_dir, self._suffix)
 
-        # app.log.info("Done downloading %d matrix files.", len(local_mtx_paths))
+        logger.info("Done downloading %d matrix files.", len(local_mtx_paths))
 
         return temp_dir, local_mtx_paths
 
@@ -71,10 +80,10 @@ class MatrixHandler(ABC):
         :param path: Path of the merged matrix.
         :return: S3 bucket key for uploading file.
         """
-        # app.log.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(
-        #     os.path.basename(path),
-        #     MERGED_MTX_BUCKET_NAME
-        # ))
+        logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(
+            os.path.basename(path),
+            MERGED_MTX_BUCKET_NAME
+        ))
 
         key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
@@ -84,7 +93,7 @@ class MatrixHandler(ABC):
                 src_file_handle=merged_matrix
             )
 
-        # app.log.info("Done uploading.")
+        logger.info("Done uploading.")
 
         # Remove local merged mtx after uploading it to s3
         shutil.rmtree(os.path.dirname(path))
@@ -107,17 +116,29 @@ class MatrixHandler(ABC):
             status=RequestStatus.RUNNING
         )
 
-        mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
-        merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
-        self._upload_mtx(merged_mtx_path)
+        try:
+            mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
+            merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
+            self._upload_mtx(merged_mtx_path)
 
-        # Update the request status to DONE
-        RequestHandler.update_request_status(
-            bundle_uuids=bundle_uuids,
-            request_id=request_id,
-            job_id=job_id,
-            status=RequestStatus.DONE
-        )
+            # Update the request status to DONE
+            RequestHandler.update_request_status(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.DONE
+            )
+        except SwaggerAPIException as e:
+
+            # Update the request status to ABORT
+            RequestHandler.update_request_status(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.ABORT
+            )
+
+            raise e
 
     def get_mtx_url(self, request_id) -> str:
         """
@@ -147,9 +168,9 @@ class LoomMatrixHandler(MatrixHandler):
         try:
             merged_mtx_dir = tempfile.mkdtemp(dir=TEMP_DIR)
             out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)
-            # app.log.info("Combining matrices to %s.", out_file)
+            logger.info("Combining matrices to %s.", out_file)
             loompy.combine(mtx_paths, out_file)
-            # app.log.info("Done combining.")
+            logger.info("Done combining.")
 
         finally:
             shutil.rmtree(mtx_dir)

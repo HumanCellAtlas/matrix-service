@@ -1,7 +1,7 @@
 import boto3
 
 from chalicelib import generate_md5
-from chalicelib.constants import MS_SQS_QUEUE_NAME
+from chalicelib.config import MS_SQS_QUEUE_NAME
 
 
 class SqsQueueHandler:
