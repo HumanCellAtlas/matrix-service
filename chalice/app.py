@@ -1,15 +1,18 @@
 import json
 import traceback
 
-from chalice import app
+from chalice import Chalice, NotFoundError, BadRequestError, ChaliceViewError
+from hca.util import SwaggerAPIException
+
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
-from chalicelib import rand_uuid
-from chalicelib.constants import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG
+from chalicelib import rand_uuid, logger
+from chalicelib.config import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
 
-app = app.Chalice(app_name='matrix-service')
+app = Chalice(app_name='matrix-service')
+app.debug = True
 
 # Replace handler here for supporting concatenation on other matrix formats
 mtx_handler = LoomMatrixHandler()
@@ -29,16 +32,13 @@ def check_request_status(request_id):
     :param request_id: <string> Matrices concatenation request ID
     """
     try:
-        app.log.info("Checking request({}) status.".format(request_id))
         request_status = RequestHandler.check_request_status(request_id)
-        app.log.info("Request({}) status: {}.".format(request_id, request_status))
+        logger.info("Request({}) status: {}.".format(request_id, request_status.name))
 
         if request_status == RequestStatus.UNINITIALIZED:
-            raise app.NotFoundError("Request({}) does not exist.".format(request_id))
+            raise NotFoundError("Request({}) has not been initialized.".format(request_id))
         else:
-            app.log.info("Fetching matrix url for request({}).".format(request_id))
             mtx_url = mtx_handler.get_mtx_url(request_id)
-            app.log.info("Matrix url for request({}) is: {}.".format(request_id, mtx_url))
 
             return {
                 "status": request_status.name,
@@ -46,7 +46,7 @@ def check_request_status(request_id):
             }
     except (BlobNotFoundError, BlobStoreUnknownError):
         error_msg = traceback.format_exc()
-        raise app.BadRequestError(error_msg)
+        raise BadRequestError(error_msg)
 
 
 @app.route('/matrices/concat', methods=['POST'])
@@ -58,13 +58,22 @@ def concat_matrices():
     bundle_uuids = request.json_body
     request_id = RequestHandler.generate_request_id(bundle_uuids)
 
+    logger.info("Request ID({}): Received request for concatenating matrices from bundles {};"
+                .format(request_id, str(bundle_uuids)))
+
     try:
         request_status = RequestHandler.check_request_status(request_id)
 
+        logger.info("Request({}) status: {}.".format(request_id, request_status.name))
+
         # Send the request as a message to the SQS queue if the request
-        # has not been made before
-        if request_status == RequestStatus.UNINITIALIZED:
+        # has not been made or has been aborted before
+        if request_status == RequestStatus.UNINITIALIZED \
+                or request_status == RequestStatus.ABORT:
             job_id = rand_uuid()
+
+            logger.info("Request ID({}): Initialize the request with job id({})"
+                        .format(request_id, job_id))
 
             RequestHandler.update_request_status(
                 bundle_uuids=bundle_uuids,
@@ -78,15 +87,18 @@ def concat_matrices():
             msg["bundle_uuids"] = bundle_uuids
             msg["job_id"] = job_id
 
+            logger.info("Request ID({}): Send request message({}) to SQS Queue."
+                        .format(request_id, str(msg)))
+
             # Send the msg to the SQS queue
             msg_str = json.dumps(msg, sort_keys=True)
             SqsQueueHandler.send_msg_to_ms_queue(msg_str)
 
     except BlobStoreUnknownError:
         error_msg = traceback.format_exc()
-        raise app.BadRequestError(error_msg)
+        raise BadRequestError(error_msg)
     except AssertionError:
-        raise app.ChaliceViewError("Message has not been correctly sent to SQS Queue.")
+        raise ChaliceViewError("Message has not been correctly sent to SQS Queue.")
 
     return {"request_id": request_id}
 
@@ -127,13 +139,12 @@ def ms_sqs_queue_listener(event):
             if not job_id or job_id != msg["job_id"]:
                 return
 
-        except BlobStoreUnknownError:
-            error_msg = traceback.format_exc()
-            app.log.exception(error_msg)
-            return
+            mtx_handler.run_merge_request(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=msg["job_id"]
+            )
 
-        mtx_handler.run_merge_request(
-            bundle_uuids=bundle_uuids,
-            request_id=request_id,
-            job_id=msg["job_id"]
-        )
+        except (BlobStoreUnknownError, SwaggerAPIException):
+            error_msg = traceback.format_exc()
+            logger.exception(error_msg)
