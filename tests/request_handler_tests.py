@@ -6,7 +6,7 @@ from random import shuffle
 
 from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
 from chalicelib import rand_uuid, s3_blob_store
-from chalicelib.constants import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME
+from chalicelib.config import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from tests import rand_uuids
 
