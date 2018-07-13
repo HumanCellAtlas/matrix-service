@@ -3,7 +3,9 @@
   "app_name": "matrix-service",
   "stages": {
     "dev": {
-      "api_gateway_stage": "api"
+      "api_gateway_stage": "api",
+      "manage_iam_role": false,
+      "iam_role_arn": "arn:aws:iam::861229788715:role/matrix-service-lambda-role"
     }
   }
 }
