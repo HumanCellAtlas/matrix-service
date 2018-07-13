@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, List
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
 from chalicelib import s3_blob_store
-from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
+from chalicelib.config import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
     MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE, TEMP_DIR
 
 
@@ -16,6 +16,7 @@ class RequestStatus(Enum):
     INITIALIZED = "INITIALIZED"
     RUNNING = "RUNNING"
     DONE = "DONE"
+    ABORT = "ABORT"
 
 
 class RequestHandler:
