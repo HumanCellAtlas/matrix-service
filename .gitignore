@@ -3,7 +3,7 @@ venv/
 __pycache__/
 .DS_Store
 chalice/.chalice/deployed/
-chalice/.chalice/deployments/
+chalice/.chalice/deployments/*.zip
 terraform/.terraform/
 *.tfstate
 *.tfstate.backup
