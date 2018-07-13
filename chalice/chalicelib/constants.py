@@ -33,4 +33,7 @@ SQS_QUEUE_MSG = {
     "job_id": ""
 }
 
+# Default directory for all temp files
+TEMP_DIR = "/tmp"
+
 JSON_SUFFIX = ".json"

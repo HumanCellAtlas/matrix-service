@@ -9,7 +9,7 @@ from typing import List, Tuple
 from abc import ABC, abstractmethod
 from chalicelib import get_mtx_paths, s3_blob_store
 from chalicelib.constants import MERGED_MTX_BUCKET_NAME, \
-    REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX
+    REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, TEMP_DIR
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
 
@@ -32,7 +32,7 @@ class MatrixHandler(ABC):
         # app.log.info("Downloading matrices from bundles: %s.", str(bundle_uuids))
 
         # Create a temp directory for storing s3 matrix files
-        temp_dir = tempfile.mkdtemp()
+        temp_dir = tempfile.mkdtemp(dir=TEMP_DIR)
 
         # Filter and download only matrices file that satisfies a specific suffix within bundles
         for bundle_uuid in bundle_uuids:
@@ -145,7 +145,7 @@ class LoomMatrixHandler(MatrixHandler):
 
     def _concat_mtx(self, mtx_paths, mtx_dir, request_id) -> str:
         try:
-            merged_mtx_dir = tempfile.mkdtemp()
+            merged_mtx_dir = tempfile.mkdtemp(dir=TEMP_DIR)
             out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)
             # app.log.info("Combining matrices to %s.", out_file)
             loompy.combine(mtx_paths, out_file)
