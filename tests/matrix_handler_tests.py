@@ -6,7 +6,7 @@ import unittest
 
 from cloud_blobstore import BlobNotFoundError
 from chalicelib import s3_blob_store
-from chalicelib.constants import MERGED_MTX_BUCKET_NAME
+from chalicelib.config import MERGED_MTX_BUCKET_NAME
 from chalicelib.matrix_handler import LoomMatrixHandler
 from tests import get_random_existing_bundle_uuids
 
