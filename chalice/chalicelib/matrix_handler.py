@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import tempfile
-import hca
 import loompy
 
 from hca.util import SwaggerAPIException
@@ -10,7 +9,7 @@ from typing import List, Tuple
 from abc import ABC, abstractmethod
 from chalicelib import get_mtx_paths, s3_blob_store, logger
 from chalicelib.config import MERGED_MTX_BUCKET_NAME, \
-    REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, TEMP_DIR
+    REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, TEMP_DIR, hca_client
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
 
@@ -21,10 +20,6 @@ class MatrixHandler(ABC):
     """
     def __init__(self, suffix) -> None:
         self._suffix = suffix
-        self.hca_client = hca.dss.DSSClient()
-
-        # Set this under the dev stage
-        self.hca_client.host = "https://dss.dev.data.humancellatlas.org/v1"
 
     def _download_mtx(self, bundle_uuids) -> Tuple[str, List[str]]:
         """
@@ -44,7 +39,7 @@ class MatrixHandler(ABC):
                 logger.info("Downloading matrices from bundle, {}, into {}."
                             .format(bundle_uuid, dest_name))
 
-                self.hca_client.download(
+                hca_client.download(
                     bundle_uuid=bundle_uuid,
                     replica="aws",
                     dest_name=dest_name,

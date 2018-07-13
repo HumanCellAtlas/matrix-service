@@ -3,7 +3,6 @@ import traceback
 
 from chalice import Chalice, NotFoundError, BadRequestError, ChaliceViewError
 from hca.util import SwaggerAPIException
-
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
 from chalicelib import rand_uuid, logger
 from chalicelib.config import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG

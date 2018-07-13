@@ -1,7 +1,19 @@
 import json
+import hca
 
 from dcplib.aws_secret import AwsSecret
 from tweak import Config
+
+# Default directory for all temp files
+TEMP_DIR = "/tmp"
+
+# Patch tweak package s.t it will write to tmp/ directory
+Config._site_config_home = TEMP_DIR + Config._site_config_home
+Config._user_config_home = TEMP_DIR + Config._user_config_home.split()[-1]
+
+# HCA Client
+hca_client = hca.dss.DSSClient()
+hca_client.host = "https://dss.dev.data.humancellatlas.org/v1"
 
 # Load secret for the matrix service
 secret = AwsSecret(name="dcp/matrix-service/secrets")
@@ -34,11 +46,4 @@ SQS_QUEUE_MSG = {
     "job_id": ""
 }
 
-# Default directory for all temp files
-TEMP_DIR = "/tmp"
-
 JSON_SUFFIX = ".json"
-
-# Patch tweak package s.t it will write to tmp/ directory
-Config._site_config_home = TEMP_DIR + Config._site_config_home
-Config._user_config_home = TEMP_DIR + Config._user_config_home.split()[-1]
