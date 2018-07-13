@@ -8,7 +8,7 @@ from typing import Any, List
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
 from chalicelib import s3_blob_store
 from chalicelib.constants import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
-    MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE
+    MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE, TEMP_DIR
 
 
 class RequestStatus(Enum):
@@ -85,7 +85,7 @@ class RequestHandler:
             )
             request["merged_mtx_url"] = mtx_url
 
-        _, temp_file = tempfile.mkstemp(suffix=JSON_SUFFIX)
+        _, temp_file = tempfile.mkstemp(dir=TEMP_DIR, suffix=JSON_SUFFIX)
 
         with open(temp_file, "w") as f:
             json.dump(request, f)
