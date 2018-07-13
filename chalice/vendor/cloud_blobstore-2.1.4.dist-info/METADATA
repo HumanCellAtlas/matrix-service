@@ -1,0 +1,47 @@
+Metadata-Version: 2.1
+Name: cloud-blobstore
+Version: 2.1.4
+Summary: Abstraction layer for cloud blobstores.
+Home-page: https://github.com/chanzuckerberg/cloud-blobstore
+Author: Human Cell Atlas contributors
+Author-email: tonytung@chanzuckerberg.com
+License: Apache Software License
+Platform: MacOS X
+Platform: Posix
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: boto3
+Requires-Dist: google-cloud-storage (>=1.7.0)
+Requires-Dist: requests
+
+# cloud-blobstore
+
+This library provides an abstraction layer for the most basic functionality provided by the cloud providers.  These are the basic functions required by the [Human Cell Atlas](https://www.humancellatlas.org/) [Data Storage Service](https://github.com/HumanCellAtlas/data-store).
+
+## Development
+
+### Set up your python environment
+Before you start, you may wish to set up a [virtualenv](https://virtualenv.pypa.io/en/stable/).  Run `pip install -r requirements-dev.txt`. Then set up the following environment variables:
+
+| Environment variable    | Explanation |
+| ----------------------- | ----------- |
+| S3_BUCKET               | Points to the AWS S3 bucket where new files will be written.  It may be advisable to set up a cleanup policy for this bucket. |
+| S3_BUCKET_FIXTURES      | Points to the AWS S3 bucket where static fixtures are stored. |
+| S3_BUCKET_US_EAST_1     | Points to an AWS S3 bucket in the US_EAST_1 region.  This can overlap with one of the other buckets. |
+| S3_BUCKET_NON_US_EAST_1 | Points to an AWS S3 bucket _not_ in the US_EAST_1 region.  This can overlap with one of the other buckets. |
+| GS_BUCKET               | Points to the GCP GS bucket where new files will be written.  It may be advisable to set up a cleanup policy for this bucket. |
+| GS_BUCKET_FIXTURES      | Points to the GCP GS bucket where static fixtures are stored. |
+
+
+### Set up test fixtures.
+Run `python tests/fixtures/populate.py --s3-bucket $S3_BUCKET_FIXTURES --gs-bucket $GS_BUCKET_FIXTURES`
+
+#### Running tests
+Run `make test` in the top-level directory.
+
+

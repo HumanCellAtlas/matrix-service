@@ -1,0 +1,17 @@
+loompy/__init__.py,sha256=xrnP5f3ESUoJ1tyecbYjJ0GoauZF7BylRalrIrvdrIY,580
+loompy/_version.py,sha256=tyko1Y7lBV1CG0lJ-UkbWYem9KtU1HlYsl7jRvXxroA,50
+loompy/attribute_manager.py,sha256=9KOhiE-Kh52nFMCU4ttC8MdkV3KU4cGPJMQEBWUe-CM,5615
+loompy/file_attribute_manager.py,sha256=HOnTZv4SK3dX0DIDjmwjheQ4FKmHUyiJHUDOjLghx-E,2093
+loompy/graph_manager.py,sha256=R_wd0tEGLSrsCeg8_o33xxd_RmDMQw01QManAL-RKxw,6394
+loompy/layer_manager.py,sha256=LSujCKTWMLW6S4EkZg45YG3-6Z9UxrXJxSES7WbcSoI,4338
+loompy/loom_layer.py,sha256=WO4-aDvRW0VIetYMqRS9ztgRIqaAVTwfzrbRh5VelhA,6891
+loompy/loom_view.py,sha256=R2j2bEBHKnTRxGCTOKb2GJnsFnqNt0NNhHb55vCGLVU,1752
+loompy/loompy.py,sha256=uKIMz3_t56c1WIbaGKNXSMKuV-p7DCeeSNPXNx-yiAg,36548
+loompy/normalize.py,sha256=IZrM2RXOpq2inO7wTRS6x5Mj4xpIYBJ4VYO0eyJWpfQ,3383
+loompy/to_html.py,sha256=8vtmHEYGdCV5LLyzvCb9_X95oqMVDlS564EXAirBnVc,1846
+loompy/utils.py,sha256=C8BlN-nq6m3TAO4wJXKx2NxD9ZI-XINn8OOh-mgyAlQ,399
+loompy/view_manager.py,sha256=HOU_vxawKWkj7RUbdAMDI6jFzMKU25V4bdDjnevMbgs,1013
+loompy-2.0.9.dist-info/METADATA,sha256=q7A5Ol2e9YOZP9J9p1F7SSXqZNjw00n-f4dnB0fHMlM,501
+loompy-2.0.9.dist-info/RECORD,,
+loompy-2.0.9.dist-info/WHEEL,sha256=NzFAKnL7g-U64xnS1s5e3mJnxKpOTeOtlXdFwS9yNXI,92
+loompy-2.0.9.dist-info/top_level.txt,sha256=A9l7qbsNqsNwwSYmXl2yzpgFE_jVIeWxvbe2I0AAVTs,7
