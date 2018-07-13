@@ -1,6 +1,7 @@
 import json
 
 from dcplib.aws_secret import AwsSecret
+from tweak import Config
 
 # Load secret for the matrix service
 secret = AwsSecret(name="dcp/matrix-service/secrets")
@@ -37,3 +38,7 @@ SQS_QUEUE_MSG = {
 TEMP_DIR = "/tmp"
 
 JSON_SUFFIX = ".json"
+
+# Patch tweak package s.t it will write to tmp/ directory
+Config._site_config_home = TEMP_DIR + Config._site_config_home
+Config._user_config_home = TEMP_DIR + Config._user_config_home.split()[-1]
