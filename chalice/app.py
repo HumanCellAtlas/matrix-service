@@ -60,39 +60,16 @@ def concat_matrices():
 
         logger.info("Request({}) status: {}.".format(request_id, request_status.name))
 
-        # Send the request as a message to the SQS queue if the request
-        # has not been made or has been aborted before
-        if request_status == RequestStatus.UNINITIALIZED \
-                or request_status == RequestStatus.ABORT:
-            job_id = rand_uuid()
+        # Send the request to sqs queue if the request has been abort before
+        if request_status == RequestStatus.ABORT:
+            SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
 
-            logger.info("Request ID({}): Initialize the request with job id({})"
-                        .format(request_id, job_id))
-
-            RequestHandler.update_request_status(
-                bundle_uuids=bundle_uuids,
-                request_id=request_id,
-                job_id=job_id,
-                status=RequestStatus.INITIALIZED
-            )
-
-            # Create message to send to the SQS Queue
-            msg = SQS_QUEUE_MSG.copy()
-            msg["bundle_uuids"] = bundle_uuids
-            msg["job_id"] = job_id
-
-            logger.info("Request ID({}): Send request message({}) to SQS Queue."
-                        .format(request_id, str(msg)))
-
-            # Send the msg to the SQS queue
-            msg_str = json.dumps(msg, sort_keys=True)
-            SqsQueueHandler.send_msg_to_ms_queue(msg_str)
-
+    except BlobNotFoundError:
+        # Send the request to sqs queue if the request has not been made before
+        SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
     except BlobStoreUnknownError:
         error_msg = traceback.format_exc()
         raise BadRequestError(error_msg)
-    except AssertionError:
-        raise ChaliceViewError("Message has not been correctly sent to SQS Queue.")
 
     return {"request_id": request_id}
 
