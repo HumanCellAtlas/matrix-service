@@ -1,11 +1,10 @@
 import json
 import traceback
 
-from chalice import Chalice, NotFoundError, BadRequestError, ChaliceViewError
+from chalice import Chalice, NotFoundError, BadRequestError
 from hca.util import SwaggerAPIException
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
-from chalicelib import rand_uuid, logger
-from chalicelib.config import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG
+from chalicelib.config import MS_SQS_QUEUE_NAME, logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
@@ -28,24 +27,18 @@ def check_request_status(request_id):
     Check the status of a matrices concatenation request based on
     a request ID.
 
-    :param request_id: <string> Matrices concatenation request ID
+    :param request_id: Matrices concatenation request ID.
     """
     try:
-        request_status = RequestHandler.check_request_status(request_id)
-        logger.info("Request({}) status: {}.".format(request_id, request_status.name))
+        request_content = RequestHandler.get_request(request_id=request_id)
+        request_body = json.loads(request_content)
+        return request_body
 
-        if request_status == RequestStatus.UNINITIALIZED:
-            raise NotFoundError("Request({}) has not been initialized.".format(request_id))
-        else:
-            mtx_url = mtx_handler.get_mtx_url(request_id)
+    except BlobNotFoundError:
+        raise NotFoundError("Request({}) has not been initialized.".format(request_id))
 
-            return {
-                "status": request_status.name,
-                "url": mtx_url
-            }
-    except (BlobNotFoundError, BlobStoreUnknownError):
-        error_msg = traceback.format_exc()
-        raise BadRequestError(error_msg)
+    except BlobStoreUnknownError:
+        raise BadRequestError(traceback.format_exc())
 
 
 @app.route('/matrices/concat', methods=['POST'])
@@ -132,7 +125,9 @@ def ms_sqs_queue_listener(event):
         set of matrices.
         """
         try:
-            job_id = RequestHandler.get_request_job_id(request_id=request_id)
+            request_content = RequestHandler.get_request(request_id=request_id)
+            request_body = json.loads(request_content)
+            job_id = request_body["job_id"]
 
             # Stall concatenation process if any of these cases happens
             if not job_id or job_id != msg["job_id"]:

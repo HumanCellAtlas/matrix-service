@@ -4,8 +4,8 @@ import unittest
 
 from random import shuffle
 from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
-from chalicelib import rand_uuid, s3_blob_store
-from chalicelib.config import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME
+from chalicelib import rand_uuid
+from chalicelib.config import JSON_SUFFIX, REQUEST_STATUS_BUCKET_NAME, s3_blob_store
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from tests import rand_uuids
 
@@ -30,20 +30,7 @@ class TestRequestHandler(unittest.TestCase):
             RequestHandler.generate_request_id(bundle_uuids_copy)
         )
 
-    def test_check_request_status(self):
-        """
-        Check status for an non-existing request should return UNINITIALIZED
-        """
-        non_existing_uuid = rand_uuid()
-
-        try:
-            status = RequestHandler.check_request_status(non_existing_uuid)
-        except BlobStoreUnknownError:
-            self.fail(traceback.format_exc())
-
-        self.assertEqual(status, RequestStatus.UNINITIALIZED)
-
-    def test_update_request_status(self):
+    def test_update_request(self):
         """
         Make sure update_request() function can successfully update the
         status json file stored in s3
@@ -52,7 +39,7 @@ class TestRequestHandler(unittest.TestCase):
         request_id = RequestHandler.generate_request_id(bundle_uuids)
         status = RequestStatus.RUNNING
         job_id = rand_uuid()
-        RequestHandler.update_request_status(
+        RequestHandler.update_request(
             bundle_uuids=bundle_uuids,
             request_id=request_id,
             job_id=job_id,
@@ -71,12 +58,14 @@ class TestRequestHandler(unittest.TestCase):
         self.assertEqual(request_id, body["request_id"])
         self.assertEqual(job_id, body["job_id"])
         self.assertEqual(status.name, body["status"])
+        self.assertEqual(body["time_spent_to_complete"], "")
+        self.assertEqual(body["reason_to_abort"], "")
 
         # Merged matrix url for running request should be an empty string
         self.assertEqual(body["merged_mtx_url"], "")
 
         status = RequestStatus.DONE
-        RequestHandler.update_request_status(
+        RequestHandler.update_request(
             bundle_uuids=bundle_uuids,
             request_id=request_id,
             job_id=job_id,

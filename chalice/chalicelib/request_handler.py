@@ -12,7 +12,6 @@ from chalicelib.config import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
 
 
 class RequestStatus(Enum):
-    UNINITIALIZED = "UNINITIALIZED"
     INITIALIZED = "INITIALIZED"
     RUNNING = "RUNNING"
     DONE = "DONE"
@@ -36,20 +35,18 @@ class RequestHandler:
         return m.hexdigest()
 
     @staticmethod
-    def check_request_status(request_id: str) -> RequestStatus:
+    def get_request(request_id: str) -> bytes:
         """
-        Check the status of a matrix concatenation request.
+        Get request status file content from s3.
         :param request_id: Matrices concatenation request id.
-        :return: The status of the request.
+        :return: File content in bytes.
         """
         key = request_id + JSON_SUFFIX
 
         try:
-            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
-            return RequestStatus(body["status"])
-        except BlobNotFoundError:
-            return RequestStatus("UNINITIALIZED")
-        except BlobStoreUnknownError as e:
+            content = s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key)
+            return content
+        except (BlobNotFoundError, BlobStoreUnknownError) as e:
             raise e
 
     @staticmethod
@@ -102,20 +99,3 @@ class RequestHandler:
             )
 
         os.remove(temp_file)
-
-    @staticmethod
-    def get_request_job_id(request_id: str):
-        """
-        Get job id from a request status file if exists.
-        :param request_id: Matrix concatenation request id.
-        :return: Job id if request exists. Otherwise, return None.
-        """
-        key = request_id + JSON_SUFFIX
-
-        try:
-            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
-            return body["job_id"]
-        except BlobNotFoundError:
-            return None
-        except BlobStoreUnknownError as e:
-            raise e
