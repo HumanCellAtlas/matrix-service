@@ -54,7 +54,9 @@ def concat_matrices():
                 .format(request_id, str(bundle_uuids)))
 
     try:
-        request_status = RequestHandler.check_request_status(request_id)
+        request_content = RequestHandler.get_request(request_id=request_id)
+        request_body = json.loads(request_content)
+        request_status = request_body["status"]
 
         logger.info("Request({}) status: {}.".format(request_id, request_status.name))
 

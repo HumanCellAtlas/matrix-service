@@ -49,11 +49,13 @@ class RequestHandler:
             raise e
 
     @staticmethod
-    def update_request_status(
+    def update_request(
             bundle_uuids: List[str],
             request_id: str,
             job_id: str,
-            status: RequestStatus) -> None:
+            status: RequestStatus,
+            time_spent_to_complete="",
+            reason_to_abort="") -> None:
         """
         Update the request status json file in s3 bucket if exists. Otherwise,
         create a new status file.
@@ -62,15 +64,17 @@ class RequestHandler:
         :param request_id: Matrices concatenation request id.
         :param job_id: Matrices concatenation job id.
         :param status: Request status to update.
+        :param time_spent_to_complete: Time spent to complete the concatenation job.
+        :param reason_to_abort: Request abort reason.
         """
-        assert isinstance(status, RequestStatus)
-
         # Create a request based on a template dict
         request = REQUEST_TEMPLATE.copy()
         request["bundle_uuids"] = bundle_uuids
         request["status"] = status.name
         request["request_id"] = request_id
         request["job_id"] = job_id
+        request["time_spent_to_complete"] = time_spent_to_complete
+        request["reason_to_abort"] = reason_to_abort
 
         if status == RequestStatus.DONE:
             # Key for merged matrix stored in s3 bucket

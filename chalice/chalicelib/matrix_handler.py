@@ -104,7 +104,7 @@ class MatrixHandler(ABC):
         :param job_id: Job id of the request.
         """
         # Update the request status to RUNNING
-        RequestHandler.update_request_status(
+        RequestHandler.update_request(
             bundle_uuids=bundle_uuids,
             request_id=request_id,
             job_id=job_id,
@@ -112,43 +112,31 @@ class MatrixHandler(ABC):
         )
 
         try:
+            start_time = time.time()
             mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
             merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
             self._upload_mtx(merged_mtx_path)
+            end_time = time.time()
 
             # Update the request status to DONE
-            RequestHandler.update_request_status(
+            RequestHandler.update_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
                 job_id=job_id,
-                status=RequestStatus.DONE
+                status=RequestStatus.DONE,
+                time_spent_to_complete="{} seconds".format(end_time - start_time)
             )
         except SwaggerAPIException as e:
 
             # Update the request status to ABORT
-            RequestHandler.update_request_status(
+            RequestHandler.update_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
                 job_id=job_id,
-                status=RequestStatus.ABORT
+                status=RequestStatus.ABORT,
+                reason_to_abort=traceback.format_exc()
             )
 
-            raise e
-
-    def get_mtx_url(self, request_id) -> str:
-        """
-        Get url of a matrix in s3 bucket
-        :param request_id: Matrices concatenation request id
-        :return: URL of the matrix file
-        """
-        key = request_id + JSON_SUFFIX
-
-        try:
-            body = json.loads(s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key))
-            return body["merged_mtx_url"]
-        except BlobStoreUnknownError as e:
-            raise e
-        except BlobNotFoundError as e:
             raise e
 
 
