@@ -1,17 +1,17 @@
-import json
 import os
 import shutil
 import tempfile
+import time
+import traceback
 import loompy
 
 from hca.util import SwaggerAPIException
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from chalicelib import get_mtx_paths, s3_blob_store, logger
-from chalicelib.config import MERGED_MTX_BUCKET_NAME, \
-    REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, TEMP_DIR, hca_client
+from chalicelib import get_mtx_paths
+from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, hca_client, \
+    s3_blob_store, logger
 from chalicelib.request_handler import RequestHandler, RequestStatus
-from cloud_blobstore import BlobStoreUnknownError, BlobNotFoundError
 
 
 class MatrixHandler(ABC):

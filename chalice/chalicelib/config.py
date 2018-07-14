@@ -1,8 +1,11 @@
 import json
+import logging
+import boto3
 import hca
 
 from dcplib.aws_secret import AwsSecret
 from tweak import Config
+from cloud_blobstore.s3 import S3BlobStore
 
 # Default directory for all temp files
 TEMP_DIR = "/tmp"
@@ -14,6 +17,13 @@ Config._user_config_home = TEMP_DIR + Config._user_config_home.split()[-1]
 # HCA Client
 hca_client = hca.dss.DSSClient()
 hca_client.host = "https://dss.dev.data.humancellatlas.org/v1"
+
+# Cloud_blobstore client
+s3_blob_store = S3BlobStore(s3_client=boto3.client("s3"))
+
+# Logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # Load secret for the matrix service
 secret = AwsSecret(name="dcp/matrix-service/secrets")
@@ -37,7 +47,9 @@ REQUEST_TEMPLATE = {
     "status": "",
     "request_id": "",
     "job_id": "",
-    "merged_mtx_url": ""
+    "merged_mtx_url": "",
+    "time_spent_to_complete": "",
+    "reason_to_abort": ""
 }
 
 # SQS Queue Message template

@@ -6,9 +6,8 @@ import tempfile
 from enum import Enum
 from typing import List
 from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
-from chalicelib import s3_blob_store
 from chalicelib.config import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
-    MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE, TEMP_DIR
+    MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE, TEMP_DIR, s3_blob_store
 
 
 class RequestStatus(Enum):

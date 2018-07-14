@@ -1,16 +1,8 @@
 import hashlib
-import logging
 import os
 import uuid
-import boto3
 
 from typing import List
-from cloud_blobstore.s3 import S3BlobStore
-
-s3_blob_store = S3BlobStore(s3_client=boto3.client("s3"))
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 def rand_uuid() -> str:
@@ -39,6 +31,3 @@ def generate_md5(s) -> str:
     :return: MD5 sum of the input string.
     """
     return hashlib.md5(s.encode('utf-8')).hexdigest()
-
-
-
