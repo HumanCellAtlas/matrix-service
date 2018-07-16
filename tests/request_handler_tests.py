@@ -13,7 +13,7 @@ from tests import rand_uuids
 class TestRequestHandler(unittest.TestCase):
     def test_generate_request_id(self):
         """
-        Request ids generated on uuids with different order should always
+        Request ids generated on same uuids with different order should always
         be same.
         """
         bundle_uuids = rand_uuids(ub=11)
@@ -29,6 +29,13 @@ class TestRequestHandler(unittest.TestCase):
             RequestHandler.generate_request_id(bundle_uuids),
             RequestHandler.generate_request_id(bundle_uuids_copy)
         )
+
+    def test_get_request(self):
+        """
+        Get request with an invalid request id should raise BlobNotFoundException.
+        """
+        invalid_request_id = rand_uuid()
+        self.assertRaises(BlobNotFoundError, RequestHandler.get_request, invalid_request_id)
 
     def test_update_request(self):
         """
@@ -64,6 +71,7 @@ class TestRequestHandler(unittest.TestCase):
         # Merged matrix url for running request should be an empty string
         self.assertEqual(body["merged_mtx_url"], "")
 
+        # Update status of the request to be DONE
         status = RequestStatus.DONE
         RequestHandler.update_request(
             bundle_uuids=bundle_uuids,
