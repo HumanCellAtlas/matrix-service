@@ -9,7 +9,7 @@ from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
 
-app = Chalice(app_name='matrix-service')
+app = Chalice(app_name='hca-matrix-service')
 app.debug = True
 
 # Replace handler here for supporting concatenation on other matrix formats
@@ -58,7 +58,7 @@ def concat_matrices():
         merge_request_body = json.loads(merge_request)
         merge_request_status = merge_request_body["status"]
 
-        logger.info("Request({}) status: {}.".format(request_id, merge_request_status.name))
+        logger.info("Request({}) status: {}.".format(request_id, merge_request_status))
 
         # Send the request to sqs queue if the request has been abort before
         if merge_request_status == RequestStatus.ABORT:
@@ -75,7 +75,7 @@ def concat_matrices():
     return {"request_id": request_id}
 
 
-@app.on_sqs_message(queue=MS_SQS_QUEUE_NAME)
+@app.on_sqs_message(queue=MS_SQS_QUEUE_NAME, name="hca-dcp-ms-queue-listener")
 def ms_sqs_queue_listener(event):
     """
     Create a lambda function that listens for the matrix service's SQS
@@ -119,6 +119,6 @@ def ms_sqs_queue_listener(event):
                 job_id=msg["job_id"]
             )
 
-        except (BlobStoreUnknownError, SwaggerAPIException):
+        except (BlobStoreUnknownError, SwaggerAPIException, Exception):
             error_msg = traceback.format_exc()
             logger.exception(error_msg)

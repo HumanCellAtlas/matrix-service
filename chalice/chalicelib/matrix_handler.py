@@ -155,9 +155,11 @@ class LoomMatrixHandler(MatrixHandler):
             loompy.combine(mtx_paths, out_file)
             logger.info("Done combining.")
 
+        # Catch any potential exception arose from loompy.combine()
         except Exception as e:
             raise e
 
+        # Remove all unneeded downloaded mtx at the end
         finally:
             shutil.rmtree(mtx_dir)
 
