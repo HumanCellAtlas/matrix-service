@@ -30,9 +30,9 @@ def check_request_status(request_id):
     :param request_id: Matrices concatenation request ID.
     """
     try:
-        request_content = RequestHandler.get_request(request_id=request_id)
-        request_body = json.loads(request_content)
-        return request_body
+        merge_request = RequestHandler.get_request(request_id=request_id)
+        merge_request_body = json.loads(merge_request)
+        return merge_request_body
 
     except BlobNotFoundError:
         raise NotFoundError("Request({}) has not been initialized.".format(request_id))
@@ -50,23 +50,24 @@ def concat_matrices():
     bundle_uuids = request.json_body
     request_id = RequestHandler.generate_request_id(bundle_uuids)
 
-    logger.info("Request ID({}): Received request for concatenating matrices from bundles {};"
+    logger.info("Request ID({}): Received request for concatenating matrices within bundles {};"
                 .format(request_id, str(bundle_uuids)))
 
     try:
-        request_content = RequestHandler.get_request(request_id=request_id)
-        request_body = json.loads(request_content)
-        request_status = request_body["status"]
+        merge_request = RequestHandler.get_request(request_id=request_id)
+        merge_request_body = json.loads(merge_request)
+        merge_request_status = merge_request_body["status"]
 
-        logger.info("Request({}) status: {}.".format(request_id, request_status.name))
+        logger.info("Request({}) status: {}.".format(request_id, merge_request_status.name))
 
         # Send the request to sqs queue if the request has been abort before
-        if request_status == RequestStatus.ABORT:
+        if merge_request_status == RequestStatus.ABORT:
             SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
 
     except BlobNotFoundError:
         # Send the request to sqs queue if the request has not been made before
         SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
+
     except BlobStoreUnknownError:
         error_msg = traceback.format_exc()
         raise BadRequestError(error_msg)
@@ -104,11 +105,11 @@ def ms_sqs_queue_listener(event):
         set of matrices.
         """
         try:
-            request_content = RequestHandler.get_request(request_id=request_id)
-            request_body = json.loads(request_content)
-            job_id = request_body["job_id"]
+            merge_request = RequestHandler.get_request(request_id=request_id)
+            merge_request_body = json.loads(merge_request)
+            job_id = merge_request_body["job_id"]
 
-            # Stall concatenation process if any of these cases happens
+            # Stall concatenation process if any of these cases described above happens
             if not job_id or job_id != msg["job_id"]:
                 return
 

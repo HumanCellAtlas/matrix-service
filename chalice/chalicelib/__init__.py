@@ -9,7 +9,7 @@ def rand_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def get_mtx_paths(dir, mtx_suffix) -> List[str]:
+def get_mtx_paths(dir: str, mtx_suffix: str) -> List[str]:
     """
     Get all matrices file paths within a directory.
     :param dir: Directory that contains matrix files.
@@ -24,7 +24,7 @@ def get_mtx_paths(dir, mtx_suffix) -> List[str]:
     return mtx_paths
 
 
-def generate_md5(s) -> str:
+def generate_md5(s: str) -> str:
     """
     Generate MD5 sum of a sting.
     :param s: Input string.

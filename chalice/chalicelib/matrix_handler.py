@@ -126,7 +126,7 @@ class MatrixHandler(ABC):
                 status=RequestStatus.DONE,
                 time_spent_to_complete="{} seconds".format(end_time - start_time)
             )
-        except SwaggerAPIException as e:
+        except (SwaggerAPIException, Exception) as e:
 
             # Update the request status to ABORT
             RequestHandler.update_request(
@@ -154,6 +154,9 @@ class LoomMatrixHandler(MatrixHandler):
             logger.info("Combining matrices to %s.", out_file)
             loompy.combine(mtx_paths, out_file)
             logger.info("Done combining.")
+
+        except Exception as e:
+            raise e
 
         finally:
             shutil.rmtree(mtx_dir)
