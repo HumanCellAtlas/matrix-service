@@ -8,7 +8,7 @@
       "iam_role_arn": "arn:aws:iam::861229788715:role/matrix-service-lambda-role",
       "lambda_functions": {
         "ms_sqs_queue_listener": {
-          "lambda_timeout": 120
+          "lambda_timeout": 300
         }
       }
     }
