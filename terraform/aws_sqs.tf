@@ -8,7 +8,7 @@ data "template_file" "aws_sqs_queue_policy" {
 }
 
 resource "aws_sqs_queue" "sqs" {
-  name                       = "hca-ms-queue"
+  name                       = "${var.ms-sqs-queue}"
   visibility_timeout_seconds = 60
 }
 
