@@ -1,5 +1,0 @@
-{
-  "hca_host": "https://dss.dev.data.humancellatlas.org/v1",
-  "ms_secret_name": "hca/dcp/ms/secrets",
-  "sample_matrices_bucket_name": "matrix-service-test"
-}
