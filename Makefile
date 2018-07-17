@@ -1,3 +1,6 @@
+# Make sure the value is consistent with the one defined in terraform/variables.tf
+DEPLOYMENT_S3_BUCKET := hca-ms-deployment
+
 default: build
 
 .PHONY: install
@@ -12,13 +15,15 @@ test:
 
 .PHONY: build
 build:
+	bash -c 'for wheel in vendor.in/*/*.whl; do unzip -q -o -d chalice/vendor/ $$wheel; done'
 	cd terraform && terraform apply
 	. venv/bin/activate && cd chalice && chalice package ../target/
+	rm -rf chalice/vendor/
 
 .PHONY: deploy
 deploy:
 	aws cloudformation package --template-file ./target/sam.json \
-	  --s3-bucket hca-dcp-matrix-service-deployment \
+	  --s3-bucket $(DEPLOYMENT_S3_BUCKET) \
 	  --output-template-file ./target/sam-packaged.yaml
 	aws cloudformation deploy --template-file ./target/sam-packaged.yaml \
 	  --stack-name matrix-service-stack \
@@ -28,5 +33,6 @@ deploy:
 
 .PHONY: clean
 clean:
-	cd terraform && terraform destroy
+	aws cloudformation delete-stack --stack-name matrix-service-stack
+	aws cloudformation wait stack-delete-complete --stack-name matrix-service-stack
 	rm -rf target/
