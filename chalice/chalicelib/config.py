@@ -1,11 +1,23 @@
 import json
 import logging
+import os
 import boto3
 import hca
 
 from dcplib.aws_secret import AwsSecret
 from tweak import Config
 from cloud_blobstore.s3 import S3BlobStore
+
+CHALICELIB__DIR = os.path.dirname(os.path.abspath(__file__))
+CHALICE_DIR = os.path.dirname(CHALICELIB__DIR)
+BASE_DIR = os.path.dirname(CHALICE_DIR)
+CONFIGURATION_FILE = os.path.join(BASE_DIR, "config.json")
+
+# Load configuration
+with open(CONFIGURATION_FILE) as f:
+    configuration = json.load(f)
+    hca_client_host = configuration["hca_host"]
+    ms_secret_name = configuration["ms_secret_name"]
 
 # Default directory for all temp files
 TEMP_DIR = "/tmp"
@@ -16,7 +28,7 @@ Config._user_config_home = TEMP_DIR + Config._user_config_home.split()[-1]
 
 # HCA Client
 hca_client = hca.dss.DSSClient()
-hca_client.host = "https://dss.dev.data.humancellatlas.org/v1"
+hca_client.host = hca_client_host
 
 # Cloud_blobstore client
 s3_blob_store = S3BlobStore(s3_client=boto3.client("s3"))
@@ -26,7 +38,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Load secret for the matrix service
-secret = AwsSecret(name="dcp/matrix-service/secrets")
+secret = AwsSecret(name=ms_secret_name)
 secret_value = json.loads(secret.value)
 
 # S3 Bucket for storing merged matrices
