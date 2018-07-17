@@ -3,6 +3,7 @@ import os
 import sys
 import hca
 
+from chalicelib.config import SAMPLE_MATRICES_BUCKET_NAME
 from config import BUNDLE_UUIDS_PATH
 
 

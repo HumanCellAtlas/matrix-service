@@ -75,7 +75,7 @@ def concat_matrices():
     return {"request_id": request_id}
 
 
-@app.on_sqs_message(queue=MS_SQS_QUEUE_NAME, name="hca-dcp-ms-queue-listener")
+@app.on_sqs_message(queue=MS_SQS_QUEUE_NAME)
 def ms_sqs_queue_listener(event):
     """
     Create a lambda function that listens for the matrix service's SQS
