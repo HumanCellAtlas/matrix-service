@@ -8,7 +8,7 @@ locals {
 }
 
 resource "aws_secretsmanager_secret" "hca_ms_secrets" {
-  name = "hca/dcp/ms/secrets"
+  name = "hca/dcp/matrix-service/secrets"
 }
 
 resource "aws_secretsmanager_secret_version" "secrets" {
