@@ -9,7 +9,7 @@ data "template_file" "aws_sqs_queue_policy" {
 
 resource "aws_sqs_queue" "sqs" {
   name                       = "${var.ms-sqs-queue}"
-  visibility_timeout_seconds = 60
+  visibility_timeout_seconds = 300
 }
 
 resource "aws_sqs_queue_policy" "sqs_policy" {
