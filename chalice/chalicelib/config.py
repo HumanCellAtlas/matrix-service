@@ -8,9 +8,7 @@ from dcplib.aws_secret import AwsSecret
 from tweak import Config
 from cloud_blobstore.s3 import S3BlobStore
 
-CHALICELIB__DIR = os.path.dirname(os.path.abspath(__file__))
-CHALICE_DIR = os.path.dirname(CHALICELIB__DIR)
-BASE_DIR = os.path.dirname(CHALICE_DIR)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIGURATION_FILE = os.path.join(BASE_DIR, "config.json")
 
 # Load configuration
