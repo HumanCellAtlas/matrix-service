@@ -32,7 +32,7 @@ class TestRequestHandler(unittest.TestCase):
 
     def test_get_request(self):
         """
-        Get request with an invalid request id should raise BlobNotFoundException.
+        Get request with an invalid request id should raise BlobNotFoundError.
         """
         invalid_request_id = rand_uuid()
         self.assertRaises(BlobNotFoundError, RequestHandler.get_request, invalid_request_id)
