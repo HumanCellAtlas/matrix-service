@@ -9,7 +9,7 @@ from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
 
-app = Chalice(app_name='hca-matrix-service')
+app = Chalice(app_name='matrix-service-api')
 app.debug = True
 
 # Replace handler here for supporting concatenation on other matrix formats
@@ -75,8 +75,7 @@ def concat_matrices():
     return {"request_id": request_id}
 
 
-@app.on_sqs_message(queue=MS_SQS_QUEUE_NAME)
-def ms_sqs_queue_listener(event):
+def ms_sqs_queue_listener(event, context):
     """
     Create a lambda function that listens for the matrix service's SQS
     queue events.Once it detects an incoming message on the queue, it
@@ -84,9 +83,9 @@ def ms_sqs_queue_listener(event):
     based on the message content.
     :param event: SQS Queue event.
     """
-    for record in event:
-        msg = json.loads(record.body)
-        bundle_uuids = msg["bundle_uuids"]
+    for record in event["Records"]:
+        record_body = json.loads(record["body"])
+        bundle_uuids = record_body["bundle_uuids"]
         request_id = RequestHandler.generate_request_id(bundle_uuids)
 
         """
@@ -110,13 +109,13 @@ def ms_sqs_queue_listener(event):
             job_id = merge_request_body["job_id"]
 
             # Stall concatenation process if any of these cases described above happens
-            if not job_id or job_id != msg["job_id"]:
+            if not job_id or job_id != record_body["job_id"]:
                 return
 
             mtx_handler.run_merge_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
-                job_id=msg["job_id"]
+                job_id=record_body["job_id"]
             )
 
         except (BlobStoreUnknownError, SwaggerAPIException, Exception):
