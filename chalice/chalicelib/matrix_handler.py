@@ -57,3 +57,39 @@ class MatrixHandler(ABC):
         logger.info("Done downloading %d matrix files.", len(local_mtx_paths))
 
         return temp_dir, local_mtx_paths
+
+    @abstractmethod
+    def _concat_mtx(self, mtx_paths: List[str], mtx_dir: str, request_id: str) -> str:
+        """
+        Concatenate a list of matrices, and save into a new file on disk.
+
+        :param mtx_paths: A list of downloaded local matrix files paths.
+        :param mtx_dir: The directory that contains the matrices.
+        :param request_id: The request id for the matrices concatenation.
+        :return: New concatenated matrix file's path.
+        """
+
+class LoomMatrixHandler(MatrixHandler):
+    """
+    Matrix handler for .loom file format
+    """
+    def __init__(self) -> None:
+        super().__init__(".loom")
+
+    def _concat_mtx(self, mtx_paths: List[str], mtx_dir: str, request_id: str) -> str:
+        try:
+            merged_mtx_dir = tempfile.mkdtemp(dir=TEMP_DIR)
+            out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)
+            logger.info("Combining matrices to %s.", out_file)
+            loompy.combine(mtx_paths, out_file)
+            logger.info("Done combining.")
+
+        # Catch any potential exception arose from loompy.combine()
+        except Exception as e:
+            raise e
+
+        # Remove all unneeded downloaded mtx at the end
+        finally:
+            shutil.rmtree(mtx_dir)
+
+        return out_file
