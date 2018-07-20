@@ -51,3 +51,17 @@ class SqsQueueHandler:
         response = SqsQueueHandler.ms_queue.send_message(MessageBody=msg_str)
 
         return response.get("MessageId")
+
+    @staticmethod
+    def msg_exists_ms_queue(msg_id: str) -> bool:
+        """
+        Check the existence of a msg in matrix service sqs queue.
+        :param msg_id: Id of the message to check for existence.
+        :return: True if msg exists in matrix service sqs queue.
+        """
+        for queue_msg in SqsQueueHandler.ms_queue.receive_messages():
+            if queue_msg.message_id == msg_id:
+                queue_msg.delete()
+                return True
+
+        return False
