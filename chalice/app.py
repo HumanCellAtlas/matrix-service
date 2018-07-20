@@ -39,3 +39,37 @@ def check_request_status(request_id):
 
     except BlobStoreUnknownError:
         raise BadRequestError(traceback.format_exc())
+
+
+@app.route('/matrices/concat', methods=['POST'])
+def concat_matrices():
+    """
+    Concat matrices within bundles based on bundles uuid
+    """
+    request = app.current_request
+    bundle_uuids = request.json_body
+    request_id = RequestHandler.generate_request_id(bundle_uuids)
+
+    logger.info("Request ID({}): Received request for concatenating matrices within bundles {};"
+                .format(request_id, str(bundle_uuids)))
+
+    try:
+        merge_request = RequestHandler.get_request(request_id=request_id)
+        merge_request_body = json.loads(merge_request)
+        merge_request_status = merge_request_body["status"]
+
+        logger.info("Request({}) status: {}.".format(request_id, merge_request_status))
+
+        # Send the request to sqs queue if the request has been abort before
+        if merge_request_status == RequestStatus.ABORT:
+            SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
+
+    except BlobNotFoundError:
+        # Send the request to sqs queue if the request has not been made before
+        SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
+
+    except BlobStoreUnknownError:
+        error_msg = traceback.format_exc()
+        raise BadRequestError(error_msg)
+
+    return {"request_id": request_id}
