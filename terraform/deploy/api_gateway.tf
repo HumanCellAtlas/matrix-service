@@ -62,7 +62,7 @@ resource "aws_api_gateway_integration" "matrix_service_health_check_api_integrat
   rest_api_id = "${aws_api_gateway_rest_api.matrix_service_api_gateway.id}"
   integration_http_method = "POST"
   type        = "AWS_PROXY"
-  uri         = "${aws_lambda_function.matrix_service.invoke_arn}"
+  uri         = "${aws_lambda_function.matrix_service_api.invoke_arn}"
 }
 
 resource "aws_api_gateway_integration" "matrix_service_status_check_api_integration" {
@@ -71,7 +71,7 @@ resource "aws_api_gateway_integration" "matrix_service_status_check_api_integrat
   rest_api_id = "${aws_api_gateway_rest_api.matrix_service_api_gateway.id}"
   integration_http_method = "POST"
   type        = "AWS_PROXY"
-  uri         = "${aws_lambda_function.matrix_service.invoke_arn}"
+  uri         = "${aws_lambda_function.matrix_service_api.invoke_arn}"
 }
 
 resource "aws_api_gateway_integration" "matrix_service_concat_api_integration" {
@@ -80,7 +80,7 @@ resource "aws_api_gateway_integration" "matrix_service_concat_api_integration" {
   rest_api_id = "${aws_api_gateway_rest_api.matrix_service_api_gateway.id}"
   integration_http_method = "POST"
   type        = "AWS_PROXY"
-  uri         = "${aws_lambda_function.matrix_service.invoke_arn}"
+  uri         = "${aws_lambda_function.matrix_service_api.invoke_arn}"
 }
 
 resource "aws_api_gateway_deployment" "matrix_service_deployment_dev" {

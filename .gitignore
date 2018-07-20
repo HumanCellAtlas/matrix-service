@@ -10,3 +10,5 @@ terraform/.terraform/
 **/*.zip
 deployment/
 target/
+*.tfvars
+chalice/chalicelib/config.json

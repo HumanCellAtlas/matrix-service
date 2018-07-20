@@ -1,7 +1,7 @@
-# Make sure the value is consistent with the one defined in terraform/variables.tf
-DEPLOYMENT_S3_BUCKET := hca-ms-deployment
+# HCA HOST used in the matrix service (Feel free to change it if necessary)
+HCA_HOST := https://dss.dev.data.humancellatlas.org/v1
 
-default: build
+default: all
 
 .PHONY: install
 install:
@@ -15,24 +15,53 @@ test:
 
 .PHONY: build
 build:
+	@read -p "Enter AWS_PROFILE: " aws_profile; \
+	read -p "Enter AWS_REGION: " aws_region; \
+	read -p "Enter name of s3 bucket which stores deployment package: " deployment_s3_bucket; \
+	read -p "Enter name of s3 bucket which stores merged matrices: " merged_mtx_s3_bucket; \
+	read -p "Enter name of s3 bucket which stores request status json file: " request_status_s3_bucket; \
+	read -p "Enter name of AWS SQS Queue for matrix service: " ms_sqs_queue; \
+	read -p "Enter name of secret which stores in aws secret manager: " secret_name; \
+	echo "aws_profile = \"$$aws_profile\"\naws_region = \"$$aws_region\"\n\
+	hca_ms_merged_mtx_bucket = \"$$merged_mtx_s3_bucket\"\n\
+	hca_ms_request_bucket = \"$$request_status_s3_bucket\"\n\
+	hca_ms_deployment_bucket = \"$$deployment_s3_bucket\"\n\
+	ms_sqs_queue = \"$$ms_sqs_queue\"\n\
+	ms_secret_name = \"$$secret_name\"" \
+	| tee terraform/build/terraform.tfvars terraform/deploy/terraform.tfvars; \
+	echo "{\n\
+		\"hca_host\": \"$(HCA_HOST)\",\n\
+		\"ms_secret_name\": \"$$secret_name\"\n\
+	}" > chalice/chalicelib/config.json
+	cd terraform/build && terraform init && terraform apply
 	bash -c 'for wheel in vendor.in/*/*.whl; do unzip -q -o -d chalice/vendor/ $$wheel; done'
-	cd terraform && terraform apply
-	. venv/bin/activate && cd chalice && chalice package ../target/
-	rm -rf chalice/vendor/
+	. venv/bin/activate && cd chalice && chalice package ../target/ && rm -rf vendor/
 
 .PHONY: deploy
 deploy:
-	aws cloudformation package --template-file ./target/sam.json \
-	  --s3-bucket $(DEPLOYMENT_S3_BUCKET) \
-	  --output-template-file ./target/sam-packaged.yaml
-	aws cloudformation deploy --template-file ./target/sam-packaged.yaml \
-	  --stack-name matrix-service-stack \
-	  --capabilities CAPABILITY_IAM
-	aws cloudformation describe-stacks --stack-name matrix-service-stack \
-		--query "Stacks[].Outputs[?OutputKey=='EndpointURL'][] | [0].OutputValue"
+	@read -p "Re-enter name of s3 bucket which stores deployment package: " deployment_s3_bucket; \
+	read -p "Enter the version number of the service to deploy: " app_version; \
+	echo "app_version = \"$$app_version\"" >> terraform/deploy/terraform.tfvars; \
+	aws s3 cp target/deployment.zip s3://$$deployment_s3_bucket/v$$app_version/deployment.zip
+	cd terraform/deploy && terraform init && terraform apply
+	rm -rf target
 
+# Undeploy the lambda functions
 .PHONY: clean
 clean:
-	aws cloudformation delete-stack --stack-name matrix-service-stack
-	aws cloudformation wait stack-delete-complete --stack-name matrix-service-stack
+	cd terraform/deploy && terraform destroy
 	rm -rf target/
+
+# Undeploy all aws fixtures
+.PHONY: clean-all
+clean-all:
+	cd terraform/deploy && terraform destroy
+	cd terraform/build	&& terraform destroy
+	rm -rf target
+	rm terraform/build/terraform.tfvars
+	rm terraform/deploy/terraform.tfvars
+	rm -rf venv
+
+.PHONY: all
+all:
+	make install && make build && make test && make deploy
