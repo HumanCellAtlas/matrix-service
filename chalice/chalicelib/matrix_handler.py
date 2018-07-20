@@ -94,6 +94,52 @@ class MatrixHandler(ABC):
         shutil.rmtree(os.path.dirname(path))
 
         return key
+
+    def run_merge_request(self, bundle_uuids: List[str], request_id: str, job_id: str) -> None:
+        """
+        Merge matrices within bundles, and upload the merged matrix to an s3 bucket.
+
+        :param bundle_uuids: Bundles' uuid for locating bundles in DSS.
+        :param request_id: Merge request id.
+        :param job_id: Job id of the request.
+        """
+        # Update the request status to RUNNING
+        RequestHandler.update_request(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id,
+            job_id=job_id,
+            status=RequestStatus.RUNNING
+        )
+
+        try:
+            start_time = time.time()
+            mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
+            merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
+            self._upload_mtx(merged_mtx_path)
+            end_time = time.time()
+
+            # Update the request status to DONE
+            RequestHandler.update_request(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.DONE,
+                time_spent_to_complete="{} seconds".format(end_time - start_time)
+            )
+        except (SwaggerAPIException, Exception) as e:
+
+            # Update the request status to ABORT
+            RequestHandler.update_request(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.ABORT,
+                reason_to_abort=traceback.format_exc()
+            )
+
+            raise e
+
+
 class LoomMatrixHandler(MatrixHandler):
     """
     Matrix handler for .loom file format
