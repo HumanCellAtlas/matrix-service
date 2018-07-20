@@ -1,0 +1,4 @@
+{
+	"hca_host": "https://dss.dev.data.humancellatlas.org/v1",
+	"ms_secret_name": "matrix-service/secrets/v1.0.5"
+}
