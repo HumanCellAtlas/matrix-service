@@ -69,6 +69,31 @@ class MatrixHandler(ABC):
         :return: New concatenated matrix file's path.
         """
 
+    def _upload_mtx(self, path: str) -> str:
+        """
+        Upload a matrix file into an s3 bucket.
+        :param path: Path of the merged matrix.
+        :return: S3 bucket key for uploading file.
+        """
+        logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(
+            os.path.basename(path),
+            MERGED_MTX_BUCKET_NAME
+        ))
+
+        key = os.path.basename(path)
+        with open(path, "rb") as merged_matrix:
+            s3_blob_store.upload_file_handle(
+                bucket=MERGED_MTX_BUCKET_NAME,
+                key=key,
+                src_file_handle=merged_matrix
+            )
+
+        logger.info("Done uploading.")
+
+        # Remove local merged mtx after uploading it to s3
+        shutil.rmtree(os.path.dirname(path))
+
+        return key
 class LoomMatrixHandler(MatrixHandler):
     """
     Matrix handler for .loom file format
