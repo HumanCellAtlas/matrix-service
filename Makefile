@@ -61,6 +61,7 @@ clean-all:
 	rm terraform/build/terraform.tfvars
 	rm terraform/deploy/terraform.tfvars
 	rm -rf venv
+	rm chalice/chalicelib/config.json
 
 .PHONY: all
 all:

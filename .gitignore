@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 chalice/.chalice/deployed/
 chalice/.chalice/deployments/
+chalice/chalicelib/config.json
 terraform/**/.terraform/
 *.tfstate
 *.tfstate.backup
@@ -11,4 +12,3 @@ terraform/**/.terraform/
 deployment/
 target/
 *.tfvars
-chalice/chalicelib/config.json

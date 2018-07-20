@@ -21,7 +21,7 @@ resource "aws_lambda_function" "matrix_service_sqs_handler" {
 }
 
 resource "aws_lambda_event_source_mapping" "matrix_service_sqs_lambda_event_source_mapping" {
-  event_source_arn  = "arn:aws:sqs:${var.aws_region}:861229788715:${var.ms_sqs_queue}"
+  event_source_arn  = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
   function_name     = "${aws_lambda_function.matrix_service_sqs_handler.arn}"
   starting_position = ""
 }
@@ -79,8 +79,8 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
                 "arn:aws:s3:::${var.hca_ms_request_bucket}",
                 "arn:aws:s3:::${var.hca_ms_merged_mtx_bucket}/*",
                 "arn:aws:s3:::${var.hca_ms_request_bucket}/*",
-                "arn:aws:secretsmanager:${var.aws_region}:861229788715:secret:${var.ms_secret_name}*",
-                "arn:aws:sqs:${var.aws_region}:861229788715:${var.ms_sqs_queue}"
+                "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
+                "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
             ]
         }
     ]

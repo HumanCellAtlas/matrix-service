@@ -8,7 +8,8 @@ locals {
 }
 
 resource "aws_secretsmanager_secret" "hca_ms_secrets" {
-  name = "${var.ms_secret_name}"
+  name                    = "${var.ms_secret_name}"
+  recovery_window_in_days = 7
 }
 
 resource "aws_secretsmanager_secret_version" "secrets" {

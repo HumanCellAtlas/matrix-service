@@ -21,7 +21,7 @@ class MatrixHandler(ABC):
     def __init__(self, suffix) -> None:
         self._suffix = suffix
 
-    def _download_mtx(self, bundle_uuids) -> Tuple[str, List[str]]:
+    def _download_mtx(self, bundle_uuids: List[str]) -> Tuple[str, List[str]]:
         """
         Filter for the matrix files within bundles, and download them locally
 
@@ -59,7 +59,7 @@ class MatrixHandler(ABC):
         return temp_dir, local_mtx_paths
 
     @abstractmethod
-    def _concat_mtx(self, mtx_paths, mtx_dir, request_id) -> str:
+    def _concat_mtx(self, mtx_paths: List[str], mtx_dir: str, request_id: str) -> str:
         """
         Concatenate a list of matrices, and save into a new file on disk.
 
@@ -69,7 +69,7 @@ class MatrixHandler(ABC):
         :return: New concatenated matrix file's path.
         """
 
-    def _upload_mtx(self, path) -> str:
+    def _upload_mtx(self, path: str) -> str:
         """
         Upload a matrix file into an s3 bucket.
         :param path: Path of the merged matrix.
@@ -95,7 +95,7 @@ class MatrixHandler(ABC):
 
         return key
 
-    def run_merge_request(self, bundle_uuids, request_id, job_id) -> None:
+    def run_merge_request(self, bundle_uuids: List[str], request_id: str, job_id: str) -> None:
         """
         Merge matrices within bundles, and upload the merged matrix to an s3 bucket.
 
@@ -147,7 +147,7 @@ class LoomMatrixHandler(MatrixHandler):
     def __init__(self) -> None:
         super().__init__(".loom")
 
-    def _concat_mtx(self, mtx_paths, mtx_dir, request_id) -> str:
+    def _concat_mtx(self, mtx_paths: List[str], mtx_dir: str, request_id: str) -> str:
         try:
             merged_mtx_dir = tempfile.mkdtemp(dir=TEMP_DIR)
             out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)

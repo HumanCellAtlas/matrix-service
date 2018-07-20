@@ -50,6 +50,8 @@ class TestMatrixHandler(unittest.TestCase):
         # Download mtx from bundles
         mtx_handler = LoomMatrixHandler()
         mtx_dir, mtx_paths = mtx_handler._download_mtx(bundle_uuids)
+
+        # Merge matrices
         merged_mtx_path = mtx_handler._concat_mtx(mtx_paths, mtx_dir, request_id)
 
         self.assertTrue(os.path.exists(merged_mtx_path))
