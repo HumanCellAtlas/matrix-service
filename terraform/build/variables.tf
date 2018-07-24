@@ -23,3 +23,7 @@ variable "ms_sqs_queue" {
 variable "ms_secret_name" {
   description = "The name of the secret in aws secret manager"
 }
+
+variable "ms_dead_letter_queue" {
+  description = "The name of dead letter queue for the matrix service"
+}

@@ -1,6 +1,11 @@
 resource "aws_sqs_queue" "sqs" {
   name                       = "${var.ms_sqs_queue}"
   visibility_timeout_seconds = 300
+  redrive_policy             = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.dead_letter_queue.arn}\",\"maxReceiveCount\":3}"
+}
+
+resource "aws_sqs_queue" "dead_letter_queue" {
+  name = "${var.ms_dead_letter_queue}"
 }
 
 resource "aws_sqs_queue_policy" "sqs_policy" {
