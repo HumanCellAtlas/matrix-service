@@ -11,3 +11,4 @@ terraform/**/.terraform/
 deployment/
 target/
 *.tfvars
+data/
