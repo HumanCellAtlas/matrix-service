@@ -1,4 +1,3 @@
-import hashlib
 import os
 import uuid
 
@@ -22,12 +21,3 @@ def get_mtx_paths(dir: str, mtx_suffix: str) -> List[str]:
         mtx_paths.extend([os.path.join(dname, fname) for fname in fnames if fname.endswith(mtx_suffix)])
 
     return mtx_paths
-
-
-def generate_md5(s: str) -> str:
-    """
-    Generate MD5 sum of a sting.
-    :param s: Input string.
-    :return: MD5 sum of the input string.
-    """
-    return hashlib.md5(s.encode('utf-8')).hexdigest()

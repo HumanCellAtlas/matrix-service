@@ -30,12 +30,15 @@ class SqsQueueHandler:
         logger.info("Request ID({}): Initialize the request with job id({})"
                     .format(request_id, job_id))
 
-        RequestHandler.update_request(
-            bundle_uuids=bundle_uuids,
-            request_id=request_id,
-            job_id=job_id,
-            status=RequestStatus.INITIALIZED
-        )
+        try:
+            RequestHandler.update_request(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.INITIALIZED
+            )
+        except Exception as e:
+            raise e
 
         # Create message to send to the SQS Queue
         msg = SQS_QUEUE_MSG.copy()

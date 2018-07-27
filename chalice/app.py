@@ -2,9 +2,8 @@ import json
 import traceback
 
 from chalice import Chalice, NotFoundError, BadRequestError
-from hca.util import SwaggerAPIException
-from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
-from chalicelib.config import MS_SQS_QUEUE_NAME, logger
+from cloud_blobstore import BlobNotFoundError
+from chalicelib.config import logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
@@ -30,14 +29,13 @@ def check_request_status(request_id):
     :param request_id: Matrices concatenation request ID.
     """
     try:
-        merge_request = RequestHandler.get_request(request_id=request_id)
-        merge_request_body = json.loads(merge_request)
+        merge_request_body = RequestHandler.get_request_body(request_id=request_id)
         return merge_request_body
 
     except BlobNotFoundError:
         raise NotFoundError("Request({}) has not been initialized.".format(request_id))
 
-    except BlobStoreUnknownError:
+    except:
         raise BadRequestError(traceback.format_exc())
 
 
@@ -54,9 +52,7 @@ def concat_matrices():
                 .format(request_id, str(bundle_uuids)))
 
     try:
-        merge_request = RequestHandler.get_request(request_id=request_id)
-        merge_request_body = json.loads(merge_request)
-        merge_request_status = merge_request_body["status"]
+        merge_request_status = RequestHandler.get_request_field(request_id=request_id, fieldname='status')
 
         logger.info("Request({}) status: {}.".format(request_id, merge_request_status))
 
@@ -65,12 +61,14 @@ def concat_matrices():
             SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
 
     except BlobNotFoundError:
-        # Send the request to sqs queue if the request has not been made before
-        SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
+        try:
+            # Send the request to sqs queue if the request has not been made before
+            SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
+        except:
+            return BadRequestError(traceback.format_exc())
 
-    except BlobStoreUnknownError:
-        error_msg = traceback.format_exc()
-        raise BadRequestError(error_msg)
+    except:
+        raise BadRequestError(traceback.format_exc())
 
     return {"request_id": request_id}
 
@@ -83,6 +81,8 @@ def ms_sqs_queue_listener(event, context):
     based on the message content.
     :param event: SQS Queue event.
     """
+    logger.info("Handling {} matrix service SQS queue events......".format(len(event["Records"])))
+
     for record in event["Records"]:
         record_body = json.loads(record["body"])
         bundle_uuids = record_body["bundle_uuids"]
@@ -104,9 +104,7 @@ def ms_sqs_queue_listener(event, context):
         set of matrices.
         """
         try:
-            merge_request = RequestHandler.get_request(request_id=request_id)
-            merge_request_body = json.loads(merge_request)
-            job_id = merge_request_body["job_id"]
+            job_id = RequestHandler.get_request_field(request_id=request_id, fieldname='job_id')
 
             # Stall concatenation process if any of these cases described above happens
             if not job_id or job_id != record_body["job_id"]:
@@ -118,6 +116,7 @@ def ms_sqs_queue_listener(event, context):
                 job_id=record_body["job_id"]
             )
 
-        except (BlobStoreUnknownError, SwaggerAPIException, Exception):
-            error_msg = traceback.format_exc()
-            logger.exception(error_msg)
+        except:
+            logger.exception(traceback.format_exc())
+
+    logger.info("Done.")

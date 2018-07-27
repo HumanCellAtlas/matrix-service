@@ -1,11 +1,11 @@
 import hashlib
 import json
-import os
 import tempfile
+import boto3
 
 from enum import Enum
 from typing import List
-from cloud_blobstore import BlobNotFoundError, BlobStoreUnknownError
+from cloud_blobstore import BlobNotFoundError
 from chalicelib.config import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
     MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE, TEMP_DIR, s3_blob_store
 
@@ -18,6 +18,8 @@ class RequestStatus(Enum):
 
 
 class RequestHandler:
+    s3 = boto3.resource("s3")
+
     @staticmethod
     def generate_request_id(bundle_uuids: List[str]) -> str:
         """
@@ -34,18 +36,36 @@ class RequestHandler:
         return m.hexdigest()
 
     @staticmethod
-    def get_request(request_id: str) -> bytes:
+    def get_request_field(request_id: str, fieldname: str) -> str:
         """
-        Get request status file content from s3.
+        Get a field value from a request status file in s3.
         :param request_id: Matrices concatenation request id.
-        :return: File content in bytes.
+        :param fieldname: Field name in the request body
+        :return: Corresponding field value in the request body.
         """
         key = request_id + JSON_SUFFIX
 
         try:
             content = s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key)
-            return content
-        except (BlobNotFoundError, BlobStoreUnknownError) as e:
+            value = json.loads(content)[fieldname]
+            return value
+        except Exception as e:
+            raise e
+
+    @staticmethod
+    def get_request_body(request_id: str) -> dict:
+        """
+        Get request body from a request status file in s3.
+        :param request_id: Matrices concatenation request id.
+        :return: Request body.
+        """
+        key = request_id + JSON_SUFFIX
+
+        try:
+            content = s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key)
+            body = json.loads(content)
+            return body
+        except Exception as e:
             raise e
 
     @staticmethod
@@ -67,6 +87,21 @@ class RequestHandler:
         :param time_spent_to_complete: Time spent to complete the concatenation job.
         :param reason_to_abort: Request abort reason.
         """
+        request_key = request_id + JSON_SUFFIX
+
+        # Check whether request status file exists in the s3 bucket; Create one if not.
+        try:
+            RequestHandler.get_request_body(request_id=request_id)
+        except BlobNotFoundError:
+            with tempfile.TemporaryFile(dir=TEMP_DIR, suffix=JSON_SUFFIX) as f:
+                s3_blob_store.upload_file_handle(
+                    bucket=REQUEST_STATUS_BUCKET_NAME,
+                    key=request_key,
+                    src_file_handle=f
+                )
+        except Exception as e:
+            raise e
+
         # Create a request based on a template dict
         request = REQUEST_TEMPLATE.copy()
         request["bundle_uuids"] = bundle_uuids
@@ -78,27 +113,16 @@ class RequestHandler:
 
         if status == RequestStatus.DONE:
             # Key for merged matrix stored in s3 bucket
-            key = request_id + ".loom"
+            mtx_key = request_id + ".loom"
 
             mtx_url = "s3://{}/{}".format(
                 MERGED_MTX_BUCKET_NAME,
-                key
+                mtx_key
             )
             request["merged_mtx_url"] = mtx_url
 
-        _, temp_file = tempfile.mkstemp(dir=TEMP_DIR, suffix=JSON_SUFFIX)
-
-        with open(temp_file, "w") as f:
-            json.dump(request, f)
-
-        # Key for request stored in s3 bucket
-        key = request_id + JSON_SUFFIX
-
-        with open(temp_file, "rb") as f:
-            s3_blob_store.upload_file_handle(
-                bucket=REQUEST_STATUS_BUCKET_NAME,
-                key=key,
-                src_file_handle=f
-            )
-
-        os.remove(temp_file)
+        try:
+            s3_request_obj = RequestHandler.s3.Object(REQUEST_STATUS_BUCKET_NAME, request_key)
+            s3_request_obj.put(Body=json.dumps(request))
+        except Exception as e:
+            raise e

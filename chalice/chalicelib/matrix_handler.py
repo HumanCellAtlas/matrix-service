@@ -1,13 +1,12 @@
 import os
-import shutil
 import tempfile
 import time
 import traceback
 import loompy
 
-from hca.util import SwaggerAPIException
-from typing import List, Tuple
 from abc import ABC, abstractmethod
+from subprocess import call
+from typing import List
 from chalicelib import get_mtx_paths
 from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, hca_client, \
     s3_blob_store, logger
@@ -18,19 +17,17 @@ class MatrixHandler(ABC):
     """
     A generic matrix handler for matrices concatenation
     """
+
     def __init__(self, suffix) -> None:
         self._suffix = suffix
 
-    def _download_mtx(self, bundle_uuids: List[str]) -> Tuple[str, List[str]]:
+    def _download_mtx(self, bundle_uuids: List[str], temp_dir: str) -> List[str]:
         """
-        Filter for the matrix files within bundles, and download them locally
-
-        :param bundle_uuids: A list of bundle uuids
-        :return: A list of downloaded local matrix files paths and their directory
+        Filter for the matrix files within bundles, and download them locally.
+        :param bundle_uuids: A list of bundle uuids.
+        :param temp_dir: A temporary directory for storing all downloaded matrix files.
+        :return: A list of downloaded matrix files paths.
         """
-        # Create a temp directory for storing s3 matrix files
-        temp_dir = tempfile.mkdtemp(dir=TEMP_DIR)
-
         # Filter and download only matrices file that satisfies a specific suffix within bundles
         for bundle_uuid in bundle_uuids:
             dest_name = os.path.join(temp_dir, bundle_uuid)
@@ -46,9 +43,7 @@ class MatrixHandler(ABC):
                     metadata_files=(),
                     data_files=("*{}".format(self._suffix),)
                 )
-
-            # Catch file not found exception
-            except SwaggerAPIException as e:
+            except Exception as e:
                 raise e
 
         # Get all downloaded mtx paths from temp_dir
@@ -56,44 +51,38 @@ class MatrixHandler(ABC):
 
         logger.info("Done downloading %d matrix files.", len(local_mtx_paths))
 
-        return temp_dir, local_mtx_paths
+        return local_mtx_paths
 
     @abstractmethod
-    def _concat_mtx(self, mtx_paths: List[str], mtx_dir: str, request_id: str) -> str:
+    def _concat_mtx(self, mtx_paths: List[str], out_file: str) -> None:
         """
         Concatenate a list of matrices, and save into a new file on disk.
-
         :param mtx_paths: A list of downloaded local matrix files paths.
-        :param mtx_dir: The directory that contains the matrices.
-        :param request_id: The request id for the matrices concatenation.
-        :return: New concatenated matrix file's path.
+        :param out_file: Path to the concatenated matrix.
         """
 
-    def _upload_mtx(self, path: str) -> str:
+    def _upload_mtx(self, path: str, request_id: str):
         """
         Upload a matrix file into an s3 bucket.
         :param path: Path of the merged matrix.
-        :return: S3 bucket key for uploading file.
+        :param request_id: Merge request id.
         """
         logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(
             os.path.basename(path),
             MERGED_MTX_BUCKET_NAME
         ))
 
-        key = os.path.basename(path)
         with open(path, "rb") as merged_matrix:
-            s3_blob_store.upload_file_handle(
-                bucket=MERGED_MTX_BUCKET_NAME,
-                key=key,
-                src_file_handle=merged_matrix
-            )
+            try:
+                s3_blob_store.upload_file_handle(
+                    bucket=MERGED_MTX_BUCKET_NAME,
+                    key=request_id + self._suffix,
+                    src_file_handle=merged_matrix
+                )
+            except Exception as e:
+                raise e
 
         logger.info("Done uploading.")
-
-        # Remove local merged mtx after uploading it to s3
-        shutil.rmtree(os.path.dirname(path))
-
-        return key
 
     def run_merge_request(self, bundle_uuids: List[str], request_id: str, job_id: str) -> None:
         """
@@ -103,40 +92,51 @@ class MatrixHandler(ABC):
         :param request_id: Merge request id.
         :param job_id: Job id of the request.
         """
+        # Print out the current usage of /tmp/ directory
+        call(["df", "-H", TEMP_DIR])
+
         # Update the request status to RUNNING
-        RequestHandler.update_request(
-            bundle_uuids=bundle_uuids,
-            request_id=request_id,
-            job_id=job_id,
-            status=RequestStatus.RUNNING
-        )
-
         try:
-            start_time = time.time()
-            mtx_dir, mtx_paths = self._download_mtx(bundle_uuids)
-            merged_mtx_path = self._concat_mtx(mtx_paths, mtx_dir, request_id)
-            self._upload_mtx(merged_mtx_path)
-            end_time = time.time()
-
-            # Update the request status to DONE
             RequestHandler.update_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
                 job_id=job_id,
-                status=RequestStatus.DONE,
-                time_spent_to_complete="{} seconds".format(end_time - start_time)
-            )
-        except (SwaggerAPIException, Exception) as e:
-
-            # Update the request status to ABORT
-            RequestHandler.update_request(
-                bundle_uuids=bundle_uuids,
-                request_id=request_id,
-                job_id=job_id,
-                status=RequestStatus.ABORT,
-                reason_to_abort=traceback.format_exc()
+                status=RequestStatus.RUNNING
             )
 
+            try:
+                # Create a temp directory for storing all temp files
+                with tempfile.TemporaryDirectory(dir=TEMP_DIR) as temp_dir:
+
+                    start_time = time.time()
+                    mtx_paths = self._download_mtx(bundle_uuids=bundle_uuids, temp_dir=temp_dir)
+                    _, merged_mtx_path = tempfile.mkstemp(dir=temp_dir, prefix=request_id, suffix=self._suffix)
+                    self._concat_mtx(mtx_paths=mtx_paths, out_file=merged_mtx_path)
+                    self._upload_mtx(path=merged_mtx_path, request_id=request_id)
+                    end_time = time.time()
+
+                    # Update the request status to DONE
+                    RequestHandler.update_request(
+                        bundle_uuids=bundle_uuids,
+                        request_id=request_id,
+                        job_id=job_id,
+                        status=RequestStatus.DONE,
+                        time_spent_to_complete="{} seconds".format(end_time - start_time)
+                    )
+            except Exception as e:
+
+                # Update the request status to ABORT
+                RequestHandler.update_request(
+                    bundle_uuids=bundle_uuids,
+                    request_id=request_id,
+                    job_id=job_id,
+                    status=RequestStatus.ABORT,
+                    reason_to_abort=traceback.format_exc()
+                )
+
+                raise e
+
+        except Exception as e:
             raise e
 
 
@@ -144,23 +144,14 @@ class LoomMatrixHandler(MatrixHandler):
     """
     Matrix handler for .loom file format
     """
+
     def __init__(self) -> None:
         super().__init__(".loom")
 
-    def _concat_mtx(self, mtx_paths: List[str], mtx_dir: str, request_id: str) -> str:
+    def _concat_mtx(self, mtx_paths: List[str], out_file: str) -> None:
         try:
-            merged_mtx_dir = tempfile.mkdtemp(dir=TEMP_DIR)
-            out_file = os.path.join(merged_mtx_dir, request_id + self._suffix)
             logger.info("Combining matrices to %s.", out_file)
             loompy.combine(mtx_paths, out_file)
             logger.info("Done combining.")
-
-        # Catch any potential exception arose from loompy.combine()
         except Exception as e:
             raise e
-
-        # Remove all unneeded downloaded mtx at the end
-        finally:
-            shutil.rmtree(mtx_dir)
-
-        return out_file
