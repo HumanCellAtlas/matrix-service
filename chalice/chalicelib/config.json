@@ -6,6 +6,7 @@
     "hca_ms_deployment_bucket": "matrix-service-deployment",
     "ms_sqs_queue": "matrix-service-queue",
     "ms_dead_letter_queue": "matrix-service-dead-letter-queue",
-    "ms_secret_name": "matrix-service/dev/aws_fixtures",
-    "hca_host": "https://dss.dev.data.humancellatlas.org/v1"
+    "ms_secret_name": "matrix-service/dev/terraform.tfvars",
+    "hca_host": "https://dss.dev.data.humancellatlas.org/v1",
+    "sample_matrices_bucket_name": "matrix-service-test"
 }
