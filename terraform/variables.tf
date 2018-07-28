@@ -27,3 +27,5 @@ variable "ms_secret_name" {
 variable "ms_dead_letter_queue" {
   description = "The name of dead letter queue for the matrix service"
 }
+
+variable "app_version" {}

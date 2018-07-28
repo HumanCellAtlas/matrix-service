@@ -13,9 +13,7 @@ class SqsQueueHandler:
     matrix service's SQS queue.
     """
 
-    # Get the matrix service sqs queue
     sqs = boto3.resource("sqs")
-    ms_queue = sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)
 
     @staticmethod
     def send_msg_to_ms_queue(bundle_uuids: List[str], request_id: str) -> str:
@@ -51,7 +49,8 @@ class SqsQueueHandler:
         msg_str = json.dumps(msg, sort_keys=True)
 
         # Send the msg to the SQS queue
-        response = SqsQueueHandler.ms_queue.send_message(MessageBody=msg_str)
+        ms_queue = SqsQueueHandler.sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)
+        response = ms_queue.send_message(MessageBody=msg_str)
 
         return response.get("MessageId")
 
@@ -62,7 +61,8 @@ class SqsQueueHandler:
         :param msg_id: Id of the message to check for existence.
         :return: True if msg exists in matrix service sqs queue.
         """
-        for queue_msg in SqsQueueHandler.ms_queue.receive_messages():
+        ms_queue = SqsQueueHandler.sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)
+        for queue_msg in ms_queue.receive_messages():
             if queue_msg.message_id == msg_id:
                 queue_msg.delete()
                 return True

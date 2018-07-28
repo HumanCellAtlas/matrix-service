@@ -120,3 +120,28 @@ def ms_sqs_queue_listener(event, context):
             logger.exception(traceback.format_exc())
 
     logger.info("Done.")
+
+
+def ms_dead_letter_queue_listener(event, context):
+    """
+    A lambda function which listens on the matrix service dead letter queue.
+    It will set the corresponding request status for all messages in the
+    queue to ABORT.
+    :param event: SQS event.
+    """
+    for record in event["Records"]:
+        record_body = json.loads(record["body"])
+        bundle_uuids = record_body["bundle_uuids"]
+        job_id = record_body["job_id"]
+        request_id = RequestHandler.generate_request_id(bundle_uuids)
+
+        try:
+            RequestHandler.update_request(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.ABORT,
+                reason_to_abort="Lambda function timed out."
+            )
+        except:
+            logger.exception(traceback.format_exc())

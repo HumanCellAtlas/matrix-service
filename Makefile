@@ -31,7 +31,7 @@ deploy:
 	@read -p "Enter the version number of the service to deploy: " app_version; \
 	aws s3 cp target/deployment.zip s3://$(shell aws secretsmanager get-secret-value --secret-id \
 	matrix-service/dev/terraform.tfvars | jq -r .SecretString | jq -r .hca_ms_deployment_bucket)\
-	/v$$app_version/deployment.zip
+	/v$$app_version/deployment.zip; 
 	cd terraform && terraform init && terraform apply
 	rm -rf target
 

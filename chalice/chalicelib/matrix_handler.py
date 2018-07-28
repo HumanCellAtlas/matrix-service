@@ -92,8 +92,17 @@ class MatrixHandler(ABC):
         :param request_id: Merge request id.
         :param job_id: Job id of the request.
         """
+        logger.info("Concatenate matrices for request_id: {}".format(request_id))
+
         # Print out the current usage of /tmp/ directory
         call(["df", "-H", TEMP_DIR])
+
+        logger.info("tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
+
+        # Clean /tmp folder before each run
+        call('rm -rf /tmp/*', shell=True)
+
+        logger.info("After cleaning, /tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
 
         # Update the request status to RUNNING
         try:
@@ -106,7 +115,7 @@ class MatrixHandler(ABC):
 
             try:
                 # Create a temp directory for storing all temp files
-                with tempfile.TemporaryDirectory(dir=TEMP_DIR) as temp_dir:
+                with tempfile.TemporaryDirectory(dir=TEMP_DIR, prefix="{}_".format(request_id)) as temp_dir:
 
                     start_time = time.time()
                     mtx_paths = self._download_mtx(bundle_uuids=bundle_uuids, temp_dir=temp_dir)
@@ -124,6 +133,8 @@ class MatrixHandler(ABC):
                         time_spent_to_complete="{} seconds".format(end_time - start_time)
                     )
             except Exception as e:
+                temp_files = os.listdir(TEMP_DIR)
+                logger.info("tmp directory contains: {}".format(str(temp_files)))
 
                 # Update the request status to ABORT
                 RequestHandler.update_request(
