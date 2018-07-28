@@ -16,7 +16,7 @@ secrets:
 		--secret-id matrix-service/dev/terraform.tfvars | \
 		jq -r .SecretString | \
 		python -m json.tool | \
-		tee terraform/terraform.tfvars chalice/chalicelib/config.json
+		tee terraform/terraform.tfvars
 
 .PHONY: build
 build:
@@ -45,7 +45,6 @@ clean:
 	rm -rf target
 	rm terraform/terraform.tfvars
 	rm -rf venv
-	rm chalice/chalicelib/config.json
 
 .PHONY: all
 all:

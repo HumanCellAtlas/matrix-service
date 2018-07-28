@@ -9,13 +9,11 @@ from tweak import Config
 from cloud_blobstore.s3 import S3BlobStore
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIGURATION_FILE = os.path.join(BASE_DIR, "config.json")
 
-# Load configuration
-with open(CONFIGURATION_FILE) as f:
-    configuration = json.load(f)
-    hca_client_host = configuration["hca_host"]
-    ms_secret_name = configuration["ms_secret_name"]
+# Under dev stage, use the following hca client hostname
+hca_client_host = "https://dss.dev.data.humancellatlas.org/v1"
+
+ms_secret_name = "matrix-service/dev/terraform.tfvars"
 
 # Default directory for all temp files
 TEMP_DIR = "/tmp"
