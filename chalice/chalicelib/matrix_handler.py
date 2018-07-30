@@ -92,20 +92,20 @@ class MatrixHandler(ABC):
         :param request_id: Merge request id.
         :param job_id: Job id of the request.
         """
-        logger.info("Concatenate matrices for request_id: {}".format(request_id))
-
-        # Print out the current usage of /tmp/ directory
-        call(["df", "-H", TEMP_DIR])
-
-        logger.info("tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
-
-        # Clean /tmp folder before each run
-        call('rm -rf /tmp/*', shell=True)
-
-        logger.info("After cleaning, /tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
-
-        # Update the request status to RUNNING
         try:
+            logger.info("Concatenate matrices for request_id: {}".format(request_id))
+
+            # Print out the current usage of /tmp/ directory
+            call(["df", "-H", TEMP_DIR])
+
+            logger.info("tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
+
+            # Clean /tmp folder before each run
+            call('rm -rf /tmp/*', shell=True)
+
+            logger.info("After cleaning, /tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
+
+            # Update the request status to RUNNING
             RequestHandler.update_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
@@ -113,41 +113,38 @@ class MatrixHandler(ABC):
                 status=RequestStatus.RUNNING
             )
 
-            try:
-                # Create a temp directory for storing all temp files
-                with tempfile.TemporaryDirectory(dir=TEMP_DIR, prefix="{}_".format(request_id)) as temp_dir:
+            # Create a temp directory for storing all temp files
+            with tempfile.TemporaryDirectory(dir=TEMP_DIR, prefix="{}_".format(request_id)) as temp_dir:
 
-                    start_time = time.time()
-                    mtx_paths = self._download_mtx(bundle_uuids=bundle_uuids, temp_dir=temp_dir)
-                    _, merged_mtx_path = tempfile.mkstemp(dir=temp_dir, prefix=request_id, suffix=self._suffix)
-                    self._concat_mtx(mtx_paths=mtx_paths, out_file=merged_mtx_path)
-                    self._upload_mtx(path=merged_mtx_path, request_id=request_id)
-                    end_time = time.time()
+                start_time = time.time()
+                mtx_paths = self._download_mtx(bundle_uuids=bundle_uuids, temp_dir=temp_dir)
+                _, merged_mtx_path = tempfile.mkstemp(dir=temp_dir, prefix=request_id, suffix=self._suffix)
+                self._concat_mtx(mtx_paths=mtx_paths, out_file=merged_mtx_path)
+                self._upload_mtx(path=merged_mtx_path, request_id=request_id)
+                end_time = time.time()
 
-                    # Update the request status to DONE
-                    RequestHandler.update_request(
-                        bundle_uuids=bundle_uuids,
-                        request_id=request_id,
-                        job_id=job_id,
-                        status=RequestStatus.DONE,
-                        time_spent_to_complete="{} seconds".format(end_time - start_time)
-                    )
-            except Exception as e:
-                temp_files = os.listdir(TEMP_DIR)
-                logger.info("tmp directory contains: {}".format(str(temp_files)))
-
-                # Update the request status to ABORT
+                # Update the request status to DONE
                 RequestHandler.update_request(
                     bundle_uuids=bundle_uuids,
                     request_id=request_id,
                     job_id=job_id,
-                    status=RequestStatus.ABORT,
-                    reason_to_abort=traceback.format_exc()
+                    status=RequestStatus.DONE,
+                    time_spent_to_complete="{} seconds".format(end_time - start_time)
                 )
 
-                raise e
-
         except Exception as e:
+            temp_files = os.listdir(TEMP_DIR)
+            logger.info("tmp directory contains: {}".format(str(temp_files)))
+
+            # Update the request status to ABORT
+            RequestHandler.update_request(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id,
+                job_id=job_id,
+                status=RequestStatus.ABORT,
+                reason_to_abort=traceback.format_exc()
+            )
+
             raise e
 
 
