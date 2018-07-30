@@ -11,6 +11,5 @@ terraform/**/.terraform/
 deployment/
 target/
 *.tfvars
-config.json
 notebooks/.ipynb_checkpoints/
 chalice/vendor/

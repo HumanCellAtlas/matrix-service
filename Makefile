@@ -1,3 +1,5 @@
+PROJECT_CONFIG_SECRET = matrix-service/dev/terraform.tfvars
+
 default: all
 
 .PHONY: install
@@ -13,10 +15,14 @@ test:
 .PHONY: secrets
 secrets:
 	aws secretsmanager get-secret-value \
-		--secret-id matrix-service/dev/terraform.tfvars | \
+		--secret-id $(PROJECT_CONFIG_SECRET) | \
 		jq -r .SecretString | \
 		python -m json.tool | \
 		tee terraform/terraform.tfvars
+
+.PHONY: upload-secrets
+upload-secrets:
+	python scripts/upload_project_secrets.py $(PROJECT_CONFIG_SECRET)
 
 .PHONY: build
 build:
@@ -31,7 +37,7 @@ deploy:
 	@read -p "Enter the version number of the service to deploy: " app_version; \
 	aws s3 cp target/deployment.zip s3://$(shell aws secretsmanager get-secret-value --secret-id \
 	matrix-service/dev/terraform.tfvars | jq -r .SecretString | jq -r .hca_ms_deployment_bucket)\
-	/v$$app_version/deployment.zip; 
+	/v$$app_version/deployment.zip;
 	cd terraform && terraform init && terraform apply
 	rm -rf target
 
