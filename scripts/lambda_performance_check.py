@@ -8,11 +8,12 @@ import boto3
 import requests
 
 from typing import List
-from config import BUNDLE_UUIDS_PATH, DATA_DIR
+from config import BUNDLE_UUIDS_PATH
 from scripts.lambda_log_client import get_lambda_status
 
-matrix_service_url = "https://6gbgppoyi5.execute-api.us-east-1.amazonaws.com/dev/matrices/concat"
+matrix_service_url = "https://brp95mk7ig.execute-api.us-east-1.amazonaws.com/dev/matrices/concat"
 log_group = "/aws/lambda/matrix-service-sqs-listener"
+out_dir = "../data/v1.0.0"
 
 
 def get_random_existing_bundle_uuids(uuids_num: int) -> List[str]:
@@ -92,7 +93,7 @@ def measure_lambda_duration(memory_size: int, cell_num: int, request_num: int, w
 
     print("Saving time information......")
 
-    _, path = tempfile.mkstemp(dir=DATA_DIR, suffix=".json", prefix="time_info_memory_{}_cell_{}_"
+    _, path = tempfile.mkstemp(dir=out_dir, suffix=".json", prefix="time_info_memory_{}_cell_{}_"
                                .format(memory_size, cell_num))
 
     with open(path, 'w') as f:
@@ -120,7 +121,7 @@ def get_lamb_info(memory_size):
         except Exception:
             continue
 
-        _, path = tempfile.mkstemp(dir=DATA_DIR, suffix=".json", prefix="lambda_info_memory_{}_cell_{}_"
+        _, path = tempfile.mkstemp(dir=out_dir, suffix=".json", prefix="lambda_info_memory_{}_cell_{}_"
                                    .format(memory_size, cell_num))
 
         result = {
@@ -147,7 +148,7 @@ def get_lamb_info(memory_size):
 
 
 if __name__ == '__main__':
-    memory_sizes = [256, 512, 1024, 2048, 3008]
+    memory_sizes = [128, 256, 512, 1024, 2048, 3008]
     lambda_client = boto3.client('lambda')
 
     for memory_size in memory_sizes:
@@ -157,4 +158,4 @@ if __name__ == '__main__':
         )
         assert response['MemorySize'] == memory_size
         get_lamb_info(memory_size)
-        time.sleep(60)
+        time.sleep(200)
