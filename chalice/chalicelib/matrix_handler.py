@@ -114,20 +114,15 @@ class MatrixHandler(ABC):
         :param job_id: Job id of the request.
         """
         try:
-            logger.info("Concatenate matrices for request_id: {}".format(request_id))
-
-            # Print out the current usage of /tmp/ directory
-            call(["df", "-H", TEMP_DIR])
-
-            logger.info("tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
+            logger.info(f'Concatenate matrices for request_id: {request_id}')
+            logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}')
+            logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
 
             # Clean /tmp folder before each run
-            call('rm -rf /tmp/*', shell=True)
-
-            logger.info("After cleaning, /tmp directory contains: {}".format(str(os.listdir(TEMP_DIR))))
+            clean_dir(TEMP_DIR)
 
             # Update the request status to RUNNING
-            RequestHandler.update_request(
+            RequestHandler.put_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
                 job_id=job_id,
@@ -135,30 +130,36 @@ class MatrixHandler(ABC):
             )
 
             # Create a temp directory for storing all temp files
-            with tempfile.TemporaryDirectory(dir=TEMP_DIR, prefix="{}_".format(request_id)) as temp_dir:
+            with tempfile.TemporaryDirectory(dir=TEMP_DIR, prefix=f'{request_id}_') as temp_dir:
 
-                start_time = time.time()
+                logger.info(f'Before download, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
+                logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
+                logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
                 mtx_paths = self._download_mtx(bundle_uuids=bundle_uuids, temp_dir=temp_dir)
-                _, merged_mtx_path = tempfile.mkstemp(dir=temp_dir, prefix=request_id, suffix=self._suffix)
+                _, merged_mtx_path = tempfile.mkstemp(dir=temp_dir, prefix=request_id, suffix=self.suffix)
+
+                logger.info(f'Before concat, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
+                logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
+                logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
                 self._concat_mtx(mtx_paths=mtx_paths, out_file=merged_mtx_path)
-                self._upload_mtx(path=merged_mtx_path, request_id=request_id)
-                end_time = time.time()
+
+                logger.info(f'Before upload, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
+                logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
+                logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
+                _, merged_mtx_url = self._upload_mtx(path=merged_mtx_path)
 
                 # Update the request status to DONE
-                RequestHandler.update_request(
+                RequestHandler.put_request(
                     bundle_uuids=bundle_uuids,
                     request_id=request_id,
                     job_id=job_id,
                     status=RequestStatus.DONE,
-                    time_spent_to_complete="{} seconds".format(end_time - start_time)
+                    merged_mtx_url=merged_mtx_url
                 )
 
         except Exception as e:
-            temp_files = os.listdir(TEMP_DIR)
-            logger.info("tmp directory contains: {}".format(str(temp_files)))
-
             # Update the request status to ABORT
-            RequestHandler.update_request(
+            RequestHandler.put_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
                 job_id=job_id,
@@ -179,8 +180,11 @@ class LoomMatrixHandler(MatrixHandler):
 
     def _concat_mtx(self, mtx_paths: List[str], out_file: str) -> None:
         try:
-            logger.info("Combining matrices to %s.", out_file)
+            logger.info(f'Combining matrices to {out_file}.')
             loompy.combine(mtx_paths, out_file)
-            logger.info("Done combining.")
+            logger.info(f'Done combining.')
         except Exception as e:
+            logger.info(f'Exception caught, the size of tmp directory is: {get_size(TEMP_DIR)} bytes')
+            logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
+            logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}')
             raise e
