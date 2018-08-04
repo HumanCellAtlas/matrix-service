@@ -10,11 +10,11 @@ CONFIG_TEMPLATE = {
   "aws_region": "",
   "hca_ms_deployment_bucket": "",
   "hca_ms_merged_mtx_bucket": "",
-  "hca_ms_request_bucket": "",
   "ms_sqs_queue": "",
   "ms_dead_letter_queue": "",
   "ms_secret_name": "",
-  "hca_host": ""
+  "hca_host": "",
+  "ms_dynamodb": ""
 }
 
 if __name__ == "__main__":
