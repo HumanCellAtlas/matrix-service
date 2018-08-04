@@ -4,7 +4,6 @@ import traceback
 import unittest
 
 from hca.util import SwaggerAPIException
-from chalicelib import rand_uuid
 from chalicelib.request_handler import RequestHandler
 from cloud_blobstore import BlobNotFoundError
 from chalicelib.config import MERGED_MTX_BUCKET_NAME, s3_blob_store
@@ -73,21 +72,20 @@ class TestMatrixHandler(unittest.TestCase):
         """
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            key = rand_uuid()
             _, path = tempfile.mkstemp(dir=temp_dir)
             mtx_handler = LoomMatrixHandler()
-            mtx_handler._upload_mtx(path, key)
+            key, _ = mtx_handler._upload_mtx(path)
 
         self.assertFalse(os.path.exists(temp_dir))
 
         try:
-            s3_blob_store.get(bucket=MERGED_MTX_BUCKET_NAME, key=key + ".loom")
+            s3_blob_store.get(bucket=MERGED_MTX_BUCKET_NAME, key=key)
         except BlobNotFoundError:
             error_msg = traceback.format_exc()
             self.fail(error_msg)
 
         # Delete the key after checking
-        s3_blob_store.delete(bucket=MERGED_MTX_BUCKET_NAME, key=key + ".loom")
+        s3_blob_store.delete(bucket=MERGED_MTX_BUCKET_NAME, key=key)
 
 
 if __name__ == '__main__':

@@ -85,28 +85,25 @@ class MatrixHandler(ABC):
         :param out_file: Path to the concatenated matrix.
         """
 
-    def _upload_mtx(self, path: str, request_id: str):
+    def _upload_mtx(self, path: str) -> (str, str):
         """
         Upload a matrix file into an s3 bucket.
         :param path: Path of the merged matrix.
-        :param request_id: Merge request id.
+        :return: Uploaded merged matrix url and the s3 key.
         """
-        logger.info("%s", "Uploading \"{}\" to s3 bucket: \"{}\".".format(
-            os.path.basename(path),
-            MERGED_MTX_BUCKET_NAME
-        ))
+        logger.info(f'Uploading \"{os.path.basename(path)}\" to s3 bucket: \"{MERGED_MTX_BUCKET_NAME}\".')
+
+        key = f'{rand_uuid()}{self.suffix}'
 
         with open(path, "rb") as merged_matrix:
-            try:
-                s3_blob_store.upload_file_handle(
-                    bucket=MERGED_MTX_BUCKET_NAME,
-                    key=request_id + self._suffix,
-                    src_file_handle=merged_matrix
-                )
-            except Exception as e:
-                raise e
+            s3_blob_store.upload_file_handle(
+                bucket=MERGED_MTX_BUCKET_NAME,
+                key=key,
+                src_file_handle=merged_matrix
+            )
 
-        logger.info("Done uploading.")
+        merged_mtx_url = f's3://{MERGED_MTX_BUCKET_NAME}/{key}'
+        return key, merged_mtx_url
 
     def run_merge_request(self, bundle_uuids: List[str], request_id: str, job_id: str) -> None:
         """
