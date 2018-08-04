@@ -1,15 +1,13 @@
 import os
 import tempfile
-import time
 import traceback
 import loompy
 
 from abc import ABC, abstractmethod
-from subprocess import call
 from typing import List
-from chalicelib import get_mtx_paths
-from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, hca_client, \
-    s3_blob_store, logger
+from chalicelib import get_mtx_paths, get_size, rand_uuid, clean_dir
+from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, s3_blob_store, logger
+from chalicelib.hca_download_worker import HcaDownloadWorker
 from chalicelib.request_handler import RequestHandler, RequestStatus
 
 
@@ -21,6 +19,10 @@ class MatrixHandler(ABC):
     def __init__(self, suffix) -> None:
         self._suffix = suffix
 
+    @property
+    def suffix(self):
+        return self._suffix
+
     def _download_mtx(self, bundle_uuids: List[str], temp_dir: str) -> List[str]:
         """
         Filter for the matrix files within bundles, and download them locally.
@@ -28,28 +30,50 @@ class MatrixHandler(ABC):
         :param temp_dir: A temporary directory for storing all downloaded matrix files.
         :return: A list of downloaded matrix files paths.
         """
-        # Filter and download only matrices file that satisfies a specific suffix within bundles
-        for bundle_uuid in bundle_uuids:
-            dest_name = os.path.join(temp_dir, bundle_uuid)
+        jobs_pool = list(bundle_uuids)
+        hca_download_workers = dict()
+        parallelism = 4
 
-            try:
-                logger.info("Downloading matrices from bundle, {}, into {}."
-                            .format(bundle_uuid, dest_name))
+        # Create and assign worker to work on a job only when needed
+        while len(jobs_pool):
+            wip_jobs = list(hca_download_workers.keys())
 
-                hca_client.download(
-                    bundle_uuid=bundle_uuid,
-                    replica="aws",
-                    dest_name=dest_name,
-                    metadata_files=(),
-                    data_files=("*{}".format(self._suffix),)
-                )
-            except Exception as e:
-                raise e
+            for wip_job in wip_jobs:
+                hca_download_worker = hca_download_workers[wip_job]
+
+                # Catch the exception happens in the worker
+                if hca_download_worker.exception is not None:
+                    logger.info(f'Exception caught, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
+                    logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
+                    raise hca_download_worker.exception
+
+                # Kick off the worker from the list when it finishes its work
+                if hca_download_worker.exitcode is not None:
+                    del hca_download_workers[wip_job]
+
+            # Assign jobs to workers until reaching the maximum parallelism or there is no more job left.
+            while len(jobs_pool) > 0 and len(hca_download_workers) < parallelism:
+                job = jobs_pool.pop()
+
+                dest_name = os.path.join(temp_dir, job)
+                keywords = {
+                    "bundle_uuid": job,
+                    "replica": "aws",
+                    "dest_name": dest_name,
+                    "metadata_files": (),
+                    "data_files": (f'*{self.suffix}',)
+                }
+
+                hca_download_workers[job] = HcaDownloadWorker(**keywords)
+                hca_download_workers[job].start()
+
+        for hca_download_worker in hca_download_workers.values():
+            hca_download_worker.join()
 
         # Get all downloaded mtx paths from temp_dir
-        local_mtx_paths = get_mtx_paths(temp_dir, self._suffix)
+        local_mtx_paths = get_mtx_paths(temp_dir, self.suffix)
 
-        logger.info("Done downloading %d matrix files.", len(local_mtx_paths))
+        logger.info(f'Done downloading {len(local_mtx_paths)} matrix files.')
 
         return local_mtx_paths
 
