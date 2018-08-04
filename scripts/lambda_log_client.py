@@ -38,7 +38,10 @@ def make_query_func(client, log_group, start_time, end_time):
         while token is not None:
             response = client.filter_log_events(
                 logGroupName=log_group,
-                nextToken=token
+                startTime=start_time,
+                endTime=end_time,
+                nextToken=token,
+                filterPattern=filter_pattern
             )
             new_messages, token = parse_response(response)
             messages += new_messages
