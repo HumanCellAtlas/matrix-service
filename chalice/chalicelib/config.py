@@ -29,6 +29,9 @@ hca_client.host = hca_client_host
 # Cloud_blobstore client
 s3_blob_store = S3BlobStore(s3_client=boto3.client("s3"))
 
+# Faked DSS client
+faked_dss_client = boto3.resource('s3').Bucket('matrix-service-faked-dss')
+
 # Logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -40,30 +43,17 @@ secret_value = json.loads(secret.value)
 # S3 Bucket for storing merged matrices
 MERGED_MTX_BUCKET_NAME = secret_value['hca_ms_merged_mtx_bucket']
 
-# S3 Bucket for storing matrices concatenation request status
-REQUEST_STATUS_BUCKET_NAME = secret_value['hca_ms_request_bucket']
-
 # S3 Bucket for staging sample matrices
 SAMPLE_MATRICES_BUCKET_NAME = secret_value['sample_matrices_bucket_name']
 
 # SQS Queue for storing matrices concatenation requests
 MS_SQS_QUEUE_NAME = secret_value['ms_sqs_queue']
 
-# Request template
-REQUEST_TEMPLATE = {
-    "bundle_uuids": [],
-    "status": "",
-    "request_id": "",
-    "job_id": "",
-    "merged_mtx_url": "",
-    "time_spent_to_complete": "",
-    "reason_to_abort": ""
-}
+# DynamoDB table for storing request status
+REQUEST_STATUS_TABLE = secret_value['ms_dynamodb']
 
 # SQS Queue Message template
 SQS_QUEUE_MSG = {
     "bundle_uuids": [],
     "job_id": ""
 }
-
-JSON_SUFFIX = ".json"

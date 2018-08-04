@@ -9,20 +9,14 @@ resource "aws_iam_user_policy" "matrix_service_test_policy" {
         {
             "Effect": "Allow",
             "Action": [
-                "s3:PutObject",
-                "s3:GetObject",
                 "sqs:GetQueueUrl",
                 "sqs:DeleteMessage",
                 "secretsmanager:GetSecretValue",
                 "secretsmanager:DescribeSecret",
                 "sqs:ReceiveMessage",
-                "sqs:SendMessage",
-                "s3:ListBucket",
-                "s3:DeleteObject"
+                "sqs:SendMessage"
             ],
             "Resource": [
-                "arn:aws:s3:::${var.hca_ms_request_bucket}",
-                "arn:aws:s3:::${var.hca_ms_request_bucket}/*",
                 "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
                 "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
             ]
@@ -35,6 +29,21 @@ resource "aws_iam_user_policy" "matrix_service_test_policy" {
                 "s3:DeleteObject"
             ],
             "Resource": "arn:aws:s3:::${var.hca_ms_merged_mtx_bucket}/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
+                "arn:aws:dynamodb:*:*:table/*/index/*"
+            ]
         }
     ]
 }

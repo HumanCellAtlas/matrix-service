@@ -25,26 +25,21 @@ class SqsQueueHandler:
         """
         job_id = rand_uuid()
 
-        logger.info("Request ID({}): Initialize the request with job id({})"
-                    .format(request_id, job_id))
+        logger.info(f'Request ID({request_id}): Initialize the request with job id({job_id})')
 
-        try:
-            RequestHandler.update_request(
-                bundle_uuids=bundle_uuids,
-                request_id=request_id,
-                job_id=job_id,
-                status=RequestStatus.INITIALIZED
-            )
-        except Exception as e:
-            raise e
+        RequestHandler.put_request(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id,
+            job_id=job_id,
+            status=RequestStatus.INITIALIZED
+        )
 
         # Create message to send to the SQS Queue
         msg = SQS_QUEUE_MSG.copy()
         msg["bundle_uuids"] = bundle_uuids
         msg["job_id"] = job_id
 
-        logger.info("Request ID({}): Send request message({}) to SQS Queue."
-                    .format(request_id, str(msg)))
+        logger.info(f'Request ID({request_id}): Send request message({msg}) to SQS Queue.')
 
         msg_str = json.dumps(msg, sort_keys=True)
 

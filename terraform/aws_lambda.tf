@@ -16,6 +16,7 @@ resource "aws_lambda_function" "matrix_service_sqs_handler" {
   description   = "Matrix Service SQS Listener Lambda Function"
   handler       = "app.ms_sqs_queue_listener"
   role          = "${aws_iam_role.matrix_service_lambda_role.arn}"
+  memory_size   = 1024
   timeout       = 300
   runtime       = "python3.6"
 }
@@ -94,12 +95,26 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
             ],
             "Resource": [
                 "arn:aws:s3:::${var.hca_ms_merged_mtx_bucket}",
-                "arn:aws:s3:::${var.hca_ms_request_bucket}",
+                "arn:aws:s3:::matrix-service-faked-dss",
                 "arn:aws:s3:::${var.hca_ms_merged_mtx_bucket}/*",
-                "arn:aws:s3:::${var.hca_ms_request_bucket}/*",
+                "arn:aws:s3:::matrix-service-faked-dss/*",
                 "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
                 "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}",
                 "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:UpdateItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
+                "arn:aws:dynamodb:*:*:table/*/index/*"
             ]
         }
     ]

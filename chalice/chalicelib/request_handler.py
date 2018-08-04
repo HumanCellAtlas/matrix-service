@@ -1,13 +1,9 @@
 import hashlib
-import json
-import tempfile
 import boto3
 
 from enum import Enum
 from typing import List
-from cloud_blobstore import BlobNotFoundError
-from chalicelib.config import REQUEST_STATUS_BUCKET_NAME, JSON_SUFFIX, \
-    MERGED_MTX_BUCKET_NAME, REQUEST_TEMPLATE, TEMP_DIR, s3_blob_store
+from chalicelib.config import REQUEST_STATUS_TABLE
 
 
 class RequestStatus(Enum):
@@ -18,7 +14,8 @@ class RequestStatus(Enum):
 
 
 class RequestHandler:
-    s3 = boto3.resource("s3")
+    _dynamodb = boto3.resource('dynamodb')
+    _request_status_table = _dynamodb.Table(REQUEST_STATUS_TABLE)
 
     @staticmethod
     def generate_request_id(bundle_uuids: List[str]) -> str:
@@ -36,93 +33,86 @@ class RequestHandler:
         return m.hexdigest()
 
     @staticmethod
-    def get_request_field(request_id: str, fieldname: str) -> str:
+    def get_request_attribute(request_id: str, attribute_name: str) -> str:
         """
-        Get a field value from a request status file in s3.
+        Get a attribute value from the request status table based on the request_id.
         :param request_id: Matrices concatenation request id.
-        :param fieldname: Field name in the request body
-        :return: Corresponding field value in the request body.
+        :param attribute_name: Target attribute name.
+        :return: Corresponding attribute value.
         """
-        key = request_id + JSON_SUFFIX
-
-        try:
-            content = s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key)
-            value = json.loads(content)[fieldname]
-            return value
-        except Exception as e:
-            raise e
+        response = RequestHandler._request_status_table.get_item(
+            Key={
+                'request_id': request_id,
+            },
+            ProjectionExpression=f'{attribute_name}',
+            ConsistentRead=True
+        )
+        return response['Item'][attribute_name]
 
     @staticmethod
-    def get_request_body(request_id: str) -> dict:
+    def get_request_status(request_id: str) -> str:
         """
-        Get request body from a request status file in s3.
+        Get request status based on the request id.
         :param request_id: Matrices concatenation request id.
-        :return: Request body.
+        :return: Request status.
         """
-        key = request_id + JSON_SUFFIX
-
-        try:
-            content = s3_blob_store.get(bucket=REQUEST_STATUS_BUCKET_NAME, key=key)
-            body = json.loads(content)
-            return body
-        except Exception as e:
-            raise e
+        return RequestHandler.get_request_attribute(request_id=request_id, attribute_name='request_status')
 
     @staticmethod
-    def update_request(
-            bundle_uuids: List[str],
-            request_id: str,
-            job_id: str,
-            status: RequestStatus,
-            time_spent_to_complete="",
-            reason_to_abort="") -> None:
+    def get_request_job_id(request_id: str) -> str:
         """
-        Update the request status json file in s3 bucket if exists. Otherwise,
-        create a new status file.
+        Get request job id based on the request id.
+        :param request_id: Matrices concatenation request id.
+        :return: Request job id.
+        """
+        return RequestHandler.get_request_attribute(request_id=request_id, attribute_name='job_id')
 
+    @staticmethod
+    def get_request_attributes(request_id: str) -> dict:
+        """
+        Get all attributes values from request status table based on the request_id.
+        :param request_id: Matrices concatenation request id.
+        :return: All attributes values.
+        """
+        response = RequestHandler._request_status_table.get_item(
+            Key={
+                'request_id': request_id
+            },
+            ConsistentRead=True
+        )
+        return response['Item']
+
+    @staticmethod
+    def put_request(bundle_uuids: List[str], request_id: str, job_id: str, status: RequestStatus,
+                    reason_to_abort="undefined", merged_mtx_url="undefined") -> None:
+        """
+        Update a request status items in the request status table if exists. Otherwise, create a new item.
         :param bundle_uuids: A list of bundle uuids.
         :param request_id: Matrices concatenation request id.
         :param job_id: Matrices concatenation job id.
         :param status: Request status to update.
-        :param time_spent_to_complete: Time spent to complete the concatenation job.
         :param reason_to_abort: Request abort reason.
+        :param merged_mtx_url: S3 url for accessing the merged matrix.
         """
-        request_key = request_id + JSON_SUFFIX
+        RequestHandler._request_status_table.put_item(
+            Item={
+                'request_id': request_id,
+                'job_id': job_id,
+                'bundle_uuids': bundle_uuids,
+                'request_status': status.name,
+                'reason_to_abort': reason_to_abort,
+                'merged_mtx_url': merged_mtx_url
+            }
+        )
 
-        # Check whether request status file exists in the s3 bucket; Create one if not.
-        try:
-            RequestHandler.get_request_body(request_id=request_id)
-        except BlobNotFoundError:
-            with tempfile.TemporaryFile(dir=TEMP_DIR, suffix=JSON_SUFFIX) as f:
-                s3_blob_store.upload_file_handle(
-                    bucket=REQUEST_STATUS_BUCKET_NAME,
-                    key=request_key,
-                    src_file_handle=f
-                )
-        except Exception as e:
-            raise e
-
-        # Create a request based on a template dict
-        request = REQUEST_TEMPLATE.copy()
-        request["bundle_uuids"] = bundle_uuids
-        request["status"] = status.name
-        request["request_id"] = request_id
-        request["job_id"] = job_id
-        request["time_spent_to_complete"] = time_spent_to_complete
-        request["reason_to_abort"] = reason_to_abort
-
-        if status == RequestStatus.DONE:
-            # Key for merged matrix stored in s3 bucket
-            mtx_key = request_id + ".loom"
-
-            mtx_url = "s3://{}/{}".format(
-                MERGED_MTX_BUCKET_NAME,
-                mtx_key
-            )
-            request["merged_mtx_url"] = mtx_url
-
-        try:
-            s3_request_obj = RequestHandler.s3.Object(REQUEST_STATUS_BUCKET_NAME, request_key)
-            s3_request_obj.put(Body=json.dumps(request))
-        except Exception as e:
-            raise e
+    @staticmethod
+    def delete_request(request_id: str) -> None:
+        """
+        Delete the item from the request status table based on the request_id.
+        :param request_id: Matrices concatenation request id.
+        """
+        RequestHandler._request_status_table.delete_item(
+            Key={
+                'request_id': request_id
+            }
+        )
