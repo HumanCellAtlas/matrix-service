@@ -1,8 +1,8 @@
 import json
 import traceback
 
-from chalice import Chalice, NotFoundError, BadRequestError
-from cloud_blobstore import BlobNotFoundError
+from functools import wraps
+from chalice import Chalice, NotFoundError, ChaliceViewError
 from chalicelib.config import logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
@@ -15,12 +15,26 @@ app.debug = True
 mtx_handler = LoomMatrixHandler()
 
 
+def api_endpoint_decorator(api_endpoint_func):
+    @wraps(api_endpoint_func)
+    def api_endpoint_wrapper(*args, **kwargs):
+        try:
+            return api_endpoint_func(*args, **kwargs)
+        except KeyError:
+            raise NotFoundError(f'{kwargs} has not been initialized.')
+        except:
+            raise ChaliceViewError(traceback.format_exc())
+    return api_endpoint_wrapper
+
+
 @app.route('/matrices/health', methods=['GET'])
+@api_endpoint_decorator
 def health():
     return {'status': 'OK'}
 
 
 @app.route('/matrices/concat/{request_id}', methods=['GET'])
+@api_endpoint_decorator
 def check_request_status(request_id):
     """
     Check the status of a matrices concatenation request based on
@@ -28,18 +42,12 @@ def check_request_status(request_id):
 
     :param request_id: Matrices concatenation request ID.
     """
-    try:
-        merge_request_body = RequestHandler.get_request_body(request_id=request_id)
-        return merge_request_body
-
-    except BlobNotFoundError:
-        raise NotFoundError("Request({}) has not been initialized.".format(request_id))
-
-    except:
-        raise BadRequestError(traceback.format_exc())
+    merge_request_body = RequestHandler.get_request_attributes(request_id=request_id)
+    return merge_request_body
 
 
 @app.route('/matrices/concat', methods=['POST'])
+@api_endpoint_decorator
 def concat_matrices():
     """
     Concat matrices within bundles based on bundles uuid
@@ -48,27 +56,26 @@ def concat_matrices():
     bundle_uuids = request.json_body
     request_id = RequestHandler.generate_request_id(bundle_uuids)
 
-    logger.info("Request ID({}): Received request for concatenating matrices within bundles {};"
-                .format(request_id, str(bundle_uuids)))
+    logger.info(f'Request ID({request_id}): Received request for concatenating matrices within bundles {bundle_uuids}.')
 
     try:
-        merge_request_status = RequestHandler.get_request_field(request_id=request_id, fieldname='status')
+        merge_request_status = RequestHandler.get_request_status(request_id=request_id)
 
-        logger.info("Request({}) status: {}.".format(request_id, merge_request_status))
+        logger.info(f'Request({request_id}) status: {merge_request_status}.')
 
         # Send the request to sqs queue if the request has been abort before
-        if merge_request_status == RequestStatus.ABORT:
-            SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
+        if merge_request_status == RequestStatus.ABORT.name:
+            SqsQueueHandler.send_msg_to_ms_queue(
+                bundle_uuids=bundle_uuids,
+                request_id=request_id
+            )
 
-    except BlobNotFoundError:
-        try:
-            # Send the request to sqs queue if the request has not been made before
-            SqsQueueHandler.send_msg_to_ms_queue(bundle_uuids=bundle_uuids, request_id=request_id)
-        except:
-            return BadRequestError(traceback.format_exc())
-
-    except:
-        raise BadRequestError(traceback.format_exc())
+    # Request does not exist
+    except KeyError:
+        SqsQueueHandler.send_msg_to_ms_queue(
+            bundle_uuids=bundle_uuids,
+            request_id=request_id
+        )
 
     return {"request_id": request_id}
 
@@ -81,7 +88,7 @@ def ms_sqs_queue_listener(event, context):
     based on the message content.
     :param event: SQS Queue event.
     """
-    logger.info("Handling {} matrix service SQS queue events......".format(len(event["Records"])))
+    logger.info(f'Handling {len(event["Records"])} matrix service SQS queue events......')
 
     for record in event["Records"]:
         record_body = json.loads(record["body"])
@@ -89,7 +96,7 @@ def ms_sqs_queue_listener(event, context):
         request_id = RequestHandler.generate_request_id(bundle_uuids)
 
         """
-        Check whether job id has a corresponding match in s3:
+        Check whether job id has a corresponding match in request item in the dynamodb table:
         If yes, then proceed the matrices concatenation.
         If no, it means either of the following cases happens:
           1. Message sent to SQS Queue has been corrupted; As a result,
@@ -104,7 +111,7 @@ def ms_sqs_queue_listener(event, context):
         set of matrices.
         """
         try:
-            job_id = RequestHandler.get_request_field(request_id=request_id, fieldname='job_id')
+            job_id = RequestHandler.get_request_job_id(request_id=request_id)
 
             # Stall concatenation process if any of these cases described above happens
             if not job_id or job_id != record_body["job_id"]:
@@ -115,11 +122,10 @@ def ms_sqs_queue_listener(event, context):
                 request_id=request_id,
                 job_id=record_body["job_id"]
             )
-
         except:
             logger.exception(traceback.format_exc())
 
-    logger.info("Done.")
+    logger.info(f'Done.')
 
 
 def ms_dead_letter_queue_listener(event, context):
@@ -136,12 +142,12 @@ def ms_dead_letter_queue_listener(event, context):
         request_id = RequestHandler.generate_request_id(bundle_uuids)
 
         try:
-            RequestHandler.update_request(
+            RequestHandler.put_request(
                 bundle_uuids=bundle_uuids,
                 request_id=request_id,
                 job_id=job_id,
                 status=RequestStatus.ABORT,
-                reason_to_abort="Lambda function timed out."
+                reason_to_abort=f'Lambda function timed out.'
             )
         except:
             logger.exception(traceback.format_exc())
