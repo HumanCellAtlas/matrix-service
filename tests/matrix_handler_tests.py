@@ -3,7 +3,6 @@ import tempfile
 import traceback
 import unittest
 
-from hca.util import SwaggerAPIException
 from chalicelib.request_handler import RequestHandler
 from cloud_blobstore import BlobNotFoundError
 from chalicelib.config import MERGED_MTX_BUCKET_NAME, s3_blob_store
@@ -39,7 +38,7 @@ class TestMatrixHandler(unittest.TestCase):
         mtx_handler = LoomMatrixHandler()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            self.assertRaises(SwaggerAPIException, mtx_handler._download_mtx, invalid_bundle_uuids, temp_dir)
+            self.assertRaises(Exception, mtx_handler._download_mtx, invalid_bundle_uuids, temp_dir)
 
         self.assertFalse(os.path.exists(temp_dir))
 
