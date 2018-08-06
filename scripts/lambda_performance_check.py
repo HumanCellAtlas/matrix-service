@@ -2,7 +2,7 @@ import datetime
 import json
 import multiprocessing
 import random
-import tempfile
+import sys
 import time
 import boto3
 import requests
@@ -13,7 +13,9 @@ from scripts.lambda_log_client import get_lambda_status
 
 matrix_service_url = "https://brp95mk7ig.execute-api.us-east-1.amazonaws.com/dev/matrices/concat"
 log_group = "/aws/lambda/matrix-service-sqs-listener"
-out_dir = "../data/v1.0.0"
+
+s3 = boto3.resource('s3')
+s3_bucket_name = 'matrix-service-performance-data'
 
 
 def get_random_existing_bundle_uuids(uuids_num: int) -> List[str]:
@@ -30,6 +32,12 @@ def get_random_existing_bundle_uuids(uuids_num: int) -> List[str]:
     return bundle_uuids_subset
 
 
+def get_random_existing_faked_bundle_uuids(uuids_num: int) -> List[str]:
+    results = random.sample(range(1, 1000), uuids_num)
+    results = [str(result) for result in results]
+    return results
+
+
 def wait_job_to_complete(request_id: str) -> None:
     """
     Wait for a matrices-concatenation request to complete.
@@ -38,12 +46,12 @@ def wait_job_to_complete(request_id: str) -> None:
     """
     for _ in range(10):
         r = requests.get(matrix_service_url + "/" + request_id)
-        if r.status_code == 200 and r.json()["status"] == "DONE":
+        if r.status_code == 200 and r.json()["request_status"] == "DONE":
             return
-        time.sleep(30)
+        time.sleep(20)
 
 
-def measure_lambda_duration(memory_size: int, cell_num: int, request_num: int, wait_time: int):
+def measure_lambda_duration(memory_size: int, cell_num: int, request_num: int, wait_time: int, s3_dir: str):
     """
     Measure average duration for the lambda function on concatenating n 23465 * 1 dimensional matrices.
     Default matrix size: 23465 * 1, which means one matrix corresponds to one cell.
@@ -51,6 +59,7 @@ def measure_lambda_duration(memory_size: int, cell_num: int, request_num: int, w
     :param cell_num: Number of cells to concatenate.
     :param request_num: Number of concatenation requests to make.
     :param wait_time: Time to wait between sending each request.
+    :param s3_dir: S3 dirname for storing result data.
     """
     request_ids = []
     jobs = []
@@ -62,6 +71,7 @@ def measure_lambda_duration(memory_size: int, cell_num: int, request_num: int, w
     for i in range(request_num):
         print("Send {} request.".format(i + 1))
         data = get_random_existing_bundle_uuids(cell_num)
+        # data = get_random_existing_faked_bundle_uuids(cell_num)
         r = requests.post(matrix_service_url, json=data)
         if r.status_code != 200:
             continue
@@ -93,36 +103,32 @@ def measure_lambda_duration(memory_size: int, cell_num: int, request_num: int, w
 
     print("Saving time information......")
 
-    _, path = tempfile.mkstemp(dir=out_dir, suffix=".json", prefix="time_info_memory_{}_cell_{}_"
-                               .format(memory_size, cell_num))
-
-    with open(path, 'w') as f:
-        json.dump(results, f)
+    s3_object = s3.Object(s3_bucket_name, f'{s3_dir}/time_info_memory_{memory_size}_cell_{cell_num}.json')
+    s3_object.put(Body=json.dumps(results))
 
     print("Done")
 
     return start_time, end_time
 
 
-def get_lamb_info(memory_size):
+def get_lamb_info(memory_size: int, s3_dir: str):
     """
     Get lambda running info on a particular memory size lambda instance.
     :param memory_size: Lambda memory size.
+    :param s3_dir: S3 dirname for storing result data.
     """
-    for cell_num in range(100, 3000, 50):
+    for cell_num in range(100, 1000, 50):
         start_time, end_time = measure_lambda_duration(
             memory_size=memory_size,
             cell_num=cell_num,
             request_num=20,
-            wait_time=60
+            wait_time=10,
+            s3_dir=s3_dir
         )
         try:
             lambda_info = get_lambda_status(log_group=log_group, start_time=start_time, end_time=end_time)
         except Exception:
             continue
-
-        _, path = tempfile.mkstemp(dir=out_dir, suffix=".json", prefix="lambda_info_memory_{}_cell_{}_"
-                                   .format(memory_size, cell_num))
 
         result = {
             "memory": memory_size,
@@ -131,8 +137,8 @@ def get_lamb_info(memory_size):
             "info": lambda_info
         }
 
-        with open(path, 'w') as f:
-            json.dump(result, f)
+        s3_object = s3.Object(s3_bucket_name, f'{s3_dir}/lambda_info_memory_{memory_size}_cell_{cell_num}_.json')
+        s3_object.put(Body=json.dumps(result))
 
         error_count = 0
 
@@ -144,10 +150,11 @@ def get_lamb_info(memory_size):
         if float(error_count) / float(len(lambda_info)) >= 0.8:
             return
 
-        time.sleep(60)
+        time.sleep(30)
 
 
 if __name__ == '__main__':
+    s3_dir = sys.argv[1]
     memory_sizes = [128, 256, 512, 1024, 2048, 3008]
     lambda_client = boto3.client('lambda')
 
@@ -157,5 +164,5 @@ if __name__ == '__main__':
             MemorySize=memory_size
         )
         assert response['MemorySize'] == memory_size
-        get_lamb_info(memory_size)
-        time.sleep(200)
+        get_lamb_info(memory_size, s3_dir)
+        time.sleep(100)

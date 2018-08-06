@@ -13,3 +13,4 @@ target/
 *.tfvars
 notebooks/.ipynb_checkpoints/
 chalice/vendor/
+data/

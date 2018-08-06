@@ -20,6 +20,16 @@ secrets:
 		python -m json.tool | \
 		tee terraform/terraform.tfvars
 
+.PHONY: data
+data:
+	rm -rf data
+	mkdir data
+	aws s3 sync s3://matrix-service-performance-data data/
+
+.PHONY: clean-data
+clean-data:
+	rm -rf data
+
 .PHONY: upload-secrets
 upload-secrets:
 	python scripts/upload_project_secrets.py $(PROJECT_CONFIG_SECRET)
@@ -41,7 +51,6 @@ deploy:
 	cd terraform && terraform init && terraform apply
 	rm -rf target
 
-# Undeploy all aws fixtures
 .PHONY: clean
 clean:
 	aws s3 rb s3://$(shell aws secretsmanager get-secret-value --secret-id \
@@ -51,6 +60,7 @@ clean:
 	rm -rf target
 	rm terraform/terraform.tfvars
 	rm -rf venv
+	rm -rf data
 
 .PHONY: all
 all:
