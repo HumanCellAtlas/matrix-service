@@ -35,7 +35,7 @@ class MatrixHandler(ABC):
         parallelism = 4
 
         # Create and assign worker to work on a job only when needed
-        while len(jobs_pool):
+        while len(jobs_pool) > 0 or len(hca_download_workers) > 0:
             wip_jobs = list(hca_download_workers.keys())
 
             for wip_job in wip_jobs:
@@ -66,9 +66,6 @@ class MatrixHandler(ABC):
 
                 hca_download_workers[job] = HcaDownloadWorker(**keywords)
                 hca_download_workers[job].start()
-
-        for hca_download_worker in hca_download_workers.values():
-            hca_download_worker.join()
 
         # Get all downloaded mtx paths from temp_dir
         local_mtx_paths = get_mtx_paths(temp_dir, self.suffix)
