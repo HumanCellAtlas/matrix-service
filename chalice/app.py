@@ -1,15 +1,16 @@
 import json
 import traceback
+import requests
 
-from functools import wraps
 from botocore.exceptions import ClientError
-from chalice import Chalice, NotFoundError, ChaliceViewError, Response
+from chalice import Chalice, ChaliceViewError, Response
 from chalicelib.config import logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
 from chalicelib import rand_uuid
 
+from chalicelib.error import ApiException, matrix_service_handler
 
 app = Chalice(app_name='matrix-service-api')
 app.debug = True
@@ -18,26 +19,14 @@ app.debug = True
 mtx_handler = LoomMatrixHandler()
 
 
-def api_endpoint_decorator(api_endpoint_func):
-    @wraps(api_endpoint_func)
-    def api_endpoint_wrapper(*args, **kwargs):
-        try:
-            return api_endpoint_func(*args, **kwargs)
-        except KeyError:
-            raise NotFoundError(f'{kwargs} has not been initialized.')
-        except:
-            raise ChaliceViewError(traceback.format_exc())
-    return api_endpoint_wrapper
-
-
 @app.route('/matrices/health', methods=['GET'])
-@api_endpoint_decorator
+@matrix_service_handler
 def health():
     return {'status': 'OK'}
 
 
 @app.route('/matrices/concat/{request_id}', methods=['GET'])
-@api_endpoint_decorator
+@matrix_service_handler
 def check_request_status(request_id):
     """
     Check the status of a matrices concatenation request based on
@@ -45,12 +34,16 @@ def check_request_status(request_id):
 
     :param request_id: Matrices concatenation request ID.
     """
-    merge_request_body = RequestHandler.get_request_attributes(request_id=request_id)
-    return merge_request_body
+    maybe_merge_request_body = RequestHandler.get_request_attributes(request_id=request_id)
+
+    if not maybe_merge_request_body:
+        raise ApiException(status=requests.codes.not_found, code="not_found", title='request id does not exist')
+
+    return maybe_merge_request_body
 
 
 @app.route('/matrices/concat', methods=['POST'])
-@api_endpoint_decorator
+@matrix_service_handler
 def concat_matrices():
     """
     Concat matrices within bundles based on bundles uuid
@@ -133,7 +126,7 @@ def ms_sqs_queue_listener(event, context):
                 request_id=request_id,
                 job_id=record_body["job_id"]
             )
-        except:
+        except Exception as e:
             logger.exception(traceback.format_exc())
 
     logger.info(f'Done.')

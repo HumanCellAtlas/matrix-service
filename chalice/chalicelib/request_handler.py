@@ -1,5 +1,6 @@
 import hashlib
 import boto3
+import typing
 
 from enum import Enum
 from typing import List
@@ -33,7 +34,7 @@ class RequestHandler:
         return m.hexdigest()
 
     @staticmethod
-    def get_request_attribute(request_id: str, attribute_name: str) -> str:
+    def get_request_attribute(request_id: str, attribute_name: str) -> typing.Optional[str]:
         """
         Get a attribute value from the request status table based on the request_id.
         :param request_id: Matrices concatenation request id.
@@ -47,7 +48,7 @@ class RequestHandler:
             ProjectionExpression=f'{attribute_name}',
             ConsistentRead=True
         )
-        return response['Item'][attribute_name]
+        return response['Item'].get(attribute_name)
 
     @staticmethod
     def get_request_status(request_id: str) -> str:
@@ -68,7 +69,7 @@ class RequestHandler:
         return RequestHandler.get_request_attribute(request_id=request_id, attribute_name='job_id')
 
     @staticmethod
-    def get_request_attributes(request_id: str) -> dict:
+    def get_request_attributes(request_id: str) -> typing.Optional[dict]:
         """
         Get all attributes values from request status table based on the request_id.
         :param request_id: Matrices concatenation request id.
@@ -80,7 +81,7 @@ class RequestHandler:
             },
             ConsistentRead=True
         )
-        return response['Item']
+        return response.get('Item')
 
     @staticmethod
     def put_request(bundle_uuids: List[str], request_id: str, job_id: str, status: RequestStatus,
