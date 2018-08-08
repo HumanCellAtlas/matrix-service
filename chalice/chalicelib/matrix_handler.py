@@ -6,9 +6,9 @@ import loompy
 from abc import ABC, abstractmethod
 from typing import List
 from chalicelib import get_mtx_paths, get_size, rand_uuid, clean_dir
-from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, s3_blob_store, logger
-from chalicelib.hca_download_worker import HcaDownloadWorker
+from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, s3_blob_store, logger, hca_client
 from chalicelib.request_handler import RequestHandler, RequestStatus
+from concurrent.futures import ThreadPoolExecutor
 
 
 class MatrixHandler(ABC):
@@ -30,42 +30,25 @@ class MatrixHandler(ABC):
         :param temp_dir: A temporary directory for storing all downloaded matrix files.
         :return: A list of downloaded matrix files paths.
         """
-        jobs_pool = list(bundle_uuids)
-        hca_download_workers = dict()
-        parallelism = 4
+        jobs = []
 
-        # Create and assign worker to work on a job only when needed
-        while len(jobs_pool) > 0 or len(hca_download_workers) > 0:
-            wip_jobs = list(hca_download_workers.keys())
+        for bundle_uuid in bundle_uuids:
+            dest_name = os.path.join(temp_dir, bundle_uuid)
+            keywords = {
+                "bundle_uuid": bundle_uuid,
+                "replica": "aws",
+                "dest_name": dest_name,
+                "metadata_files": (),
+                "data_files": (f'*{self.suffix}',)
+            }
+            jobs.append(keywords)
 
-            for wip_job in wip_jobs:
-                hca_download_worker = hca_download_workers[wip_job]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(lambda x: hca_client.download(**x), job) for job in jobs]
 
-                # Catch the exception happens in the worker
-                if hca_download_worker.exception is not None:
-                    logger.info(f'Exception caught, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
-                    logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
-                    raise hca_download_worker.exception
-
-                # Kick off the worker from the list when it finishes its work
-                if hca_download_worker.exitcode is not None:
-                    del hca_download_workers[wip_job]
-
-            # Assign jobs to workers until reaching the maximum parallelism or there is no more job left.
-            while len(jobs_pool) > 0 and len(hca_download_workers) < parallelism:
-                job = jobs_pool.pop()
-
-                dest_name = os.path.join(temp_dir, job)
-                keywords = {
-                    "bundle_uuid": job,
-                    "replica": "aws",
-                    "dest_name": dest_name,
-                    "metadata_files": (),
-                    "data_files": (f'*{self.suffix}',)
-                }
-
-                hca_download_workers[job] = HcaDownloadWorker(**keywords)
-                hca_download_workers[job].start()
+            # Force futures to join
+            for f in futures:
+                f.result()
 
         # Get all downloaded mtx paths from temp_dir
         local_mtx_paths = get_mtx_paths(temp_dir, self.suffix)
