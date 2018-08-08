@@ -96,23 +96,6 @@ resource "aws_api_gateway_deployment" "matrix_service_deployment_dev" {
   stage_name  = "dev"
 }
 
-//resource "aws_api_gateway_deployment" "matrix_service_deployment_prod" {
-//  depends_on  = [
-//    "aws_api_gateway_method.health_check_method",
-//    "aws_api_gateway_method.status_check_method",
-//    "aws_api_gateway_method.matrices_concat_method",
-//    "aws_api_gateway_integration.matrix_service_health_check_api_integration",
-//    "aws_api_gateway_integration.matrix_service_status_check_api_integration",
-//    "aws_api_gateway_integration.matrix_service_concat_api_integration"
-//  ]
-//  rest_api_id = "${aws_api_gateway_rest_api.matrix_service_api_gateway.id}"
-//  stage_name  = "prod"
-//}
-
 output "matrix_service_dev_url" {
   value = "${aws_api_gateway_deployment.matrix_service_deployment_dev.invoke_url}"
 }
-
-//output "matrix_service_prod_url" {
-//  value = "${aws_api_gateway_deployment.matrix_service_deployment_prod.invoke_url}"
-//}
