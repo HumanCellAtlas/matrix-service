@@ -2,11 +2,14 @@ import json
 import traceback
 
 from functools import wraps
-from chalice import Chalice, NotFoundError, ChaliceViewError
+from botocore.exceptions import ClientError
+from chalice import Chalice, NotFoundError, ChaliceViewError, Response
 from chalicelib.config import logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
+from chalicelib import rand_uuid
+
 
 app = Chalice(app_name='matrix-service-api')
 app.debug = True
@@ -55,29 +58,37 @@ def concat_matrices():
     request = app.current_request
     bundle_uuids = request.json_body
     request_id = RequestHandler.generate_request_id(bundle_uuids)
+    response = {"request_id": request_id}
 
     logger.info(f'Request ID({request_id}): Received request for concatenating matrices within bundles {bundle_uuids}.')
 
+    job_id = rand_uuid()
+
     try:
-        merge_request_status = RequestHandler.get_request_status(request_id=request_id)
-
-        logger.info(f'Request({request_id}) status: {merge_request_status}.')
-
-        # Send the request to sqs queue if the request has been abort before
-        if merge_request_status == RequestStatus.ABORT.name:
-            SqsQueueHandler.send_msg_to_ms_queue(
-                bundle_uuids=bundle_uuids,
-                request_id=request_id
-            )
-
-    # Request does not exist
-    except KeyError:
-        SqsQueueHandler.send_msg_to_ms_queue(
+        # put only if the job does not exist or is aborted
+        RequestHandler.put_request(
             bundle_uuids=bundle_uuids,
-            request_id=request_id
+            request_id=request_id,
+            job_id=job_id,
+            status=RequestStatus.INITIALIZED,
+            ConditionExpression=f'attribute_not_exists(request_id) OR request_status = :status',
+            ExpressionAttributeValues={
+                ':status': RequestStatus.ABORT.name
+            }
         )
+        SqsQueueHandler.send_msg_to_ms_queue(
+            payload=dict(
+                bundle_uuids=bundle_uuids,
+                job_id=job_id
+            )
+        )
+        logger.info(f'Request ID({request_id}): Send request_id({request_id}) to SQS Queue.')
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code")
+        if error_code == 'ConditionalCheckFailedException':
+            return response
 
-    return {"request_id": request_id}
+    return Response(body=response, status_code=201)
 
 
 def ms_sqs_queue_listener(event, context):

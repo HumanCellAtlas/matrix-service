@@ -1,10 +1,7 @@
 import json
 import boto3
 
-from typing import List
-from chalicelib import rand_uuid
-from chalicelib.config import MS_SQS_QUEUE_NAME, SQS_QUEUE_MSG, logger
-from chalicelib.request_handler import RequestHandler, RequestStatus
+from chalicelib.config import MS_SQS_QUEUE_NAME
 
 
 class SqsQueueHandler:
@@ -16,32 +13,14 @@ class SqsQueueHandler:
     sqs = boto3.resource("sqs")
 
     @staticmethod
-    def send_msg_to_ms_queue(bundle_uuids: List[str], request_id: str) -> str:
+    def send_msg_to_ms_queue(payload: dict) -> str:
         """
         Send a message to matrix service's sqs queue.
-        :param bundle_uuids: UUID of the bundle.
-        :param request_id: Concatenation request id.
+        :param payload: the dict to serialize to json and send to SQS.
         :return: Message ID of the msg being sent.
         """
-        job_id = rand_uuid()
-
-        logger.info(f'Request ID({request_id}): Initialize the request with job id({job_id})')
-
-        RequestHandler.put_request(
-            bundle_uuids=bundle_uuids,
-            request_id=request_id,
-            job_id=job_id,
-            status=RequestStatus.INITIALIZED
-        )
-
         # Create message to send to the SQS Queue
-        msg = SQS_QUEUE_MSG.copy()
-        msg["bundle_uuids"] = bundle_uuids
-        msg["job_id"] = job_id
-
-        logger.info(f'Request ID({request_id}): Send request message({msg}) to SQS Queue.')
-
-        msg_str = json.dumps(msg, sort_keys=True)
+        msg_str = json.dumps(payload)
 
         # Send the msg to the SQS queue
         ms_queue = SqsQueueHandler.sqs.get_queue_by_name(QueueName=MS_SQS_QUEUE_NAME)

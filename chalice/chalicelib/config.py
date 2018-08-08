@@ -51,9 +51,3 @@ MS_SQS_QUEUE_NAME = secret_value['ms_sqs_queue']
 
 # DynamoDB table for storing request status
 REQUEST_STATUS_TABLE = secret_value['ms_dynamodb']
-
-# SQS Queue Message template
-SQS_QUEUE_MSG = {
-    "bundle_uuids": [],
-    "job_id": ""
-}

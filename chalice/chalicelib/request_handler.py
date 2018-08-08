@@ -84,7 +84,7 @@ class RequestHandler:
 
     @staticmethod
     def put_request(bundle_uuids: List[str], request_id: str, job_id: str, status: RequestStatus,
-                    reason_to_abort="undefined", merged_mtx_url="undefined") -> None:
+                    reason_to_abort="undefined", merged_mtx_url="undefined", **kwargs) -> None:
         """
         Update a request status items in the request status table if exists. Otherwise, create a new item.
         :param bundle_uuids: A list of bundle uuids.
@@ -94,16 +94,19 @@ class RequestHandler:
         :param reason_to_abort: Request abort reason.
         :param merged_mtx_url: S3 url for accessing the merged matrix.
         """
-        RequestHandler._request_status_table.put_item(
-            Item={
-                'request_id': request_id,
-                'job_id': job_id,
-                'bundle_uuids': bundle_uuids,
-                'request_status': status.name,
-                'reason_to_abort': reason_to_abort,
-                'merged_mtx_url': merged_mtx_url
-            }
-        )
+        item = {
+            'request_id': request_id,
+            'job_id': job_id,
+            'bundle_uuids': bundle_uuids,
+            'request_status': status.name,
+            'reason_to_abort': reason_to_abort,
+            'merged_mtx_url': merged_mtx_url
+        }
+
+        put_kwargs = dict(Item=item)
+        put_kwargs.update(kwargs)
+
+        RequestHandler._request_status_table.put_item(**put_kwargs)
 
     @staticmethod
     def delete_request(request_id: str) -> None:
