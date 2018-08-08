@@ -1,0 +1,16 @@
+.idea/
+venv/
+__pycache__/
+.DS_Store
+chalice/.chalice/deployed/
+chalice/.chalice/deployments/
+terraform/**/.terraform/
+*.tfstate
+*.tfstate.backup
+**/*.zip
+deployment/
+target/
+*.tfvars
+notebooks/.ipynb_checkpoints/
+chalice/vendor/
+data/
