@@ -1,6 +1,16 @@
 PROJECT_CONFIG_SECRET = matrix-service/dev/terraform.tfvars
+TERRAFORM_BACKEND_SECRET = matrix-service/dev/backend.tfvars
 
 default: all
+
+.PHONY: init
+init:
+	aws secretsmanager get-secret-value \
+		--secret-id $(TERRAFORM_BACKEND_SECRET) | \
+		jq -r .SecretString | \
+		python -m json.tool | \
+		tee terraform/backend.auto.tfvars
+	cd terraform && terraform init -backend-config=backend.auto.tfvars
 
 .PHONY: install
 install:
@@ -42,26 +52,24 @@ build:
 .PHONY: deploy
 deploy:
 	aws s3api create-bucket --bucket $(shell aws secretsmanager get-secret-value --secret-id \
-	matrix-service/dev/terraform.tfvars | jq -r .SecretString | jq -r .hca_ms_deployment_bucket) \
-	--region us-east-1 --acl private
+	$(PROJECT_CONFIG_SECRET) | jq -r .SecretString | jq -r .hca_ms_deployment_bucket)
 	@read -p "Enter the version number of the service to deploy: " app_version; \
 	aws s3 cp target/deployment.zip s3://$(shell aws secretsmanager get-secret-value --secret-id \
 	matrix-service/dev/terraform.tfvars | jq -r .SecretString | jq -r .hca_ms_deployment_bucket)\
 	/v$$app_version/deployment.zip;
-	cd terraform && terraform init && terraform apply
+	cd terraform && terraform apply
 	rm -rf target
 
 .PHONY: clean
 clean:
-	aws s3 rb s3://$(shell aws secretsmanager get-secret-value --secret-id \
-	matrix-service/dev/terraform.tfvars | jq -r .SecretString | jq -r .hca_ms_deployment_bucket) \
-	--force
 	cd terraform && terraform destroy
+	aws s3 rb s3://$(shell aws secretsmanager get-secret-value --secret-id \
+	$(PROJECT_CONFIG_SECRET) | jq -r .SecretString | jq -r .hca_ms_deployment_bucket) --force
 	rm -rf target
-	rm terraform/terraform.tfvars
+	rm terraform/*.tfvars
 	rm -rf venv
 	rm -rf data
 
 .PHONY: all
 all:
-	make install && make secrets && make build && make deploy && make test
+	make init && make install && make secrets && make build && make deploy && make test

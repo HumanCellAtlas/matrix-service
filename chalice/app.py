@@ -5,13 +5,12 @@ import requests
 from aws_xray_sdk.core import xray_recorder, patch
 from aws_xray_sdk.core.context import Context
 from botocore.exceptions import ClientError
-from chalice import Chalice, ChaliceViewError, Response
+from chalice import Chalice, Response
 from chalicelib import rand_uuid
 from chalicelib.config import logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
 from chalicelib.sqs import SqsQueueHandler
-
 from chalicelib.error import ApiException, matrix_service_handler
 
 
