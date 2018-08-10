@@ -1,6 +1,6 @@
-variable "aws_profile" {}
+variable "profile" {}
 
-variable "aws_region" {
+variable "region" {
   default = "us-east-1"
 }
 
@@ -29,3 +29,11 @@ variable "ms_dynamodb"{
 }
 
 variable "app_version" {}
+
+variable "bucket" {
+  description = "The terraform backend bucket"
+}
+
+variable "key" {
+  description = "The terraform backend key"
+}

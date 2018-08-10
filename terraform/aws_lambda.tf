@@ -34,13 +34,13 @@ resource "aws_lambda_function" "matrix_service_dlq_handler" {
 
 
 resource "aws_lambda_event_source_mapping" "matrix_service_sqs_lambda_event_source_mapping" {
-  event_source_arn  = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
+  event_source_arn  = "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
   function_name     = "${aws_lambda_function.matrix_service_sqs_handler.arn}"
   starting_position = ""
 }
 
 resource "aws_lambda_event_source_mapping" "matrix_service_dlq_lambda_event_source_mapping" {
-  event_source_arn  = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
+  event_source_arn  = "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
   function_name     = "${aws_lambda_function.matrix_service_dlq_handler.arn}"
   starting_position = ""
 }
@@ -98,9 +98,9 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
                 "arn:aws:s3:::matrix-service-faked-dss",
                 "arn:aws:s3:::${var.hca_ms_merged_mtx_bucket}/*",
                 "arn:aws:s3:::matrix-service-faked-dss/*",
-                "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
-                "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}",
-                "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
+                "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
+                "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}",
+                "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
             ]
         },
         {
@@ -113,7 +113,7 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
                 "dynamodb:UpdateItem"
             ],
             "Resource": [
-                "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
+                "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
                 "arn:aws:dynamodb:*:*:table/*/index/*"
             ]
         }
