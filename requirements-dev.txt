@@ -48,3 +48,4 @@ tweak==0.6.7
 typing==3.6.4
 urllib3==1.23
 awslogs==0.10.0
+aws-xray-sdk==1.1.2

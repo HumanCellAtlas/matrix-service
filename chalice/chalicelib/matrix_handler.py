@@ -4,6 +4,7 @@ import traceback
 import loompy
 
 from abc import ABC, abstractmethod
+from aws_xray_sdk.core import xray_recorder
 from typing import List
 from chalicelib import get_mtx_paths, get_size, rand_uuid, clean_dir
 from chalicelib.config import MERGED_MTX_BUCKET_NAME, TEMP_DIR, s3_blob_store, logger, hca_client
@@ -115,18 +116,24 @@ class MatrixHandler(ABC):
                 logger.info(f'Before download, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
                 logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
                 logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
+                xray_recorder.begin_segment('download_matrices')
                 mtx_paths = self._download_mtx(bundle_uuids=bundle_uuids, temp_dir=temp_dir)
                 _, merged_mtx_path = tempfile.mkstemp(dir=temp_dir, prefix=request_id, suffix=self.suffix)
+                xray_recorder.end_segment('download_matrices')
 
                 logger.info(f'Before concat, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
                 logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
                 logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
+                xray_recorder.begin_segment('concatenate_matrices')
                 self._concat_mtx(mtx_paths=mtx_paths, out_file=merged_mtx_path)
+                xray_recorder.end_segment('concatenate_matrices')
 
                 logger.info(f'Before upload, the size of tmp directory is: {get_size(TEMP_DIR)} bytes.')
                 logger.info(f'tmp directory contains: {os.listdir(TEMP_DIR)}.')
                 logger.info(f'tmp directory usage: {os.statvfs(TEMP_DIR)}')
+                xray_recorder.begin_segment('upload_new_matrix')
                 _, merged_mtx_url = self._upload_mtx(path=merged_mtx_path)
+                xray_recorder.end_segment('upload_new_matrix')
 
                 # Update the request status to DONE
                 RequestHandler.put_request(
