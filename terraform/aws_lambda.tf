@@ -130,6 +130,14 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
                 "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
                 "arn:aws:dynamodb:*:*:table/*/index/*"
             ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords"
+            ],
+            "Resource": "*"
         }
     ]
 }
