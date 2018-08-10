@@ -17,8 +17,8 @@ resource "aws_iam_user_policy" "matrix_service_test_policy" {
                 "sqs:SendMessage"
             ],
             "Resource": [
-                "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
-                "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
+                "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*",
+                "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}"
             ]
         },
         {
@@ -41,7 +41,7 @@ resource "aws_iam_user_policy" "matrix_service_test_policy" {
                 "dynamodb:DeleteItem"
             ],
             "Resource": [
-                "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
+                "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:table/${var.ms_dynamodb}",
                 "arn:aws:dynamodb:*:*:table/*/index/*"
             ]
         }
