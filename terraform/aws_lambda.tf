@@ -99,7 +99,7 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
                 "secretsmanager:DescribeSecret"
             ],
             "Resource": [
-                "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*"
+                "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:secret:${var.ms_secret_name}*"
             ]
         },
         {
@@ -113,8 +113,8 @@ resource "aws_iam_role_policy" "matrix_service_policy" {
                 "sqs:GetQueueAttributes"
             ],
             "Resource": [
-                "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}",
-                "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
+                "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_sqs_queue}",
+                "arn:aws:sqs:${var.region}:${data.aws_caller_identity.aws_caller.account_id}:${var.ms_dead_letter_queue}"
             ]
         },
         {
