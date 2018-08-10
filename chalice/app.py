@@ -3,7 +3,7 @@ import traceback
 import requests
 
 from botocore.exceptions import ClientError
-from chalice import Chalice, ChaliceViewError, Response
+from chalice import Chalice, Response
 from chalicelib.config import logger
 from chalicelib.matrix_handler import LoomMatrixHandler
 from chalicelib.request_handler import RequestHandler, RequestStatus
