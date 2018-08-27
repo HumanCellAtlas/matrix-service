@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provides a matrix service API for testing
+Parameters:
+  LambdaCodeBucket:
+    Type: String
+    Description: S3 bucket with zip files containing code for the lambda functions.
+  LambdaCodeKey:
+    Type: String
+    Description: Path within the Lambda code S3 bucket to the zip file with the handlers
+  SwaggerPath:
+    Type: String
+    Description: Path to Matrix Service swagger
+Resources:
+
+  # DyanamoDB
+  RequestTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Join [ "-", [ !Ref "AWS::StackName", "request-table" ] ]
+      AttributeDefinitions:
+        - AttributeName: RequestId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: RequestId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 3
+
+  # IAM
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ "-", [ !Ref "AWS::StackName", "lambda-role" ] ]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+  LambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Join [ "-", [ !Ref "AWS::StackName", "lambda-policy" ] ]
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt RequestTable.Arn
+
+  # Lambda
+  MatrixPostFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Handles POST to /matrix
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      FunctionName: !Join [ "-", [ !Ref "AWS::StackName", "matrix-post" ] ]
+      Handler: matrix_service_lambdas.matrix_post
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: "python3.6"
+      Timeout: 29
+      Environment:
+        Variables:
+          REQUEST_TABLE: !Ref RequestTable
+  MatrixGetFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Handles GET to /matrix
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      FunctionName: !Join [ "-", [ !Ref "AWS::StackName", "matrix-get" ] ]
+      Handler: matrix_service_lambdas.matrix_get
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: "python3.6"
+      Timeout: 29
+      Environment:
+        Variables:
+          REQUEST_TABLE: !Ref RequestTable
+
+  # API Gateway
+  MatrixApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Join ["-", [ !Ref "AWS::StackName", "api" ] ]
+      Description: Matrix service dummy api
+      Parameters:
+        basepath: prepend
+      Body:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: !Ref SwaggerPath
+  MatrixApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref MatrixApi
+      StageName: dummy
+
+  # Lambda permissions
+  MatrixPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt MatrixPostFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join ["", ["arn:aws:execute-api:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":", !Ref MatrixApi, "/*/POST/v0/matrix" ] ]
+  MatrixGetPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt MatrixGetFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join ["", ["arn:aws:execute-api:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":", !Ref MatrixApi, "/*/GET/v0/matrix/*" ] ]
