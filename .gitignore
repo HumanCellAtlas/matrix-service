@@ -14,3 +14,4 @@ target/
 notebooks/.ipynb_checkpoints/
 chalice/vendor/
 data/
+.python-version

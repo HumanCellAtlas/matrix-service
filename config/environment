@@ -1,0 +1,20 @@
+# Resolve the location of this file and set PROJECT_ROOT to the root
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+export PROJECT_ROOT="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
+
+set -a
+SERVICE_NAME='matrix'
+DCP_DNS_DOMAIN='data.humancellatlas.org'
+DEPLOYMENT_STAGE="${DEPLOYMENT_STAGE:-dev}"
+MATRIX_SERVICE_VERSION=`(git describe --tags --always)`
+if [[ ${DEPLOYMENT_STAGE} = prod ]] ; then
+    API_HOST=${SERVICE_NAME}.${DCP_DNS_DOMAIN}
+else
+    API_HOST=${SERVICE_NAME}.${DEPLOYMENT_STAGE}.${DCP_DNS_DOMAIN}
+fi
+
+AWS_DEFAULT_REGION='us-east-1'
+set +a
+
+echo "DEPLOYMENT STAGE IS \"${DEPLOYMENT_STAGE}\""

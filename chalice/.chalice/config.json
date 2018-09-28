@@ -1,0 +1,15 @@
+{
+  "version": "0.0",
+  "app_name": "matrix-service-api",
+  "stages": {
+    "dev": {
+      "api_gateway_stage": "dev",
+      "environment_variables": {
+        "DEPLOYMENT_STAGE": "dev",
+        "API_HOST": "matrix.dev.data.humancellatlas.org"
+      }
+    }
+  },
+  "lambda_timeout": 30,
+  "lambda_memory_size": 512
+}
