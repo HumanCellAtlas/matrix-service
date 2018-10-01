@@ -17,7 +17,7 @@ build:
 	envsubst '$$API_HOST' < ../config/matrix-api.yml > chalicelib/config/matrix-api.yml
 	shopt -s nullglob; for wheel in vendor.in/*/*.whl; do unzip -q -o -d vendor $$wheel; done
 
-deploy: build
+deploy: clean build
 	@echo -e "\n\n#########################################################"
 	@echo -e "########## Deploying to $(DEPLOYMENT_STAGE) environment"
 	@echo -e "#########################################################\n"
