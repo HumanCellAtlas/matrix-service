@@ -1,4 +1,8 @@
-import os, sys, re, logging, collections
+import collections
+import logging
+import os
+import re
+import sys
 
 import chalice
 import connexion
