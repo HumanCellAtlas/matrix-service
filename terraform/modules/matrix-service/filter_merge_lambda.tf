@@ -47,7 +47,7 @@ resource "aws_s3_bucket" "lambda_area_bucket" {
     acceleration_status = "Enabled"
 }
 
-resource "aws_lambda_function" "matrix_service_filter_merge_lambda" {
+resource "aws_lambda_function" "matrix_service_driver_lambda" {
   function_name    = "dcp-matrix-service-driver-${var.deployment_stage}"
   s3_bucket        = "${aws_s3_bucket.lambda_area_bucket.id}"
   s3_key           = "filter_merge_daemon.zip"
