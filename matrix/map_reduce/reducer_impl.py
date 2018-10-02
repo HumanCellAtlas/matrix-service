@@ -1,0 +1,2 @@
+def reducer():
+    raise NotImplementedError()
