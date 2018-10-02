@@ -59,7 +59,7 @@ paths:
   /matrix:
     post:
       summary: Submit a matrix query request.
-      operationId: matrix.api.core.post_matrix
+      operationId: matrix.lambdas.api.core.post_matrix
       parameters:
         - in: body
           name: body
@@ -75,7 +75,7 @@ paths:
   /matrix/{request_id}:
     get:
       summary: Retrieve the status, and result if available, of a matrix query request.
-      operationId: matrix.api.core.get_matrix
+      operationId: matrix.lambdas.api.core.get_matrix
       parameters:
         - in: path
           name: request_id

@@ -12,8 +12,8 @@ clobber: clean
 
 build:
 	cp ../requirements.txt .
-	mkdir -p chalicelib/matrix/api
-	cp -R ../matrix/api chalicelib/matrix
+	mkdir -p chalicelib/matrix/lambdas
+	cp -R ../matrix/lambdas/api chalicelib/matrix/lambdas
 	mkdir -p chalicelib/config
 	envsubst '$$API_HOST' < ../config/matrix-api.yml > chalicelib/config/matrix-api.yml
 	shopt -s nullglob; for wheel in vendor.in/*/*.whl; do unzip -q -o -d vendor $$wheel; done
