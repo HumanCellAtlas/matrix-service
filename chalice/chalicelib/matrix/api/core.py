@@ -8,7 +8,6 @@ LAMBDA_CLIENT = boto3.client("lambda", region_name=os.environ['AWS_DEFAULT_REGIO
 
 
 def post_matrix(body):
-    print(body)
     LAMBDA_CLIENT.invoke(
         FunctionName=os.environ['DRIVER_FN_NAME'],
         InvocationType="Event",

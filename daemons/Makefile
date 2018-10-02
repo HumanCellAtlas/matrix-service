@@ -1,2 +1,2 @@
 build clean clobber deploy:
-	$(MAKE) -C filter-merge-daemon $@
+	$(MAKE) -C filter_merge_daemon $@
