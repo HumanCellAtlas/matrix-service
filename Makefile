@@ -1,5 +1,6 @@
 .PHONY: lint test unit-tests
 MODULES=matrix tests daemons chalice
+EXCLUDE=target,vendor,chalicelib
 
 deploy:
 	$(MAKE) -C chalice $@
@@ -8,7 +9,7 @@ deploy:
 test: lint unit-tests
 
 lint:
-	flake8 $(MODULES) *.py
+	flake8 $(MODULES) --exclude $(EXCLUDE) *.py
 
 unit-tests:
 	PYTHONWARNINGS=ignore:ResourceWarning coverage run --source=upload \
