@@ -1,5 +1,5 @@
 .PHONY: lint test unit-tests
-MODULES=upload tests
+MODULES=matrix tests daemons chalice
 
 deploy:
 	$(MAKE) -C chalice $@
