@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 ifndef PROJECT_ROOT
-$(error Please run "source config/environment" in the data-store repo root directory before running make commands)
+$(error Please run "source config/environment" in the matrix-service repo root directory before running make commands)
 endif
 
 ifeq ($(shell which jq),)

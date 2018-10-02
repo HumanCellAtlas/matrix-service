@@ -6,7 +6,8 @@
       "api_gateway_stage": "dev",
       "environment_variables": {
         "DEPLOYMENT_STAGE": "dev",
-        "API_HOST": "matrix.dev.data.humancellatlas.org"
+        "API_HOST": "matrix.dev.data.humancellatlas.org",
+        "DRIVER_FN_NAME": "dcp-matrix-service-driver-dev"
       }
     }
   },

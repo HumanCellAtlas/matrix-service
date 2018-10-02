@@ -11,10 +11,10 @@ worker() - Apply user-defined filter query on chunk, write partial results to S3
 reducer() - Combine partial results into final .zarr file in S3, return S3 location.
 """
 
-from matrix.map_reduce.driver_impl import driver
-from matrix.map_reduce.mapper_impl import mapper
-from matrix.map_reduce.worker_impl import worker
-from matrix.map_reduce.reducer_impl import reducer
+from .driver_impl import driver
+from .mapper_impl import mapper
+from .worker_impl import worker
+from .reducer_impl import reducer
 
 
 def driver_handler():

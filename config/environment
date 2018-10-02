@@ -15,6 +15,7 @@ else
 fi
 
 AWS_DEFAULT_REGION='us-east-1'
+DRIVER_FN_NAME="dcp-matrix-service-driver-${DEPLOYMENT_STAGE}"
 set +a
 
 echo "DEPLOYMENT STAGE IS \"${DEPLOYMENT_STAGE}\""

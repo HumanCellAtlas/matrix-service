@@ -1,7 +1,8 @@
 include ../common.mk
 
 export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
-        API_HOST
+                                    API_HOST \
+                                    DRIVER_FN_NAME
 
 clean:
 	git clean -df .
