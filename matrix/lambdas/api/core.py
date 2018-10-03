@@ -4,7 +4,8 @@ import requests
 
 import boto3
 
-LAMBDA_CLIENT = boto3.client("lambda", region_name=os.environ['AWS_DEFAULT_REGION'])
+LAMBDA_CLIENT = boto3.client("lambda",
+                             region_name=os.environ['AWS_DEFAULT_REGION'])
 
 
 def post_matrix(body):
