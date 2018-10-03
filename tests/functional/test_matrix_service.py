@@ -6,7 +6,7 @@ import json
 from .waitfor import WaitFor
 
 
-BUNDLE_IDS = {
+INPUT_BUNDLE_IDS = {
     "dev": [],
     "integration": [
         "8e60fe1f-2217-4a15-9c2f-4e79cc341196",
@@ -32,7 +32,7 @@ class TestMatrixService(unittest.TestCase):
         self._create_matrix_service_request()
 
         # wait for get requests to return 200 and status of COMPLETED
-        WaitFor(self._checksum_record_status, filename)\
+        WaitFor(self._poll_matrix_service_request)\
             .to_return_value('COMPLETED', timeout_seconds=300)
 
         # analyze produced matrix against standard
@@ -43,14 +43,14 @@ class TestMatrixService(unittest.TestCase):
                                       verb='POST',
                                       url=f"{self.api_url}/matrix",
                                       expected_status=202,
-                                      json={"bundle_fqids": INTEGRATION_BUNDLE_IDS})
+                                      json={"bundle_fqids": INPUT_BUNDLE_IDS[self.deployment_stage]})
         data = json.loads(response)
         self.request_id = data["request_id"]
 
     def _poll_matrix_service_request(self):
         response = self._make_request(description="GET REQUEST TO MATRIX SERVICE WITH REQUEST ID",
                                       verb='GET',
-                                      url=f"{self.api_url}/matrix?request_id={request_id}",
+                                      url=f"{self.api_url}/matrix?request_id={self.request_id}",
                                       expected_status=200)
         data = json.loads(response)
         status = data["status"]
