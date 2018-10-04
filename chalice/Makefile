@@ -2,7 +2,11 @@ include ../common.mk
 
 export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                     API_HOST \
-                                    DRIVER_FN_NAME
+                                    LAMBDA_DRIVER_FUNCTION_NAME \
+                                    LAMBDA_MAPPER_FUNCTION_NAME \
+                                    LAMBDA_WORKER_FUNCTION_NAME \
+                                    LAMBDA_REDUCER_FUNCTION_NAME \
+                                    DYNAMO_STATE_TABLE_NAME
 
 clean:
 	git clean -df .

@@ -15,7 +15,11 @@ else
 fi
 
 AWS_DEFAULT_REGION='us-east-1'
-DRIVER_FN_NAME="dcp-matrix-service-driver-${DEPLOYMENT_STAGE}"
+LAMBDA_DRIVER_FUNCTION_NAME="dcp-matrix-service-driver-${DEPLOYMENT_STAGE}"
+LAMBDA_MAPPER_FUNCTION_NAME="dcp-matrix-service-mapper-${DEPLOYMENT_STAGE}"
+LAMBDA_WORKER_FUNCTION_NAME="dcp-matrix-service-worker-${DEPLOYMENT_STAGE}"
+LAMBDA_REDUCER_FUNCTION_NAME="dcp-matrix-service-reducer-${DEPLOYMENT_STAGE}"
+DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${DEPLOYMENT_STAGE}"
 set +a
 
 echo "DEPLOYMENT STAGE IS \"${DEPLOYMENT_STAGE}\""
