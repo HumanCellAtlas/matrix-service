@@ -5,6 +5,7 @@ __pycache__/
 .DS_Store
 chalice/.chalice/deployed/
 chalice/.chalice/deployments/
+chalice/chalicelib/
 terraform/**/.terraform/
 *.tfstate
 *.tfstate.backup

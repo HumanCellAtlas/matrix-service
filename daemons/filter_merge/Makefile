@@ -22,6 +22,7 @@ build:
 
 stage: build
 	aws s3 cp $(ZIP_FILE) s3://$(BUCKET)/$(STAGED_FILE_KEY)
+	rm -rf target
 
 deploy: stage
 	aws lambda update-function-code --function-name dcp-matrix-service-driver-$(DEPLOYMENT_STAGE) --s3-bucket $(BUCKET) --s3-key $(STAGED_FILE_KEY)
