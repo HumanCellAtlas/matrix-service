@@ -9,5 +9,5 @@ class MatrixFormat(Enum):
 
 class MatrixRequestStatus(Enum):
     COMPLETE = "Complete"
-    IN_PROGRESS = "In progress"
+    IN_PROGRESS = "In Progress"
     FAILED = "Failed"
