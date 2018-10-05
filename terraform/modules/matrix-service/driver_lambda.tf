@@ -75,10 +75,7 @@ resource "aws_lambda_function" "matrix_service_driver_lambda" {
   environment {
     variables = {
         DEPLOYMENT_STAGE = "${var.deployment_stage}"
-        LAMBDA_DRIVER_FUNCTION_NAME="dcp-matrix-service-driver-${var.deployment_stage}"
         LAMBDA_MAPPER_FUNCTION_NAME="dcp-matrix-service-mapper-${var.deployment_stage}"
-        LAMBDA_WORKER_FUNCTION_NAME="dcp-matrix-service-worker-${var.deployment_stage}"
-        LAMBDA_REDUCER_FUNCTION_NAME="dcp-matrix-service-reducer-${var.deployment_stage}"
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
     }
   }
