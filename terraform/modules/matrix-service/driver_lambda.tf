@@ -28,7 +28,7 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
     {
       "Sid": "LogsPolicy",
       "Effect": "Allow",
-      "Resource": "arn:aws:logs:*:*:*",
+      "Resource": "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-${var.deployment_stage}",
       "Action": [
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
@@ -41,7 +41,7 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       "Action": [
         "dynamodb:PutItem"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-${var.deployment_stage}"
+      "Resource": "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}"
     },
     {
       "Sid": "LambdaPolicy",
@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       "Action": [
         "lambda:InvokeFunction"
       ],
-      "Resource": "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-mapper-${var.deployment_stage}"
+      "Resource": "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-mapper-${var.deployment_stage}"
     }
   ]
 }
