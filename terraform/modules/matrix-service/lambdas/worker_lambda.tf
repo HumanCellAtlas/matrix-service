@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "matrix_service_worker_lambda" {
       "Action": [
         "lambda:InvokeFunction"
       ],
-      "Resource": "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-mapper-${var.deployment_stage}"
+      "Resource": "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-reducer-${var.deployment_stage}"
     }
   ]
 }
