@@ -11,14 +11,17 @@ worker  - Apply user-defined filter query on chunk, write partial results to S3
 reducer - Combine partial results into final .zarr file in S3, return S3 location
 """
 
-from matrix.lambdas.filter_merge.driver import driver
+from matrix.lambdas.filter_merge.driver import Driver
 from matrix.lambdas.filter_merge.mapper import mapper
 from matrix.lambdas.filter_merge.worker import worker
 from matrix.lambdas.filter_merge.reducer import reducer
 
 
-def driver_handler():
-    driver()
+def driver_handler(event, context):
+    # TODO: better error handling
+    assert 'request_id' in event and 'bundle_fqids' in event and 'format' in event
+    driver = Driver()
+    driver.run(event['request_id'], event['bundle_fqids'], event['format'])
 
 
 def mapper_handler():

@@ -1,13 +1,10 @@
-import json
-import os
 import requests
-
-import boto3
+import uuid
 
 from ...common.constants import MatrixFormat
-
-LAMBDA_CLIENT = boto3.client("lambda",
-                             region_name=os.environ['AWS_DEFAULT_REGION'])
+from ...common.constants import MatrixRequestStatus
+from ...common.lambda_handler import LambdaHandler
+from ...common.lambda_handler import LambdaName
 
 
 def post_matrix(body):
@@ -16,7 +13,7 @@ def post_matrix(body):
 
     format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
 
-    # validate input parameters
+    # Validate input parameters
     if not (has_ids or has_url):
         return {
                    'code': requests.codes.bad_request,
@@ -33,12 +30,24 @@ def post_matrix(body):
                               "Visit https://matrix.dev.data.humancellatlas.org for more information."
                }, requests.codes.bad_request
 
-    LAMBDA_CLIENT.invoke(
-        FunctionName=os.environ['DRIVER_FN_NAME'],
-        InvocationType="Event",
-        Payload=json.dumps(body).encode(),
-    )
-    return "post_matrix", requests.codes.ok
+    # TODO: read bundle ids from URL
+
+    lambda_handler = LambdaHandler()
+    if has_ids:
+        request_id = str(uuid.uuid4())
+        body.update({
+            'request_id': request_id,
+            'format': format,
+        })
+        lambda_handler.invoke(LambdaName.DRIVER, body)
+
+        return {'request_id': request_id,
+                'status': MatrixRequestStatus.IN_PROGRESS.value,
+                'key': "",
+                'eta': "",
+                'message': "Job started.",
+                'links': [],
+                }, requests.codes.accepted
 
 
 def get_matrix(request_id):
