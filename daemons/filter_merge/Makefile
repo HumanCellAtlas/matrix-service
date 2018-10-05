@@ -1,8 +1,8 @@
 include ../../common.mk
 .PHONY: install build stage deploy clobber
 
-ZIP_FILE=filter_merge_daemon.zip
-BUCKET=dcp-matrix-service-filter-merge-lambda-deployment-$(DEPLOYMENT_STAGE)
+ZIP_FILE=driver_daemon.zip
+BUCKET=dcp-matrix-service-lambda-deployment-$(DEPLOYMENT_STAGE)
 STAGED_FILE_KEY=$(ZIP_FILE)
 
 default: build

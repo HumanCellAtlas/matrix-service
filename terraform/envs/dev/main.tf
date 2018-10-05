@@ -12,7 +12,7 @@ terraform {
 
 provider "aws" {
   version = ">= 1.38"
-  region = "us-east-1"
+  region = "${var.aws_region}"
   profile = "hca"
 }
 
@@ -20,4 +20,6 @@ provider "aws" {
 module "matrix-service" {
   source = "../../modules/matrix-service"
   deployment_stage = "${var.deployment_stage}"
+  account_id = "${var.account_id}"
+  aws_region = "${var.aws_region}"
 }
