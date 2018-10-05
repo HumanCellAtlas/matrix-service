@@ -7,7 +7,12 @@
       "environment_variables": {
         "DEPLOYMENT_STAGE": "dev",
         "API_HOST": "matrix.dev.data.humancellatlas.org",
-        "DRIVER_FN_NAME": "dcp-matrix-service-driver-dev"
+        "DRIVER_FN_NAME": "dcp-matrix-service-driver-dev",
+        "LAMBDA_DRIVER_FUNCTION_NAME": "dcp-matrix-service-driver-dev",
+        "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-dev",
+        "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-dev",
+        "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-dev",
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev"
       }
     }
   },

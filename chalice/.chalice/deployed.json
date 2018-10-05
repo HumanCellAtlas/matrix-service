@@ -1,0 +1,12 @@
+{
+  "dev": {
+    "api_handler_name": "matrix-service-api-dev",
+    "api_handler_arn": "arn:aws:lambda:us-east-1:861229788715:function:matrix-service-api-dev",
+    "lambda_functions": {},
+    "backend": "api",
+    "chalice_version": "1.1.1",
+    "rest_api_id": "5qdmeox37i",
+    "api_gateway_stage": "dev",
+    "region": "us-east-1"
+  }
+}
