@@ -16,10 +16,17 @@ provider "aws" {
   profile = "hca"
 }
 
-
-module "matrix-service" {
-  source = "../../modules/matrix-service"
+module "matrix_service_infra" {
+  source = "../../modules/matrix-service/infra"
   deployment_stage = "${var.deployment_stage}"
   account_id = "${var.account_id}"
   aws_region = "${var.aws_region}"
+}
+
+module "matrix_service_lambdas" {
+  source = "../../modules/matrix-service/lambdas"
+  deployment_stage = "${var.deployment_stage}"
+  account_id = "${var.account_id}"
+  aws_region = "${var.aws_region}"
+  deployment_bucket_id = "${module.matrix_service_infra.deployment_bucket_id}"
 }
