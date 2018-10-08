@@ -56,16 +56,9 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
 EOF
 }
 
-resource "aws_s3_bucket" "matrix_service_lambda_deployment_bucket" {
-    bucket = "dcp-matrix-service-lambda-deployment-${var.deployment_stage}"
-    acl = "private"
-    force_destroy = "false"
-    acceleration_status = "Enabled"
-}
-
 resource "aws_lambda_function" "matrix_service_driver_lambda" {
   function_name    = "dcp-matrix-service-driver-${var.deployment_stage}"
-  s3_bucket        = "${aws_s3_bucket.matrix_service_lambda_deployment_bucket.id}"
+  s3_bucket        = "${var.deployment_bucket_id}"
   s3_key           = "driver_daemon.zip"
   role             = "${aws_iam_role.matrix_service_driver_lambda.arn}"
   handler          = "app.driver_handler"
