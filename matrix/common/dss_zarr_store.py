@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Classes for working with expression matrices serialized in the DCP."""
+"""Class for working with expression matrices serialized in the DCP."""
 
 from collections import MutableMapping
 import hashlib
 
+import hca
 
-class HCAStore(MutableMapping):
+
+class DSSZarrStore(MutableMapping):
     """
     Zarr compatible interface to expression matrices stored in a DCP analysis bundle.
     Parameters
@@ -42,9 +44,15 @@ class HCAStore(MutableMapping):
     def _transform_key(self, key):
         return key.replace("/", self._separator_char)
 
-    def __init__(self, dss_client, bundle_uuid, bundle_version=None, replica="aws"):
+    def __init__(self, bundle_uuid, dss_instance=None, bundle_version=None, replica="aws"):
+        """
+        :param dss_instance: name of dss environment such as 'dev' or 'staging'
+        :param bundle_uuid: unique identifier for bundle in dss
+        :param bundle_version: (optional) version tag for bundle in dss
+        :param replica: (optional) "aws", "gcp", or "azure" to reflect dss cloud
+        """
 
-        self._dss_client = dss_client
+        self._dss_client = self._get_dss_client(dss_instance)
         self._bundle_uuid = bundle_uuid
         self._bundle_version = bundle_version
         self._replica = replica
@@ -78,6 +86,15 @@ class HCAStore(MutableMapping):
         latest version.
         """
         return self._bundle_version
+
+    def _get_dss_client(self, dss_instance=None):
+        client = hca.dss.DSSClient()
+        if not dss_instance:
+            client.host = "https://dss.integration.data.humancellatlas.org/v1"
+        else:
+            client.host = "https://dss.{dss_instance}.data.humancellatlas.org/v1".format(
+                dss_instance=dss_instance)
+        return client
 
     def __setitem__(self, key, value):
         raise NotImplementedError("The HCA Data Storage System is read-only.")
@@ -114,7 +131,7 @@ class HCAStore(MutableMapping):
 
     def __eq__(self, other):
         return (
-            isinstance(other, HCAStore) and
+            isinstance(other, DSSZarrStore) and
             self._bundle_uuid == other._bundle_uuid and
             self._bundle_version == other._bundle_version
         )

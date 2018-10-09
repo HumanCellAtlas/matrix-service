@@ -1,22 +1,12 @@
 import pandas
-import hca
 import zarr
-
-
-def get_client(dss_instance=None):
-    client = hca.dss.DSSClient()
-    if not dss_instance:
-        client.host = "https://dss.integration.data.humancellatlas.org/v1"
-    else:
-        client.host = "https://dss.{dss_instance}.data.humancellatlas.org/v1".format(
-            dss_instance=dss_instance)
-    return client
 
 
 def convert_zarr_store_to_pandas_df(zarr_store, concat=False):
         """Get a pandas dataframe of the expression matrix
         Parameters
         ----------
+        zarr_store : instance of DSSZarrStore
         concat : bool, optional
             Concatenate the expression and cell metadata into a single dataframe
             (default is False)
