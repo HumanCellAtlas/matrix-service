@@ -3,7 +3,7 @@ from unittest import mock
 import uuid
 
 from matrix.common.lambda_handler import LambdaName
-from matrix.lambdas.filter_merge.driver import Driver
+from matrix.lambdas.daemons.driver import Driver
 
 
 class TestDriver(unittest.TestCase):
