@@ -1,8 +1,8 @@
 import typing
 
-from ...common.dynamo_handler import DynamoHandler
-from ...common.lambda_handler import LambdaHandler
-from ...common.lambda_handler import LambdaName
+from matrix.common.dynamo_handler import DynamoHandler
+from matrix.common.lambda_handler import LambdaHandler
+from matrix.common.lambda_handler import LambdaName
 
 
 class Driver:
