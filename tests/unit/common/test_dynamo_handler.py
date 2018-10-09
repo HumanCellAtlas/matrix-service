@@ -7,6 +7,7 @@ from .. import MatrixTestCaseUsingMockAWS
 from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.dynamo_handler import StateTableField
 from matrix.common.dynamo_handler import OutputTableField
+from matrix.common.dynamo_handler import DynamoTable
 
 
 class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
@@ -69,26 +70,27 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertTrue(all(field.value in entry for field in OutputTableField))
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
-    def test_increment_state_table_field(self):
+    def test_increment_table_field_state_table_path(self):
         self.handler.create_state_table_entry(self.request_id, num_bundles=1)
 
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 0)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
-        self.handler.increment_state_table_field(self.request_id, StateTableField.COMPLETED_WORKER_EXECUTIONS.value, 5)
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, StateTableField.COMPLETED_WORKER_EXECUTIONS.value, 5)
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 5)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
-    def test_increment_output_table_field(self):
+    def test_increment_table_field_output_table_path(self):
         self.handler.create_output_table_entry(self.request_id)
+
         response, entry = self._get_output_table_response_and_entry()
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
-        self.handler.increment_output_table_field(self.request_id, OutputTableField.ROW_COUNT.value, 10)
+        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, OutputTableField.ROW_COUNT.value, 5)
         response, entry = self._get_output_table_response_and_entry()
-        self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 10)
+        self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
 
     def test_increment_field(self):
         self.handler.create_state_table_entry(self.request_id, num_bundles=1)

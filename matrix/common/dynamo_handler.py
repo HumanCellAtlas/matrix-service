@@ -27,14 +27,22 @@ class OutputTableField(Enum):
     ROW_COUNT = "RowCount"
 
 
+class DynamoTable(Enum):
+    """
+    Names of dynamo tables in matrix service
+    """
+    STATE_TABLE = os.getenv("DYNAMO_STATE_TABLE_NAME")
+    OUTPUT_TABLE = os.getenv("DYNAMO_OUTPUT_TABLE_NAME")
+
+
 class DynamoHandler:
     """
     Interface for interacting with DynamoDB Tables.
     """
     def __init__(self):
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
-        self._state_table = self._dynamo.Table(os.getenv("DYNAMO_STATE_TABLE_NAME"))
-        self._output_table = self._dynamo.Table(os.getenv("DYNAMO_OUTPUT_TABLE_NAME"))
+        self._state_table = self._dynamo.Table(DynamoTable.STATE_TABLE.value)
+        self._output_table = self._dynamo.Table(DynamoTable.OUTPUT_TABLE.value)
 
     def create_state_table_entry(self, request_id: str, num_bundles: int):
         """
@@ -68,27 +76,23 @@ class DynamoHandler:
             }
         )
 
-    def increment_state_table_field(self, request_id: str, field_name: str, increment_size: int):
-        """Increment value in state table
+    def increment_table_field(self, table: DynamoTable, request_id: str, field_name: str, increment_size: int):
+        """Increment value in dynamo table
         Args:
-            request_id: request id key in state table
+            table_name: DynamoTable enum
+            request_id: request id key in table
             field_name: Name of the field to increment
             increment_size: Amount by which to increment the field.
         Returns:
             start_value, end_value: The values before and after incrementing
         """
-        self._increment_field(self._state_table, {"RequestId": request_id}, field_name, increment_size)
-
-    def increment_output_table_field(self, request_id: str, field_name: str, increment_size: int):
-        """Increment value in output table
-        Args:
-            request_id: request id key in output table
-            field_name: Name of the field to increment
-            increment_size: Amount by which to increment the field.
-        Returns:
-            start_value, end_value: The values before and after incrementing
-        """
-        self._increment_field(self._output_table, {"RequestId": request_id}, field_name, increment_size)
+        if table.name == "STATE_TABLE":
+            table = self._state_table
+        elif table.name == "OUTPUT_TABLE":
+            table = self._output_table
+        key_dict = {"RequestId": request_id}
+        start_value, end_value = self._increment_field(table, key_dict, field_name, increment_size)
+        return start_value, end_value
 
     def _increment_field(self, table, key_dict: dict, field_name: str, increment_size: int):
         """Increment a value in a dynamo table safely.
