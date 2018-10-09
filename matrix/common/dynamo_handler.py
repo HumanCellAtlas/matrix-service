@@ -17,17 +17,26 @@ class StateTableField(Enum):
     COMPLETED_REDUCER_EXECUTIONS = "CompletedReducerExecutions"
 
 
+class OutputTableField(Enum):
+    """
+    Field names for Output table in DynamoDB.
+    """
+    REQUEST_ID = "RequestId"
+    ROW_COUNT = "RowCount"
+
+
 class DynamoHandler:
     """
     Interface for interacting with DynamoDB Tables.
     """
     def __init__(self):
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
-        self._state_table = self._dynamo.Table(os.environ['DYNAMO_STATE_TABLE_NAME'])
+        self._state_table = self._dynamo.Table(os.getenv("DYNAMO_STATE_TABLE_NAME"))
+        self._output_table = self._dynamo.Table(os.getenv("DYNAMO_OUTPUT_TABLE_NAME"))
 
-    def init_state_table(self, request_id, num_bundles):
+    def create_state_table_entry(self, request_id: str, num_bundles: int):
         """
-        Initialize the DynamoDB table responsible for tracking task execution states and
+        Put a new item in the DynamoDB table responsible for tracking task execution states and
         counts for a specified job.
 
         :param request_id: UUID identifying a filter merge job request.
@@ -41,6 +50,18 @@ class DynamoHandler:
                 StateTableField.EXPECTED_MAPPER_EXECUTIONS.value: num_bundles,
                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_REDUCER_EXECUTIONS.value: 1,
-                StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0
+                StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
+            }
+        )
+
+    def create_output_table_entry(self, request_id: str):
+        """
+        Put a new item in the DynamoDB Table responsible for counting output rows
+        :param request_id: UUID identifying a filter merge job request.
+        """
+        self._output_table.put_item(
+            Item={
+                OutputTableField.REQUEST_ID.value: request_id,
+                OutputTableField.ROW_COUNT.value: 0,
             }
         )
