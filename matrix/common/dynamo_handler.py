@@ -25,9 +25,9 @@ class DynamoHandler:
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
         self._state_table = self._dynamo.Table(os.environ['DYNAMO_STATE_TABLE_NAME'])
 
-    def init_state_table(self, request_id, num_bundles):
+    def put_state_item(self, request_id, num_bundles):
         """
-        Initialize the DynamoDB table responsible for tracking task execution states and
+        Put a new item in the DynamoDB table responsible for tracking task execution states and
         counts for a specified job.
 
         :param request_id: UUID identifying a filter merge job request.

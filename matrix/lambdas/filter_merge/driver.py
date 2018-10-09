@@ -21,7 +21,7 @@ class Driver:
         :param bundle_fqids: List of bundle fqids to be queried on
         :param format: MatrixFormat file format of expression matrices
         """
-        self.dynamo_handler.init_state_table(request_id, len(bundle_fqids))
+        self.dynamo_handler.put_state_item(request_id, len(bundle_fqids))
 
         for fqid in bundle_fqids:
             mapper_payload = {

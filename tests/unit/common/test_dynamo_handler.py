@@ -18,13 +18,13 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.state_table_name = os.environ['DYNAMO_STATE_TABLE_NAME']
         self.dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
 
-        self._create_state_table()
+        self._create_test_state_table()
 
-    def test_init_state_table(self):
+    def test_put_state_item(self):
         request_id = "test_id"
         num_bundles = 2
 
-        self.handler.init_state_table(request_id, num_bundles)
+        self.handler.put_state_item(request_id, num_bundles)
         response = self.dynamo.batch_get_item(
             RequestItems={
                 self.state_table_name: {
@@ -40,7 +40,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.EXPECTED_MAPPER_EXECUTIONS.value], num_bundles)
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
-    def _create_state_table(self):
+    def _create_test_state_table(self):
         self.dynamo.create_table(
             TableName=self.state_table_name,
             KeySchema=[
