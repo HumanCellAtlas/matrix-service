@@ -1,7 +1,9 @@
-from enum import Enum
 import os
+import time
+from enum import Enum
 
 import boto3
+import botocore
 
 
 class StateTableField(Enum):
@@ -25,14 +27,22 @@ class OutputTableField(Enum):
     ROW_COUNT = "RowCount"
 
 
+class DynamoTable(Enum):
+    """
+    Names of dynamo tables in matrix service
+    """
+    STATE_TABLE = os.getenv("DYNAMO_STATE_TABLE_NAME")
+    OUTPUT_TABLE = os.getenv("DYNAMO_OUTPUT_TABLE_NAME")
+
+
 class DynamoHandler:
     """
     Interface for interacting with DynamoDB Tables.
     """
     def __init__(self):
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
-        self._state_table = self._dynamo.Table(os.getenv("DYNAMO_STATE_TABLE_NAME"))
-        self._output_table = self._dynamo.Table(os.getenv("DYNAMO_OUTPUT_TABLE_NAME"))
+        self._state_table = self._dynamo.Table(DynamoTable.STATE_TABLE.value)
+        self._output_table = self._dynamo.Table(DynamoTable.OUTPUT_TABLE.value)
 
     def create_state_table_entry(self, request_id: str, num_bundles: int):
         """
@@ -65,3 +75,62 @@ class DynamoHandler:
                 OutputTableField.ROW_COUNT.value: 0,
             }
         )
+
+    def increment_table_field(self, table: DynamoTable, request_id: str, field_name: str, increment_size: int):
+        """Increment value in dynamo table
+        Args:
+            table_name: DynamoTable enum
+            request_id: request id key in table
+            field_name: Name of the field to increment
+            increment_size: Amount by which to increment the field.
+        Returns:
+            start_value, end_value: The values before and after incrementing
+        """
+        if table.name == "STATE_TABLE":
+            table = self._state_table
+        elif table.name == "OUTPUT_TABLE":
+            table = self._output_table
+        key_dict = {"RequestId": request_id}
+        start_value, end_value = self._increment_field(table, key_dict, field_name, increment_size)
+        return start_value, end_value
+
+    def _increment_field(self, table, key_dict: dict, field_name: str, increment_size: int):
+        """Increment a value in a dynamo table safely.
+        Makes sure distributed table updates don't clobber each other. For example,
+        increment_field(dynamo_table_obj, {"id": id_}, "Counts", 5)
+        will increment the Counts value in the item keyed by {"id": id_} in table
+        "my_table" by 5.
+        Args:
+          table: boto3 resource for a dynamodb table
+          key_dict: Dict for the key in the table
+          field_name: Name of the field to increment
+          increment_size: Amount by which to increment the field.
+        Returns:
+          start_value, end_value: The values before and after incrementing
+        """
+
+        while True:
+            db_response = table.get_item(
+                Key=key_dict,
+                ConsistentRead=True
+            )
+            item = db_response["Item"]
+            start_value = item[field_name]
+            new_value = start_value + increment_size
+
+            try:
+                table.update_item(
+                    Key=key_dict,
+                    UpdateExpression=f"SET {field_name} = :n",
+                    ConditionExpression=f"{field_name} = :s",
+                    ExpressionAttributeValues={":n": new_value, ":s": start_value}
+                )
+                break
+            except botocore.exceptions.ClientError as exc:
+                if exc.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                    pass
+                else:
+                    raise
+            time.sleep(.5)
+
+        return start_value, new_value
