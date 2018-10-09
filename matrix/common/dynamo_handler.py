@@ -1,7 +1,9 @@
-from enum import Enum
 import os
+import time
+from enum import Enum
 
 import boto3
+import botocore
 
 
 class StateTableField(Enum):
@@ -65,3 +67,66 @@ class DynamoHandler:
                 OutputTableField.ROW_COUNT.value: 0,
             }
         )
+
+    def increment_state_table_field(self, request_id: str, field_name: str, increment_size: int):
+        """Increment value in state table
+        Args:
+            request_id: request id key in state table
+            field_name: Name of the field to increment
+            increment_size: Amount by which to increment the field.
+        Returns:
+            start_value, end_value: The values before and after incrementing
+        """
+        self._increment_field(self._state_table, {"RequestId": request_id}, field_name, increment_size)
+
+    def increment_output_table_field(self, request_id: str, field_name: str, increment_size: int):
+        """Increment value in output table
+        Args:
+            request_id: request id key in output table
+            field_name: Name of the field to increment
+            increment_size: Amount by which to increment the field.
+        Returns:
+            start_value, end_value: The values before and after incrementing
+        """
+        self._increment_field(self._output_table, {"RequestId": request_id}, field_name, increment_size)
+
+    def _increment_field(self, table, key_dict: dict, field_name: str, increment_size: int):
+        """Increment a value in a dynamo table safely.
+        Makes sure distributed table updates don't clobber each other. For example,
+        increment_field(dynamo_table_obj, {"id": id_}, "Counts", 5)
+        will increment the Counts value in the item keyed by {"id": id_} in table
+        "my_table" by 5.
+        Args:
+          table: boto3 resource for a dynamodb table
+          key_dict: Dict for the key in the table
+          field_name: Name of the field to increment
+          increment_size: Amount by which to increment the field.
+        Returns:
+          start_value, end_value: The values before and after incrementing
+        """
+
+        while True:
+            db_response = table.get_item(
+                Key=key_dict,
+                ConsistentRead=True
+            )
+            item = db_response["Item"]
+            start_value = item[field_name]
+            new_value = start_value + increment_size
+
+            try:
+                table.update_item(
+                    Key=key_dict,
+                    UpdateExpression=f"SET {field_name} = :n",
+                    ConditionExpression=f"{field_name} = :s",
+                    ExpressionAttributeValues={":n": new_value, ":s": start_value}
+                )
+                break
+            except botocore.exceptions.ClientError as exc:
+                if exc.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                    pass
+                else:
+                    raise
+            time.sleep(.5)
+
+        return start_value, new_value
