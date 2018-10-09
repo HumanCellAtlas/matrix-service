@@ -28,7 +28,10 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
     {
       "Sid": "LogsPolicy",
       "Effect": "Allow",
-      "Resource": "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-${var.deployment_stage}",
+      "Resource": [
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-${var.deployment_stage}",
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-${var.deployment_stage}:*:*"
+      ],
       "Action": [
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
