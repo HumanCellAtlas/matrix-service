@@ -8,7 +8,7 @@ from matrix.common.lambda_handler import LambdaName
 
 class TestLambdaHandler(unittest.TestCase):
     """
-    Environment variables are set in tests/__init__.py
+    Environment variables are set in tests/unit/__init__.py
     """
     def setUp(self):
         self.handler = LambdaHandler()
