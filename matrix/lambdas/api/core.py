@@ -14,19 +14,19 @@ def post_matrix(body: dict):
     format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
 
     # Validate input parameters
-    if not (has_ids or has_url):
-        return {
-            'code': requests.codes.bad_request,
-            'message': "Missing required parameter. "
-                       "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
-                       "Visit https://matrix.dev.data.humancellatlas.org for more information."
-        }, requests.codes.bad_request
-
     if has_ids and has_url:
         return {
             'code': requests.codes.bad_request,
             'message': "Invalid parameters supplied. "
                        "Must supply either one of `bundle_fqids` or `bundle_fqids_url`. "
+                       "Visit https://matrix.dev.data.humancellatlas.org for more information."
+        }, requests.codes.bad_request
+
+    if not has_ids and not has_url:
+        return {
+            'code': requests.codes.bad_request,
+            'message': "Missing required parameter. "
+                       "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
                        "Visit https://matrix.dev.data.humancellatlas.org for more information."
         }, requests.codes.bad_request
 
