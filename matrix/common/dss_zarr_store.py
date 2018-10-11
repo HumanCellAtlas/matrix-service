@@ -5,6 +5,7 @@ from collections import MutableMapping
 import hashlib
 
 import hca
+from hca import HCAConfig
 
 
 class DSSZarrStore(MutableMapping):
@@ -44,7 +45,7 @@ class DSSZarrStore(MutableMapping):
     def _transform_key(self, key):
         return key.replace("/", self._separator_char)
 
-    def __init__(self, bundle_uuid, dss_instance=None, bundle_version=None, replica="aws"):
+    def __init__(self, bundle_uuid, dss_instance="integration", bundle_version=None, replica="aws"):
         """
         :param dss_instance: name of dss environment such as 'dev' or 'staging'
         :param bundle_uuid: unique identifier for bundle in dss
@@ -87,13 +88,15 @@ class DSSZarrStore(MutableMapping):
         """
         return self._bundle_version
 
-    def _get_dss_client(self, dss_instance=None):
-        client = hca.dss.DSSClient()
-        if not dss_instance:
-            client.host = "https://dss.integration.data.humancellatlas.org/v1"
-        else:
-            client.host = "https://dss.{dss_instance}.data.humancellatlas.org/v1".format(
-                dss_instance=dss_instance)
+    def _get_dss_client(self, dss_instance="integration"):
+        # Default DSS config is unreachable when a user defined config dir is supplied.
+        # This workaround supplies an explicit DSS config to avoid reading the config dir.
+        # TODO: Fix user set config dir issue in DSS
+        dss_config = HCAConfig()
+        dss_config['DSSClient'] = {}
+        dss_config['DSSClient']['swagger_url'] = f"https://dss.{dss_instance}.data.humancellatlas.org/v1/swagger.json"
+
+        client = hca.dss.DSSClient(config=dss_config)
         return client
 
     def __setitem__(self, key, value):
