@@ -9,3 +9,4 @@ requests==2.19.1
 zarr==2.2.0
 pandas==0.23.4
 hca==4.3.3
+s3fs==0.1.6
