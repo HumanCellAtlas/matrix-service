@@ -25,7 +25,7 @@ class ZarrToS3Writer():
         }
         self.order = "C"
 
-    def run(self, request_id: str, filtered_exp_df: DataFrame, filtered_qc_df: DataFrame):
+    def write(self, request_id: str, filtered_exp_df: DataFrame, filtered_qc_df: DataFrame):
         """
         Method to write filtered pandas matrices to respective location in s3 zarr store
         Params:
