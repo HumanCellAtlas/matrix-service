@@ -23,7 +23,7 @@ def convert_dss_zarr_root_to_subset_pandas_dfs(zarr_root: Group, start_row: int,
     return expression_df, qc_df
 
 
-def pass_filter_through_pandas_dfs(filter_query: str, exp_df: DataFrame, qc_df: DataFrame):
+def apply_filter_to_matrix_pandas_dfs(filter_query: str, exp_df: DataFrame, qc_df: DataFrame):
     """
     Params:
         filter_query: query filter string in pandas notation
