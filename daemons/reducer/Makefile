@@ -1,4 +1,4 @@
-include ../../common.mk
+#include ../../common.mk
 .PHONY: install build stage deploy clobber
 
 ZIP_FILE=reducer_daemon.zip
@@ -15,14 +15,15 @@ build:
 	rm -rf target
 	mkdir target
 	pip install -r requirements.txt -t target/ --upgrade
+	cp target.in/blosc.cpython-36m-x86_64-linux-gnu.so target/numcodecs
 	cp -R ../../matrix target/
 	cp -R *.py target/
 
 	cd target && zip -r ../$(ZIP_FILE) *
 
-stage: build
+stage:
 	aws s3 cp $(ZIP_FILE) s3://$(BUCKET)/$(STAGED_FILE_KEY)
-	rm -rf target
+	#rm -rf target
 
 deploy: stage
 	aws lambda update-function-code --function-name dcp-matrix-service-reducer-$(DEPLOYMENT_STAGE) --s3-bucket $(BUCKET) --s3-key $(STAGED_FILE_KEY)

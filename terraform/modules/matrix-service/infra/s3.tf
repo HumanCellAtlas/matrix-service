@@ -1,4 +1,4 @@
-resource "aws_s3_bucket" "matrix_service_results_bucket" {
+resource "aws_s3_bucket" "matrix-results" {
   bucket = "dcp-matrix-service-results-${var.deployment_stage}"
   acl    = "public-read"
 
@@ -26,5 +26,5 @@ output "deployment_bucket_id" {
 }
 
 output "results_bucket_arn" {
-  value = "${aws_s3_bucket.matrix_service_results_bucket.arn}"
+  value = "${aws_s3_bucket.matrix-results.arn}"
 }

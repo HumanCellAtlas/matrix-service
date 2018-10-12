@@ -61,7 +61,7 @@ resource "aws_iam_role_policy" "matrix_service_reducer_lambda" {
       ],
       "Resource": [
         "${var.results_bucket_arn}",
-        "${var.results_bucket_arn}:*"
+        "${var.results_bucket_arn}/*"
       ]
     }
   ]
@@ -83,6 +83,7 @@ resource "aws_lambda_function" "matrix_service_reducer_lambda" {
       DEPLOYMENT_STAGE = "${var.deployment_stage}"
       DYNAMO_STATE_TABLE_NAME = "dcp-matrix-service-state-table-${var.deployment_stage}"
       DYNAMO_OUTPUT_TABLE_NAME = "dcp-matrix-service-output-table-${var.deployment_stage}"
+      S3_RESULTS_BUCKET = "dcp-matrix-service-results-${var.deployment_stage}"
     }
   }
 }
