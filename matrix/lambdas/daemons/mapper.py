@@ -1,3 +1,4 @@
+import os
 import typing
 
 import zarr
@@ -34,7 +35,7 @@ class Mapper:
         :param bundle_version: Bundle version of the analysis bundle containing the expression matrix to be filtered
         :return:
         """
-        print(f"Mapper running with: {bundle_uuid}, {bundle_version}")
+        print(f"{self.request_id} Mapper running with: {bundle_uuid}, {bundle_version}")
         worker_chunk_specs = Mapper._get_chunk_specs(bundle_uuid, bundle_version)
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
@@ -42,8 +43,11 @@ class Mapper:
                                                   StateTableField.EXPECTED_WORKER_EXECUTIONS.value,  # TODO: use enum
                                                   len(worker_chunk_specs))
 
+        print(f"{self.request_id} Invoking {len(worker_chunk_specs)} worker lambdas...")
         for worker_chunk_spec in worker_chunk_specs:
             self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_spec))
+            print(f"{self.request_id} Worker invoked: start row "
+                  f"{worker_chunk_spec['start_row']}, num rows {worker_chunk_spec['num_rows']}")
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
@@ -73,7 +77,9 @@ class Mapper:
         :param bundle_version: Bundle version of the analysis bundle containing the expression matrix
         :return: List of dicts describing row subsets (chunks) of the input expression matrix
         """
-        zarr_store = DSSZarrStore(bundle_uuid, bundle_version=bundle_version, dss_instance="dev")
+        zarr_store = DSSZarrStore(bundle_uuid,
+                                  bundle_version=bundle_version,
+                                  dss_instance=os.environ['DEPLOYMENT_STAGE'])
         root = zarr.group(store=zarr_store)
 
         rows_per_chunk = root.expression.chunks[0]

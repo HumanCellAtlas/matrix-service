@@ -28,7 +28,7 @@ class TestMapper(unittest.TestCase):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
 
-        test_chunk_specs = [{}]
+        test_chunk_specs = [{'start_row': 0, 'num_rows': 5}]
         mock_get_chunk_specs.return_value = test_chunk_specs
         mock_get_worker_payload.return_value = {}
 
