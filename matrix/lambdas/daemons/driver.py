@@ -25,10 +25,11 @@ class Driver:
         self.dynamo_handler.create_output_table_entry(request_id)
 
         for fqid in bundle_fqids:
+            bundle_uuid, bundle_version = fqid.split(".", 1)
             mapper_payload = {
                 'request_id': request_id,
-                'bundle_fqid': fqid,
+                'bundle_uuid': bundle_uuid,
+                'bundle_version': bundle_version,
                 'format': format,
             }
-
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
