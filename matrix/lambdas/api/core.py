@@ -1,10 +1,14 @@
+import os
 import requests
 import uuid
 
-from ...common.constants import MatrixFormat
-from ...common.constants import MatrixRequestStatus
-from ...common.lambda_handler import LambdaHandler
-from ...common.lambda_handler import LambdaName
+from matrix.common.constants import MatrixFormat
+from matrix.common.constants import MatrixRequestStatus
+from matrix.common.dynamo_handler import DynamoHandler
+from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.dynamo_handler import StateTableField
+from matrix.common.lambda_handler import LambdaHandler
+from matrix.common.lambda_handler import LambdaName
 
 
 def post_matrix(body: dict):
@@ -55,11 +59,31 @@ def post_matrix(body: dict):
             }, requests.codes.accepted
 
 
+# TODO: write tests
 def get_matrix(request_id: str):
+    dynamo_handler = DynamoHandler()
+    # TODO: error handling: invalid request_id
+    ready, ready = dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+                                                        request_id,
+                                                        StateTableField.COMPLETED_REDUCER_EXECUTIONS.value,
+                                                        0)
+    if ready:
+        # TODO: error handling: missing zarr (corrupted zarr?)
+        s3_key = f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_id}.zarr"
+        return {'request_id': request_id,
+                'status': "Complete",
+                'key': s3_key,
+                'eta': "N/A",
+                'message': f"Request {request_id} has successfully completed. The resultant expression matrix can be "
+                           f"downloaded at the S3 location {s3_key}",
+                'links': [],
+                }, requests.codes.ok
+
+    # TODO: return appropriate code if result is not ready
     return {'request_id': request_id,
-            'status': "In Progress",
-            'key': "sample key",
-            'eta': "sample eta",
-            'message': "sample message",
+            'status': "In progress",
+            'key': "N/A",
+            'eta': "N/A",
+            'message': "Request {request_id} is still processing. Please try again later.",
             'links': [],
             }, requests.codes.ok
