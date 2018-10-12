@@ -42,7 +42,8 @@ resource "aws_iam_role_policy" "matrix_service_mapper_lambda" {
       "Sid": "DynamoPolicy",
       "Effect": "Allow",
       "Action": [
-        "dynamodb:UpdateItem"
+        "dynamodb:UpdateItem",
+        "dynamodb:GetItem"
       ],
       "Resource": "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}"
     },
@@ -71,9 +72,10 @@ resource "aws_lambda_function" "matrix_service_mapper_lambda" {
   environment {
     variables = {
       DEPLOYMENT_STAGE = "${var.deployment_stage}"
-      LAMBDA_WORKER_FUNCTION_NAME="dcp-matrix-service-worker-${var.deployment_stage}"
-      DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
-      DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
+      LAMBDA_WORKER_FUNCTION_NAME = "dcp-matrix-service-worker-${var.deployment_stage}"
+      DYNAMO_STATE_TABLE_NAME = "dcp-matrix-service-state-table-${var.deployment_stage}"
+      DYNAMO_OUTPUT_TABLE_NAME = "dcp-matrix-service-output-table-${var.deployment_stage}"
+      XDG_CONFIG = "/tmp/.config"
     }
   }
 }
