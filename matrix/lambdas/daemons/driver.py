@@ -13,7 +13,7 @@ class Driver:
         self.lambda_handler = LambdaHandler()
         self.dynamo_handler = DynamoHandler()
 
-    def run(self, request_id: str, bundle_fqids: typing.List[str], format: str):
+    def run(self, request_id: str, bundle_fqids: typing.List[str], filter_string: str, format: str):
         """
         Initialize a filter merge job and spawn a mapper task for each bundle_fqid.
 
@@ -30,6 +30,7 @@ class Driver:
                 'request_id': request_id,
                 'bundle_uuid': bundle_uuid,
                 'bundle_version': bundle_version,
+                'filter_string': filter_string,
                 'format': format,
             }
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)

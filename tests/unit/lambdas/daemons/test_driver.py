@@ -19,7 +19,7 @@ class TestDriver(unittest.TestCase):
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
 
-        self._driver.run(request_id, bundle_fqids, format)
+        self._driver.run(request_id, bundle_fqids, "", format)
 
         mock_dynamo_create_state_table_entry.assert_called_once_with(request_id, len(bundle_fqids))
         mock_dynamo_create_output_table_entry.assert_called_once_with(request_id)
@@ -27,10 +27,12 @@ class TestDriver(unittest.TestCase):
             call(LambdaName.MAPPER, {'request_id': request_id,
                                      'bundle_uuid': "id1",
                                      'bundle_version': "version",
+                                     'filter_string': "",
                                      'format': format}),
             call(LambdaName.MAPPER, {'request_id': request_id,
                                      'bundle_uuid': "id2",
                                      'bundle_version': "version",
+                                     'filter_string': "",
                                      'format': format}),
         ]
         mock_lambda_invoke.assert_has_calls(expected_calls)
