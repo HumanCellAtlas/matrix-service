@@ -11,19 +11,6 @@ resource "aws_dynamodb_table" "state-table" {
   # Add tags to this resource
 }
 
-resource "aws_dynamodb_table" "timing-table" {
-  name           = "dcp-matrix-service-timing-table-${var.deployment_stage}"
-  read_capacity  = 3
-  write_capacity = 3
-  hash_key       = "RequestId"
-
-  attribute {
-    name = "RequestId"
-    type = "S"
-  }
-  # Add tags to this resource
-}
-
 resource "aws_dynamodb_table" "lock-table" {
   name           = "dcp-matrix-service-lock-table-${var.deployment_stage}"
   read_capacity  = 25

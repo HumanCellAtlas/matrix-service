@@ -28,7 +28,10 @@ resource "aws_iam_role_policy" "matrix_service_worker_lambda" {
     {
       "Sid": "LogsPolicy",
       "Effect": "Allow",
-      "Resource": "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-worker-${var.deployment_stage}",
+      "Resource": [
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-worker-${var.deployment_stage}",
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-worker-${var.deployment_stage}:*:*"
+      ],
       "Action": [
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
@@ -39,9 +42,13 @@ resource "aws_iam_role_policy" "matrix_service_worker_lambda" {
       "Sid": "DynamoPolicy",
       "Effect": "Allow",
       "Action": [
-        "dynamodb:PutItem"
+        "dynamodb:UpdateItem",
+        "dynamodb:GetItem"
       ],
-      "Resource": "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}"
+      "Resource": [
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
+      ]
     },
     {
       "Sid": "LambdaPolicy",
@@ -70,7 +77,9 @@ resource "aws_lambda_function" "matrix_service_worker_lambda" {
         DEPLOYMENT_STAGE = "${var.deployment_stage}"
         LAMBDA_REDUCER_FUNCTION_NAME="dcp-matrix-service-reducer-${var.deployment_stage}"
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
+        DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
         S3_RESULTS_BUCKET="dcp-matrix-service-results-${var.deployment_stage}"
+        XDG_CONFIG_HOME="/tmp/.config"
     }
   }
 }
