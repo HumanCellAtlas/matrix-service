@@ -16,7 +16,8 @@ class TestCore(unittest.TestCase):
 
         body = {
             'bundle_fqids': bundle_fqids,
-            'format': format
+            'filter_string': "",
+            'format': format,
         }
         response, code = post_matrix(body)
         body.update({'request_id': mock.ANY})

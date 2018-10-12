@@ -14,7 +14,7 @@ class TestMapper(unittest.TestCase):
     def setUp(self):
         self.request_id = str(uuid.uuid4())
         self.format = "test_format"
-        self._mapper = Mapper(self.request_id, self.format)
+        self._mapper = Mapper(self.request_id, self.format, "")
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_worker_payload")
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
@@ -84,16 +84,12 @@ class TestMapper(unittest.TestCase):
         test_chunk_spec = {}
         expected_payload = {
             'request_id': self.request_id,
+            'filter_string': "",
             'format': self.format,
             'worker_chunk_spec': test_chunk_spec
         }
 
         payload = self._mapper._get_worker_payload(test_chunk_spec)
-
-        self.assertTrue("request_id" in payload)
-        self.assertTrue("format" in payload)
-        self.assertTrue("worker_chunk_spec" in payload)
-
         self.assertEqual(payload, expected_payload)
 
     @mock.patch("zarr.group")

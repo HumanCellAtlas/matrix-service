@@ -10,23 +10,23 @@ from ...common.lambda_handler import LambdaName
 def post_matrix(body: dict):
     has_ids = 'bundle_fqids' in body
     has_url = 'bundle_fqids_url' in body
-
     format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
+    filter_string = body['filter_string'] if 'filter_string' in body else ""
 
     # Validate input parameters
     if has_ids and has_url:
         return {
             'code': requests.codes.bad_request,
-            'message': "Invalid parameters supplied. "
-                       "Must supply either one of `bundle_fqids` or `bundle_fqids_url`. "
+            'message': "Invalid parameters supplied."
+                       "Must supply either one of `bundle_fqids` or `bundle_fqids_url`."
                        "Visit https://matrix.dev.data.humancellatlas.org for more information."
         }, requests.codes.bad_request
 
     if not has_ids and not has_url:
         return {
             'code': requests.codes.bad_request,
-            'message': "Missing required parameter. "
-                       "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
+            'message': "Missing required parameter."
+                       "One of `bundle_fqids` or `bundle_fqids_url` must be supplied."
                        "Visit https://matrix.dev.data.humancellatlas.org for more information."
         }, requests.codes.bad_request
 
@@ -41,6 +41,7 @@ def post_matrix(body: dict):
     driver_payload = {
         'request_id': request_id,
         'bundle_fqids': bundle_fqids,
+        'filter_string': filter_string,
         'format': format,
     }
     lambda_handler = LambdaHandler()
