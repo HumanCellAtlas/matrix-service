@@ -1,0 +1,188 @@
+import os
+import math
+import json
+
+import s3fs
+import zarr
+from pandas import DataFrame
+import numpy
+
+
+from matrix.common.dynamo_handler import DynamoHandler
+from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.dynamo_handler import OutputTableField
+from matrix.common.dynamo_utils import Lock
+
+
+ZARR_OUTPUT_CONFIG = {
+    "cells_per_chunk": 3000,
+    "compressor": zarr.storage.default_compressor,
+    "dtypes": {
+        "expression": "<f4",
+        "cell_id": "<U64",
+        "cell_metadata": "<f4"
+    },
+    "order": "C"
+}
+
+
+class S3ZarrStore:
+
+    def __init__(self, request_id: str):
+        self._request_id = request_id
+        self._results_bucket = os.environ['S3_RESULTS_BUCKET']
+        self._zarr_lock_table_name = os.environ['DYNAMO_LOCK_TABLE_NAME']
+        self._cells_per_chunk = ZARR_OUTPUT_CONFIG['cells_per_chunk']
+        self.dynamo_handler = DynamoHandler()
+        self.s3_file_system = s3fs.S3FileSystem(anon=False)
+        self.exp_df = None
+        self.qc_df = None
+
+    def write_from_pandas_dfs(self, exp_df: DataFrame, qc_df: DataFrame, num_rows: int):
+        """Write specified number of rows from matrix dataframes to s3 results bucket.
+
+        Input:
+            exp_df: (DataFrame) expression pandas dataframe from dss zarr store
+            qc_df: (DataFrame) qc values pandas dataframe from dss zarr store
+            num_rows: (int) number of rows to write from input dataframes
+        """
+        self.exp_df = exp_df
+        self.qc_df = qc_df
+
+        # Figure out which rows of the output table this filtered chunk will be assigned.
+        output_start_row_idx, output_end_row_idx = self._get_output_row_boundaries(num_rows)
+        # Based on that, determine which zarr chunks we need to write to
+        output_start_chunk_idx, output_end_chunk_idx = self._get_output_chunk_boundaries(
+            output_start_row_idx,
+            output_end_row_idx
+        )
+
+        # Now iterate through each chunk we're supposed to write to, and write the
+        # appropriate rows to each one.
+        written_rows = 0
+        for chunk_idx in range(output_start_chunk_idx, output_end_chunk_idx):
+            output_chunk_start = chunk_idx * self._cells_per_chunk
+
+            # Get the start and end rows in the filtered matrix that correspond to
+            # this chunk as well as the start and end rows in the chunk.
+            input_row_start = int(written_rows)
+            output_row_start = int(max(0, output_start_row_idx - output_chunk_start))
+            input_row_end = int(min(output_end_row_idx - output_start_row_idx,
+                                    input_row_start + self._cells_per_chunk - output_row_start))
+            output_row_end = int(output_row_start + input_row_end - input_row_start)
+            print(f"Writing {input_row_start}:{input_row_end} --> {output_row_start}:{output_row_end}")
+
+            input_bounds = (input_row_start, input_row_end)
+            output_bounds = (output_row_start, output_row_end)
+            self._write_row_data_to_results_chunk(chunk_idx, input_bounds, output_bounds)
+            row_count = input_row_end - input_row_start
+            written_rows += row_count
+
+    def _write_row_data_to_results_chunk(self, chunk_idx: int, input_bounds: tuple, output_bounds: tuple):
+        """Write bounded row data from input to specified results chunk.
+
+        Input:
+            chunk_idx: (str) index corresponding with index of chunk in s3 zarr store
+            input_bounds: (tuple) Beginning and end of boundaries for input rows
+            output_bounds: (tuple) Beginning and end of boundaries in output rows
+        """
+        for dset in ["expression", "cell_metadata", "cell_id"]:
+            if dset == "expression":
+                values = self.exp_df.values
+            elif dset == "cell_metadata":
+                values = self.qc_df.values
+            elif dset == "cell_id":
+                values = self.exp_df.index.values
+            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/{chunk_idx}.0"
+            print(f"Writing {dset} to {full_dest_key}")
+            if values.ndim == 2:
+                chunk_shape = (self._cells_per_chunk, values.shape[1])
+            else:
+                chunk_shape = (self._cells_per_chunk,)
+            dtype = ZARR_OUTPUT_CONFIG['dtypes'][dset]
+
+            # Reading and writing zarr chunks is pretty straightforward, you
+            # just pass it through the compression and cast it to a numpy array
+            with Lock(self._zarr_lock_table_name, full_dest_key):
+                try:
+                    arr = numpy.frombuffer(
+                        ZARR_OUTPUT_CONFIG['compressor'].decode(
+                            self.s3_file_system.open(full_dest_key, 'rb').read()),
+                        dtype=dtype).reshape(chunk_shape, order=ZARR_OUTPUT_CONFIG['order'])
+                except FileNotFoundError:
+                    arr = numpy.zeros(shape=chunk_shape,
+                                      dtype=dtype)
+                    print("Created new array")
+                arr.setflags(write=1)
+                arr[output_bounds[0]:output_bounds[1]] = values[input_bounds[0]:input_bounds[1]]
+                self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
+
+    def write_row_metadata(self):
+        pass
+        # TO BE IMPLEMENTED AND UTILIZED IN REDUCER
+
+    def write_column_data(self, group: zarr.Group):
+        """Write all column data from input to results s3 bucket.
+
+        Input:
+            group: (str) zarr.Group representation of dss zarr store
+        """
+        for dset in ["gene_id", "cell_metadata_name"]:
+            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/0.0"
+            if not self.s3_file_system.exists(full_dest_key):
+                with Lock(self._zarr_lock_table_name, full_dest_key):
+                    arr = numpy.array(getattr(group, dset))
+                    self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
+
+                zarray_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/.zarray"
+                zarray = {
+                    "chunks": [arr.shape[0]],
+                    "compressor": ZARR_OUTPUT_CONFIG['compressor'].get_config(),
+                    "dtype": str(arr.dtype),
+                    "fill_value": self._fill_value(arr.dtype),
+                    "filters": None,
+                    "order": ZARR_OUTPUT_CONFIG['order'],
+                    "shape": [arr.shape[0]],
+                    "zarr_format": 2
+                }
+                with Lock(self._zarr_lock_table_name, zarray_key):
+                    self.s3_file_system.open(zarray_key, 'wb').write(json.dumps(zarray).encode())
+
+    def _get_output_row_boundaries(self, nrows: int):
+        """Get the start and end rows in the output table to write to.
+
+        Input:
+            nrows: number of rows for current chunk
+        Output:
+            Tuple:
+                output_start_row_idx: (int) start row in output table to begin writing
+                output_start_end_idx: (int) end row in output table at which to end writing
+        """
+        field_value = OutputTableField.ROW_COUNT.value
+        output_start_row_idx, output_end_row_idx = self.dynamo_handler.increment_table_field(
+            DynamoTable.OUTPUT_TABLE, self._request_id, field_value, nrows)
+        return output_start_row_idx, output_end_row_idx
+
+    def _get_output_chunk_boundaries(self, output_start_row_idx: int, output_end_row_idx: int):
+        """Get the start and end chunks in the output table to write to.
+
+        Input:
+            output_start_row_idx: (int) start row in output table to begin writing
+            output_end_row_idx:   (int) end row in output table to end writing
+
+        Output:
+            Tuple:
+                start_chunk_idx: (int) start chunk in output table to begin writing
+                end_chunk_idx: (int) end chunk in output table at which to end writing
+        """
+        output_start_chunk_idx = math.floor(output_start_row_idx / self._cells_per_chunk)
+        output_end_chunk_idx = math.ceil(output_end_row_idx / self._cells_per_chunk)
+        return output_start_chunk_idx, output_end_chunk_idx
+
+    def _fill_value(self, dtype: str):
+        if dtype.kind == 'f':
+            return float(0)
+        elif dtype.kind == 'i':
+            return 0
+        elif dtype.kind == 'U':
+            return ""
