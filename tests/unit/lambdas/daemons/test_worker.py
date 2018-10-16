@@ -2,6 +2,7 @@ import os
 import uuid
 
 import boto3
+from unittest import mock
 
 from ... import MatrixTestCaseUsingMockAWS
 from ... import test_bundle_spec
@@ -9,6 +10,7 @@ from matrix.lambdas.daemons.worker import Worker
 from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.dynamo_handler import StateTableField
 from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.lambda_handler import LambdaName
 
 
 class TestWorker(MatrixTestCaseUsingMockAWS):
@@ -32,8 +34,28 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         }
         self.worker = Worker(self.request_id)
 
-    def test_run(self):
-        pass
+    @mock.patch('matrix.common.s3_zarr_store.S3ZarrStore.write_from_pandas_dfs')
+    @mock.patch('matrix.common.dss_zarr_store.DSSZarrStore.__init__')
+    @mock.patch('zarr.group')
+    @mock.patch('matrix.lambdas.daemons.worker.convert_dss_zarr_root_to_subset_pandas_dfs')
+    @mock.patch('matrix.lambdas.daemons.worker.Worker._check_if_all_workers_and_mappers_for_request_are_complete')
+    @mock.patch('matrix.common.dynamo_handler.DynamoHandler.increment_table_field')
+    @mock.patch('matrix.common.s3_zarr_store.S3ZarrStore.write_column_data')
+    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    def test_run(self, mock_lambda_handler_invoke, mock_write_column_data, mock_increment_dynamo, mock_is_complete,
+                 mock_df_conversion, mock_zarr_group, mock_dss_zarr_store, mock_write_to_s3):
+        mock_dss_zarr_store.return_value = None
+        mock_write_to_s3.return_value = None
+        mock_zarr_group.return_value = None
+        mock_df_conversion.return_value = (None, None)
+        mock_is_complete.return_value = True
+        self.worker.run(self.format_string, self.worker_chunk_spec)
+        expected_calls = [
+            mock.call(LambdaName.REDUCER, {'request_id': self.request_id,
+                                           'format': self.format_string}),
+        ]
+        self.assertEqual(mock_lambda_handler_invoke.call_count, 1)
+        mock_lambda_handler_invoke.assert_has_calls(expected_calls)
 
     def test_parse_worker_chunk_spec(self):
         self.worker._parse_worker_chunk_spec(self.worker_chunk_spec)
