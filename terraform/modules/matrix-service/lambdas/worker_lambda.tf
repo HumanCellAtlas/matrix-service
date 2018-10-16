@@ -93,6 +93,7 @@ resource "aws_lambda_function" "matrix_service_worker_lambda" {
         LAMBDA_REDUCER_FUNCTION_NAME="dcp-matrix-service-reducer-${var.deployment_stage}"
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
         DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
+        DYNAMO_LOCK_TABLE_NAME="dcp-matrix-service-lock-table-${var.deployment_stage}"
         S3_RESULTS_BUCKET="dcp-matrix-service-results-${var.deployment_stage}"
         XDG_CONFIG_HOME="/tmp/.config"
     }
