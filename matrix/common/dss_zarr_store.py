@@ -5,6 +5,7 @@ from collections import MutableMapping
 import hashlib
 
 import hca
+import zarr
 from hca import HCAConfig
 
 
@@ -76,6 +77,8 @@ class DSSZarrStore(MutableMapping):
                     "sha1": dcp_file["sha1"]
                 }
 
+        self._root = zarr.group(store=self)
+
     @property
     def bundle_uuid(self):
         """str : DCP uuid of the analysis bundle."""
@@ -87,6 +90,34 @@ class DSSZarrStore(MutableMapping):
         latest version.
         """
         return self._bundle_version
+
+    @property
+    def expression(self):
+        return self._root.expression
+
+    @property
+    def cell_id(self):
+        return self._root.cell_id
+
+    @property
+    def cell_metadata(self):
+        return self._root.cell_metadata
+
+    @property
+    def cell_metadata_name(self):
+        return self._root.cell_metadata_name
+
+    @property
+    def gene_id(self):
+        return self._root.cell_id
+
+    @property
+    def gene_metadata(self):
+        return self._root.gene_metadata
+
+    @property
+    def gene_metadata_name(self):
+        return self._root.gene_metadata_name
 
     def _get_dss_client(self, dss_instance="integration"):
         # Default DSS config is unreachable when a user defined config dir is supplied.
