@@ -45,16 +45,16 @@ class Reducer:
         s3.open(zgroup_key, 'wb').write(json.dumps({"zarr_format": 2}).encode())
 
         num_genes = json.loads(s3.open(
-            f"{s3_results_prefix}/gene_name/.zarray", 'rb').read())["chunks"][0]
+            f"{s3_results_prefix}/gene_id/.zarray", 'rb').read())["chunks"][0]
         num_qcs = json.loads(s3.open(
-            f"{s3_results_prefix}/qc_names/.zarray", 'rb').read())["chunks"][0]
-        ncols = {"data": int(num_genes), "qc_values": int(num_qcs), "cell_name": 0}
+            f"{s3_results_prefix}/cell_metadata_name/.zarray", 'rb').read())["chunks"][0]
+        ncols = {"expression": int(num_genes), "cell_metadata": int(num_qcs), "cell_id": 0}
         num_rows, num_rows = self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE,
                                                                        self.request_id,
                                                                        OutputTableField.ROW_COUNT.value,
                                                                        0)
 
-        for dset in ["data", "qc_values", "cell_name"]:
+        for dset in ["expression", "cell_metadata", "cell_id"]:
             zarray_key = f"{s3_results_prefix}/{dset}/.zarray"
 
             chunks = [Reducer.ZARR_OUTPUT_CONFIG["cells_per_chunk"]]
