@@ -43,11 +43,14 @@ resource "aws_iam_role_policy" "matrix_service_worker_lambda" {
       "Effect": "Allow",
       "Action": [
         "dynamodb:UpdateItem",
-        "dynamodb:GetItem"
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
       ],
       "Resource": [
         "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
-        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}",
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-lock-table-${var.deployment_stage}"
       ]
     },
     {
@@ -57,6 +60,17 @@ resource "aws_iam_role_policy" "matrix_service_worker_lambda" {
         "lambda:InvokeFunction"
       ],
       "Resource": "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-reducer-${var.deployment_stage}"
+    },
+    {
+      "Sid": "s3",
+      "Effect": "Allow",
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
+      ]
     }
   ]
 }
@@ -70,7 +84,8 @@ resource "aws_lambda_function" "matrix_service_worker_lambda" {
   role             = "${aws_iam_role.matrix_service_worker_lambda.arn}"
   handler          = "app.worker_handler"
   runtime          = "python3.6"
-  timeout          = 300
+  timeout          = 900
+  memory_size      = 3000
 
   environment {
     variables = {
@@ -78,6 +93,7 @@ resource "aws_lambda_function" "matrix_service_worker_lambda" {
         LAMBDA_REDUCER_FUNCTION_NAME="dcp-matrix-service-reducer-${var.deployment_stage}"
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
         DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
+        DYNAMO_LOCK_TABLE_NAME="dcp-matrix-service-lock-table-${var.deployment_stage}"
         S3_RESULTS_BUCKET="dcp-matrix-service-results-${var.deployment_stage}"
         XDG_CONFIG_HOME="/tmp/.config"
     }
