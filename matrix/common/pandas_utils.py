@@ -16,10 +16,10 @@ def convert_dss_zarr_root_to_subset_pandas_dfs(zarr_root: Group, start_row: int,
     """
     expression_df = pandas.DataFrame(data=zarr_root.expression[start_row:end_row],
                                      index=zarr_root.cell_id[start_row:end_row],
-                                     columns=zarr_root.gene_id)
+                                     columns=zarr_root.gene_id[:])
     qc_df = pandas.DataFrame(data=zarr_root.cell_metadata[start_row:end_row],
                              index=zarr_root.cell_id[start_row:end_row],
-                             columns=zarr_root.cell_metadata_name[start_row:end_row])
+                             columns=zarr_root.cell_metadata_name[:])
     return expression_df, qc_df
 
 
