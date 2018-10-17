@@ -8,6 +8,7 @@ from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.dynamo_handler import StateTableField
 from matrix.common.dynamo_handler import OutputTableField
 from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.exceptions import MatrixException
 
 
 class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
@@ -127,3 +128,10 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_enum, 5)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
+
+    def test_get_table_item(self):
+        self.assertRaises(MatrixException, self.handler.get_table_item, DynamoTable.OUTPUT_TABLE, self.request_id)
+
+        self.handler.create_output_table_entry(self.request_id)
+        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
+        self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
