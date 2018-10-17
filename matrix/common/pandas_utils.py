@@ -17,9 +17,16 @@ def convert_dss_zarr_root_to_subset_pandas_dfs(zarr_root: Group, start_row: int,
     expression_df = pandas.DataFrame(data=zarr_root.expression[start_row:end_row],
                                      index=zarr_root.cell_id[start_row:end_row],
                                      columns=zarr_root.gene_id[:])
-    qc_df = pandas.DataFrame(data=zarr_root.cell_metadata[start_row:end_row],
-                             index=zarr_root.cell_id[start_row:end_row],
-                             columns=zarr_root.cell_metadata_name[:])
+    numeric_qc_df = pandas.DataFrame(data=zarr_root.cell_metadata_numeric[start_row:end_row],
+                                     index=zarr_root.cell_id[start_row:end_row],
+                                     columns=zarr_root.cell_metadata_numeric_name[:],
+                                     dtype="float32")
+    string_qc_df = pandas.DataFrame(data=zarr_root.cell_metadata_string[start_row:end_row],
+                                    index=zarr_root.cell_id[start_row:end_row],
+                                    columns=zarr_root.cell_metadata_string_name[:],
+                                    dtype="<U40")
+    qc_df = pandas.concat((numeric_qc_df, string_qc_df), axis=1, copy=False)
+
     return expression_df, qc_df
 
 
