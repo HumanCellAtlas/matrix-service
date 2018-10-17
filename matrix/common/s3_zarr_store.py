@@ -19,7 +19,8 @@ ZARR_OUTPUT_CONFIG = {
     "dtypes": {
         "expression": "<f4",
         "cell_id": "<U64",
-        "cell_metadata": "<f4"
+        "cell_numeric_metadata": "<f4",
+        "cell_string_metadata": "<U64"
     },
     "order": "C"
 }
@@ -80,11 +81,13 @@ class S3ZarrStore:
             output_bounds: (tuple) Beginning and end of boundaries in output rows
         """
         # TODO TEST THIS FUNCTION
-        for dset in ["expression", "cell_metadata", "cell_id"]:
+        for dset in ["expression", "cell_metadata_numeric", "cell_metadata_string", "cell_id"]:
             if dset == "expression":
                 values = self.exp_df.values
-            elif dset == "cell_metadata":
-                values = self.qc_df.values
+            elif dset == "cell_metadata_numeric":
+                values = self.qc_df.select_dtypes("float32").values
+            elif dset == "cell_metadata_string":
+                values = self.qc_df.select_dtypes("object").values
             elif dset == "cell_id":
                 values = self.exp_df.index.values
             full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/{chunk_idx}.0"
@@ -122,8 +125,8 @@ class S3ZarrStore:
             group: (str) zarr.Group representation of dss zarr store
         """
         # TO DO TEST THIS FUNCTION
-        for dset in ["gene_id", "cell_metadata_name"]:
-            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/0.0"
+        for dset in ["gene_id", "cell_metadata_numeric_name", "cell_metadata_string_name"]:
+            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/0"
             if not self.s3_file_system.exists(full_dest_key):
                 with Lock(full_dest_key):
                     arr = numpy.array(getattr(group, dset))
