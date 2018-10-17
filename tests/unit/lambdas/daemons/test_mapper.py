@@ -40,11 +40,11 @@ class TestMapper(unittest.TestCase):
         expected_calls = [
             call(DynamoTable.STATE_TABLE,
                  self.request_id,
-                 StateTableField.EXPECTED_WORKER_EXECUTIONS.value,
+                 StateTableField.EXPECTED_WORKER_EXECUTIONS,
                  len(test_chunk_specs)),
             call(DynamoTable.STATE_TABLE,
                  self.request_id,
-                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value,
+                 StateTableField.COMPLETED_MAPPER_EXECUTIONS,
                  1)
         ]
         mock_dynamo_increment_table_field.assert_has_calls(expected_calls)
@@ -70,11 +70,11 @@ class TestMapper(unittest.TestCase):
         expected_calls = [
             call(DynamoTable.STATE_TABLE,
                  self.request_id,
-                 StateTableField.EXPECTED_WORKER_EXECUTIONS.value,
+                 StateTableField.EXPECTED_WORKER_EXECUTIONS,
                  len(test_chunk_specs)),
             call(DynamoTable.STATE_TABLE,
                  self.request_id,
-                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value,
+                 StateTableField.COMPLETED_MAPPER_EXECUTIONS,
                  1)
         ]
         mock_dynamo_increment_table_field.assert_has_calls(expected_calls)

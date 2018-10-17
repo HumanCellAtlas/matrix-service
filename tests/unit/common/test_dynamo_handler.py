@@ -77,8 +77,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 0)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
-        field_value = StateTableField.COMPLETED_WORKER_EXECUTIONS.value
-        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_value, 5)
+        field_enum = StateTableField.COMPLETED_WORKER_EXECUTIONS
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_enum, 5)
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 5)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
@@ -89,8 +89,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         response, entry = self._get_output_table_response_and_entry()
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
-        field_value = OutputTableField.ROW_COUNT.value
-        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_value, 5)
+        field_enum = OutputTableField.ROW_COUNT
+        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_enum, 5)
         response, entry = self._get_output_table_response_and_entry()
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
 
@@ -101,8 +101,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
         key_dict = {"RequestId": self.request_id}
-        field_value = StateTableField.COMPLETED_WORKER_EXECUTIONS.value
-        self.handler._increment_field(self.handler._state_table, key_dict, field_value, 15)
+        field_enum = StateTableField.COMPLETED_WORKER_EXECUTIONS
+        self.handler._increment_field(self.handler._state_table, key_dict, field_enum, 15)
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 15)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
@@ -113,8 +113,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
         key_dict = {"RequestId": self.request_id}
-        field_value = StateTableField.COMPLETED_WORKER_EXECUTIONS.value
-        self.handler._increment_field(self.handler._state_table, key_dict, field_value, 15)
+        field_enum = StateTableField.COMPLETED_WORKER_EXECUTIONS
+        self.handler._increment_field(self.handler._state_table, key_dict, field_enum, 15)
         entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, self.request_id)
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 15)
 
@@ -123,7 +123,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
-        field_value = OutputTableField.ROW_COUNT.value
-        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_value, 5)
+        field_enum = OutputTableField.ROW_COUNT
+        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_enum, 5)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)

@@ -35,17 +35,20 @@ class Worker:
         format: (str) Expected file format of request
         worker_chunk_spec: (dict) Information about input bundle and matrix row indices to process
         """
+        # TO DO pass in the parameters in worker chunk spec flat
         self._parse_worker_chunk_spec(worker_chunk_spec)
         dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuid,
                                       bundle_version=self._bundle_version,
                                       dss_instance=self._deployment_stage)
         group = zarr.group(store=dss_zarr_store)
         exp_df, qc_df = convert_dss_zarr_root_to_subset_pandas_dfs(group, self._input_start_row, self._input_end_row)
-        s3_zarr_store = S3ZarrStore(self._request_id)
-        s3_zarr_store.write_from_pandas_dfs(exp_df, qc_df, self._num_rows)
+        s3_zarr_store = S3ZarrStore(request_id=self._request_id, exp_df=exp_df, qc_df=qc_df)
+        s3_zarr_store.write_from_pandas_dfs(self._num_rows)
 
-        field_value = StateTableField.COMPLETED_WORKER_EXECUTIONS.value
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE, self._request_id, field_value, 1)
+        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+                                                  self._request_id,
+                                                  StateTableField.COMPLETED_WORKER_EXECUTIONS,
+                                                  1)
 
         workers_and_mappers_are_complete = self._check_if_all_workers_and_mappers_for_request_are_complete(
             self._request_id)

@@ -27,7 +27,9 @@ class TestZarrS3Store(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler = DynamoHandler()
         self.dynamo_handler.create_output_table_entry(self.request_id)
 
-        self.s3_zarr_store = S3ZarrStore(self.request_id)
+        exp_df = DataFrame()
+        qc_df = DataFrame()
+        self.s3_zarr_store = S3ZarrStore(self.request_id, exp_df, qc_df)
 
     def test_get_output_row_boundaries(self):
         start_row_idx, end_row_idx = self.s3_zarr_store._get_output_row_boundaries(6000)
@@ -53,10 +55,8 @@ class TestZarrS3Store(MatrixTestCaseUsingMockAWS):
 
     @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_row_data_to_results_chunk")
     def test_write_from_pandas_dfs_from_zero_num_rows(self, mock_write_row_data):
-        exp_df = DataFrame()
-        qc_df = DataFrame()
         num_rows = 5000
-        self.s3_zarr_store.write_from_pandas_dfs(exp_df, qc_df, num_rows)
+        self.s3_zarr_store.write_from_pandas_dfs(num_rows)
         input_bounds_one = (0, 3000)
         input_bounds_two = (3000, 5000)
         output_bounds_one = (0, 3000)
@@ -70,12 +70,10 @@ class TestZarrS3Store(MatrixTestCaseUsingMockAWS):
 
     @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_row_data_to_results_chunk")
     def test_write_from_pandas_dfs_from_preexisting_rows(self, mock_write_row_data):
-        field_value = OutputTableField.ROW_COUNT.value
-        self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_value, 50)
-        exp_df = DataFrame()
-        qc_df = DataFrame()
+        field_enum = OutputTableField.ROW_COUNT
+        self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_enum, 50)
         num_rows = 5000
-        self.s3_zarr_store.write_from_pandas_dfs(exp_df, qc_df, num_rows)
+        self.s3_zarr_store.write_from_pandas_dfs(num_rows)
         input_bounds_one = (0, 2950)
         input_bounds_two = (2950, 5000)
         output_bounds_one = (50, 3000)

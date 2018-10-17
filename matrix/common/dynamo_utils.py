@@ -1,6 +1,10 @@
-"""Implement a Lock object using DynamoDB. Can be used to acquire locks in distributed
+"""TODO TEST AND/OR REFACTOR THIS CLASS OUT OF IMPLEMENTATION.
+
+Implement a Lock object using DynamoDB. Can be used to acquire locks in distributed
 environments like multiple independent lambdas.
 """
+import os
+
 import datetime
 import time
 import uuid
@@ -14,21 +18,19 @@ class Lock(object):
 
     timestamp_fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-    def __init__(self, lock_table_name, lock_key, expiration_in_ms=None):
+    def __init__(self, lock_key, expiration_in_ms=None):
         """Init the lock object.
         Args:
-          lock_table_name: Name of the table that manages the locks. This must
-            be the same for all lock clients.
           lock_key: String representing the resource associated with the lock. For
             example, if you're locking an S3 object, this would be the bucket/key
             for the object.
           expiration_in_ms: Optionally set an expiration time for the lock. This
             is helpful the the acquirer dies gracelessly, for example.
         """
-        self._lock_table_name = lock_table_name
         self._lock_key = lock_key
         self._expiration_in_ms = expiration_in_ms
         self._lock_id = str(uuid.uuid4())
+        self._lock_table_name = os.environ['DYNAMO_LOCK_TABLE_NAME']
 
     def __enter__(self):
         """Support `with DynamoLock(...)`"""

@@ -50,12 +50,8 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         mock_df_conversion.return_value = (None, None)
         mock_is_complete.return_value = True
         self.worker.run(self.format_string, self.worker_chunk_spec)
-        expected_calls = [
-            mock.call(LambdaName.REDUCER, {'request_id': self.request_id,
-                                           'format': self.format_string}),
-        ]
-        self.assertEqual(mock_lambda_handler_invoke.call_count, 1)
-        mock_lambda_handler_invoke.assert_has_calls(expected_calls)
+        mock_lambda_handler_invoke.assert_called_once_with(LambdaName.REDUCER, {
+            'request_id': self.request_id, 'format': self.format_string})
 
     def test_parse_worker_chunk_spec(self):
         self.worker._parse_worker_chunk_spec(self.worker_chunk_spec)
@@ -69,10 +65,10 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         complete = self.worker._check_if_all_workers_and_mappers_for_request_are_complete(self.request_id)
         self.assertEqual(complete, False)
 
-        field_value = StateTableField.EXPECTED_WORKER_EXECUTIONS.value
-        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_value, 5)
-        field_value = StateTableField.COMPLETED_MAPPER_EXECUTIONS.value
-        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_value, 2)
+        field_enum = StateTableField.EXPECTED_WORKER_EXECUTIONS
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_enum, 5)
+        field_enum = StateTableField.COMPLETED_MAPPER_EXECUTIONS
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_enum, 2)
 
         complete = self.worker._check_if_all_workers_and_mappers_for_request_are_complete(self.request_id)
         self.assertEqual(complete, False)
@@ -82,12 +78,12 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         complete = self.worker._check_if_all_workers_and_mappers_for_request_are_complete(self.request_id)
         self.assertEqual(complete, False)
 
-        field_value = StateTableField.EXPECTED_WORKER_EXECUTIONS.value
-        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_value, 5)
-        field_value = StateTableField.COMPLETED_MAPPER_EXECUTIONS.value
-        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_value, 2)
-        field_value = StateTableField.COMPLETED_WORKER_EXECUTIONS.value
-        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_value, 5)
+        field_enum = StateTableField.EXPECTED_WORKER_EXECUTIONS
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_enum, 5)
+        field_enum = StateTableField.COMPLETED_MAPPER_EXECUTIONS
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_enum, 2)
+        field_enum = StateTableField.COMPLETED_WORKER_EXECUTIONS
+        self.handler.increment_table_field(DynamoTable.STATE_TABLE, self.request_id, field_enum, 5)
 
         complete = self.worker._check_if_all_workers_and_mappers_for_request_are_complete(self.request_id)
         self.assertEqual(complete, True)

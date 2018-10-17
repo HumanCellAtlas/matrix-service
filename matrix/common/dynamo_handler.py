@@ -52,10 +52,9 @@ class DynamoHandler:
         Output:
             boto3 dynamodb resource
         """
-        name = dynamo_table.name
-        if name == "STATE_TABLE":
+        if dynamo_table == DynamoTable.STATE_TABLE:
             return self._state_table
-        elif name == "OUTPUT_TABLE":
+        elif dynamo_table == DynamoTable.OUTPUT_TABLE:
             return self._output_table
 
     def create_state_table_entry(self, request_id: str, num_bundles: int):
@@ -101,27 +100,27 @@ class DynamoHandler:
         """
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
         item = dynamo_table.get_item(
-            Key={"RequestId": request_id},
+            Key={'RequestId': request_id},
             ConsistentRead=True
         )['Item']
         return item
 
-    def increment_table_field(self, table: DynamoTable, request_id: str, field_name: str, increment_size: int):
+    def increment_table_field(self, table: DynamoTable, request_id: str, field_enum: Enum, increment_size: int):
         """Increment value in dynamo table
         Args:
             table: DynamoTable enum
             request_id: request id key in table
-            field_name: Name of the field to increment
+            field_enum: field enum to increment
             increment_size: Amount by which to increment the field.
         Returns:
             start_value, end_value: The values before and after incrementing
         """
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
         key_dict = {"RequestId": request_id}
-        start_value, end_value = self._increment_field(dynamo_table, key_dict, field_name, increment_size)
+        start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
         return start_value, end_value
 
-    def _increment_field(self, table, key_dict: dict, field_name: str, increment_size: int):
+    def _increment_field(self, table, key_dict: dict, field_enum: Enum, increment_size: int):
         """Increment a value in a dynamo table safely.
         Makes sure distributed table updates don't clobber each other. For example,
         increment_field(dynamo_table_obj, {"id": id_}, "Counts", 5)
@@ -130,26 +129,26 @@ class DynamoHandler:
         Args:
           table: boto3 resource for a dynamodb table
           key_dict: Dict for the key in the table
-          field_name: Name of the field to increment
+          field_value: Name of the field to increment
           increment_size: Amount by which to increment the field.
         Returns:
           start_value, end_value: The values before and after incrementing
         """
-
+        field_value = field_enum.value
         while True:
             db_response = table.get_item(
                 Key=key_dict,
                 ConsistentRead=True
             )
             item = db_response['Item']
-            start_value = item[field_name]
+            start_value = item[field_value]
             new_value = start_value + increment_size
 
             try:
                 table.update_item(
                     Key=key_dict,
-                    UpdateExpression=f"SET {field_name} = :n",
-                    ConditionExpression=f"{field_name} = :s",
+                    UpdateExpression=f"SET {field_value} = :n",
+                    ConditionExpression=f"{field_value} = :s",
                     ExpressionAttributeValues={":n": new_value, ":s": start_value}
                 )
                 break

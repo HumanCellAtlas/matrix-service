@@ -4,7 +4,6 @@ import json
 
 import s3fs
 import zarr
-from pandas import DataFrame
 import numpy
 
 
@@ -28,27 +27,21 @@ ZARR_OUTPUT_CONFIG = {
 
 class S3ZarrStore:
 
-    def __init__(self, request_id: str):
+    def __init__(self, request_id: str, exp_df=None, qc_df=None):
         self._request_id = request_id
         self._results_bucket = os.environ['S3_RESULTS_BUCKET']
-        self._zarr_lock_table_name = os.environ['DYNAMO_LOCK_TABLE_NAME']
         self._cells_per_chunk = ZARR_OUTPUT_CONFIG['cells_per_chunk']
         self.dynamo_handler = DynamoHandler()
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
-        self.exp_df = None
-        self.qc_df = None
-
-    def write_from_pandas_dfs(self, exp_df: DataFrame, qc_df: DataFrame, num_rows: int):
-        """Write specified number of rows from matrix dataframes to s3 results bucket.
-
-        Input:
-            exp_df: (DataFrame) expression pandas dataframe from dss zarr store
-            qc_df: (DataFrame) qc values pandas dataframe from dss zarr store
-            num_rows: (int) number of rows to write from input dataframes
-        """
         self.exp_df = exp_df
         self.qc_df = qc_df
 
+    def write_from_pandas_dfs(self, num_rows: int):
+        """Write specified number of rows from matrix dataframes to s3 results bucket.
+
+        Input:
+            num_rows: (int) number of rows to write from input dataframes
+        """
         # Figure out which rows of the output table this filtered chunk will be assigned.
         output_start_row_idx, output_end_row_idx = self._get_output_row_boundaries(num_rows)
         # Based on that, determine which zarr chunks we need to write to
@@ -86,6 +79,7 @@ class S3ZarrStore:
             input_bounds: (tuple) Beginning and end of boundaries for input rows
             output_bounds: (tuple) Beginning and end of boundaries in output rows
         """
+        # TODO TEST THIS FUNCTION
         for dset in ["expression", "cell_metadata", "cell_id"]:
             if dset == "expression":
                 values = self.exp_df.values
@@ -103,7 +97,7 @@ class S3ZarrStore:
 
             # Reading and writing zarr chunks is pretty straightforward, you
             # just pass it through the compression and cast it to a numpy array
-            with Lock(self._zarr_lock_table_name, full_dest_key):
+            with Lock(full_dest_key):
                 try:
                     arr = numpy.frombuffer(
                         ZARR_OUTPUT_CONFIG['compressor'].decode(
@@ -127,10 +121,11 @@ class S3ZarrStore:
         Input:
             group: (str) zarr.Group representation of dss zarr store
         """
+        # TO DO TEST THIS FUNCTION
         for dset in ["gene_id", "cell_metadata_name"]:
             full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/0.0"
             if not self.s3_file_system.exists(full_dest_key):
-                with Lock(self._zarr_lock_table_name, full_dest_key):
+                with Lock(full_dest_key):
                     arr = numpy.array(getattr(group, dset))
                     self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
 
@@ -145,7 +140,7 @@ class S3ZarrStore:
                     "shape": [arr.shape[0]],
                     "zarr_format": 2
                 }
-                with Lock(self._zarr_lock_table_name, zarray_key):
+                with Lock(zarray_key):
                     self.s3_file_system.open(zarray_key, 'wb').write(json.dumps(zarray).encode())
 
     def _get_output_row_boundaries(self, nrows: int):
@@ -158,9 +153,9 @@ class S3ZarrStore:
                 output_start_row_idx: (int) start row in output table to begin writing
                 output_start_end_idx: (int) end row in output table at which to end writing
         """
-        field_value = OutputTableField.ROW_COUNT.value
+        field_enum = OutputTableField.ROW_COUNT
         output_start_row_idx, output_end_row_idx = self.dynamo_handler.increment_table_field(
-            DynamoTable.OUTPUT_TABLE, self._request_id, field_value, nrows)
+            DynamoTable.OUTPUT_TABLE, self._request_id, field_enum, nrows)
         return output_start_row_idx, output_end_row_idx
 
     def _get_output_chunk_boundaries(self, output_start_row_idx: int, output_end_row_idx: int):
