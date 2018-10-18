@@ -90,10 +90,11 @@ class S3ZarrStore:
                 values = self.qc_df.select_dtypes("object").values
             elif dset == "cell_id":
                 values = self.exp_df.index.values
-            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/{chunk_idx}.0"
+            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/{chunk_idx}"
             print(f"Writing {dset} to {full_dest_key}")
             if values.ndim == 2:
                 chunk_shape = (self._cells_per_chunk, values.shape[1])
+                full_dest_key += ".0"
             else:
                 chunk_shape = (self._cells_per_chunk,)
             dtype = ZARR_OUTPUT_CONFIG['dtypes'][dset]
