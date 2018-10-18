@@ -17,9 +17,10 @@ class Reducer:
         "cells_per_chunk": 3000,
         "compressor": zarr.storage.default_compressor,
         "dtypes": {
-            "data": "<f4",
-            "cell_name": "<U64",
-            "qc_values": "<f4"
+            "expression": "<f4",
+            "cell_id": "<U64",
+            "cell_numeric_metadata": "<f4",
+            "cell_string_metadata": "<U64"
         },
         "order": "C"
     }
@@ -46,15 +47,19 @@ class Reducer:
 
         num_genes = json.loads(s3.open(
             f"{s3_results_prefix}/gene_id/.zarray", 'rb').read())["chunks"][0]
-        num_qcs = json.loads(s3.open(
-            f"{s3_results_prefix}/cell_metadata_name/.zarray", 'rb').read())["chunks"][0]
-        ncols = {"data": int(num_genes), "qc_values": int(num_qcs), "cell_name": 0}
+        num_numeric_cell_metadata = json.loads(s3.open(
+            f"{s3_results_prefix}/cell_numeric_metadata_name/.zarray", 'rb').read())["chunks"][0]
+        num_string_cell_metadata = json.loads(s3.open(
+            f"{s3_results_prefix}/cell_string_metadata_name/.zarray", 'rb').read())["chunks"][0]
+
+        ncols = {"expression": int(num_genes), "cell_numeric_metadata": int(num_numeric_cell_metadata),
+                 "cell_string_metadata": int(num_string_cell_metadata), "cell_id": 0}
         num_rows, num_rows = self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE,
                                                                        self.request_id,
                                                                        OutputTableField.ROW_COUNT.value,
                                                                        0)
 
-        for dset in ["data", "qc_values", "cell_name"]:
+        for dset in ["expression", "cell_numeric_metadata", "cell_string_metadata", "cell_id"]:
             zarray_key = f"{s3_results_prefix}/{dset}/.zarray"
 
             chunks = [Reducer.ZARR_OUTPUT_CONFIG["cells_per_chunk"]]
