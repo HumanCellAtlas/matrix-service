@@ -10,3 +10,6 @@ variable "aws_region" {
 variable "deployment_bucket_id" {
   type = "string"
 }
+variable "results_bucket_arn" {
+  type = "string"
+}
