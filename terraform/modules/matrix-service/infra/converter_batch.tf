@@ -186,3 +186,36 @@ resource "aws_iam_role_policy_attachment" "converter_job_role" {
   role = "${aws_iam_role.converter_job_role.name}"
   policy_arn = "${aws_iam_policy.converter_job_policy.arn}"
 }
+
+resource "aws_batch_job_definition" "converter_job_def" {
+    name = "dcp-matrix-converter-job-definition-${var.deployment_stage}"
+    type = "container"
+    container_properties = <<CONTAINER_PROPERTIES
+{
+    "command": [],
+    "image": "humancellatlas/matrix-converter:latest",
+    "memory": 4096,
+    "vcpus": 4,
+    'jobRoleArn': "${aws_iam_role.converter_job_role.arn}"
+    'volumes': [
+        {
+            'host': {'sourcePath': '/data'},
+            'name': 'data'
+        },
+    ],
+    "environment": [
+        {"name": "VARNAME", "value": "VARVAL"}
+    ],
+    'mountPoints': [
+        {
+            'containerPath': '/data',
+            'readOnly': False,
+            'sourceVolume': 'data'
+        },
+    ],
+    retryStrategy={
+      'attempts': 3
+    }
+}
+CONTAINER_PROPERTIES
+}
