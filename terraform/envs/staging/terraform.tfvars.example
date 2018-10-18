@@ -1,1 +1,4 @@
 deployment_stage = ""
+account_id = ""
+aws_region = ""
+converter_cluster_ami_id=""
