@@ -40,8 +40,8 @@ class DSSZarrStore(MutableMapping):
 
     # There are possibly many files in the analysis bundle, but we only want to
     # read those that are associated with the expression matrix. We can
-    # identify those via a prefix in the file name.
-    _zarr_file_prefix = "expression_matrix"
+    # identify those via a substring present in the name
+    _zarr_substring = ".zarr" + _separator_char
 
     def _transform_key(self, key):
         return key.replace("/", self._separator_char)
@@ -69,8 +69,15 @@ class DSSZarrStore(MutableMapping):
 
         self._bundle_contents = {}
         for dcp_file in bundle_contents["bundle"]["files"]:
-            if dcp_file["name"].startswith(self._zarr_file_prefix):
-                normalized_name = dcp_file["name"][len(self._zarr_file_prefix) + len(self._separator_char):]
+            if self._zarr_substring in dcp_file["name"]:
+
+                # Names look like this:
+                # 586fdb4e-b533-40b1-b9b0-0d9211d0b198.zarr!cell_metadata_string_name!.zarray
+                # we want this
+                # cell_metadata_string_name!.zarray
+                normalized_name = dcp_file["name"][
+                    dcp_file["name"].index(self._zarr_substring) + len(self._zarr_substring):]
+
                 self._bundle_contents[normalized_name] = {
                     "uuid": dcp_file["uuid"],
                     "version": dcp_file["version"],
