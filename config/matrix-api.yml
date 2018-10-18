@@ -39,16 +39,12 @@ definitions:
         format: uuid
       status:
         $ref: '#/definitions/MatrixRequestStatus'
-      key:
+      matrix_location:
         type: string
       eta:
         type: string
       message:
         type: string
-      links:
-        type: array
-        items:
-          type: object
   MatrixRequestStatus:
     type: string
     enum:
@@ -58,8 +54,6 @@ definitions:
   MatrixResponseError:
     type: object
     properties:
-      code:
-        type: integer
       message:
         type: string
 paths:

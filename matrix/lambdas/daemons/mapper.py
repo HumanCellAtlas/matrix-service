@@ -40,7 +40,7 @@ class Mapper:
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,  # TODO: init DH with this to remove from params
-                                                  StateTableField.EXPECTED_WORKER_EXECUTIONS.value,  # TODO: use enum
+                                                  StateTableField.EXPECTED_WORKER_EXECUTIONS,
                                                   len(worker_chunk_specs))
 
         print(f"{self.request_id} Invoking {len(worker_chunk_specs)} worker lambdas...")
@@ -51,7 +51,7 @@ class Mapper:
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
-                                                  StateTableField.COMPLETED_MAPPER_EXECUTIONS.value,
+                                                  StateTableField.COMPLETED_MAPPER_EXECUTIONS,
                                                   1)
 
     def _get_worker_payload(self, worker_chunk_spec: dict) -> dict:
