@@ -16,3 +16,4 @@ notebooks/.ipynb_checkpoints/
 chalice/vendor/
 data/
 .python-version
+docker-images/matrix-converter/code/

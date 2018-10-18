@@ -71,7 +71,10 @@ def get_matrix(request_id: str):
         return ConnexionResponse(status_code=ex.status,
                                  body={'message': f"Unable to find job with request ID {request_id}."})
 
-    if job_state[StateTableField.COMPLETED_REDUCER_EXECUTIONS.value] == 1:
+    completed_reducer_executions = job_state[StateTableField.COMPLETED_REDUCER_EXECUTIONS.value]
+    expected_converter_executions = job_state[StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value]
+    completed_converter_executions = job_state[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value]
+    if completed_reducer_executions == 1 and expected_converter_executions == completed_converter_executions:
         # TODO: handle missing/corrupted zarr
         s3_key = f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_id}.zarr"
         return ConnexionResponse(status_code=requests.codes.ok,

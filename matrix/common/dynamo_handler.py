@@ -24,6 +24,8 @@ class StateTableField(TableField):
     COMPLETED_WORKER_EXECUTIONS = "CompletedWorkerExecutions"
     EXPECTED_REDUCER_EXECUTIONS = "ExpectedReducerExecutions"
     COMPLETED_REDUCER_EXECUTIONS = "CompletedReducerExecutions"
+    EXPECTED_CONVERTER_EXECUTIONS = "ExpectedConverterExecutions"
+    COMPLETED_CONVERTER_EXECUTIONS = "CompletedConverterExecutions"
 
 
 class OutputTableField(TableField):
@@ -82,6 +84,8 @@ class DynamoHandler:
                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_REDUCER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
+                StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0,
+                StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
             }
         )
 

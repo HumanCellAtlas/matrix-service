@@ -66,7 +66,11 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
     def test_get_matrix_processing(self, mock_get_table_item):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0}
+        mock_get_table_item.return_value = {
+            StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
+            StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
+            StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0
+        }
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
@@ -75,7 +79,11 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
     def test_get_matrix_complete(self, mock_get_table_item):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 1}
+        mock_get_table_item.return_value = {
+            StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 1,
+            StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
+            StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0
+        }
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)

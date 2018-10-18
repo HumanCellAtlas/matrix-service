@@ -80,6 +80,12 @@ class Reducer:
             }
             s3.open(zarray_key, 'wb').write(json.dumps(zarray).encode())
 
+        if self.format is not "zarr":
+            self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+                                                      self.request_id,
+                                                      StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value,
+                                                      1)
+
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
                                                   StateTableField.COMPLETED_REDUCER_EXECUTIONS.value,
