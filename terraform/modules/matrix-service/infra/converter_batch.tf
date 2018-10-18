@@ -192,30 +192,22 @@ resource "aws_batch_job_definition" "converter_job_def" {
     type = "container"
     container_properties = <<CONTAINER_PROPERTIES
 {
-    "command": [],
-    "image": "humancellatlas/matrix-converter:latest",
-    "memory": 4096,
-    "vcpus": 4,
-    'jobRoleArn': "${aws_iam_role.converter_job_role.arn}"
-    'volumes': [
-        {
-            'host': {'sourcePath': '/data'},
-            'name': 'data'
-        },
-    ],
-    "environment": [
-        {"name": "VARNAME", "value": "VARVAL"}
-    ],
-    'mountPoints': [
-        {
-            'containerPath': '/data',
-            'readOnly': False,
-            'sourceVolume': 'data'
-        },
-    ],
-    retryStrategy={
-      'attempts': 3
-    }
+  "command": [],
+  "image": "humancellatlas/matrix-converter:1",
+  "memory": 4096,
+  "vcpus": 4,
+  "jobRoleArn": "${aws_iam_role.converter_job_role.arn}",
+  "volumes": [{
+    "host": {
+      "sourcePath": "/data"
+    },
+    "name": "data"
+  }],
+  "mountPoints": [{
+    "containerPath": "/data",
+    "readOnly": false,
+    "sourceVolume": "data"
+  }]
 }
 CONTAINER_PROPERTIES
 }
