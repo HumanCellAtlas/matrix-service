@@ -133,7 +133,7 @@ class DynamoHandler:
         start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
         return start_value, end_value
 
-    def _increment_field(self, table, key_dict: dict, field_enum: Enum, increment_size: int):
+    def _increment_field(self, table, key_dict: dict, field_enum: TableField, increment_size: int):
         """Increment a value in a dynamo table safely.
         Makes sure distributed table updates don't clobber each other. For example,
         increment_field(dynamo_table_obj, {"id": id_}, "Counts", 5)

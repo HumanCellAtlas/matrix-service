@@ -56,7 +56,7 @@ class Reducer:
                  "cell_metadata_string": int(num_string_cell_metadata), "cell_id": 0}
         num_rows, num_rows = self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE,
                                                                        self.request_id,
-                                                                       OutputTableField.ROW_COUNT.value,
+                                                                       OutputTableField.ROW_COUNT,
                                                                        0)
 
         for dset in ["expression", "cell_metadata_numeric", "cell_metadata_string", "cell_id"]:
@@ -82,7 +82,7 @@ class Reducer:
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
-                                                  StateTableField.COMPLETED_REDUCER_EXECUTIONS.value,
+                                                  StateTableField.COMPLETED_REDUCER_EXECUTIONS,
                                                   1)
 
     def _fill_value(self, dtype):
