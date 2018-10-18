@@ -19,8 +19,8 @@ class Reducer:
         "dtypes": {
             "expression": "<f4",
             "cell_id": "<U64",
-            "cell_numeric_metadata": "<f4",
-            "cell_string_metadata": "<U64"
+            "cell_metadata_numeric": "<f4",
+            "cell_metadata_string": "<U64"
         },
         "order": "C"
     }
@@ -48,18 +48,18 @@ class Reducer:
         num_genes = json.loads(s3.open(
             f"{s3_results_prefix}/gene_id/.zarray", 'rb').read())["chunks"][0]
         num_numeric_cell_metadata = json.loads(s3.open(
-            f"{s3_results_prefix}/cell_numeric_metadata_name/.zarray", 'rb').read())["chunks"][0]
+            f"{s3_results_prefix}/cell_metadata_numeric_name/.zarray", 'rb').read())["chunks"][0]
         num_string_cell_metadata = json.loads(s3.open(
-            f"{s3_results_prefix}/cell_string_metadata_name/.zarray", 'rb').read())["chunks"][0]
+            f"{s3_results_prefix}/cell_metadata_string_name/.zarray", 'rb').read())["chunks"][0]
 
-        ncols = {"expression": int(num_genes), "cell_numeric_metadata": int(num_numeric_cell_metadata),
-                 "cell_string_metadata": int(num_string_cell_metadata), "cell_id": 0}
+        ncols = {"expression": int(num_genes), "cell_metadata_numeric": int(num_numeric_cell_metadata),
+                 "cell_metadata_string": int(num_string_cell_metadata), "cell_id": 0}
         num_rows, num_rows = self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE,
                                                                        self.request_id,
                                                                        OutputTableField.ROW_COUNT.value,
                                                                        0)
 
-        for dset in ["expression", "cell_numeric_metadata", "cell_string_metadata", "cell_id"]:
+        for dset in ["expression", "cell_metadata_numeric", "cell_metadata_string", "cell_id"]:
             zarray_key = f"{s3_results_prefix}/{dset}/.zarray"
 
             chunks = [Reducer.ZARR_OUTPUT_CONFIG["cells_per_chunk"]]
