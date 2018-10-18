@@ -1,10 +1,17 @@
+import os
 import requests
 import uuid
 
-from ...common.constants import MatrixFormat
-from ...common.constants import MatrixRequestStatus
-from ...common.lambda_handler import LambdaHandler
-from ...common.lambda_handler import LambdaName
+from connexion.lifecycle import ConnexionResponse
+
+from matrix.common.constants import MatrixFormat
+from matrix.common.constants import MatrixRequestStatus
+from matrix.common.dynamo_handler import DynamoHandler
+from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.dynamo_handler import StateTableField
+from matrix.common.exceptions import MatrixException
+from matrix.common.lambda_handler import LambdaHandler
+from matrix.common.lambda_handler import LambdaName
 
 
 def post_matrix(body: dict):
@@ -15,22 +22,22 @@ def post_matrix(body: dict):
 
     # Validate input parameters
     if has_ids and has_url:
-        return {
-            'code': requests.codes.bad_request,
-            'message': "Invalid parameters supplied. "
-                       "Must supply either one of `bundle_fqids` or `bundle_fqids_url`. "
-                       "Visit https://matrix.dev.data.humancellatlas.org for more information."
-        }, requests.codes.bad_request
+        return ConnexionResponse(status_code=requests.codes.bad_request,
+                                 body={
+                                     'message': "Invalid parameters supplied. "
+                                                "Please supply either one of `bundle_fqids` or `bundle_fqids_url`. "
+                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                 })
 
     if not has_ids and not has_url:
-        return {
-            'code': requests.codes.bad_request,
-            'message': "Missing required parameter. "
-                       "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
-                       "Visit https://matrix.dev.data.humancellatlas.org for more information."
-        }, requests.codes.bad_request
+        return ConnexionResponse(status_code=requests.codes.bad_request,
+                                 body={
+                                     'message': "Missing required parameter. "
+                                                "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
+                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                 })
 
-    # TODO: test when URL param is supported
+    # TODO: test this when URL param is supported
     if has_url:
         response = requests.get(body['bundle_fqids_url'])
         bundle_fqids = [b.strip() for b in response.text.split()]
@@ -46,20 +53,44 @@ def post_matrix(body: dict):
     lambda_handler = LambdaHandler()
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
 
-    return {'request_id': request_id,
-            'status': MatrixRequestStatus.IN_PROGRESS.value,
-            'key': "",
-            'eta': "",
-            'message': "Job started.",
-            'links': [],
-            }, requests.codes.accepted
+    return ConnexionResponse(status_code=requests.codes.accepted,
+                             body={
+                                 'request_id': request_id,
+                                 'status': MatrixRequestStatus.IN_PROGRESS.value,
+                                 'matrix_location': "",
+                                 'eta': "",
+                                 'message': "Job started.",
+                             })
 
 
 def get_matrix(request_id: str):
-    return {'request_id': request_id,
-            'status': "In Progress",
-            'key': "sample key",
-            'eta': "sample eta",
-            'message': "sample message",
-            'links': [],
-            }, requests.codes.ok
+    try:
+        dynamo_handler = DynamoHandler()
+        job_state = dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id)
+    except MatrixException as ex:
+        return ConnexionResponse(status_code=ex.status,
+                                 body={'message': f"Unable to find job with request ID {request_id}."})
+
+    if job_state[StateTableField.COMPLETED_REDUCER_EXECUTIONS.value] == 1:
+        # TODO: handle missing/corrupted zarr
+        s3_key = f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_id}.zarr"
+        return ConnexionResponse(status_code=requests.codes.ok,
+                                 body={
+                                     'request_id': request_id,
+                                     'status': MatrixRequestStatus.COMPLETE.value,
+                                     'matrix_location': s3_key,
+                                     'eta': "",
+                                     'message': f"Request {request_id} has successfully completed. "
+                                                f"The resultant expression matrix is available for download at the S3 "
+                                                f"location {s3_key}",
+                                 })
+
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={
+                                 'request_id': request_id,
+                                 'status': MatrixRequestStatus.IN_PROGRESS.value,
+                                 'matrix_location': "",
+                                 'eta': "",
+                                 'message': f"Request {request_id} has been accepted and is currently being processed. "
+                                            f"Please try again later.",
+                             })
