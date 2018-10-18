@@ -1,12 +1,19 @@
 import os
+import requests
 import time
 from enum import Enum
 
 import boto3
 import botocore
 
+from matrix.common.exceptions import MatrixException
 
-class StateTableField(Enum):
+
+class TableField(Enum):
+    pass
+
+
+class StateTableField(TableField):
     """
     Field names for State table in DynamoDB.
     """
@@ -19,7 +26,7 @@ class StateTableField(Enum):
     COMPLETED_REDUCER_EXECUTIONS = "CompletedReducerExecutions"
 
 
-class OutputTableField(Enum):
+class OutputTableField(TableField):
     """
     Field names for Output table in DynamoDB.
     """
@@ -99,13 +106,19 @@ class DynamoHandler:
             item: dynamodb item
         """
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
-        item = dynamo_table.get_item(
-            Key={'RequestId': request_id},
-            ConsistentRead=True
-        )['Item']
+        try:
+            item = dynamo_table.get_item(
+                Key={'RequestId': request_id},
+                ConsistentRead=True
+            )['Item']
+        except KeyError:
+            raise MatrixException(status=requests.codes.not_found,
+                                  title=f"Unable to find table item with request ID "
+                                        f"{request_id} from DynamoDb Table {table.value}.")
+
         return item
 
-    def increment_table_field(self, table: DynamoTable, request_id: str, field_enum: Enum, increment_size: int):
+    def increment_table_field(self, table: DynamoTable, request_id: str, field_enum: TableField, increment_size: int):
         """Increment value in dynamo table
         Args:
             table: DynamoTable enum
