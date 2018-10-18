@@ -12,7 +12,9 @@
         "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-dev",
         "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-dev",
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-dev",
-        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev"
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev",
+        "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-dev",
+        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-dev"
       }
     }
   },

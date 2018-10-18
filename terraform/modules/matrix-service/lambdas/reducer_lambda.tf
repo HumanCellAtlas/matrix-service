@@ -63,6 +63,15 @@ resource "aws_iam_role_policy" "matrix_service_reducer_lambda" {
         "${var.results_bucket_arn}",
         "${var.results_bucket_arn}/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "batch:SubmitJob"
+      ],
+      "Resource": [
+        "arn:aws:batch:*:${var.account_id}:*"
+      ]
     }
   ]
 }

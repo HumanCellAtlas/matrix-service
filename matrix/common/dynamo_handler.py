@@ -1,11 +1,12 @@
 import os
-import requests
 import time
 from enum import Enum
 
 import boto3
 import botocore
+import requests
 
+from matrix.common.constants import MatrixFormat
 from matrix.common.exceptions import MatrixException
 
 
@@ -24,6 +25,8 @@ class StateTableField(TableField):
     COMPLETED_WORKER_EXECUTIONS = "CompletedWorkerExecutions"
     EXPECTED_REDUCER_EXECUTIONS = "ExpectedReducerExecutions"
     COMPLETED_REDUCER_EXECUTIONS = "CompletedReducerExecutions"
+    EXPECTED_CONVERTER_EXECUTIONS = "ExpectedConverterExecutions"
+    COMPLETED_CONVERTER_EXECUTIONS = "CompletedConverterExecutions"
 
 
 class OutputTableField(TableField):
@@ -32,6 +35,7 @@ class OutputTableField(TableField):
     """
     REQUEST_ID = "RequestId"
     ROW_COUNT = "RowCount"
+    FORMAT = "Format"
 
 
 class DynamoTable(Enum):
@@ -64,13 +68,14 @@ class DynamoHandler:
         elif dynamo_table == DynamoTable.OUTPUT_TABLE:
             return self._output_table
 
-    def create_state_table_entry(self, request_id: str, num_bundles: int):
+    def create_state_table_entry(self, request_id: str, num_bundles: int, format: MatrixFormat=MatrixFormat.ZARR):
         """
         Put a new item in the DynamoDB table responsible for tracking task execution states and
         counts for a specified job.
 
         :param request_id: UUID identifying a filter merge job request.
         :param num_bundles: Number of bundles to be processed.
+        :param format: User requested output file format of final expression matrix.
         """
 
         self._state_table.put_item(
@@ -82,18 +87,22 @@ class DynamoHandler:
                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_REDUCER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
+                StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0 if format == MatrixFormat.ZARR else 1,
+                StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0
             }
         )
 
-    def create_output_table_entry(self, request_id: str):
+    def create_output_table_entry(self, request_id: str, format: str):
         """
         Put a new item in the DynamoDB Table responsible for counting output rows
         :param request_id: UUID identifying a filter merge job request.
+        :param format: expected file format for filter merge job request.
         """
         self._output_table.put_item(
             Item={
                 OutputTableField.REQUEST_ID.value: request_id,
                 OutputTableField.ROW_COUNT.value: 0,
+                OutputTableField.FORMAT.value: format
             }
         )
 

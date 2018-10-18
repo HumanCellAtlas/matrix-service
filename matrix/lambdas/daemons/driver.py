@@ -33,8 +33,8 @@ class Driver:
                      f"format={format}, bundles_per_worker={self.bundles_per_worker}")
 
         num_expected_mappers = int(math.ceil(len(bundle_fqids) / self.bundles_per_worker))
-        self.dynamo_handler.create_state_table_entry(self.request_id, num_expected_mappers)
-        self.dynamo_handler.create_output_table_entry(self.request_id)
+        self.dynamo_handler.create_state_table_entry(self.request_id, num_expected_mappers, format)
+        self.dynamo_handler.create_output_table_entry(self.request_id, format)
 
         logger.debug(f"Invoking {num_expected_mappers} Mapper(s) with approximately "
                      f"{self.bundles_per_worker} bundles per Mapper.")
@@ -43,7 +43,6 @@ class Driver:
             mapper_payload = {
                 'request_id': self.request_id,
                 'bundle_fqids': bundle_fqid_group,
-                'format': format,
             }
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
 
