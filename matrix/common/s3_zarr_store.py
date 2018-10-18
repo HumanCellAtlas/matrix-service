@@ -19,8 +19,8 @@ ZARR_OUTPUT_CONFIG = {
     "dtypes": {
         "expression": "<f4",
         "cell_id": "<U64",
-        "cell_numeric_metadata": "<f4",
-        "cell_string_metadata": "<U64"
+        "cell_metadata_numeric": "<f4",
+        "cell_metadata_string": "<U64"
     },
     "order": "C"
 }
