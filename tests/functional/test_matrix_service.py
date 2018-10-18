@@ -112,6 +112,3 @@ class TestMatrixService(unittest.TestCase):
             print(response.content.decode('utf8'))
 
         return response.content
-
-    def _convert_zarr_group_to_pandas_df(self, group):
-        pass
