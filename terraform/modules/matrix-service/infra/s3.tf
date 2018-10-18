@@ -26,7 +26,7 @@ resource "aws_s3_bucket_policy" "matrix_results_bucket_policy" {
       "Effect": "Allow",
       "Principal": "*",
       "Action": ["s3:ListBucket", "s3:GetObject"],
-      "Resource": ["${aws_s3_bucket.matrix-results.arn}", "${aws_s3_bucket.matrix-results.arn}/*"],
+      "Resource": ["${aws_s3_bucket.matrix-results.arn}", "${aws_s3_bucket.matrix-results.arn}/*"]
     }
   ]
 }
