@@ -6,7 +6,9 @@ export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                     LAMBDA_MAPPER_FUNCTION_NAME \
                                     LAMBDA_WORKER_FUNCTION_NAME \
                                     LAMBDA_REDUCER_FUNCTION_NAME \
-                                    DYNAMO_STATE_TABLE_NAME
+                                    DYNAMO_STATE_TABLE_NAME \
+                                    DYNAMO_OUTPUT_TABLE_NAME \
+                                    S3_RESULTS_BUCKET
 
 clean:
 	git clean -df .
