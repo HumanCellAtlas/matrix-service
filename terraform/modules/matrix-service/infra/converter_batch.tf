@@ -143,7 +143,7 @@ resource "aws_iam_policy" "converter_job_policy" {
         "Sid": "s3",
         "Effect": "Allow",
         "Action": [
-          "s3:*"
+          "s3:PutObject"
         ],
         "Resource": [
           "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
