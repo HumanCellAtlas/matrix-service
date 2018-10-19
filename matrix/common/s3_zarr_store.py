@@ -1,6 +1,7 @@
 import os
 import math
 import json
+import time
 
 import s3fs
 import zarr
@@ -102,15 +103,32 @@ class S3ZarrStore:
             # Reading and writing zarr chunks is pretty straightforward, you
             # just pass it through the compression and cast it to a numpy array
             with Lock(full_dest_key):
-                try:
-                    arr = numpy.frombuffer(
-                        ZARR_OUTPUT_CONFIG['compressor'].decode(
-                            self.s3_file_system.open(full_dest_key, 'rb').read()),
-                        dtype=dtype).reshape(chunk_shape, order=ZARR_OUTPUT_CONFIG['order'])
-                except FileNotFoundError:
-                    arr = numpy.zeros(shape=chunk_shape,
-                                      dtype=dtype)
-                    print("Created new array")
+                # This is a graceless workaround for the issue identified here:
+                # https://github.com/pangeo-data/pangeo/issues/196
+                # Sometimes blosc.decode raises a RuntimeError that goes away on retry
+                # TODO: factor out the retry logic
+                num_tries = 0
+                delay = 1
+                while True:
+                    try:
+                        arr = numpy.frombuffer(
+                            ZARR_OUTPUT_CONFIG['compressor'].decode(
+                                self.s3_file_system.open(full_dest_key, 'rb').read()),
+                            dtype=dtype).reshape(chunk_shape, order=ZARR_OUTPUT_CONFIG['order'])
+                        break
+                    except FileNotFoundError:
+                        arr = numpy.zeros(shape=chunk_shape,
+                                          dtype=dtype)
+                        print("Created new array")
+                        break
+                    except RuntimeError:
+                        if num_tries > 10:
+                            raise
+                        time.sleep(delay)
+                        num_tries += 1
+                        delay *= 1.6
+
+
                 arr.setflags(write=1)
                 arr[output_bounds[0]:output_bounds[1]] = values[input_bounds[0]:input_bounds[1]]
                 self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
