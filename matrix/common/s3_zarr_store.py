@@ -128,7 +128,6 @@ class S3ZarrStore:
                         num_tries += 1
                         delay *= 1.6
 
-
                 arr.setflags(write=1)
                 arr[output_bounds[0]:output_bounds[1]] = values[input_bounds[0]:input_bounds[1]]
                 self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
