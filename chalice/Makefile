@@ -17,10 +17,14 @@ clobber: clean
 	git checkout .chalice/*.json
 
 build:
-	cp ../requirements.txt .
 	mkdir -p chalicelib/matrix/lambdas
-	cp -R ../matrix/lambdas/api chalicelib/matrix/lambdas/
-	cp -R ../matrix/common chalicelib/matrix/
+	mkdir -p chalicelib/matrix/common
+	cp -R ../matrix/lambdas/api chalicelib/matrix/lambdas
+	cp ../matrix/common/__init__.py chalicelib/matrix/common
+	cp ../matrix/common/constants.py chalicelib/matrix/common
+	cp ../matrix/common/exceptions.py chalicelib/matrix/common
+	cp ../matrix/common/dynamo_handler.py chalicelib/matrix/common
+	cp ../matrix/common/lambda_handler.py chalicelib/matrix/common
 	mkdir -p chalicelib/config
 	envsubst '$$API_HOST' < ../config/matrix-api.yml > chalicelib/config/matrix-api.yml
 	shopt -s nullglob; for wheel in vendor.in/*/*.whl; do unzip -q -o -d vendor $$wheel; done

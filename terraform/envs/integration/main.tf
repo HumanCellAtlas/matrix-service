@@ -30,4 +30,5 @@ module "matrix_service_lambdas" {
   account_id = "${var.account_id}"
   aws_region = "${var.aws_region}"
   deployment_bucket_id = "${module.matrix_service_infra.deployment_bucket_id}"
+  results_bucket_arn = "${module.matrix_service_infra.results_bucket_arn}"
 }
