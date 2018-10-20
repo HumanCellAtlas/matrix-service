@@ -32,6 +32,18 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.status_code, requests.codes.accepted)
 
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    def test_post_matrix_with_ids_ok_and_unexpected_format(self, mock_lambda_invoke):
+        bundle_fqids = ["id1", "id2"]
+        format = "fake"
+
+        body = {
+            'bundle_fqids': bundle_fqids,
+            'format': format
+        }
+        response = post_matrix(body)
+        self.assertEqual(response.status_code, requests.codes.bad_request)
+
+    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_and_url(self, mock_lambda_invoke):
         bundle_fqids = ["id1", "id2"]
         bundle_fqids_url = "test_url"

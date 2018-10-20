@@ -13,6 +13,8 @@ from matrix.common.exceptions import MatrixException
 from matrix.common.lambda_handler import LambdaHandler
 from matrix.common.lambda_handler import LambdaName
 
+EXPECTED_FORMATS = [MatrixFormat.ZARR.value, MatrixFormat.LOOM.value, MatrixFormat.CSV.value]
+
 
 def post_matrix(body: dict):
     has_ids = 'bundle_fqids' in body
@@ -21,6 +23,13 @@ def post_matrix(body: dict):
     format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
 
     # Validate input parameters
+    if format not in EXPECTED_FORMATS:
+        return ConnexionResponse(status_code=requests.codes.bad_request,
+                                 body={
+                                     'message': "Invalid parameters supplied. "
+                                                "Please supply a valid `format`. "
+                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                 })
     if has_ids and has_url:
         return ConnexionResponse(status_code=requests.codes.bad_request,
                                  body={
@@ -76,6 +85,7 @@ def get_matrix(request_id: str):
     completed_converter_executions = job_state[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value]
     if completed_reducer_executions == 1 and expected_converter_executions == completed_converter_executions:
         # TODO: handle missing/corrupted zarr
+        # TODO: handle which file format is expected
         s3_key = f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_id}.zarr"
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={

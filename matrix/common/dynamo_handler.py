@@ -34,6 +34,7 @@ class OutputTableField(TableField):
     """
     REQUEST_ID = "RequestId"
     ROW_COUNT = "RowCount"
+    FORMAT = "Format"
 
 
 class DynamoTable(Enum):
@@ -89,15 +90,17 @@ class DynamoHandler:
             }
         )
 
-    def create_output_table_entry(self, request_id: str):
+    def create_output_table_entry(self, request_id: str, format: str):
         """
         Put a new item in the DynamoDB Table responsible for counting output rows
         :param request_id: UUID identifying a filter merge job request.
+        :param format: expected file format for filter merge job request.
         """
         self._output_table.put_item(
             Item={
                 OutputTableField.REQUEST_ID.value: request_id,
                 OutputTableField.ROW_COUNT.value: 0,
+                OutputTableField.FORMAT.value: format
             }
         )
 

@@ -22,16 +22,14 @@ class TestDriver(unittest.TestCase):
         self._driver.run(request_id, bundle_fqids, format)
 
         mock_dynamo_create_state_table_entry.assert_called_once_with(request_id, len(bundle_fqids))
-        mock_dynamo_create_output_table_entry.assert_called_once_with(request_id)
+        mock_dynamo_create_output_table_entry.assert_called_once_with(request_id, format)
         expected_calls = [
             call(LambdaName.MAPPER, {'request_id': request_id,
                                      'bundle_uuid': "id1",
-                                     'bundle_version': "version",
-                                     'format': format}),
+                                     'bundle_version': "version"}),
             call(LambdaName.MAPPER, {'request_id': request_id,
                                      'bundle_uuid': "id2",
-                                     'bundle_version': "version",
-                                     'format': format}),
+                                     'bundle_version': "version"}),
         ]
         mock_lambda_invoke.assert_has_calls(expected_calls)
         self.assertEqual(mock_lambda_invoke.call_count, len(bundle_fqids))

@@ -1,4 +1,4 @@
-include ../../common.mk
+# include ../../common.mk
 .PHONY: install build stage deploy clobber
 
 ZIP_FILE=reducer_daemon.zip

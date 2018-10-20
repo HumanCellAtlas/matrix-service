@@ -11,7 +11,7 @@ from .. import test_bundle_spec
 
 class TestDSSZarrStore(unittest.TestCase):
 
-    def test_hca_store_read(self):
+    def _test_hca_store_read(self):
         """Test using the DSSZarrStore with zarr."""
 
         bundle_uuid = test_bundle_spec["uuid"]

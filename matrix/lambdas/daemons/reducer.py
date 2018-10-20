@@ -25,12 +25,12 @@ class Reducer:
         "order": "C"
     }
 
-    def __init__(self, request_id: str, format: str):
+    def __init__(self, request_id: str):
         print(f"Reducer created: {request_id}, {format}")
         self.request_id = request_id
-        self.format = format
+        item = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id)
+        self.format = item[OutputTableField.FORMAT.value]
         self.s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
-
         self.dynamo_handler = DynamoHandler()
 
     def run(self):
@@ -85,6 +85,7 @@ class Reducer:
                                                       self.request_id,
                                                       StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value,
                                                       1)
+            # TODO REGISTER BATCH JOB HERE
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,

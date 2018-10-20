@@ -27,12 +27,11 @@ class Worker:
         self._input_end_row = None
         self._num_rows = None
 
-    def run(self, format: str, worker_chunk_spec: dict):
+    def run(self, worker_chunk_spec: dict):
         """Process and write one chunk of dss bundle matrix to s3 and
         invoke reducer lambda when last worker job is completed.
 
         Inputs:
-        format: (str) Expected file format of request
         worker_chunk_spec: (dict) Information about input bundle and matrix row indices to process
         """
         # TO DO pass in the parameters in worker chunk spec flat
@@ -55,8 +54,7 @@ class Worker:
         if workers_and_mappers_are_complete:
             s3_zarr_store.write_column_data(group)
             reducer_payload = {
-                "request_id": self._request_id,
-                "format": format
+                "request_id": self._request_id
             }
             self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
 
