@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from moto import mock_dynamodb2
+from moto import mock_dynamodb2, mock_s3
 
 # TODO: set DEPLOYMENT_STAGE=test when test env exists
 os.environ['DEPLOYMENT_STAGE'] = "dev"
@@ -49,9 +49,12 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
     def setUp(self):
         self.dynamo_mock = mock_dynamodb2()
         self.dynamo_mock.start()
+        self.s3_mock = mock_s3()
+        self.s3_mock.start()
 
     def tearDown(self):
         self.dynamo_mock.stop()
+        self.s3_mock.stop()
 
     @staticmethod
     def create_test_state_table(dynamo):
@@ -96,3 +99,7 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
                 'WriteCapacityUnits': 15,
             },
         )
+
+    @staticmethod
+    def create_s3_results_bucket(s3):
+        s3.create_bucket(Bucket=os.environ['S3_RESULTS_BUCKET'])

@@ -1,23 +1,28 @@
+import json
 import os
 import uuid
 
 import boto3
+from mock import call
 from pandas import DataFrame
 from unittest import mock
 
+from matrix.common.constants import ZarrayName
 from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.s3_zarr_store import S3ZarrStore
+from matrix.common.s3_zarr_store import S3ZarrStore, ZARR_OUTPUT_CONFIG
 from .. import MatrixTestCaseUsingMockAWS
 from matrix.common.dynamo_handler import OutputTableField
 from matrix.common.dynamo_handler import DynamoTable
 
 
-class TestZarrS3Store(MatrixTestCaseUsingMockAWS):
+class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
 
     def setUp(self):
-        super(TestZarrS3Store, self).setUp()
+        super(TestS3ZarrStore, self).setUp()
 
         self.dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
+        self.s3 = boto3.resource("s3", region_name=os.environ['AWS_DEFAULT_REGION'])
+        self.s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
         self.state_table_name = os.environ['DYNAMO_STATE_TABLE_NAME']
         self.output_table_name = os.environ['DYNAMO_OUTPUT_TABLE_NAME']
         self.create_test_state_table(self.dynamo)
@@ -84,3 +89,65 @@ class TestZarrS3Store(MatrixTestCaseUsingMockAWS):
         ]
         mock_write_row_data.assert_has_calls(expected_calls)
         self.assertEqual(mock_write_row_data.call_count, 2)
+
+    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_zarray_metadata")
+    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_zgroup_metadata")
+    def test_write_group_metadata(self,
+                                  mock_write_zgroup_metadata,
+                                  mock_write_zarray_metadata,
+                                  mock_dynamo_get_table_item):
+        num_rows = 0
+        mock_dynamo_get_table_item.return_value = {OutputTableField.ROW_COUNT.value: num_rows}
+
+        self.s3_zarr_store.write_group_metadata()
+
+        mock_write_zgroup_metadata.assert_called_once_with()
+
+        expected_calls = [
+            call(ZarrayName.EXPRESSION, num_rows),
+            call(ZarrayName.CELL_METADATA_NUMERIC, num_rows),
+            call(ZarrayName.CELL_METADATA_STRING, num_rows),
+            call(ZarrayName.CELL_ID, num_rows),
+        ]
+        mock_write_zarray_metadata.assert_has_calls(expected_calls)
+        self.assertEqual(mock_write_zarray_metadata.call_count, 4)
+
+    def test_write_zgroup_metadata(self):
+        self.create_s3_results_bucket(self.s3)
+        self.s3_zarr_store._write_zgroup_metadata()
+
+        s3_zgroup_location = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr/.zgroup"
+        data = json.loads(self.s3_zarr_store.s3_file_system.open(s3_zgroup_location, "rb").read())
+        self.assertEqual(data['zarr_format'], 2)
+
+    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._fill_value")
+    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._get_zarray_column_count")
+    def test_write_zarray_metadata(self, mock_get_zarray_column_count, mock_fill_value):
+        zarray = ZarrayName.EXPRESSION
+        row_count = 0
+        mock_get_zarray_column_count.return_value = 1
+        mock_fill_value.return_value = ""
+
+        self.create_s3_results_bucket(self.s3)
+        self.s3_zarr_store._write_zarray_metadata(zarray, row_count)
+
+        s3_zarray_location = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr/{zarray.value}/.zarray"
+        data = json.loads(self.s3_zarr_store.s3_file_system.open(s3_zarray_location, "rb").read())
+
+        self.assertEqual(data['chunks'], [ZARR_OUTPUT_CONFIG['cells_per_chunk'], 1])
+        self.assertEqual(data['compressor'], ZARR_OUTPUT_CONFIG['compressor'].get_config())
+        self.assertEqual(data['dtype'], ZARR_OUTPUT_CONFIG['dtypes'][zarray.value])
+        self.assertEqual(data['fill_value'], "")
+        self.assertEqual(data['filters'], None)
+        self.assertEqual(data['order'], ZARR_OUTPUT_CONFIG['order'])
+        self.assertEqual(data['shape'], [row_count, 1])
+        self.assertEqual(data['zarr_format'], 2)
+
+    def test_read_zarray(self):
+        # TODO
+        pass
+
+    def test_get_zarray_column_count(self):
+        # TODO
+        pass
