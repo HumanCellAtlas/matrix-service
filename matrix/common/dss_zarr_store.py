@@ -8,8 +8,10 @@ import hca
 import zarr
 from hca import HCAConfig
 
+from matrix.common.zarr_store import ZarrStore
 
-class DSSZarrStore(MutableMapping):
+
+class DSSZarrStore(MutableMapping, ZarrStore):
     """
     Zarr compatible interface to expression matrices stored in a DCP analysis bundle.
     Parameters
@@ -107,12 +109,20 @@ class DSSZarrStore(MutableMapping):
         return self._root.cell_id
 
     @property
-    def cell_metadata(self):
+    def cell_metadata_numeric(self):
         return self._root.cell_metadata
 
     @property
-    def cell_metadata_name(self):
-        return self._root.cell_metadata_name
+    def cell_metadata_numeric_name(self):
+        return self._root.cell_metadata_numeric_name
+
+    @property
+    def cell_metadata_string(self):
+        return self._root.cell_metadata_string
+
+    @property
+    def cell_metadata_string_name(self):
+        return self._root.cell_metadata_string_name
 
     @property
     def gene_id(self):

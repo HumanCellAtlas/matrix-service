@@ -12,6 +12,7 @@ from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.dynamo_handler import DynamoTable
 from matrix.common.dynamo_handler import OutputTableField
 from matrix.common.dynamo_utils import Lock
+from matrix.common.zarr_store import ZarrStore, ZarrayName
 
 
 ZARR_OUTPUT_CONFIG = {
@@ -27,7 +28,7 @@ ZARR_OUTPUT_CONFIG = {
 }
 
 
-class S3ZarrStore:
+class S3ZarrStore(ZarrStore):
 
     def __init__(self, request_id: str, exp_df=None, qc_df=None):
         self._request_id = request_id
@@ -37,6 +38,15 @@ class S3ZarrStore:
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
         self.exp_df = exp_df
         self.qc_df = qc_df
+
+        self._expression = None
+        self._cell_id = None
+        self._cell_metadata_numeric = None
+        self._cell_metadata_string = None
+        self._cell_metadata_numeric_name = None
+        self._gene_id = None
+        self._gene_metadata = None
+        self._gene_metadata_name = None
 
     def write_from_pandas_dfs(self, num_rows: int):
         """Write specified number of rows from matrix dataframes to s3 results bucket.
@@ -202,3 +212,62 @@ class S3ZarrStore:
             return 0
         elif dtype.kind == 'U':
             return ""
+
+    def _read_zarray(self, zarray: ZarrayName):
+        s3_location = f"s3://{self._results_bucket}/{self._request_id}.zarr/{zarray.value}/.zarray"
+        data = self.s3_file_system.open(s3_location, 'rb').read()
+        return json.loads(data)
+
+    @property
+    def expression(self):
+        if not self._expression:
+            self._expression = self._read_zarray(ZarrayName.EXPRESSION)
+        return self._expression
+
+    @property
+    def cell_id(self):
+        if not self._cell_id:
+            self._cell_id = self._read_zarray(ZarrayName.CELL_ID)
+        return self._cell_id
+
+    @property
+    def cell_metadata_numeric(self):
+        if not self._cell_metadata_numeric:
+            self._cell_metadata_numeric = self._read_zarray(ZarrayName.CELL_METADATA_NUMERIC)
+        return self._cell_metadata_numeric
+
+    @property
+    def cell_metadata_string(self):
+        if not self._cell_metadata_string:
+            self._cell_metadata_string = self._read_zarray(ZarrayName.CELL_METADATA_STRING)
+        return self._cell_metadata_string
+
+    @property
+    def cell_metadata_numeric_name(self):
+        if not self._cell_metadata_numeric_name:
+            self._cell_metadata_numeric_name = self._read_zarray(ZarrayName.CELL_METADATA_NUMERIC_NAME)
+        return self._cell_metadata_numeric_name
+
+    @property
+    def cell_metadata_string_name(self):
+        if not self._cell_metadata_string_name:
+            self._cell_metadata_string_name = self._read_zarray(ZarrayName.CELL_METADATA_STRING_NAME)
+        return self._cell_metadata_string_name
+
+    @property
+    def gene_id(self):
+        if not self._gene_id:
+            self._gene_id = self._read_zarray(ZarrayName.GENE_ID)
+        return self._gene_id
+
+    @property
+    def gene_metadata(self):
+        if not self._gene_metadata:
+            self._gene_metadata = self._read_zarray(ZarrayName.GENE_METADATA)
+        return self._gene_metadata
+
+    @property
+    def gene_metadata_name(self):
+        if not self._gene_metadata_name:
+            self._gene_metadata_name = self._read_zarray(ZarrayName.GENE_METADATA_NAME)
+        return self._gene_metadata_name
