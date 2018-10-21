@@ -2,6 +2,7 @@ import unittest
 import os
 import requests
 import json
+import time
 
 import s3fs
 import zarr
@@ -46,22 +47,31 @@ class TestMatrixService(unittest.TestCase):
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
 
-    def test_matrix_service(self):
-        # make request and receive job id back
-        request_id = self._post_matrix_service_request()
-
-        # wait for get requests to return 200 and status of COMPLETED
+    def test_zarr_output_matrix_service(self):
+        request_id = self._post_matrix_service_request("zarr")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+        self._analyze_zarr_matrix_results(request_id)
 
-        # analyze produced matrix against standard
-        self._analyze_matrix_results(request_id)
+    def test_loom_output_matrix_service(self):
+        request_id = self._post_matrix_service_request("loom")
+        # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
+        self._analyze_loom_matrix_results(request_id)
 
-    def _post_matrix_service_request(self):
+    def test_matrix_service_without_specified_output(self):
+        request_id = request_id = self._post_matrix_service_request()
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+        self._analyze_zarr_matrix_results(request_id)
+
+    def _post_matrix_service_request(self, format=None):
         data = {
-            "bundle_fqids": INPUT_BUNDLE_IDS[self.deployment_stage],
-            "format": "zarr"
+            "bundle_fqids": INPUT_BUNDLE_IDS[self.deployment_stage]
         }
+        if format:
+            data["format"] = format
         response = self._make_request(description="POST REQUEST TO MATRIX SERVICE",
                                       verb='POST',
                                       url=f"{self.api_url}/matrix",
@@ -69,6 +79,10 @@ class TestMatrixService(unittest.TestCase):
                                       data=json.dumps(data),
                                       headers=self.headers)
         data = json.loads(response)
+        # Need a sleep since the driver creates entry in state table.
+        # Driver's execution may occur after completion of post request.
+        # Fix by adding entry to state table directly in post request.
+        time.sleep(2)
         return data["request_id"]
 
     def _poll_get_matrix_service_request(self, request_id):
@@ -82,8 +96,9 @@ class TestMatrixService(unittest.TestCase):
         status = data["status"]
         return status
 
-    def _analyze_matrix_results(self, request_id):
+    def _analyze_zarr_matrix_results(self, request_id):
         matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("zarr"), True)
         store = s3fs.S3Map(matrix_location, s3=self.s3_file_system, check=False, create=False)
         group = zarr.group(store=store)
         exp_df, qc_df = convert_dss_zarr_root_to_subset_pandas_dfs(group, 0, 5)
@@ -91,6 +106,12 @@ class TestMatrixService(unittest.TestCase):
         self.assertEqual(exp_df_sum, 4999999.0)
         self.assertEqual(qc_df.shape, (5, 154))
         self.assertEqual(exp_df.shape, (5, 58347))
+        # TODO ADD MORE CORRECTNESS CHECKS HERE FOR ZARR OUTPUT.
+
+    def _analyze_loom_matrix_results(self, request_id):
+        matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("loom"), True)
+        # TODO ADD MORE CORRECTNESS CHECKS HERE FOR LOOM OUTPUT.
 
     def _retrieve_matrix_location(self, request_id):
         url = f"{self.api_url}/matrix/{request_id}"

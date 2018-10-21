@@ -16,6 +16,16 @@
         "lambda:InvokeFunction"
       ],
       "Resource": "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-driver-dev"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-dev",
+        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-output-table-dev"
+      ]
     }
   ]
 }

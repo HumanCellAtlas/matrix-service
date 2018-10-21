@@ -18,11 +18,10 @@ class Mapper:
     Mapper takes a single bundle (uuid, version) as input, reads the associated expression matrix
     from the DSS, and invokes a Worker task for each chunk (row subset) of the expression matrix.
     """
-    def __init__(self, request_id: str, format: str):
+    def __init__(self, request_id: str):
         Logging.set_correlation_id(logger, value=request_id)
 
         self.request_id = request_id
-        self.format = format
 
         self.lambda_handler = LambdaHandler()
         self.dynamo_handler = DynamoHandler()
@@ -37,7 +36,7 @@ class Mapper:
             expression matrix to be filtered
         :return:
         """
-        logger.debug(f"Mapper running with parameters: bundle_fqids={bundle_fqids}, format={self.format}")
+        logger.debug(f"Mapper running with parameters: bundle_fqids={bundle_fqids}")
 
         worker_chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
@@ -64,7 +63,6 @@ class Mapper:
         """
         return {
             'request_id': self.request_id,
-            'format': self.format,
             'worker_chunk_spec': worker_chunk_spec
         }
 
