@@ -104,7 +104,7 @@ resource "aws_batch_compute_environment" "converter_compute_env" {
     bid_percentage = 100
     spot_iam_fleet_role = "${aws_iam_role.AmazonEC2SpotFleetRole.arn}"
     max_vcpus = 256
-    min_vcpus = 0
+    min_vcpus = 8
     // You must set desired_vcpus otherwise you get error: "desiredvCpus should be between minvCpus and maxvCpus"
     // However this is actually not settable in AWS.  It will not let you change it.
     // Here we use an external data source to dynamically set the desired vcpus to match current state.
@@ -113,9 +113,9 @@ resource "aws_batch_compute_environment" "converter_compute_env" {
       "m4"
     ]
     image_id = "${var.converter_cluster_ami_id}"
-    subnets = ["${data.aws_subnet.default.*.cidr_block}"]
+    subnets = ["${data.aws_subnet_ids.matrix_vpc.ids}"]
     security_group_ids = [
-      "${aws_default_vpc.default.default_security_group_id}"
+      "${aws_vpc.vpc.default_security_group_id}"
     ]
     ec2_key_pair = "matrix-service-${var.deployment_stage}"
     instance_role = "${aws_iam_instance_profile.ecsInstanceRole.arn}"
@@ -143,12 +143,32 @@ resource "aws_iam_policy" "converter_job_policy" {
         "Sid": "s3",
         "Effect": "Allow",
         "Action": [
-          "s3:PutObject"
+          "s3:*"
         ],
         "Resource": [
           "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
           "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
         ]
+      },
+      {
+        "Sid": "DynamoPolicy",
+        "Effect": "Allow",
+        "Action": [
+          "dynamodb:UpdateItem",
+          "dynamodb:GetItem"
+        ],
+        "Resource": [
+          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}"
+        ]
+      },
+      {
+        "Sid": "S3ReadFors3fs",
+        "Effect": "Allow",
+        "Action": [
+            "s3:ListAllMyBuckets",
+            "s3:HeadBucket"
+        ],
+        "Resource": "*"
       }
     ]
 }
