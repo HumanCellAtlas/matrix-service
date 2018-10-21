@@ -1,4 +1,5 @@
 deployment_stage = ""
 account_id = ""
 aws_region = ""
-converter_cluster_ami_id=""
+converter_cluster_ami_id = ""
+vpc_cidr_block = ""
