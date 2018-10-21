@@ -25,7 +25,6 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         self.create_test_state_table(self.dynamo)
         self.create_test_output_table(self.dynamo)
         self.handler = DynamoHandler()
-        self.format_string = "zarr"
         self.worker_chunk_spec = {
             "bundle_uuid": test_bundle_spec['uuid'],
             "bundle_version": test_bundle_spec['version'],
@@ -49,9 +48,9 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         mock_zarr_group.return_value = None
         mock_df_conversion.return_value = (None, None)
         mock_is_complete.return_value = True
-        self.worker.run(self.format_string, self.worker_chunk_spec)
+        self.worker.run(self.worker_chunk_spec)
         mock_lambda_handler_invoke.assert_called_once_with(LambdaName.REDUCER, {
-            'request_id': self.request_id, 'format': self.format_string})
+            'request_id': self.request_id})
 
     def test_parse_worker_chunk_spec(self):
         self.worker._parse_worker_chunk_spec(self.worker_chunk_spec)

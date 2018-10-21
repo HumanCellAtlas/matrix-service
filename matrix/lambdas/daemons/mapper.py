@@ -17,13 +17,11 @@ class Mapper:
     Mapper takes a single bundle (uuid, version) as input, reads the associated expression matrix
     from the DSS, and invokes a Worker task for each chunk (row subset) of the expression matrix.
     """
-    def __init__(self, request_id: str, format: str):
-        print(f"Mapper initialized with: {request_id}, {format}")
-        self.request_id = request_id
-        self.format = format
-
+    def __init__(self, request_id: str):
+        print(f"Mapper initialized with: {request_id}")
         self.lambda_handler = LambdaHandler()
         self.dynamo_handler = DynamoHandler()
+        self.request_id = request_id
 
     def run(self, bundle_uuid: str, bundle_version: str):
         """
@@ -63,7 +61,6 @@ class Mapper:
         """
         return {
             'request_id': self.request_id,
-            'format': self.format,
             'worker_chunk_spec': worker_chunk_spec
         }
 

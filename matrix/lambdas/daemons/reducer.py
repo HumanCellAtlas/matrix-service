@@ -4,6 +4,7 @@ import os
 import numpy
 import s3fs
 import zarr
+import boto3
 
 from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.dynamo_handler import DynamoTable
@@ -13,6 +14,7 @@ from matrix.common.dynamo_handler import OutputTableField
 
 class Reducer:
     # TODO: Move this to S3 Handler class
+    # TODO: Add tests to reducer
     ZARR_OUTPUT_CONFIG = {
         "cells_per_chunk": 3000,
         "compressor": zarr.storage.default_compressor,
@@ -25,13 +27,15 @@ class Reducer:
         "order": "C"
     }
 
-    def __init__(self, request_id: str, format: str):
+    def __init__(self, request_id: str):
         print(f"Reducer created: {request_id}, {format}")
-        self.request_id = request_id
-        self.format = format
-        self.s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
-
         self.dynamo_handler = DynamoHandler()
+        self.batch = boto3.client('batch')
+        self.request_id = request_id
+        item = self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_id)
+        self.format = item[OutputTableField.FORMAT.value]
+        self.s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
+        self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
 
     def run(self):
         """
@@ -80,10 +84,51 @@ class Reducer:
             }
             s3.open(zarray_key, 'wb').write(json.dumps(zarray).encode())
 
+        if self.format != "zarr":
+            self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+                                                      self.request_id,
+                                                      StateTableField.EXPECTED_CONVERTER_EXECUTIONS,
+                                                      1)
+            self._schedule_matrix_conversion()
+
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
                                                   StateTableField.COMPLETED_REDUCER_EXECUTIONS,
                                                   1)
+
+    def _schedule_matrix_conversion(self):
+        # TODO TEST THIS WHEN REDUCER TESTS ARE ADDED
+        source_zarr_path = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr"
+        target_path = f"s3://{self.s3_results_bucket}/{self.request_id}.{self.format}"
+        job_queue_arn = "arn:aws:batch:us-east-1:861229788715:job-queue/dcp-matrix-converter-queue-dev"
+        job_def_arn = "arn:aws:batch:us-east-1:861229788715:job-definition/dcp-matrix-converter-job-definition-dev"
+        command = ['python3', '/matrix_converter.py', self.request_id, source_zarr_path, target_path, self.format]
+        environment = {
+            'DEPLOYMENT_STAGE': self.deployment_stage,
+            'DYNAMO_STATE_TABLE_NAME': DynamoTable.STATE_TABLE.value,
+            'DYNAMO_OUTPUT_TABLE_NAME': DynamoTable.OUTPUT_TABLE.value
+        }
+        job_name = "-".join([
+            "conversion", self.deployment_stage, self.request_id, self.format])
+        self._enqueue_batch_job(queue_arn=job_queue_arn,
+                                job_name=job_name,
+                                job_def_arn=job_def_arn,
+                                command=command,
+                                environment=environment)
+
+    def _enqueue_batch_job(self, queue_arn, job_name, job_def_arn, command, environment):
+        # TODO TEST THIS WHEN REDUCER TESTS ARE ADDED
+        job = self.batch.submit_job(
+            jobName=job_name,
+            jobQueue=queue_arn,
+            jobDefinition=job_def_arn,
+            containerOverrides={
+                'command': command,
+                'environment': [dict(name=k, value=v) for k, v in environment.items()]
+            }
+        )
+        print(f"Enqueued job {job_name} [{job['jobId']}] using job definition {job_def_arn}:")
+        return job['jobId']
 
     def _fill_value(self, dtype):
         if dtype.kind == 'f':

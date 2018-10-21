@@ -22,6 +22,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.state_table_name = os.environ['DYNAMO_STATE_TABLE_NAME']
         self.output_table_name = os.environ['DYNAMO_OUTPUT_TABLE_NAME']
         self.request_id = str(uuid.uuid4())
+        self.format = "zarr"
 
         self.create_test_state_table(self.dynamo)
         self.create_test_output_table(self.dynamo)
@@ -63,7 +64,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
     def test_create_output_table_entry(self):
-        self.handler.create_output_table_entry(self.request_id)
+        self.handler.create_output_table_entry(self.request_id, self.format)
         response, entry = self._get_output_table_response_and_entry()
 
         self.assertEqual(len(response['Responses'][self.output_table_name]), 1)
@@ -85,7 +86,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
     def test_increment_table_field_output_table_path(self):
-        self.handler.create_output_table_entry(self.request_id)
+        self.handler.create_output_table_entry(self.request_id, self.format)
 
         response, entry = self._get_output_table_response_and_entry()
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
@@ -120,7 +121,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 15)
 
     def test_get_output_table_entry(self):
-        self.handler.create_output_table_entry(self.request_id)
+        self.handler.create_output_table_entry(self.request_id, self.format)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
@@ -132,6 +133,6 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
     def test_get_table_item(self):
         self.assertRaises(MatrixException, self.handler.get_table_item, DynamoTable.OUTPUT_TABLE, self.request_id)
 
-        self.handler.create_output_table_entry(self.request_id)
+        self.handler.create_output_table_entry(self.request_id, self.format)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)

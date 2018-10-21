@@ -1,10 +1,10 @@
 import os
-import requests
 import time
 from enum import Enum
 
 import boto3
 import botocore
+import requests
 
 from matrix.common.exceptions import MatrixException
 
@@ -24,6 +24,8 @@ class StateTableField(TableField):
     COMPLETED_WORKER_EXECUTIONS = "CompletedWorkerExecutions"
     EXPECTED_REDUCER_EXECUTIONS = "ExpectedReducerExecutions"
     COMPLETED_REDUCER_EXECUTIONS = "CompletedReducerExecutions"
+    EXPECTED_CONVERTER_EXECUTIONS = "ExpectedConverterExecutions"
+    COMPLETED_CONVERTER_EXECUTIONS = "CompletedConverterExecutions"
 
 
 class OutputTableField(TableField):
@@ -32,6 +34,7 @@ class OutputTableField(TableField):
     """
     REQUEST_ID = "RequestId"
     ROW_COUNT = "RowCount"
+    FORMAT = "Format"
 
 
 class DynamoTable(Enum):
@@ -82,18 +85,22 @@ class DynamoHandler:
                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_REDUCER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
+                StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0,
+                StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0
             }
         )
 
-    def create_output_table_entry(self, request_id: str):
+    def create_output_table_entry(self, request_id: str, format: str):
         """
         Put a new item in the DynamoDB Table responsible for counting output rows
         :param request_id: UUID identifying a filter merge job request.
+        :param format: expected file format for filter merge job request.
         """
         self._output_table.put_item(
             Item={
                 OutputTableField.REQUEST_ID.value: request_id,
                 OutputTableField.ROW_COUNT.value: 0,
+                OutputTableField.FORMAT.value: format
             }
         )
 

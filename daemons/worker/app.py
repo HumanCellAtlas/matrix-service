@@ -12,11 +12,11 @@ def worker_handler(event: dict, context: dict):
         context: (dict) lambda context object passed in by AWS
     """
     print(f"worker invoked with {event}")
-    assert 'request_id' in event and 'worker_chunk_spec' in event and 'format' in event
+    assert 'request_id' in event and 'worker_chunk_spec' in event
 
     worker_chunk_spec = event['worker_chunk_spec']
     assert 'bundle_uuid' in worker_chunk_spec and 'bundle_version' in worker_chunk_spec
     assert 'start_row' in worker_chunk_spec and 'num_rows' in worker_chunk_spec
 
     worker = Worker(event['request_id'])
-    worker.run(event['format'], event['worker_chunk_spec'])
+    worker.run(event['worker_chunk_spec'])
