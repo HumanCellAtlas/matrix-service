@@ -7,11 +7,12 @@ import s3fs
 import zarr
 import numpy
 
-
+from matrix.common.constants import ZarrayName
 from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.dynamo_handler import DynamoTable
 from matrix.common.dynamo_handler import OutputTableField
 from matrix.common.dynamo_utils import Lock
+from matrix.common.exceptions import MatrixException
 
 
 ZARR_OUTPUT_CONFIG = {
@@ -32,6 +33,7 @@ class S3ZarrStore:
     def __init__(self, request_id: str, exp_df=None, qc_df=None):
         self._request_id = request_id
         self._results_bucket = os.environ['S3_RESULTS_BUCKET']
+        self.s3_results_prefix = f"s3://{self._results_bucket}/{self._request_id}.zarr"
         self._cells_per_chunk = ZARR_OUTPUT_CONFIG['cells_per_chunk']
         self.dynamo_handler = DynamoHandler()
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
@@ -132,9 +134,70 @@ class S3ZarrStore:
                 arr[output_bounds[0]:output_bounds[1]] = values[input_bounds[0]:input_bounds[1]]
                 self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
 
-    def write_row_metadata(self):
-        pass
-        # TO BE IMPLEMENTED AND UTILIZED IN REDUCER
+    def write_group_metadata(self):
+        """
+        Writes the group and zarray metadata of a complete expression matrix zarr in S3.
+        """
+        self._write_zgroup_metadata()
+
+        num_output_rows = int(self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
+                                                                 self._request_id)[OutputTableField.ROW_COUNT.value])
+        for zarray in [ZarrayName.EXPRESSION,
+                       ZarrayName.CELL_METADATA_NUMERIC,
+                       ZarrayName.CELL_METADATA_STRING,
+                       ZarrayName.CELL_ID]:
+            self._write_zarray_metadata(zarray, num_output_rows)
+
+    def _write_zgroup_metadata(self):
+        """
+        Writes the top level .zgroup file to this zarr store in S3.
+        """
+        data = json.dumps({'zarr_format': 2}).encode()
+        self.s3_file_system.open(f"{self.s3_results_prefix}/.zgroup", 'wb').write(data)
+
+    def _write_zarray_metadata(self, zarray: ZarrayName, row_count: int):
+        """
+        Writes the metadata for the specified zarray to this zarr store in S3.
+        :param zarray: Expression matrix zarray for which the metadata will be written for
+        :param row_count: Total number of output rows.
+        """
+        num_cols = self._get_zarray_column_count(zarray)
+        chunks = [ZARR_OUTPUT_CONFIG["cells_per_chunk"]]
+        shape = [row_count]
+
+        if num_cols:
+            chunks.append(num_cols)
+            shape.append(num_cols)
+
+        zarray_metadata = {
+            "chunks": chunks,
+            "compressor": ZARR_OUTPUT_CONFIG['compressor'].get_config(),
+            "dtype": ZARR_OUTPUT_CONFIG['dtypes'][zarray.value],
+            "fill_value": self._fill_value(numpy.dtype(ZARR_OUTPUT_CONFIG['dtypes'][zarray.value])),
+            "filters": None,
+            "order": ZARR_OUTPUT_CONFIG['order'],
+            "shape": shape,
+            "zarr_format": 2
+        }
+        zarray_key = f"{self.s3_results_prefix}/{zarray.value}/.zarray"
+        self.s3_file_system.open(zarray_key, "wb").write(json.dumps(zarray_metadata).encode())
+
+    def _read_zarray(self, zarray: ZarrayName):
+        s3_location = f"s3://{self._results_bucket}/{self._request_id}.zarr/{zarray.value}/.zarray"
+        data = self.s3_file_system.open(s3_location, 'rb').read()
+        return json.loads(data)
+
+    def _get_zarray_column_count(self, zarray: ZarrayName):
+        if zarray == ZarrayName.EXPRESSION:
+            return int(self._read_zarray(ZarrayName.GENE_ID)['chunks'][0])
+        elif zarray == ZarrayName.CELL_METADATA_NUMERIC:
+            return int(self._read_zarray(ZarrayName.CELL_METADATA_NUMERIC_NAME)['chunks'][0])
+        elif zarray == ZarrayName.CELL_METADATA_STRING:
+            return int(self._read_zarray(ZarrayName.CELL_METADATA_STRING_NAME)['chunks'][0])
+        elif zarray == ZarrayName.CELL_ID:
+            return 0
+        else:
+            raise MatrixException(400, f"Unsupported ZarrayName value supplied {zarray.value}.")
 
     def write_column_data(self, group: zarr.Group):
         """Write all column data from input to results s3 bucket.
