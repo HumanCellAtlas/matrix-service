@@ -53,7 +53,7 @@ class Worker:
 
         # In some test cases, dataframes aren't actually returned. Don't try to
         # pass those to pandas.concat
-        if any(exp_dfs):
+        if any(not df.empty for df in exp_dfs):
             exp_df = pandas.concat(exp_dfs, axis=0, copy=False)
             qc_df = pandas.concat(qc_dfs, axis=0, copy=False)
         else:
