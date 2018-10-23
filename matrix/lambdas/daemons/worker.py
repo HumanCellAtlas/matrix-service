@@ -56,7 +56,8 @@ class Worker:
             exp_dfs.append(exp_df)
             qc_dfs.append(qc_df)
 
-            if any(chunk_idx == int(math.ceil(num_bundles / 3)) * (i + 1) for i in range(2)):
+            # log every tertile of bundles read
+            if any(chunk_idx == int(math.ceil((num_bundles - 1) * ((i + 1) / 3))) for i in range(2)):
                 logger.debug(f"{chunk_idx + 1} of {len(self._bundle_uuids)} bundles successfully read from the DSS")
 
         # In some test cases, dataframes aren't actually returned. Don't try to
