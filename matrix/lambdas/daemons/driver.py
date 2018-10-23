@@ -11,7 +11,7 @@ class Driver:
     """
     The first task in a distributed filter merge job.
     """
-    def __init__(self, bundles_per_worker=100):
+    def __init__(self, bundles_per_worker=25):
         self.lambda_handler = LambdaHandler()
         self.dynamo_handler = DynamoHandler()
         self._bundles_per_worker = bundles_per_worker
@@ -39,7 +39,7 @@ class Driver:
         for bundle_fqid_group in _group_bundles(bundle_fqids, self._bundles_per_worker):
             mapper_payload = {
                 'request_id': request_id,
-                'bundle_fqids': bundle_fqids,
+                'bundle_fqids': bundle_fqid_group,
                 'format': format,
             }
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
