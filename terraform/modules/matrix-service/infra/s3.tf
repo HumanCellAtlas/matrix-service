@@ -14,25 +14,6 @@ resource "aws_s3_bucket" "matrix-results" {
   # Add tags later
 }
 
-resource "aws_s3_bucket_policy" "matrix_results_bucket_policy" {
-  bucket = "${aws_s3_bucket.matrix-results.id}"
-  policy =<<POLICY
-{
-  "Version": "2012-10-17",
-  "Id": "AddPublicRead",
-  "Statement": [
-    {
-      "Sid": "AllowPublicRead",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": ["s3:ListBucket", "s3:GetObject"],
-      "Resource": ["${aws_s3_bucket.matrix-results.arn}", "${aws_s3_bucket.matrix-results.arn}/*"]
-    }
-  ]
-}
-POLICY
-}
-
 resource "aws_s3_bucket" "matrix_service_lambda_deployment_bucket" {
     bucket = "dcp-matrix-service-lambda-deployment-${var.deployment_stage}"
     acl = "private"
