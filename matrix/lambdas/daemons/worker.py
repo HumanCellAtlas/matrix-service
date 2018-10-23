@@ -1,24 +1,27 @@
+import math
 import os
 import typing
 
 import pandas
 import zarr
 
-from matrix.common.lambda_handler import LambdaHandler
-from matrix.common.lambda_handler import LambdaName
 from matrix.common.dss_zarr_store import DSSZarrStore
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.dynamo_handler import DynamoTable
-from matrix.common.dynamo_handler import StateTableField
-from matrix.common.s3_zarr_store import S3ZarrStore
+from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
+from matrix.common.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.logging import Logging
 from matrix.common.pandas_utils import convert_dss_zarr_root_to_subset_pandas_dfs
+from matrix.common.s3_zarr_store import S3ZarrStore
+
+logger = Logging.get_logger(__name__)
 
 
 class Worker:
     """
     The worker (third) task in a distributed filter merge job.
     """
-    def __init__(self, request_id):
+    def __init__(self, request_id: str):
+        Logging.set_correlation_id(logger, value=request_id)
+
         self.lambda_handler = LambdaHandler()
         self.dynamo_handler = DynamoHandler()
         self._request_id = request_id
@@ -37,11 +40,13 @@ class Worker:
         format: (str) Expected file format of request
         worker_chunk_spec: (dict) Information about input bundle and matrix row indices to process
         """
+        logger.debug(f"Worker running with parameters: worker_chunk_spec={worker_chunk_spec}, format={format}")
         # TO DO pass in the parameters in worker chunk spec flat
         self._parse_worker_chunk_spec(worker_chunk_spec)
         exp_dfs = []
         qc_dfs = []
-        for chunk_idx in range(len(self._bundle_uuids)):
+        num_bundles = len(self._bundle_uuids)
+        for chunk_idx in range(num_bundles):
             dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[chunk_idx],
                                           bundle_version=self._bundle_versions[chunk_idx],
                                           dss_instance=self._deployment_stage)
@@ -50,6 +55,9 @@ class Worker:
                 group, self._input_start_rows[chunk_idx], self._input_end_rows[chunk_idx])
             exp_dfs.append(exp_df)
             qc_dfs.append(qc_df)
+
+            if any(chunk_idx == int(math.ceil(num_bundles / 3)) * (i + 1) for i in range(2)):
+                logger.debug(f"{chunk_idx + 1} of {len(self._bundle_uuids)} bundles successfully read from the DSS")
 
         # In some test cases, dataframes aren't actually returned. Don't try to
         # pass those to pandas.concat
@@ -70,6 +78,8 @@ class Worker:
         workers_and_mappers_are_complete = self._check_if_all_workers_and_mappers_for_request_are_complete(
             self._request_id)
         if workers_and_mappers_are_complete:
+            logger.debug("Mappers and workers are complete. Invoking reducer.")
+
             s3_zarr_store.write_column_data(group)
             reducer_payload = {
                 "request_id": self._request_id,
