@@ -91,8 +91,7 @@ class TestMatrixService(unittest.TestCase):
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
 
-        # TODO: analyze results
-        # self._analyze_matrix_results(request_id)
+        self._verify_row_counts(request_id, num_bundles)
 
     def _post_matrix_service_request(self, bundle_fqids, format):
         data = {
@@ -125,7 +124,18 @@ class TestMatrixService(unittest.TestCase):
         status = data["status"]
         return status
 
-    def _analyze_zarr_matrix_results(self, request_id):
+    def _verify_row_counts(self, request_id, expected_num_rows):
+        """Verify that the output matrix has the expected number of rows."""
+        matrix_location = self._retrieve_matrix_location(request_id)
+        store = s3fs.S3Map(matrix_location, s3=self.s3_file_system, check=False, create=False)
+        group = zarr.group(store=store)
+
+        self.assertEqual(group.expression.shape[0], expected_num_rows)
+        self.assertEqual(group.cell_metadata_numeric.shape[0], expected_num_rows)
+        self.assertEqual(group.cell_metadata_string.shape[0], expected_num_rows)
+        self.assertEqual(group.cell_id.shape[0], expected_num_rows)
+
+    def _analyze_matrix_results(self, request_id):
         matrix_location = self._retrieve_matrix_location(request_id)
         self.assertEqual(matrix_location.endswith("zarr"), True)
         store = s3fs.S3Map(matrix_location, s3=self.s3_file_system, check=False, create=False)
@@ -141,6 +151,7 @@ class TestMatrixService(unittest.TestCase):
         matrix_location = self._retrieve_matrix_location(request_id)
         self.assertEqual(matrix_location.endswith("loom"), True)
         # TODO ADD MORE CORRECTNESS CHECKS HERE FOR LOOM OUTPUT.
+
 
     def _retrieve_matrix_location(self, request_id):
         url = f"{self.api_url}/matrix/{request_id}"
