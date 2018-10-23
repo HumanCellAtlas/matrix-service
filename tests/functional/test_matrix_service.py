@@ -1,8 +1,8 @@
-import unittest
+import json
 import os
 import requests
-import json
 import time
+import unittest
 
 import s3fs
 import zarr
@@ -43,6 +43,7 @@ class TestMatrixService(unittest.TestCase):
     def setUp(self):
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
         self.api_url = f"https://{os.environ['API_HOST']}/v0"
+        self.res_dir = "tests/functional/res"
         self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
@@ -57,6 +58,18 @@ class TestMatrixService(unittest.TestCase):
         request_id = self._post_matrix_service_request("loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+        self._analyze_zarr_matrix_results(request_id)
+
+    @unittest.skip
+    def test_matrix_service_ss2_small(self):
+        # make request and receive job id back
+        request_id = self._post_matrix_service_request(INPUT_BUNDLE_IDS[self.deployment_stage], "zarr")
+
+        # wait for post to complete
+        time.sleep(2)
+        # wait for get requests to return 200 and status of COMPLETED
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
         self._analyze_loom_matrix_results(request_id)
 
@@ -66,9 +79,25 @@ class TestMatrixService(unittest.TestCase):
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
         self._analyze_zarr_matrix_results(request_id)
 
-    def _post_matrix_service_request(self, format=None):
+    def test_matrix_service_ss2(self):
+        timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
+        num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 400))
+        bundle_fqids = json.loads(open(f"{self.res_dir}/ss2_2536.json", "r").read())[:num_bundles]
+
+        request_id = self._post_matrix_service_request(bundle_fqids, "zarr")
+
+        # wait for request to complete
+        time.sleep(2)
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
+
+        # TODO: analyze results
+        # self._analyze_matrix_results(request_id)
+
+    def _post_matrix_service_request(self, bundle_fqids, format):
         data = {
-            "bundle_fqids": INPUT_BUNDLE_IDS[self.deployment_stage]
+            'bundle_fqids': bundle_fqids,
+            'format': format
         }
         if format:
             data["format"] = format
