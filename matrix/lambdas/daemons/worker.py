@@ -1,3 +1,4 @@
+import concurrent.futures
 import math
 import os
 import typing
@@ -31,6 +32,7 @@ class Worker:
         self._input_start_rows = []
         self._input_end_rows = []
         self._num_rows = []
+        self.zarr_group = None
 
     def run(self, format: str, worker_chunk_spec: typing.List[dict]):
         """Process and write one chunk of dss bundle matrix to s3 and
@@ -43,24 +45,30 @@ class Worker:
         logger.debug(f"Worker running with parameters: worker_chunk_spec={worker_chunk_spec}, format={format}")
         # TO DO pass in the parameters in worker chunk spec flat
         self._parse_worker_chunk_spec(worker_chunk_spec)
+        num_bundles = len(self._bundle_uuids)
         exp_dfs = []
         qc_dfs = []
-        num_bundles = len(self._bundle_uuids)
-        for chunk_idx in range(num_bundles):
-            dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[chunk_idx],
-                                          bundle_version=self._bundle_versions[chunk_idx],
-                                          dss_instance=self._deployment_stage)
-            group = zarr.group(store=dss_zarr_store)
-            exp_df, qc_df = convert_dss_zarr_root_to_subset_pandas_dfs(
-                group, self._input_start_rows[chunk_idx], self._input_end_rows[chunk_idx])
-            exp_dfs.append(exp_df)
-            qc_dfs.append(qc_df)
 
-            # log every tertile of bundles read
-            if any(chunk_idx == int(math.ceil((num_bundles - 1) * ((i + 1) / 3))) for i in range(2)):
-                logger.debug(f"{chunk_idx + 1} of {len(self._bundle_uuids)} bundles successfully read from the DSS")
+        # Parallelize high latency bundle reads from DSS
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_chunk_map = {executor.submit(self._parse_chunk_to_dataframe, chunk_idx): chunk_idx
+                                   for chunk_idx in range(num_bundles)}
+            for future in concurrent.futures.as_completed(future_to_chunk_map):
+                chunk_idx = future_to_chunk_map[future]
+                try:
+                    exp_df, qc_df = future.result()
+                except Exception as e:
+                    logger.debug(f"Parsing bundle uuid {self._bundle_uuids[chunk_idx]} from DSS "
+                                 f"to pandas.DataFrame caused exception {e}")
+                    exp_df, qc_df = pandas.DataFrame(), pandas.DataFrame()
+                exp_dfs.append(exp_df)
+                qc_dfs.append(qc_df)
 
-        # In some test cases, dataframes aren't actually returned. Don't try to
+                # log every tertile of bundles read
+                if any(chunk_idx + 1 == math.ceil(num_bundles * ((i + 1) / 3)) for i in range(3)):
+                    logger.debug(f"{chunk_idx + 1} of {num_bundles} bundles successfully read from the DSS")
+
+        # In some test cases, empty dataframes are actually returned. Don't try to
         # pass those to pandas.concat
         if any(not df.empty for df in exp_dfs):
             exp_df = pandas.concat(exp_dfs, axis=0, copy=False)
@@ -81,12 +89,21 @@ class Worker:
         if workers_and_mappers_are_complete:
             logger.debug("Mappers and workers are complete. Invoking reducer.")
 
-            s3_zarr_store.write_column_data(group)
+            s3_zarr_store.write_column_data(self.zarr_group)
             reducer_payload = {
                 "request_id": self._request_id,
                 "format": format
             }
             self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
+
+    def _parse_chunk_to_dataframe(self, i: int):
+        dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[i],
+                                      bundle_version=self._bundle_versions[i],
+                                      dss_instance=self._deployment_stage)
+        group = zarr.group(store=dss_zarr_store)
+        if not self.zarr_group:
+            self.zarr_group = group
+        return convert_dss_zarr_root_to_subset_pandas_dfs(group, self._input_start_rows[i], self._input_end_rows[i])
 
     def _parse_worker_chunk_spec(self, worker_chunk_spec: typing.List[dict]):
         """Parse worker chunk spec into Worker instance variables.
