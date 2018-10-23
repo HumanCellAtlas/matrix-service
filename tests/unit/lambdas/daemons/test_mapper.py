@@ -27,12 +27,13 @@ class TestMapper(unittest.TestCase):
                     mock_get_worker_payload):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
+        bundle_fqids = ['.'.join([bundle_uuid, bundle_version])]
 
         test_chunk_specs = [{'start_row': 0, 'num_rows': 5}]
         mock_get_chunk_specs.return_value = test_chunk_specs
         mock_get_worker_payload.return_value = {}
 
-        self._mapper.run(bundle_uuid, bundle_version)
+        self._mapper.run(bundle_fqids)
 
         mock_lambda_invoke.assert_called_with(LambdaName.WORKER, mock.ANY)
         self.assertEqual(mock_lambda_invoke.call_count, len(test_chunk_specs))
@@ -59,29 +60,25 @@ class TestMapper(unittest.TestCase):
                            mock_get_chunk_specs):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
+        bundle_fqids = ['.'.join([bundle_uuid, bundle_version])]
 
         test_chunk_specs = []
         mock_get_chunk_specs.return_value = test_chunk_specs
 
-        self._mapper.run(bundle_uuid, bundle_version)
-
-        self.assertEqual(mock_lambda_invoke.call_count, 0)
+        self._mapper.run(bundle_fqids)
+        mock_lambda_invoke.assert_not_called()
 
         expected_calls = [
-            call(DynamoTable.STATE_TABLE,
-                 self.request_id,
-                 StateTableField.EXPECTED_WORKER_EXECUTIONS,
-                 len(test_chunk_specs)),
             call(DynamoTable.STATE_TABLE,
                  self.request_id,
                  StateTableField.COMPLETED_MAPPER_EXECUTIONS,
                  1)
         ]
         mock_dynamo_increment_table_field.assert_has_calls(expected_calls)
-        self.assertEqual(mock_dynamo_increment_table_field.call_count, 2)
+        self.assertEqual(mock_dynamo_increment_table_field.call_count, 1)
 
     def test_get_worker_payload(self):
-        test_chunk_spec = {}
+        test_chunk_spec = []
         expected_payload = {
             'request_id': self.request_id,
             'format': self.format,
@@ -101,6 +98,7 @@ class TestMapper(unittest.TestCase):
     def test_get_chunk_specs_ok(self, mock_dss_zarr_store, mock_zarr_group):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
+        bundle_fqids = ['.'.join([bundle_uuid, bundle_version])]
         chunk_size = 10
         nchunks = 5
 
@@ -113,7 +111,7 @@ class TestMapper(unittest.TestCase):
         mock_dss_zarr_store.return_value = None
         mock_zarr_group.return_value = test_zarr_group
 
-        chunk_specs = Mapper._get_chunk_specs(bundle_uuid, bundle_version)
+        chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
         self.assertEqual(len(chunk_specs), nchunks)
         for i, chunk_spec in enumerate(chunk_specs):
@@ -125,6 +123,7 @@ class TestMapper(unittest.TestCase):
     def test_get_chunk_specs_no_chunks(self, mock_dss_zarr_store, mock_zarr_group):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
+        bundle_fqids = ['.'.join([bundle_uuid, bundle_version])]
         chunk_size = 10
         nchunks = 0
 
@@ -137,6 +136,6 @@ class TestMapper(unittest.TestCase):
         mock_dss_zarr_store.return_value = None
         mock_zarr_group.return_value = test_zarr_group
 
-        chunk_specs = Mapper._get_chunk_specs(bundle_uuid, bundle_version)
+        chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
         self.assertEqual(len(chunk_specs), 0)

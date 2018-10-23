@@ -25,29 +25,27 @@ class Mapper:
         self.lambda_handler = LambdaHandler()
         self.dynamo_handler = DynamoHandler()
 
-    def run(self, bundle_uuid: str, bundle_version: str):
+    def run(self, bundle_fqids: typing.List[str]):
         """
         Mapper entry point.
         Invokes one Worker lambda for every chunk of the input expression matrix.
         Updates relevant fields in the State tracking DynamoDB table.
 
-        :param bundle_uuid: Bundle UUID of the analysis bundle containing the expression matrix to be filtered
-        :param bundle_version: Bundle version of the analysis bundle containing the expression matrix to be filtered
+        :param bundle_fqids: List of fully-qualified IDs of the analysis bundles containing the
+            expression matrix to be filtered
         :return:
         """
-        print(f"{self.request_id} Mapper running with: {bundle_uuid}, {bundle_version}")
-        worker_chunk_specs = Mapper._get_chunk_specs(bundle_uuid, bundle_version)
+        print(f"{self.request_id} Mapper running with: {bundle_fqids}")
+        worker_chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self.request_id,  # TODO: init DH with this to remove from params
-                                                  StateTableField.EXPECTED_WORKER_EXECUTIONS,
-                                                  len(worker_chunk_specs))
-
-        print(f"{self.request_id} Invoking {len(worker_chunk_specs)} worker lambdas...")
-        for worker_chunk_spec in worker_chunk_specs:
-            self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_spec))
-            print(f"{self.request_id} Worker invoked: start row "
-                  f"{worker_chunk_spec['start_row']}, num rows {worker_chunk_spec['num_rows']}")
+        if worker_chunk_specs:
+            self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+                                                      self.request_id,  # TODO: init DH with this to remove from params
+                                                      StateTableField.EXPECTED_WORKER_EXECUTIONS,
+                                                      1)
+            print(f"{self.request_id} Invoking 1 worker lambda with {len(worker_chunk_specs)} chunks.")
+            self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_specs))
+            print(f"{self.request_id} Worker invoked {worker_chunk_specs}")
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
@@ -68,7 +66,7 @@ class Mapper:
         }
 
     @staticmethod
-    def _get_chunk_specs(bundle_uuid: str, bundle_version: str) -> typing.List[dict]:
+    def _get_chunk_specs(bundle_fqids: typing.List[str]) -> typing.List[dict]:
         """
         Retrieves an expression matrix from a bundle in the DSS,
         parses out and returns chunking information about the matrix.
@@ -77,16 +75,23 @@ class Mapper:
         :param bundle_version: Bundle version of the analysis bundle containing the expression matrix
         :return: List of dicts describing row subsets (chunks) of the input expression matrix
         """
-        zarr_store = DSSZarrStore(bundle_uuid,
-                                  bundle_version=bundle_version,
-                                  dss_instance=os.environ['DEPLOYMENT_STAGE'])
-        root = zarr.group(store=zarr_store)
 
-        rows_per_chunk = root.expression.chunks[0]
-        total_chunks = root.expression.nchunks
+        chunk_work_spec = []
+        for bundle_fqid in bundle_fqids:
+            bundle_uuid, bundle_version = bundle_fqid.split(".", 1)
+            zarr_store = DSSZarrStore(bundle_uuid,
+                                      bundle_version=bundle_version,
+                                      dss_instance=os.environ['DEPLOYMENT_STAGE'])
 
-        return [{"bundle_uuid": bundle_uuid,
-                 "bundle_version": bundle_version,
-                 "start_row": n * rows_per_chunk,
-                 "num_rows": rows_per_chunk}
-                for n in range(total_chunks)]
+            root = zarr.group(store=zarr_store)
+
+            rows_per_chunk = root.expression.chunks[0]
+            total_chunks = root.expression.nchunks
+
+            chunk_work_spec.extend(
+                [{"bundle_uuid": bundle_uuid,
+                  "bundle_version": bundle_version,
+                  "start_row": n * rows_per_chunk,
+                  "num_rows": rows_per_chunk}
+                 for n in range(total_chunks)])
+        return chunk_work_spec

@@ -26,12 +26,12 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         self.create_test_output_table(self.dynamo)
         self.handler = DynamoHandler()
         self.format_string = "zarr"
-        self.worker_chunk_spec = {
+        self.worker_chunk_spec = [{
             "bundle_uuid": test_bundle_spec['uuid'],
             "bundle_version": test_bundle_spec['version'],
             "start_row": 100,
             "num_rows": 6500
-        }
+        }]
         self.worker = Worker(self.request_id)
 
     @mock.patch('matrix.common.s3_zarr_store.S3ZarrStore.write_from_pandas_dfs')
@@ -55,10 +55,12 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
 
     def test_parse_worker_chunk_spec(self):
         self.worker._parse_worker_chunk_spec(self.worker_chunk_spec)
-        self.assertEqual(self.worker._bundle_uuid, test_bundle_spec['uuid'])
-        self.assertEqual(self.worker._bundle_version, test_bundle_spec['version'])
-        self.assertEqual(self.worker._input_start_row, 100)
-        self.assertEqual(self.worker._input_end_row, 6600)
+        self.assertEqual(self.worker._bundle_uuids,
+                         [s['bundle_uuid'] for s in self.worker_chunk_spec])
+        self.assertEqual(self.worker._bundle_versions,
+                         [s['bundle_version'] for s in self.worker_chunk_spec])
+        self.assertEqual(self.worker._input_start_rows, [100])
+        self.assertEqual(self.worker._input_end_rows, [6600])
 
     def test_check_if_all_workers_and_mappers_for_request_are_complete_returns_false(self):
         self.handler.create_state_table_entry(self.request_id, num_bundles=2)
