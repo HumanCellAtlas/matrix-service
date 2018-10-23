@@ -67,7 +67,7 @@ resource "aws_lambda_function" "matrix_service_mapper_lambda" {
   role             = "${aws_iam_role.matrix_service_mapper_lambda.arn}"
   handler          = "app.mapper_handler"
   runtime          = "python3.6"
-  timeout          = 300
+  timeout          = 900
 
   environment {
     variables = {
