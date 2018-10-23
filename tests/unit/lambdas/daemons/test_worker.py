@@ -2,6 +2,7 @@ import os
 import uuid
 
 import boto3
+from pandas import DataFrame
 from unittest import mock
 
 from ... import MatrixTestCaseUsingMockAWS
@@ -47,7 +48,7 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         mock_dss_zarr_store.return_value = None
         mock_write_to_s3.return_value = None
         mock_zarr_group.return_value = None
-        mock_df_conversion.return_value = (None, None)
+        mock_df_conversion.return_value = (DataFrame(), DataFrame())
         mock_is_complete.return_value = True
         self.worker.run(self.format_string, self.worker_chunk_spec)
         mock_lambda_handler_invoke.assert_called_once_with(LambdaName.REDUCER, {
