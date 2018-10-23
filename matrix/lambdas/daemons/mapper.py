@@ -4,10 +4,11 @@ import typing
 import zarr
 
 from matrix.common.dss_zarr_store import DSSZarrStore
-from matrix.common.dynamo_handler import DynamoTable, StateTableField
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.lambda_handler import LambdaHandler
-from matrix.common.lambda_handler import LambdaName
+from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
+from matrix.common.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.logging import Logging
+
+logger = Logging.get_logger(__name__)
 
 
 class Mapper:
@@ -18,7 +19,8 @@ class Mapper:
     from the DSS, and invokes a Worker task for each chunk (row subset) of the expression matrix.
     """
     def __init__(self, request_id: str, format: str):
-        print(f"Mapper initialized with: {request_id}, {format}")
+        Logging.set_correlation_id(logger, value=request_id)
+
         self.request_id = request_id
         self.format = format
 
@@ -35,7 +37,8 @@ class Mapper:
             expression matrix to be filtered
         :return:
         """
-        print(f"{self.request_id} Mapper running with: {bundle_fqids}")
+        logger.debug(f"Mapper running with parameters: bundle_fqids={bundle_fqids}, format={self.format}")
+
         worker_chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
         if worker_chunk_specs:
@@ -43,16 +46,16 @@ class Mapper:
                                                       self.request_id,  # TODO: init DH with this to remove from params
                                                       StateTableField.EXPECTED_WORKER_EXECUTIONS,
                                                       1)
-            print(f"{self.request_id} Invoking 1 worker lambda with {len(worker_chunk_specs)} chunks.")
+            logger.debug(f"Invoking 1 worker lambda with {len(worker_chunk_specs)} chunks.")
             self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_specs))
-            print(f"{self.request_id} Worker invoked {worker_chunk_specs}")
+            logger.debug(f"Worker invoked {worker_chunk_specs}")
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
                                                   StateTableField.COMPLETED_MAPPER_EXECUTIONS,
                                                   1)
 
-    def _get_worker_payload(self, worker_chunk_spec: dict) -> dict:
+    def _get_worker_payload(self, worker_chunk_spec: typing.List[dict]) -> dict:
         """
         Builds the data payload to invoke a Worker lambda.
 
