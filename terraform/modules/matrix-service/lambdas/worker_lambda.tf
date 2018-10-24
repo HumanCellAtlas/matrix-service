@@ -85,7 +85,7 @@ resource "aws_lambda_function" "matrix_service_worker_lambda" {
   handler          = "app.worker_handler"
   runtime          = "python3.6"
   timeout          = 900
-  memory_size      = 1500
+  memory_size      = 3000
 
   environment {
     variables = {

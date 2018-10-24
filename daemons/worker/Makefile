@@ -16,6 +16,7 @@ build:
 	mkdir target
 	pip install -r requirements.txt -t target/ --upgrade
 	cp target.in/blosc.cpython-36m-x86_64-linux-gnu.so target/numcodecs
+	cp target.in/hca_util__init__.py target/hca/util/__init__.py
 	cp -R ../../matrix target/
 	cp -R *.py target/
 

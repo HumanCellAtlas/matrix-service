@@ -1,9 +1,5 @@
-import os
 import typing
 
-import zarr
-
-from matrix.common.dss_zarr_store import DSSZarrStore
 from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.logging import Logging
@@ -82,19 +78,13 @@ class Mapper:
         chunk_work_spec = []
         for bundle_fqid in bundle_fqids:
             bundle_uuid, bundle_version = bundle_fqid.split(".", 1)
-            zarr_store = DSSZarrStore(bundle_uuid,
-                                      bundle_version=bundle_version,
-                                      dss_instance=os.environ['DEPLOYMENT_STAGE'])
-
-            root = zarr.group(store=zarr_store)
-
-            rows_per_chunk = root.expression.chunks[0]
-            total_chunks = root.expression.nchunks
+            # TODO: Not this! This is taking advantage of the fact that every
+            # matrixable bundle in the DSS will at first have data for a single
+            # cell. That won't be true for too long
 
             chunk_work_spec.extend(
                 [{"bundle_uuid": bundle_uuid,
                   "bundle_version": bundle_version,
-                  "start_row": n * rows_per_chunk,
-                  "num_rows": rows_per_chunk}
-                 for n in range(total_chunks)])
+                  "start_row": 0,
+                  "num_rows": 1}])
         return chunk_work_spec

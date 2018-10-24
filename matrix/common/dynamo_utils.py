@@ -12,6 +12,10 @@ import uuid
 import boto3
 import botocore
 
+from matrix.common.logging import Logging
+
+logger = Logging.get_logger(__name__)
+
 
 class Lock(object):
     """Implement a lock with DynamoDB."""
@@ -115,9 +119,9 @@ class Lock(object):
             # Or maybe we hold the lock ourselves, then just return
             elif db_response["Item"]["LockHolder"] == self._lock_id:
                 return
-
+            logger.debug(f"Waiting for lock on {self._lock_key}")
             # Chill out for a bit
-            time.sleep(.5)
+            time.sleep(6)
 
     def release(self):
         """Release the lock.
