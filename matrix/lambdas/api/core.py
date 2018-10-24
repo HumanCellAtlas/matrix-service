@@ -90,21 +90,26 @@ def get_matrix(request_id: str):
                                  body={'message': f"Unable to find job with request ID {request_id}."})
 
     format = job_output[OutputTableField.FORMAT.value]
+    s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
     completed_reducer_executions = job_state[StateTableField.COMPLETED_REDUCER_EXECUTIONS.value]
     expected_converter_executions = job_state[StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value]
     completed_converter_executions = job_state[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value]
     if completed_reducer_executions == 1 and expected_converter_executions == completed_converter_executions:
-        # TODO: handle missing/corrupted zarr
-        s3_key = f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_id}.{format}"
+        if format == MatrixFormat.ZARR.value:
+            matrix_location = f"s3://{s3_results_bucket}/{request_id}.{format}"
+        else:
+            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_id}.{format}"
+
+        # TODO: handle missing matrix
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={
                                      'request_id': request_id,
                                      'status': MatrixRequestStatus.COMPLETE.value,
-                                     'matrix_location': s3_key,
+                                     'matrix_location': matrix_location,
                                      'eta': "",
                                      'message': f"Request {request_id} has successfully completed. "
-                                                f"The resultant expression matrix is available for download at the S3 "
-                                                f"location {s3_key}",
+                                                f"The resultant expression matrix is available for download at "
+                                                f"{matrix_location}",
                                  })
 
     return ConnexionResponse(status_code=requests.codes.ok,

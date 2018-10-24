@@ -12,9 +12,21 @@
         "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-dev",
         "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-dev",
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-dev",
-        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev",
-        "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-dev",
-        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-dev"
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev"
+      }
+    },
+    "integration": {
+      "api_gateway_stage": "integration",
+      "environment_variables": {
+        "DEPLOYMENT_STAGE": "integration",
+        "API_HOST": "matrix.integration.data.humancellatlas.org",
+        "LAMBDA_DRIVER_FUNCTION_NAME": "dcp-matrix-service-driver-integration",
+        "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-integration",
+        "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-integration",
+        "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-integration",
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-integration",
+        "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-integration",
+        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-integration"
       }
     }
   },

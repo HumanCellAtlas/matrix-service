@@ -116,5 +116,7 @@ class TestCore(unittest.TestCase):
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['matrix_location'], f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_id}.loom")
+        self.assertEqual(response.body['matrix_location'],
+                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_id}.loom")
+
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)

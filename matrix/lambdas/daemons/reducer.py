@@ -45,8 +45,10 @@ class Reducer:
         # TODO: write tests and clean up
         source_zarr_path = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr"
         target_path = f"s3://{self.s3_results_bucket}/{self.request_id}.{self.format}"
-        job_queue_arn = "arn:aws:batch:us-east-1:861229788715:job-queue/dcp-matrix-converter-queue-dev"
-        job_def_arn = "arn:aws:batch:us-east-1:861229788715:job-definition/dcp-matrix-converter-job-definition-dev"
+        job_queue_arn = f"arn:aws:batch:us-east-1:861229788715:" \
+                        f"job-queue/dcp-matrix-converter-queue-{self.deployment_stage}"
+        job_def_arn = f"arn:aws:batch:us-east-1:861229788715:" \
+                      f"job-definition/dcp-matrix-converter-job-definition-{self.deployment_stage}"
         command = ['python3', '/matrix_converter.py', self.request_id, source_zarr_path, target_path, self.format]
         environment = {
             'DEPLOYMENT_STAGE': self.deployment_stage,
