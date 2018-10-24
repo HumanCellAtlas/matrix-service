@@ -1,5 +1,6 @@
 import os
 import requests
+import typing
 import uuid
 
 from connexion.lifecycle import ConnexionResponse
@@ -46,10 +47,17 @@ def post_matrix(body: dict):
                                                 "Visit https://matrix.dev.data.humancellatlas.org for more information."
                                  })
 
-    # TODO: test this when URL param is supported
     if has_url:
         response = requests.get(body['bundle_fqids_url'])
-        bundle_fqids = [b.strip() for b in response.text.split()]
+        if response.status_code == requests.codes.ok:
+            bundle_fqids = _parse_download_manifest(response.text)
+        else:
+            return ConnexionResponse(status_code=requests.codes.bad_request,
+                                     body={
+                                         'message': f"Invalid `bundle_fqids_url` supplied. "
+                                                    f"{body['bundle_fqids_url']} returned with "
+                                                    f"status code {response.status_code}."
+                                     })
     else:
         bundle_fqids = body['bundle_fqids']
 
@@ -108,3 +116,12 @@ def get_matrix(request_id: str):
                                  'message': f"Request {request_id} has been accepted and is currently being processed. "
                                             f"Please try again later.",
                              })
+
+
+def _parse_download_manifest(data: str) -> typing.List[str]:
+    def _parse_line(line: str) -> str:
+        tokens = line.split("\t")
+        return f"{tokens[0]}.{tokens[1]}"
+
+    lines = data.splitlines()[1:]
+    return list(map(_parse_line, lines))
