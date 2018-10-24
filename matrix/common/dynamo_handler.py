@@ -68,7 +68,7 @@ class DynamoHandler:
         elif dynamo_table == DynamoTable.OUTPUT_TABLE:
             return self._output_table
 
-    def create_state_table_entry(self, request_id: str, num_bundles: int, format: MatrixFormat=MatrixFormat.ZARR):
+    def create_state_table_entry(self, request_id: str, num_bundles: int, format: str=MatrixFormat.ZARR.value):
         """
         Put a new item in the DynamoDB table responsible for tracking task execution states and
         counts for a specified job.
@@ -87,7 +87,7 @@ class DynamoHandler:
                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_REDUCER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
-                StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0 if format == MatrixFormat.ZARR else 1,
+                StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0 if format == MatrixFormat.ZARR.value else 1,
                 StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0
             }
         )
