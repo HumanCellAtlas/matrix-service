@@ -1,0 +1,65 @@
+image: python:3.6
+
+stages:
+  - unit_tests
+  - terraform
+  - deploy
+  - functional_tests
+
+before_script:
+  - apt-get -y update
+  - apt-get -y install jq moreutils gettext unzip zip
+  - pip install -r requirements-dev.txt
+  - mkdir ./external_binaries
+  - curl https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -o /tmp/terraform.zip
+  - unzip /tmp/terraform.zip -d ./external_binaries/
+  - rm /tmp/terraform.zip
+  - export PATH=$PATH:`pwd`/external_binaries/
+  - export DEPLOYMENT_STAGE=$CI_COMMIT_REF_NAME
+  - if [ "$DEPLOYMENT_STAGE" == "master" ]; then export DEPLOYMENT_STAGE=dev; fi
+  - source config/environment
+
+unit_tests:
+  stage: unit_tests
+  except:
+    - schedules
+  only:
+    - gitlab
+    - master
+    - integration
+    - staging
+  script:
+    - make test
+
+functional_tests:
+  stage: functional_tests
+  only:
+    - gitlab
+    - master
+    - integration
+    - staging
+  script:
+    - source config/environment
+    - make functional-tests
+
+terraform:
+  stage: terraform
+  only:
+    - gitlab
+    - master
+    - integration
+    - staging
+  script:
+    - cat terraform stage
+
+deploy:
+  except:
+    - schedules
+  stage: deploy
+  only:
+    - gitlab
+    - master
+    - integration
+    - staging
+  script:
+    - cat deploy stage
