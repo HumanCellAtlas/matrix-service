@@ -13,7 +13,7 @@ class Driver:
     """
     The first task in a distributed filter merge job.
     """
-    def __init__(self, request_id: str, bundles_per_worker: int=25):
+    def __init__(self, request_id: str, bundles_per_worker: int=100):
         Logging.set_correlation_id(logger, value=request_id)
 
         self.request_id = request_id

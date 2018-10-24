@@ -50,7 +50,7 @@ class Worker:
         qc_dfs = []
 
         # Parallelize high latency bundle reads from DSS
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
             future_to_chunk_map = {executor.submit(self._parse_chunk_to_dataframe, chunk_idx): chunk_idx
                                    for chunk_idx in range(num_bundles)}
             for future in concurrent.futures.as_completed(future_to_chunk_map):
