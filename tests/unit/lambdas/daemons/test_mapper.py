@@ -1,5 +1,8 @@
 import unittest
 import uuid
+
+import pytest
+
 from mock import call
 from unittest import mock
 
@@ -99,8 +102,8 @@ class TestMapper(unittest.TestCase):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
         bundle_fqids = ['.'.join([bundle_uuid, bundle_version])]
-        chunk_size = 10
-        nchunks = 5
+        chunk_size = 1
+        nchunks = 1
 
         test_zarr_group = mock.Mock()
         test_expression_data = mock.Mock()
@@ -118,6 +121,8 @@ class TestMapper(unittest.TestCase):
             self.assertEqual(chunk_spec['start_row'], i * chunk_size)
             self.assertEqual(chunk_spec['num_rows'], chunk_size)
 
+    @pytest.mark.skip(reason="Not needed while one-cell bundle assumption is in place.")
+    @unittest.skip("Not needed while one-cell bundle assumption is in place.")
     @mock.patch("zarr.group")
     @mock.patch.object(DSSZarrStore, "__init__")
     def test_get_chunk_specs_no_chunks(self, mock_dss_zarr_store, mock_zarr_group):
