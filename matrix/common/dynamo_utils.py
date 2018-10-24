@@ -16,6 +16,7 @@ from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
 
+
 class Lock(object):
     """Implement a lock with DynamoDB."""
 

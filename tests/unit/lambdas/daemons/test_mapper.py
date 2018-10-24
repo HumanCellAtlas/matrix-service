@@ -121,6 +121,7 @@ class TestMapper(unittest.TestCase):
             self.assertEqual(chunk_spec['start_row'], i * chunk_size)
             self.assertEqual(chunk_spec['num_rows'], chunk_size)
 
+    # TODO: Turn this back on once #95 is addressed
     @pytest.mark.skip(reason="Not needed while one-cell bundle assumption is in place.")
     @unittest.skip("Not needed while one-cell bundle assumption is in place.")
     @mock.patch("zarr.group")

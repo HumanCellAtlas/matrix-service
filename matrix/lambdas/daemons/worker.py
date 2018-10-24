@@ -60,7 +60,7 @@ class Worker:
                 except Exception as e:
                     logger.debug(f"Parsing bundle uuid {self._bundle_uuids[chunk_idx]} from DSS "
                                  f"to pandas.DataFrame caused exception {e}")
-                    exp_df, qc_df = pandas.DataFrame(), pandas.DataFrame()
+                    raise
                 exp_dfs.append(exp_df)
                 qc_dfs.append(qc_df)
 
