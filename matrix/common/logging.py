@@ -17,6 +17,7 @@ class Logging:
         logger.handlers = []
         logger.addHandler(ch)
         logger.setLevel(logging.DEBUG)
+        logger.propagate = False
         return logger
 
     @staticmethod
