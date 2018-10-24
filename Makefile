@@ -1,6 +1,6 @@
 .PHONY: lint test unit-tests
 MODULES=matrix tests daemons chalice
-EXCLUDE=target,vendor,chalicelib
+EXCLUDE=target,vendor,chalicelib,target.in
 
 deploy:
 	$(MAKE) -C chalice $@
