@@ -1,6 +1,8 @@
 import os
 import unittest
 
+import boto3
+
 from moto import mock_dynamodb2, mock_s3
 
 # TODO: set DEPLOYMENT_STAGE=test when test env exists
@@ -57,8 +59,8 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         self.s3_mock.stop()
 
     @staticmethod
-    def create_test_state_table(dynamo):
-        dynamo.create_table(
+    def create_test_state_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
             TableName=os.environ['DYNAMO_STATE_TABLE_NAME'],
             KeySchema=[
                 {
@@ -79,8 +81,8 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         )
 
     @staticmethod
-    def create_test_output_table(dynamo):
-        dynamo.create_table(
+    def create_test_output_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
             TableName=os.environ['DYNAMO_OUTPUT_TABLE_NAME'],
             KeySchema=[
                 {
@@ -101,5 +103,6 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         )
 
     @staticmethod
-    def create_s3_results_bucket(s3):
-        s3.create_bucket(Bucket=os.environ['S3_RESULTS_BUCKET'])
+    def create_s3_results_bucket():
+        boto3.resource("s3", region_name=os.environ['AWS_DEFAULT_REGION']) \
+             .create_bucket(Bucket=os.environ['S3_RESULTS_BUCKET'])

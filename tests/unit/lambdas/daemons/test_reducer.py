@@ -1,8 +1,5 @@
-import os
 import uuid
 from unittest import mock
-
-import boto3
 
 from matrix.lambdas.daemons.reducer import Reducer
 from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
@@ -14,7 +11,7 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
         super(TestReducer, self).setUp()
 
         self.request_id = str(uuid.uuid4())
-        self.create_test_output_table(boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']))
+        self.create_test_output_table()
 
         self.dynamo_handler = DynamoHandler()
 

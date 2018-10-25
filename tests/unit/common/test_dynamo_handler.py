@@ -24,8 +24,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.request_id = str(uuid.uuid4())
         self.format = "zarr"
 
-        self.create_test_state_table(self.dynamo)
-        self.create_test_output_table(self.dynamo)
+        self.create_test_state_table()
+        self.create_test_output_table()
 
         self.handler = DynamoHandler()
 

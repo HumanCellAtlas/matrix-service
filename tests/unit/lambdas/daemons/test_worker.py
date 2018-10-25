@@ -1,7 +1,6 @@
 import os
 import uuid
 
-import boto3
 from pandas import DataFrame
 from unittest import mock
 
@@ -19,12 +18,11 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
     def setUp(self):
         super(TestWorker, self).setUp()
 
-        self.dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
         self.state_table_name = os.environ['DYNAMO_STATE_TABLE_NAME']
         self.output_table_name = os.environ['DYNAMO_OUTPUT_TABLE_NAME']
         self.request_id = str(uuid.uuid4())
-        self.create_test_state_table(self.dynamo)
-        self.create_test_output_table(self.dynamo)
+        self.create_test_state_table()
+        self.create_test_output_table()
         self.handler = DynamoHandler()
         self.format_string = "zarr"
         self.worker_chunk_spec = [{
