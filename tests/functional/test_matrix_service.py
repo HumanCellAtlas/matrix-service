@@ -5,7 +5,6 @@ import time
 import unittest
 
 import s3fs
-import zarr
 
 
 from . import validation
@@ -85,7 +84,7 @@ class TestMatrixService(unittest.TestCase):
 
     def test_matrix_service_ss2(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
-        num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 105))
+        num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 200))
         bundle_fqids = json.loads(open(f"{self.res_dir}/pancreas_ss2_2544_demo_bundles.json", "r").read())[:num_bundles]
 
         request_id = self._post_matrix_service_request(bundle_fqids, "zarr")
@@ -95,12 +94,11 @@ class TestMatrixService(unittest.TestCase):
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
 
-        self._verify_row_counts(request_id, num_bundles)
+        self._analyze_zarr_matrix_results(request_id, bundle_fqids)
 
     def _post_matrix_service_request(self, bundle_fqids, format=None):
         data = {
-            'bundle_fqids': bundle_fqids,
-            'format': format
+            'bundle_fqids': bundle_fqids
         }
         if format:
             data["format"] = format
@@ -128,28 +126,16 @@ class TestMatrixService(unittest.TestCase):
         status = data["status"]
         return status
 
-    def _verify_row_counts(self, request_id, expected_num_rows):
-        """Verify that the output matrix has the expected number of rows."""
-        matrix_location = self._retrieve_matrix_location(request_id)
-        store = s3fs.S3Map(matrix_location, s3=self.s3_file_system, check=False, create=False)
-        group = zarr.group(store=store)
-
-        self.assertEqual(group.expression.shape[0], expected_num_rows)
-        self.assertEqual(group.cell_metadata_numeric.shape[0], expected_num_rows)
-        self.assertEqual(group.cell_metadata_string.shape[0], expected_num_rows)
-        self.assertEqual(group.cell_id.shape[0], expected_num_rows)
-
     def _analyze_zarr_matrix_results(self, request_id, input_bundles):
 
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
 
         matrix_location = self._retrieve_matrix_location(request_id)
+
         self.assertEqual(matrix_location.endswith("zarr"), True)
 
         zarr_metrics = validation.calculate_ss2_metrics_zarr(matrix_location)
-
-        for metric in zarr_metrics:
-            self.assertEqual(zarr_metrics[metric], direct_metrics[metric])
+        self._compare_metrics(direct_metrics, zarr_metrics)
 
     def _analyze_loom_matrix_results(self, request_id, input_bundles):
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
@@ -157,9 +143,15 @@ class TestMatrixService(unittest.TestCase):
         matrix_location = self._retrieve_matrix_location(request_id)
         self.assertEqual(matrix_location.endswith("loom"), True)
         loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
+        self._compare_metrics(direct_metrics, loom_metrics)
 
-        for metric in loom_metrics:
-            self.assertEqual(loom_metrics[metric], direct_metrics[metric])
+    def _compare_metrics(self, metrics_1, metrics_2):
+        for metric in metrics_1:
+            delta = metrics_1[metric] / 100000
+            self.assertAlmostEqual(
+                metrics_1[metric], metrics_2[metric], delta=delta,
+                msg=(f"Metric {metric} doesn't match: {metrics_1[metric]} "
+                     f"{metrics_2[metric]}"))
 
     def _retrieve_matrix_location(self, request_id):
         url = f"{self.api_url}/matrix/{request_id}"
