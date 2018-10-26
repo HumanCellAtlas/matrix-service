@@ -3,7 +3,6 @@ import json
 import os
 
 import boto3
-from botocore.exceptions import ClientError
 
 from matrix.common.request_tracker import RequestTracker
 
@@ -32,15 +31,8 @@ class LambdaHandler:
         :param fn_name: The LambdaName of the function to be invoked
         :param payload: Data passed to invoked lambda
         """
-        try:
-            self._client.invoke(
-                FunctionName=fn_name.value,
-                InvocationType="Event",
-                Payload=json.dumps(payload).encode(),
-            )
-        except ClientError:
-            size = len(json.dumps(payload).encore())
-            self.request_tracker.log_error(f"An error occurred while processing your request. The size of the "
-                                           f"input parameters, {size} bytes, exceeds the maximum payload size "
-                                           f"of 131072 bytes. Please try again with a smaller input.")
-            raise
+        self._client.invoke(
+            FunctionName=fn_name.value,
+            InvocationType="Event",
+            Payload=json.dumps(payload).encode(),
+        )

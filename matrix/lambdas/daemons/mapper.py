@@ -37,11 +37,12 @@ class Mapper:
         worker_chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
         if worker_chunk_specs:
+            self.request_tracker.expect_subtask_execution(Subtask.WORKER)
             logger.debug(f"Invoking 1 worker lambda with {len(worker_chunk_specs)} chunks.")
             self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_specs))
             logger.debug(f"Worker invoked {worker_chunk_specs}")
 
-        self.request_tracker.complete_subtask_node(Subtask.MAPPER)
+        self.request_tracker.complete_subtask_execution(Subtask.MAPPER)
 
     def _get_worker_payload(self, worker_chunk_spec: typing.List[dict]) -> dict:
         """

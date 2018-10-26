@@ -193,7 +193,7 @@ def main(args):
     print(f"Uploading converted matrix for job {args.request_id}")
     upload_converted_matrix(local_converted_path, args.target_path)
     print(f"Uploaded converted matrix for job {args.request_id}")
-    RequestTracker(args.request_id).complete_subtask_node(Subtask.CONVERTER)
+    RequestTracker(args.request_id).complete_subtask_execution(Subtask.CONVERTER)
 
 
 if __name__ == "__main__":

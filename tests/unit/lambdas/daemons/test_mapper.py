@@ -19,11 +19,13 @@ class TestMapper(unittest.TestCase):
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_worker_payload")
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_node")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.expect_subtask_execution")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
     def test_run_ok(self,
                     mock_lambda_invoke,
-                    mock_complete_subtask_node,
+                    mock_complete_subtask_execution,
+                    mock_expect_subtask_execution,
                     mock_get_chunk_specs,
                     mock_get_worker_payload):
         bundle_uuid = str(uuid.uuid4())
@@ -39,14 +41,17 @@ class TestMapper(unittest.TestCase):
         mock_lambda_invoke.assert_called_with(LambdaName.WORKER, mock.ANY)
         self.assertEqual(mock_lambda_invoke.call_count, len(test_chunk_specs))
 
-        mock_complete_subtask_node.assert_called_once_with(Subtask.MAPPER)
+        mock_expect_subtask_execution.assert_called_once_with(Subtask.WORKER)
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.MAPPER)
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_node")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.expect_subtask_execution")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
     def test_run_no_chunks(self,
                            mock_lambda_invoke,
-                           mock_complete_subtask_node,
+                           mock_complete_subtask_execution,
+                           mock_expect_subtask_execution,
                            mock_get_chunk_specs):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
@@ -58,7 +63,8 @@ class TestMapper(unittest.TestCase):
         self._mapper.run(bundle_fqids)
         mock_lambda_invoke.assert_not_called()
 
-        mock_complete_subtask_node.assert_called_once_with(Subtask.MAPPER)
+        mock_expect_subtask_execution.assert_not_called()
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.MAPPER)
 
     def test_get_worker_payload(self):
         test_chunk_spec = []

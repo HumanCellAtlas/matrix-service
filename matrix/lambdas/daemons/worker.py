@@ -89,7 +89,7 @@ class Worker:
             }
             self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
 
-        self.request_tracker.complete_subtask_node(Subtask.WORKER)
+        self.request_tracker.complete_subtask_execution(Subtask.WORKER)
 
     def _parse_chunk_to_dataframe(self, i: int):
         dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[i],

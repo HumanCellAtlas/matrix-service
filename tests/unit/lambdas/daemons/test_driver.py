@@ -15,10 +15,10 @@ class TestDriver(unittest.TestCase):
         self._bundles_per_worker = 100
         self._driver = Driver(self.request_id, self._bundles_per_worker)
 
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_node")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.request_tracker.RequestTracker.init_request")
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
-    def test_run(self, mock_lambda_invoke, mock_init_request, mock_complete_subtask_node):
+    def test_run(self, mock_lambda_invoke, mock_init_request, mock_complete_subtask_execution):
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
 
@@ -33,4 +33,4 @@ class TestDriver(unittest.TestCase):
         mock_lambda_invoke.assert_has_calls(expected_calls)
         self.assertEqual(mock_lambda_invoke.call_count, num_mappers)
 
-        mock_complete_subtask_node.assert_called_once_with(Subtask.DRIVER)
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)

@@ -52,16 +52,15 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         return response, entry
 
     def test_create_state_table_entry(self):
-        num_mappers = num_workers = 2
-
-        self.handler.create_state_table_entry(self.request_id, num_mappers, num_workers)
+        num_mappers = 0
+        self.handler.create_state_table_entry(self.request_id, num_mappers)
         response, entry = self._get_state_table_response_and_entry()
 
         self.assertEqual(len(response['Responses'][self.state_table_name]), 1)
 
         self.assertTrue(all(field.value in entry for field in StateTableField))
         self.assertEqual(entry[StateTableField.EXPECTED_MAPPER_EXECUTIONS.value], num_mappers)
-        self.assertEqual(entry[StateTableField.EXPECTED_WORKER_EXECUTIONS.value], num_workers)
+        self.assertEqual(entry[StateTableField.EXPECTED_WORKER_EXECUTIONS.value], 0)
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
     def test_create_output_table_entry(self):
@@ -74,7 +73,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
     def test_increment_table_field_state_table_path(self):
-        self.handler.create_state_table_entry(self.request_id, 1, 1)
+        self.handler.create_state_table_entry(self.request_id, 1)
 
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 0)
@@ -98,7 +97,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
 
     def test_increment_field(self):
-        self.handler.create_state_table_entry(self.request_id, 1, 1)
+        self.handler.create_state_table_entry(self.request_id, 1)
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 0)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
@@ -111,7 +110,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
     def test_get_state_table_entry(self):
-        self.handler.create_state_table_entry(self.request_id, 1, 1)
+        self.handler.create_state_table_entry(self.request_id, 1)
         entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, self.request_id)
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 

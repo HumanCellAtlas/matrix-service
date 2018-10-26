@@ -17,7 +17,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.create_test_output_table()
         self.create_test_state_table()
 
-        self.dynamo_handler.create_state_table_entry(self.request_id, 1, 1, "test_format")
+        self.dynamo_handler.create_state_table_entry(self.request_id, 1, "test_format")
         self.dynamo_handler.create_output_table_entry(self.request_id, "test_format")
 
     def test_format(self):
@@ -34,16 +34,25 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_init_request(self, mock_create_state_table_entry, mock_create_output_table_entry):
         self.request_tracker.init_request(1, "test_format")
 
-        mock_create_state_table_entry.assert_called_once_with(self.request_id, 1, 1, "test_format")
+        mock_create_state_table_entry.assert_called_once_with(self.request_id, 1, "test_format")
         mock_create_output_table_entry.assert_called_once_with(self.request_id, "test_format")
 
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.increment_table_field")
-    def test_complete_subtask_node(self, mock_increment_table_field):
-        self.request_tracker.complete_subtask_node(Subtask.DRIVER)
+    def test_expect_subtask_execution(self, mock_increment_table_field):
+        self.request_tracker.expect_subtask_execution(Subtask.DRIVER)
 
         mock_increment_table_field.assert_called_once_with(DynamoTable.STATE_TABLE,
                                                            self.request_id,
-                                                           Subtask.DRIVER.value,
+                                                           StateTableField.EXPECTED_DRIVER_EXECUTIONS,
+                                                           1)
+
+    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.increment_table_field")
+    def test_complete_subtask_execution(self, mock_increment_table_field):
+        self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
+
+        mock_increment_table_field.assert_called_once_with(DynamoTable.STATE_TABLE,
+                                                           self.request_id,
+                                                           StateTableField.COMPLETED_DRIVER_EXECUTIONS,
                                                            1)
 
     def test_is_reducer_ready(self):
@@ -52,10 +61,6 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
                                                   StateTableField.COMPLETED_MAPPER_EXECUTIONS,
-                                                  1)
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self.request_id,
-                                                  StateTableField.COMPLETED_WORKER_EXECUTIONS,
                                                   1)
         self.assertTrue(self.request_tracker.is_reducer_ready())
 

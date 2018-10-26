@@ -5,13 +5,19 @@ from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableF
 
 class Subtask(Enum):
     """
-    Maps request subtasks to corresponding state tracking field in DynamoDB.
+    A Subtask represents a processing stage in a matrix service request.
+
+    Driver - daemons/driver.py
+    Mapper - daemons/mapper.py
+    Worker - daemons/worker.py
+    Reducer - daemons/reducer.py
+    Converter - common/matrix_converter.py
     """
-    DRIVER = StateTableField.COMPLETED_DRIVER_EXECUTIONS
-    MAPPER = StateTableField.COMPLETED_MAPPER_EXECUTIONS
-    WORKER = StateTableField.COMPLETED_WORKER_EXECUTIONS
-    REDUCER = StateTableField.COMPLETED_REDUCER_EXECUTIONS
-    CONVERTER = StateTableField.COMPLETED_CONVERTER_EXECUTIONS
+    DRIVER = "driver"
+    MAPPER = "mapper"
+    WORKER = "worker"
+    REDUCER = "reducer"
+    CONVERTER = "converter"
 
 
 class RequestTracker:
@@ -52,22 +58,47 @@ class RequestTracker:
         """
         Creates a new request in the relevant DynamoDB tables for state and output tracking.
         :param num_mappers: Number of expected mapper nodes this request will run.
-                            Currently, this is equal to the expected number of worker nodes as well.
         :param format: The request's user specified output file format of the resultant expression matrix.
         """
-        num_workers = num_mappers
-        self.dynamo_handler.create_state_table_entry(self.request_id, num_mappers, num_workers, format)
+        self.dynamo_handler.create_state_table_entry(self.request_id, num_mappers, format)
         self.dynamo_handler.create_output_table_entry(self.request_id, format)
 
-    def complete_subtask_node(self, subtask: Subtask):
+    def expect_subtask_execution(self, subtask: Subtask):
         """
-        Tracks the completion exeuction of a subtask node.
+        Expect the execution of 1 Subtask by tracking it in DynamoDB.
         A Subtask is executed either by a Lambda or AWS Batch.
-        :param subtask: The completed Subtaskcompleted.
+        :param subtask: The expected Subtask to be executed.
         """
+        subtask_to_dynamo_field_name = {
+            Subtask.DRIVER: StateTableField.EXPECTED_DRIVER_EXECUTIONS,
+            Subtask.MAPPER: StateTableField.EXPECTED_MAPPER_EXECUTIONS,
+            Subtask.WORKER: StateTableField.EXPECTED_WORKER_EXECUTIONS,
+            Subtask.REDUCER: StateTableField.EXPECTED_REDUCER_EXECUTIONS,
+            Subtask.CONVERTER: StateTableField.EXPECTED_CONVERTER_EXECUTIONS,
+        }
+
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
                                                   self.request_id,
-                                                  subtask.value,
+                                                  subtask_to_dynamo_field_name[subtask],
+                                                  1)
+
+    def complete_subtask_execution(self, subtask: Subtask):
+        """
+        Counts the completed execution of 1 Subtask in DynamoDB.
+        A Subtask is executed either by a Lambda or AWS Batch.
+        :param subtask: The executed Subtask.
+        """
+        subtask_to_dynamo_field_name = {
+            Subtask.DRIVER: StateTableField.COMPLETED_DRIVER_EXECUTIONS,
+            Subtask.MAPPER: StateTableField.COMPLETED_MAPPER_EXECUTIONS,
+            Subtask.WORKER: StateTableField.COMPLETED_WORKER_EXECUTIONS,
+            Subtask.REDUCER: StateTableField.COMPLETED_REDUCER_EXECUTIONS,
+            Subtask.CONVERTER: StateTableField.COMPLETED_CONVERTER_EXECUTIONS,
+        }
+
+        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+                                                  self.request_id,
+                                                  subtask_to_dynamo_field_name[subtask],
                                                   1)
 
     def is_reducer_ready(self) -> bool:

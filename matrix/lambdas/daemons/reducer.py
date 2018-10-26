@@ -34,7 +34,7 @@ class Reducer:
         if self.request_tracker.format != MatrixFormat.ZARR.value:
             self._schedule_matrix_conversion()
 
-        self.request_tracker.complete_subtask_node(Subtask.REDUCER)
+        self.request_tracker.complete_subtask_execution(Subtask.REDUCER)
 
     def _schedule_matrix_conversion(self):
         # TODO: write tests and clean up

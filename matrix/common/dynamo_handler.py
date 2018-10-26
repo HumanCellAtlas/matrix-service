@@ -74,7 +74,6 @@ class DynamoHandler:
     def create_state_table_entry(self,
                                  request_id: str,
                                  num_mappers: int,
-                                 num_workers: int,
                                  format: str=MatrixFormat.ZARR.value):
         """
         Put a new item in the DynamoDB table responsible for tracking task execution states and
@@ -82,7 +81,6 @@ class DynamoHandler:
 
         :param request_id: UUID identifying a filter merge job request.
         :param num_mappers: Number of mapper lambdas expected to be invoked.
-        :param num_workers: Number of worker lambdas expected to be invoked.
         :param format: User requested output file format of final expression matrix.
         """
 
@@ -93,7 +91,7 @@ class DynamoHandler:
                 StateTableField.COMPLETED_DRIVER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_MAPPER_EXECUTIONS.value: num_mappers,
                 StateTableField.COMPLETED_MAPPER_EXECUTIONS.value: 0,
-                StateTableField.EXPECTED_WORKER_EXECUTIONS.value: num_workers,
+                StateTableField.EXPECTED_WORKER_EXECUTIONS.value: 0,
                 StateTableField.COMPLETED_WORKER_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_REDUCER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,

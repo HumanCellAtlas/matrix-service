@@ -55,7 +55,7 @@ class Driver:
             }
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
 
-        self.request_tracker.complete_subtask_node(Subtask.DRIVER)
+        self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     @staticmethod
     def _group_bundles(bundle_fqids, bundles_per_group):

@@ -34,7 +34,7 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
     @mock.patch('matrix.common.dss_zarr_store.DSSZarrStore.__init__')
     @mock.patch('zarr.group')
     @mock.patch('matrix.lambdas.daemons.worker.convert_dss_zarr_root_to_subset_pandas_dfs')
-    @mock.patch('matrix.common.request_tracker.RequestTracker.complete_subtask_node')
+    @mock.patch('matrix.common.request_tracker.RequestTracker.complete_subtask_execution')
     @mock.patch('matrix.common.request_tracker.RequestTracker.is_reducer_ready')
     @mock.patch('matrix.common.s3_zarr_store.S3ZarrStore.write_column_data')
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
@@ -42,7 +42,7 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
                  mock_lambda_handler_invoke,
                  mock_write_column_data,
                  mock_is_reducer_ready,
-                 mock_complete_subtask_node,
+                 mock_complete_subtask_execution,
                  mock_df_conversion,
                  mock_zarr_group,
                  mock_dss_zarr_store,
@@ -55,7 +55,7 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         self.worker.run(self.worker_chunk_spec)
         mock_lambda_handler_invoke.assert_called_once_with(LambdaName.REDUCER, {
             'request_id': self.request_id})
-        mock_complete_subtask_node.assert_called_once_with(Subtask.WORKER)
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.WORKER)
 
     def test_parse_worker_chunk_spec(self):
         self.worker._parse_worker_chunk_spec(self.worker_chunk_spec)
