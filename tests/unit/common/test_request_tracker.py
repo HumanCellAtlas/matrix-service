@@ -73,6 +73,6 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertTrue(self.request_tracker.is_request_complete())
 
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.write_request_error")
-    def test_write_error(self, mock_write_request_error):
-        self.request_tracker.write_error("test error")
+    def test_log_error(self, mock_write_request_error):
+        self.request_tracker.log_error("test error")
         mock_write_request_error.assert_called_once_with(self.request_id, "test error")

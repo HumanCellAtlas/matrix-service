@@ -4,13 +4,11 @@ import unittest
 import uuid
 from unittest import mock
 
-from matrix.common.constants import MatrixFormat
-from matrix.common.constants import MatrixRequestStatus
-from matrix.common.dynamo_handler import StateTableField, OutputTableField
+from matrix.common.constants import MatrixFormat, MatrixRequestStatus
+from matrix.common.dynamo_handler import OutputTableField
 from matrix.common.exceptions import MatrixException
 from matrix.common.lambda_handler import LambdaName
-from matrix.lambdas.api.core import post_matrix
-from matrix.lambdas.api.core import get_matrix
+from matrix.lambdas.api.core import post_matrix, get_matrix
 
 
 class TestCore(unittest.TestCase):
@@ -77,28 +75,37 @@ class TestCore(unittest.TestCase):
         self.assertTrue(request_id in response.body['message'])
 
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    def test_get_matrix_processing(self, mock_get_table_item):
+    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    def test_get_matrix_processing(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {
-            StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 0,
-            StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
-            StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0,
-            OutputTableField.FORMAT.value: "zarr"
-        }
+        mock_is_request_complete.return_value = False
+        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "",
+                                            OutputTableField.FORMAT.value: "test_format"}
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
 
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    def test_get_zarr_matrix_complete(self, mock_get_table_item):
+    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    def test_get_matrix_failed(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {
-            StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 1,
-            StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
-            StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0,
-            OutputTableField.FORMAT.value: "zarr"
-        }
+        mock_is_request_complete.return_value = False
+        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "test error",
+                                            OutputTableField.FORMAT.value: "test_format"}
+
+        response = get_matrix(request_id)
+        self.assertEqual(response.status_code, requests.codes.ok)
+        self.assertEqual(response.body['status'], MatrixRequestStatus.FAILED.value)
+        self.assertEqual(response.body['message'], "test error")
+
+    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    def test_get_zarr_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
+        request_id = str(uuid.uuid4())
+        mock_is_request_complete.return_value = True
+        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "",
+                                            OutputTableField.FORMAT.value: "zarr"}
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
@@ -106,14 +113,12 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
 
     @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    def test_get_loom_matrix_complete(self, mock_get_table_item):
+    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    def test_get_loom_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {
-            StateTableField.COMPLETED_REDUCER_EXECUTIONS.value: 1,
-            StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
-            StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 0,
-            OutputTableField.FORMAT.value: "loom"
-        }
+        mock_is_request_complete.return_value = True
+        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "",
+                                            OutputTableField.FORMAT.value: "loom"}
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)

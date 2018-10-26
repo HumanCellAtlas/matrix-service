@@ -40,7 +40,7 @@ class LambdaHandler:
             )
         except ClientError:
             size = len(json.dumps(payload).encore())
-            self.request_tracker.write_error(f"An error occurred while processing your request. The size of the "
-                                             f"input parameters, {size} bytes, exceeds the maximum payload size "
-                                             f"of 131072 bytes. Please try again with a smaller input.")
+            self.request_tracker.log_error(f"An error occurred while processing your request. The size of the "
+                                           f"input parameters, {size} bytes, exceeds the maximum payload size "
+                                           f"of 131072 bytes. Please try again with a smaller input.")
             raise

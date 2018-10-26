@@ -118,6 +118,11 @@ class DynamoHandler:
         )
 
     def write_request_error(self, request_id: str, message: str):
+        """
+        Write an error message a request's DyanmoDB Output table.
+        :param request_id: str The request ID of the request that reported the error
+        :param message: str The error message
+        """
         self._output_table.update_item(
             Key={'RequestId': request_id},
             UpdateExpression=f"SET {OutputTableField.ERROR.value} = :m",

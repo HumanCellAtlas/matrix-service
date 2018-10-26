@@ -100,5 +100,9 @@ class RequestTracker:
 
         return reducer_complete and converter_complete
 
-    def write_error(self, message: str):
+    def log_error(self, message: str):
+        """
+        Logs the latest error this request reported overwriting the previously logged error.
+        :param message: str The error message to log
+        """
         self.dynamo_handler.write_request_error(self.request_id, message)

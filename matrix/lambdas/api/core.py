@@ -5,15 +5,10 @@ import uuid
 
 from connexion.lifecycle import ConnexionResponse
 
-from matrix.common.constants import MatrixFormat
-from matrix.common.constants import MatrixRequestStatus
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.dynamo_handler import DynamoTable
-from matrix.common.dynamo_handler import StateTableField
-from matrix.common.dynamo_handler import OutputTableField
+from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.exceptions import MatrixException
-from matrix.common.lambda_handler import LambdaHandler
-from matrix.common.lambda_handler import LambdaName
+from matrix.common.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.request_tracker import RequestTracker
 
 
 def post_matrix(body: dict):
@@ -84,25 +79,20 @@ def post_matrix(body: dict):
 
 def get_matrix(request_id: str):
     try:
-        dynamo_handler = DynamoHandler()
-        job_state = dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id)
-        job_output = dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_id)
+        request_tracker = RequestTracker(request_id)
+        format = request_tracker.format
     except MatrixException as ex:
         return ConnexionResponse(status_code=ex.status,
                                  body={'message': f"Unable to find job with request ID {request_id}."})
 
-    format = job_output[OutputTableField.FORMAT.value]
-    s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
-    completed_reducer_executions = job_state[StateTableField.COMPLETED_REDUCER_EXECUTIONS.value]
-    expected_converter_executions = job_state[StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value]
-    completed_converter_executions = job_state[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value]
-    if completed_reducer_executions == 1 and expected_converter_executions == completed_converter_executions:
+    # Complete case
+    if request_tracker.is_request_complete():
+        s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
         if format == MatrixFormat.ZARR.value:
             matrix_location = f"s3://{s3_results_bucket}/{request_id}.{format}"
         else:
             matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_id}.{format}"
 
-        # TODO: handle missing matrix
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={
                                      'request_id': request_id,
@@ -113,7 +103,18 @@ def get_matrix(request_id: str):
                                                 f"The resultant expression matrix is available for download at "
                                                 f"{matrix_location}",
                                  })
+    # Failed case
+    elif request_tracker.error:
+        return ConnexionResponse(status_code=requests.codes.ok,
+                                 body={
+                                     'request_id': request_id,
+                                     'status': MatrixRequestStatus.FAILED.value,
+                                     'matrix_location': "",
+                                     'eta': "",
+                                     'message': request_tracker.error,
+                                 })
 
+    # In progress case
     return ConnexionResponse(status_code=requests.codes.ok,
                              body={
                                  'request_id': request_id,
