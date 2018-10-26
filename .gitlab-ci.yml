@@ -24,7 +24,6 @@ unit_tests:
   except:
     - schedules
   only:
-    - gitlab
     - master
     - integration
     - staging
@@ -34,7 +33,6 @@ unit_tests:
 functional_tests:
   stage: functional_tests
   only:
-    - gitlab
     - master
     - integration
     - staging
@@ -45,21 +43,21 @@ functional_tests:
 terraform:
   stage: terraform
   only:
-    - gitlab
     - master
     - integration
     - staging
   script:
-    - cat terraform stage
+    - cd terraform/envs/$DEPLOYMENT_STAGE
+    - make init
+    - make plan
 
 deploy:
   except:
     - schedules
   stage: deploy
   only:
-    - gitlab
     - master
     - integration
     - staging
   script:
-    - cat deploy stage
+    - make deploy
