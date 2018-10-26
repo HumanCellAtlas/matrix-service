@@ -34,7 +34,7 @@ class Worker:
         self.zarr_group = None
 
         self.request_tracker = RequestTracker(self._request_id)
-        self.lambda_handler = LambdaHandler()
+        self.lambda_handler = LambdaHandler(self._request_id)
 
     def run(self, worker_chunk_spec: typing.List[dict]):
         """Process and write one chunk of dss bundle matrix to s3 and

@@ -69,7 +69,7 @@ def post_matrix(body: dict):
         'bundle_fqids_url': bundle_fqids_url,
         'format': format,
     }
-    lambda_handler = LambdaHandler()
+    lambda_handler = LambdaHandler(request_id)
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
 
     return ConnexionResponse(status_code=requests.codes.accepted,

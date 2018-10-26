@@ -3,6 +3,9 @@ import json
 import os
 
 import boto3
+from botocore.exceptions import ClientError
+
+from matrix.common.request_tracker import RequestTracker
 
 
 class LambdaName(Enum):
@@ -16,8 +19,11 @@ class LambdaName(Enum):
 
 
 class LambdaHandler:
-    def __init__(self):
+    def __init__(self, request_id: str):
+        self.request_id = request_id
+
         self._client = boto3.client("lambda", region_name=os.environ['AWS_DEFAULT_REGION'])
+        self.request_tracker = RequestTracker(self.request_id)
 
     def invoke(self, fn_name: LambdaName, payload: dict):
         """
@@ -26,8 +32,15 @@ class LambdaHandler:
         :param fn_name: The LambdaName of the function to be invoked
         :param payload: Data passed to invoked lambda
         """
-        self._client.invoke(
-            FunctionName=fn_name.value,
-            InvocationType="Event",
-            Payload=json.dumps(payload).encode(),
-        )
+        try:
+            self._client.invoke(
+                FunctionName=fn_name.value,
+                InvocationType="Event",
+                Payload=json.dumps(payload).encode(),
+            )
+        except ClientError:
+            size = len(json.dumps(payload).encore())
+            self.request_tracker.write_error(f"An error occurred while processing your request. The size of the "
+                                             f"input parameters, {size} bytes, exceeds the maximum payload size "
+                                             f"of 131072 bytes. Please try again with a smaller input.")
+            raise

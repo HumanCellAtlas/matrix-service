@@ -20,7 +20,7 @@ class Mapper:
         self.request_id = request_id
 
         self.request_tracker = RequestTracker(self.request_id)
-        self.lambda_handler = LambdaHandler()
+        self.lambda_handler = LambdaHandler(self.request_id)
 
     def run(self, bundle_fqids: typing.List[str]):
         """

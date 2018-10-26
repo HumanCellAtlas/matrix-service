@@ -22,7 +22,7 @@ class Driver:
         self.bundles_per_worker = bundles_per_worker
 
         self.request_tracker = RequestTracker(self.request_id)
-        self.lambda_handler = LambdaHandler()
+        self.lambda_handler = LambdaHandler(self.request_id)
 
     def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str):
         """
