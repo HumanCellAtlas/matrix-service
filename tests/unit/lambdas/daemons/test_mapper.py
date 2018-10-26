@@ -3,13 +3,11 @@ import uuid
 
 import pytest
 
-from mock import call
 from unittest import mock
 
-from matrix.common.dynamo_handler import DynamoTable
-from matrix.common.dynamo_handler import StateTableField
 from matrix.common.dss_zarr_store import DSSZarrStore
 from matrix.common.lambda_handler import LambdaName
+from matrix.common.request_tracker import Subtask
 from matrix.lambdas.daemons.mapper import Mapper
 
 
@@ -21,11 +19,11 @@ class TestMapper(unittest.TestCase):
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_worker_payload")
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.increment_table_field")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_node")
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
     def test_run_ok(self,
                     mock_lambda_invoke,
-                    mock_dynamo_increment_table_field,
+                    mock_complete_subtask_node,
                     mock_get_chunk_specs,
                     mock_get_worker_payload):
         bundle_uuid = str(uuid.uuid4())
@@ -41,25 +39,14 @@ class TestMapper(unittest.TestCase):
         mock_lambda_invoke.assert_called_with(LambdaName.WORKER, mock.ANY)
         self.assertEqual(mock_lambda_invoke.call_count, len(test_chunk_specs))
 
-        expected_calls = [
-            call(DynamoTable.STATE_TABLE,
-                 self.request_id,
-                 StateTableField.EXPECTED_WORKER_EXECUTIONS,
-                 len(test_chunk_specs)),
-            call(DynamoTable.STATE_TABLE,
-                 self.request_id,
-                 StateTableField.COMPLETED_MAPPER_EXECUTIONS,
-                 1)
-        ]
-        mock_dynamo_increment_table_field.assert_has_calls(expected_calls)
-        self.assertEqual(mock_dynamo_increment_table_field.call_count, 2)
+        mock_complete_subtask_node.assert_called_once_with(Subtask.MAPPER)
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.increment_table_field")
+    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_node")
     @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
     def test_run_no_chunks(self,
                            mock_lambda_invoke,
-                           mock_dynamo_increment_table_field,
+                           mock_complete_subtask_node,
                            mock_get_chunk_specs):
         bundle_uuid = str(uuid.uuid4())
         bundle_version = "version"
@@ -71,14 +58,7 @@ class TestMapper(unittest.TestCase):
         self._mapper.run(bundle_fqids)
         mock_lambda_invoke.assert_not_called()
 
-        expected_calls = [
-            call(DynamoTable.STATE_TABLE,
-                 self.request_id,
-                 StateTableField.COMPLETED_MAPPER_EXECUTIONS,
-                 1)
-        ]
-        mock_dynamo_increment_table_field.assert_has_calls(expected_calls)
-        self.assertEqual(mock_dynamo_increment_table_field.call_count, 1)
+        mock_complete_subtask_node.assert_called_once_with(Subtask.MAPPER)
 
     def test_get_worker_payload(self):
         test_chunk_spec = []

@@ -13,7 +13,7 @@ import s3fs
 import scipy.io
 import zarr
 
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
+from matrix.common.request_tracker import RequestTracker, Subtask
 
 # These are the formats that users can request.
 SUPPORTED_FORMATS = [
@@ -193,11 +193,7 @@ def main(args):
     print(f"Uploading converted matrix for job {args.request_id}")
     upload_converted_matrix(local_converted_path, args.target_path)
     print(f"Uploaded converted matrix for job {args.request_id}")
-    dynamo_handler = DynamoHandler()
-    dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                         args.request_id,
-                                         StateTableField.COMPLETED_CONVERTER_EXECUTIONS,
-                                         1)
+    RequestTracker(args.request_id).complete_subtask_node(Subtask.CONVERTER)
 
 
 if __name__ == "__main__":

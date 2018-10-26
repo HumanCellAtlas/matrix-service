@@ -1,7 +1,7 @@
 import uuid
 from unittest import mock
 
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
+from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
 from matrix.common.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 

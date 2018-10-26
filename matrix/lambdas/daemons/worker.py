@@ -7,8 +7,8 @@ import pandas
 import zarr
 
 from matrix.common.dss_zarr_store import DSSZarrStore
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.request_tracker import RequestTracker, Subtask
 from matrix.common.logging import Logging
 from matrix.common.pandas_utils import convert_dss_zarr_root_to_subset_pandas_dfs
 from matrix.common.s3_zarr_store import S3ZarrStore
@@ -23,16 +23,18 @@ class Worker:
     def __init__(self, request_id: str):
         Logging.set_correlation_id(logger, value=request_id)
 
-        self.lambda_handler = LambdaHandler()
-        self.dynamo_handler = DynamoHandler()
         self._request_id = request_id
         self._deployment_stage = os.environ['DEPLOYMENT_STAGE']
+
         self._bundle_uuids = []
         self._bundle_versions = []
         self._input_start_rows = []
         self._input_end_rows = []
         self._num_rows = []
         self.zarr_group = None
+
+        self.request_tracker = RequestTracker(self._request_id)
+        self.lambda_handler = LambdaHandler()
 
     def run(self, worker_chunk_spec: typing.List[dict]):
         """Process and write one chunk of dss bundle matrix to s3 and
@@ -78,14 +80,7 @@ class Worker:
         s3_zarr_store = S3ZarrStore(request_id=self._request_id, exp_df=exp_df, qc_df=qc_df)
         s3_zarr_store.write_from_pandas_dfs(sum(self._num_rows))
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self._request_id,
-                                                  StateTableField.COMPLETED_WORKER_EXECUTIONS,
-                                                  1)
-
-        workers_and_mappers_are_complete = self._check_if_all_workers_and_mappers_for_request_are_complete(
-            self._request_id)
-        if workers_and_mappers_are_complete:
+        if self.request_tracker.is_reducer_ready():
             logger.debug("Mappers and workers are complete. Invoking reducer.")
 
             s3_zarr_store.write_column_data(self.zarr_group)
@@ -93,6 +88,8 @@ class Worker:
                 'request_id': self._request_id
             }
             self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
+
+        self.request_tracker.complete_subtask_node(Subtask.WORKER)
 
     def _parse_chunk_to_dataframe(self, i: int):
         dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[i],
@@ -115,21 +112,3 @@ class Worker:
             self._input_start_rows.append(entry['start_row'])
             self._input_end_rows.append(entry['start_row'] + entry['num_rows'])
             self._num_rows.append(entry['num_rows'])
-
-    def _check_if_all_workers_and_mappers_for_request_are_complete(self, request_id):
-        """Check if all workers and mappers for request are completed.
-
-        Input:
-            request_id: (str) request id for filter merge job
-        Output:
-            Bool
-        """
-        complete = False
-        entry = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id)
-        done_mapping = (entry[StateTableField.EXPECTED_MAPPER_EXECUTIONS.value] ==
-                        entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value])
-        done_working = (entry[StateTableField.EXPECTED_WORKER_EXECUTIONS.value] ==
-                        entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value])
-        if done_mapping and done_working:
-            complete = True
-        return complete

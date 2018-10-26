@@ -1,8 +1,8 @@
 import typing
 
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.logging import Logging
+from matrix.common.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
 
@@ -19,8 +19,8 @@ class Mapper:
 
         self.request_id = request_id
 
+        self.request_tracker = RequestTracker(self.request_id)
         self.lambda_handler = LambdaHandler()
-        self.dynamo_handler = DynamoHandler()
 
     def run(self, bundle_fqids: typing.List[str]):
         """
@@ -37,18 +37,11 @@ class Mapper:
         worker_chunk_specs = Mapper._get_chunk_specs(bundle_fqids)
 
         if worker_chunk_specs:
-            self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                      self.request_id,  # TODO: init DH with this to remove from params
-                                                      StateTableField.EXPECTED_WORKER_EXECUTIONS,
-                                                      1)
             logger.debug(f"Invoking 1 worker lambda with {len(worker_chunk_specs)} chunks.")
             self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_specs))
             logger.debug(f"Worker invoked {worker_chunk_specs}")
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self.request_id,
-                                                  StateTableField.COMPLETED_MAPPER_EXECUTIONS,
-                                                  1)
+        self.request_tracker.complete_subtask_node(Subtask.MAPPER)
 
     def _get_worker_payload(self, worker_chunk_spec: typing.List[dict]) -> dict:
         """

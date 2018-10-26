@@ -4,9 +4,9 @@ import typing
 
 import requests
 
-from matrix.common.dynamo_handler import DynamoHandler
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.logging import Logging
+from matrix.common.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
 
@@ -21,8 +21,8 @@ class Driver:
         self.request_id = request_id
         self.bundles_per_worker = bundles_per_worker
 
+        self.request_tracker = RequestTracker(self.request_id)
         self.lambda_handler = LambdaHandler()
-        self.dynamo_handler = DynamoHandler()
 
     def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str):
         """
@@ -43,8 +43,7 @@ class Driver:
             resolved_bundle_fqids = bundle_fqids
 
         num_expected_mappers = int(math.ceil(len(resolved_bundle_fqids) / self.bundles_per_worker))
-        self.dynamo_handler.create_state_table_entry(self.request_id, num_expected_mappers, format)
-        self.dynamo_handler.create_output_table_entry(self.request_id, format)
+        self.request_tracker.init_request(num_expected_mappers, format)
 
         logger.debug(f"Invoking {num_expected_mappers} Mapper(s) with approximately "
                      f"{self.bundles_per_worker} bundles per Mapper.")
@@ -55,6 +54,8 @@ class Driver:
                 'bundle_fqids': bundle_fqid_group,
             }
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
+
+        self.request_tracker.complete_subtask_node(Subtask.DRIVER)
 
     @staticmethod
     def _group_bundles(bundle_fqids, bundles_per_group):
