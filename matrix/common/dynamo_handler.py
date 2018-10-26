@@ -113,7 +113,15 @@ class DynamoHandler:
                 OutputTableField.REQUEST_ID.value: request_id,
                 OutputTableField.ROW_COUNT.value: 0,
                 OutputTableField.FORMAT.value: format,
+                OutputTableField.ERROR.value: 0,
             }
+        )
+
+    def write_request_error(self, request_id: str, message: str):
+        self._output_table.update_item(
+            Key={'RequestId': request_id},
+            UpdateExpression=f"SET {OutputTableField.ERROR.value} = :m",
+            ExpressionAttributeValues={':m': message}
         )
 
     def get_table_item(self, table: DynamoTable, request_id: str):

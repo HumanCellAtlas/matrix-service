@@ -70,9 +70,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         self.assertEqual(len(response['Responses'][self.output_table_name]), 1)
 
-        self.assertTrue(all(field.value in entry for field in [OutputTableField.REQUEST_ID,
-                                                               OutputTableField.ROW_COUNT,
-                                                               OutputTableField.FORMAT]))
+        self.assertTrue(all(field.value in entry for field in OutputTableField))
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
     def test_increment_table_field_state_table_path(self):
@@ -138,3 +136,10 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.handler.create_output_table_entry(self.request_id, self.format)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
+
+    def test_write_request_error(self):
+        self.handler.create_output_table_entry(self.request_id, self.format)
+
+        self.handler.write_request_error(self.request_id, "test error")
+        output = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
+        self.assertEqual(output[OutputTableField.ERROR.value], "test error")
