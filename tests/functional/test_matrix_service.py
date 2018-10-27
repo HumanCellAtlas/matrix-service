@@ -1,16 +1,14 @@
-import unittest
-import os
-import requests
 import json
+import os
 import time
+import unittest
 
+import requests
 import s3fs
-import zarr
-import numpy
 
+from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MatrixRequestStatus
-from matrix.common.pandas_utils import convert_dss_zarr_root_to_subset_pandas_dfs
 
 
 INPUT_BUNDLE_IDS = {
@@ -43,32 +41,50 @@ class TestMatrixService(unittest.TestCase):
     def setUp(self):
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
         self.api_url = f"https://{os.environ['API_HOST']}/v0"
+        self.res_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "res")
         self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
 
     def test_zarr_output_matrix_service(self):
-        request_id = self._post_matrix_service_request("zarr")
+        request_id = self._post_matrix_service_request(
+            INPUT_BUNDLE_IDS[self.deployment_stage], "zarr")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
-        self._analyze_zarr_matrix_results(request_id)
+        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_loom_output_matrix_service(self):
-        request_id = self._post_matrix_service_request("loom")
+        request_id = self._post_matrix_service_request(
+            INPUT_BUNDLE_IDS[self.deployment_stage], "loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
-        self._analyze_loom_matrix_results(request_id)
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+        self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_matrix_service_without_specified_output(self):
-        request_id = request_id = self._post_matrix_service_request()
+        request_id = request_id = self._post_matrix_service_request(
+            INPUT_BUNDLE_IDS[self.deployment_stage])
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
-        self._analyze_zarr_matrix_results(request_id)
+        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
-    def _post_matrix_service_request(self, format=None):
+    def test_matrix_service_ss2(self):
+        timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
+        num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 200))
+        bundle_fqids = json.loads(open(f"{self.res_dir}/pancreas_ss2_2544_demo_bundles.json", "r").read())[:num_bundles]
+
+        request_id = self._post_matrix_service_request(bundle_fqids, "zarr")
+
+        # wait for request to complete
+        time.sleep(2)
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
+
+        self._analyze_zarr_matrix_results(request_id, bundle_fqids)
+
+    def _post_matrix_service_request(self, bundle_fqids, format=None):
         data = {
-            "bundle_fqids": INPUT_BUNDLE_IDS[self.deployment_stage]
+            'bundle_fqids': bundle_fqids
         }
         if format:
             data["format"] = format
@@ -96,22 +112,32 @@ class TestMatrixService(unittest.TestCase):
         status = data["status"]
         return status
 
-    def _analyze_zarr_matrix_results(self, request_id):
-        matrix_location = self._retrieve_matrix_location(request_id)
-        self.assertEqual(matrix_location.endswith("zarr"), True)
-        store = s3fs.S3Map(matrix_location, s3=self.s3_file_system, check=False, create=False)
-        group = zarr.group(store=store)
-        exp_df, qc_df = convert_dss_zarr_root_to_subset_pandas_dfs(group, 0, 5)
-        exp_df_sum = numpy.sum(exp_df.values)
-        self.assertEqual(exp_df_sum, 4999999.0)
-        self.assertEqual(qc_df.shape, (5, 154))
-        self.assertEqual(exp_df.shape, (5, 58347))
-        # TODO ADD MORE CORRECTNESS CHECKS HERE FOR ZARR OUTPUT.
+    def _analyze_zarr_matrix_results(self, request_id, input_bundles):
 
-    def _analyze_loom_matrix_results(self, request_id):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+
+        self.assertEqual(matrix_location.endswith("zarr"), True)
+
+        zarr_metrics = validation.calculate_ss2_metrics_zarr(matrix_location)
+        self._compare_metrics(direct_metrics, zarr_metrics)
+
+    def _analyze_loom_matrix_results(self, request_id, input_bundles):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
         matrix_location = self._retrieve_matrix_location(request_id)
         self.assertEqual(matrix_location.endswith("loom"), True)
-        # TODO ADD MORE CORRECTNESS CHECKS HERE FOR LOOM OUTPUT.
+        loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
+        self._compare_metrics(direct_metrics, loom_metrics)
+
+    def _compare_metrics(self, metrics_1, metrics_2):
+        for metric in metrics_1:
+            delta = metrics_1[metric] / 100000
+            self.assertAlmostEqual(
+                metrics_1[metric], metrics_2[metric], delta=delta,
+                msg=(f"Metric {metric} doesn't match: {metrics_1[metric]} "
+                     f"{metrics_2[metric]}"))
 
     def _retrieve_matrix_location(self, request_id):
         url = f"{self.api_url}/matrix/{request_id}"
