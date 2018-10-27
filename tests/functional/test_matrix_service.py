@@ -1,11 +1,10 @@
 import json
 import os
-import requests
 import time
 import unittest
 
+import requests
 import s3fs
-
 
 from . import validation
 from .wait_for import WaitFor
@@ -60,19 +59,6 @@ class TestMatrixService(unittest.TestCase):
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
-        self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
-
-    @unittest.skip
-    def test_matrix_service_ss2_small(self):
-        # make request and receive job id back
-        request_id = self._post_matrix_service_request(
-            INPUT_BUNDLE_IDS[self.deployment_stage], "zarr")
-
-        # wait for post to complete
-        time.sleep(2)
-        # wait for get requests to return 200 and status of COMPLETED
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
         self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_matrix_service_without_specified_output(self):
