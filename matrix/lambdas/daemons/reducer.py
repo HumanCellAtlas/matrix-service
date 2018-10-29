@@ -3,9 +3,10 @@ import os
 import boto3
 
 from matrix.common.constants import MatrixFormat
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
-from matrix.common.s3_zarr_store import S3ZarrStore
+from matrix.common.dynamo_handler import DynamoTable
 from matrix.common.logging import Logging
+from matrix.common.request_tracker import RequestTracker, Subtask
+from matrix.common.s3_zarr_store import S3ZarrStore
 
 logger = Logging.get_logger(__name__)
 
@@ -19,27 +20,21 @@ class Reducer:
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
 
         self.batch = boto3.client('batch')
-        self.dynamo_handler = DynamoHandler()
-
-        item = self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_id)
-        self.format = item[OutputTableField.FORMAT.value]
+        self.request_tracker = RequestTracker(self.request_id)
 
     def run(self):
         """
         Write resultant expression matrix zarr metadata in S3 after Workers complete.
         """
-        logger.debug(f"Reducer running with parameters: format={self.format}")
+        logger.debug(f"Reducer running with parameters: None")
 
         s3_zarr_store = S3ZarrStore(self.request_id)
         s3_zarr_store.write_group_metadata()
 
-        if self.format != MatrixFormat.ZARR.value:
+        if self.request_tracker.format != MatrixFormat.ZARR.value:
             self._schedule_matrix_conversion()
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self.request_id,
-                                                  StateTableField.COMPLETED_REDUCER_EXECUTIONS,
-                                                  1)
+        self.request_tracker.complete_subtask_execution(Subtask.REDUCER)
 
     def _schedule_matrix_conversion(self):
         # TODO: write tests and clean up

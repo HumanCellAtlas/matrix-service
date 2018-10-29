@@ -24,8 +24,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.request_id = str(uuid.uuid4())
         self.format = "zarr"
 
-        self.create_test_state_table(self.dynamo)
-        self.create_test_output_table(self.dynamo)
+        self.create_test_state_table()
+        self.create_test_output_table()
 
         self.handler = DynamoHandler()
 
@@ -52,15 +52,15 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         return response, entry
 
     def test_create_state_table_entry(self):
-        num_bundles = 2
-
-        self.handler.create_state_table_entry(self.request_id, num_bundles)
+        num_mappers = 0
+        self.handler.create_state_table_entry(self.request_id, num_mappers)
         response, entry = self._get_state_table_response_and_entry()
 
         self.assertEqual(len(response['Responses'][self.state_table_name]), 1)
 
         self.assertTrue(all(field.value in entry for field in StateTableField))
-        self.assertEqual(entry[StateTableField.EXPECTED_MAPPER_EXECUTIONS.value], num_bundles)
+        self.assertEqual(entry[StateTableField.EXPECTED_MAPPER_EXECUTIONS.value], num_mappers)
+        self.assertEqual(entry[StateTableField.EXPECTED_WORKER_EXECUTIONS.value], 0)
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
     def test_create_output_table_entry(self):
@@ -73,7 +73,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
     def test_increment_table_field_state_table_path(self):
-        self.handler.create_state_table_entry(self.request_id, num_bundles=1)
+        self.handler.create_state_table_entry(self.request_id, 1)
 
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 0)
@@ -97,7 +97,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
 
     def test_increment_field(self):
-        self.handler.create_state_table_entry(self.request_id, num_bundles=1)
+        self.handler.create_state_table_entry(self.request_id, 1)
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 0)
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
@@ -110,7 +110,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
     def test_get_state_table_entry(self):
-        self.handler.create_state_table_entry(self.request_id, num_bundles=1)
+        self.handler.create_state_table_entry(self.request_id, 1)
         entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, self.request_id)
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
@@ -125,8 +125,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
-        field_enum = OutputTableField.ROW_COUNT
-        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_enum, 5)
+        self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, OutputTableField.ROW_COUNT, 5)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
 
@@ -136,3 +135,10 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.handler.create_output_table_entry(self.request_id, self.format)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
+
+    def test_write_request_error(self):
+        self.handler.create_output_table_entry(self.request_id, self.format)
+
+        self.handler.write_request_error(self.request_id, "test error")
+        output = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
+        self.assertEqual(output[OutputTableField.ERROR.value], "test error")

@@ -2,7 +2,6 @@ import json
 import os
 import uuid
 
-import boto3
 from mock import call
 from pandas import DataFrame
 from unittest import mock
@@ -20,13 +19,11 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
     def setUp(self):
         super(TestS3ZarrStore, self).setUp()
 
-        self.dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
-        self.s3 = boto3.resource("s3", region_name=os.environ['AWS_DEFAULT_REGION'])
         self.s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
         self.state_table_name = os.environ['DYNAMO_STATE_TABLE_NAME']
         self.output_table_name = os.environ['DYNAMO_OUTPUT_TABLE_NAME']
-        self.create_test_state_table(self.dynamo)
-        self.create_test_output_table(self.dynamo)
+        self.create_test_state_table()
+        self.create_test_output_table()
 
         self.request_id = str(uuid.uuid4())
         self.dynamo_handler = DynamoHandler()
@@ -114,7 +111,7 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         self.assertEqual(mock_write_zarray_metadata.call_count, 4)
 
     def test_write_zgroup_metadata(self):
-        self.create_s3_results_bucket(self.s3)
+        self.create_s3_results_bucket()
         self.s3_zarr_store._write_zgroup_metadata()
 
         s3_zgroup_location = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr/.zgroup"
@@ -129,7 +126,7 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         mock_get_zarray_column_count.return_value = 1
         mock_fill_value.return_value = ""
 
-        self.create_s3_results_bucket(self.s3)
+        self.create_s3_results_bucket()
         self.s3_zarr_store._write_zarray_metadata(zarray, row_count)
 
         s3_zarray_location = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr/{zarray.value}/.zarray"

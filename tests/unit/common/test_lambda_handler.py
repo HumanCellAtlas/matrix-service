@@ -1,4 +1,5 @@
 import unittest
+import uuid
 
 from botocore.stub import Stubber
 
@@ -11,7 +12,8 @@ class TestLambdaHandler(unittest.TestCase):
     Environment variables are set in tests/unit/__init__.py
     """
     def setUp(self):
-        self.handler = LambdaHandler()
+        self.request_id = str(uuid.uuid4())
+        self.handler = LambdaHandler(self.request_id)
         self.mock_handler = Stubber(self.handler._client)
 
     def test_invoke(self):

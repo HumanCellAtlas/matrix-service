@@ -4,6 +4,8 @@ import os
 
 import boto3
 
+from matrix.common.request_tracker import RequestTracker
+
 
 class LambdaName(Enum):
     """
@@ -16,8 +18,11 @@ class LambdaName(Enum):
 
 
 class LambdaHandler:
-    def __init__(self):
+    def __init__(self, request_id: str):
+        self.request_id = request_id
+
         self._client = boto3.client("lambda", region_name=os.environ['AWS_DEFAULT_REGION'])
+        self.request_tracker = RequestTracker(self.request_id)
 
     def invoke(self, fn_name: LambdaName, payload: dict):
         """
