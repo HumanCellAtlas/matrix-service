@@ -46,7 +46,7 @@ def post_matrix(body: dict):
                                                 "Visit https://matrix.dev.data.humancellatlas.org for more information."
                                  })
 
-    if not has_url and len(body['bundle_fqids']) > 128000:
+    if not has_url and len(json.dumps(body['bundle_fqids'])) > 128000:
         return ConnexionResponse(status_code=requests.codes.request_entity_too_large,
                                  body={
                                      'message': "List of bundle fqids is too large. "
