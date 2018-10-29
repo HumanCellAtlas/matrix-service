@@ -3,6 +3,7 @@
 
 from collections import MutableMapping
 import hashlib
+import os
 
 import hca
 import zarr
@@ -46,15 +47,17 @@ class DSSZarrStore(MutableMapping):
     def _transform_key(self, key):
         return key.replace("/", self._separator_char)
 
-    def __init__(self, bundle_uuid, dss_instance="integration", bundle_version=None, replica="aws"):
+    def __init__(self, bundle_uuid, bundle_version=None, replica="aws"):
         """
-        :param dss_instance: name of dss environment such as 'dev' or 'staging'
         :param bundle_uuid: unique identifier for bundle in dss
         :param bundle_version: (optional) version tag for bundle in dss
         :param replica: (optional) "aws", "gcp", or "azure" to reflect dss cloud
         """
 
-        self._dss_client = self._get_dss_client(dss_instance)
+        deployment_stage = os.getenv('DEPLOYMENT_STAGE', "integration")
+        dss_env = "integration" if deployment_stage == "dev" else deployment_stage
+        self._dss_client = self._get_dss_client(dss_env)
+
         self._bundle_uuid = bundle_uuid
         self._bundle_version = bundle_version
         self._replica = replica
@@ -126,7 +129,7 @@ class DSSZarrStore(MutableMapping):
     def gene_metadata_name(self):
         return self._root.gene_metadata_name
 
-    def _get_dss_client(self, dss_instance="integration"):
+    def _get_dss_client(self, dss_instance):
         # Default DSS config is unreachable when a user defined config dir is supplied.
         # This workaround supplies an explicit DSS config to avoid reading the config dir.
         # TODO: Fix user set config dir issue in DSS

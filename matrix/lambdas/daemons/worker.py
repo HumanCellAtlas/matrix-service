@@ -96,8 +96,7 @@ class Worker:
 
     def _parse_chunk_to_dataframe(self, i: int):
         dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[i],
-                                      bundle_version=self._bundle_versions[i],
-                                      dss_instance=self._deployment_stage)
+                                      bundle_version=self._bundle_versions[i])
         group = zarr.group(store=dss_zarr_store)
         if not self.zarr_group:
             self.zarr_group = group

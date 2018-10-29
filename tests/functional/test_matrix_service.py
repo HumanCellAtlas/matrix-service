@@ -13,11 +13,13 @@ from matrix.common.constants import MatrixRequestStatus
 
 INPUT_BUNDLE_IDS = {
     "dev": [
-        "ca8308ee-8388-44d6-b4c3-dea6da1334f1.2018-10-18T001232.039329Z",
-        "8a82f068-d324-428c-82ad-14def15442c3.2018-10-17T235815.275412Z",
-        "3b196d5e-7d88-4d02-9c6f-61271764e4ba.2018-10-17T235315.092228Z",
-        "bcd855b6-e39a-4f55-a2be-9c0d094510e2.2018-10-17T234649.368503Z",
-        "b51f5de3-4d65-484a-bd16-7e0bb1a6df59.2018-10-17T234148.910728Z",
+        # matrix-service dev points to DSS integration.
+        # These bundles exist in DSS integration.
+        "0f997914-43c2-45e2-b79f-99167295b263.2018-10-17T204940.626010Z",
+        "167a2b69-f52f-4a0a-9691-d1db62ef12de.2018-10-17T201019.320177Z",
+        "b2965ca9-4aca-4baf-9606-215508d1e475.2018-10-17T200207.329078Z",
+        "8d567bed-a9aa-4a39-9467-75510b965257.2018-10-17T191234.528671Z",
+        "ba9c63ac-6db5-48bc-a2e3-7be4ddd03d97.2018-10-17T173508.111787Z",
     ],
     "integration": [
         "0f997914-43c2-45e2-b79f-99167295b263.2018-10-17T204940.626010Z",
@@ -50,7 +52,7 @@ class TestMatrixService(unittest.TestCase):
         request_id = self._post_matrix_service_request(
             INPUT_BUNDLE_IDS[self.deployment_stage], "zarr")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_loom_output_matrix_service(self):
@@ -58,16 +60,18 @@ class TestMatrixService(unittest.TestCase):
             INPUT_BUNDLE_IDS[self.deployment_stage], "loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_matrix_service_without_specified_output(self):
         request_id = request_id = self._post_matrix_service_request(
             INPUT_BUNDLE_IDS[self.deployment_stage])
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=180)
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
+    @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
+                         "SS2 Pancreas bundles are only available in staging.")
     def test_matrix_service_ss2(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
         num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 200))
