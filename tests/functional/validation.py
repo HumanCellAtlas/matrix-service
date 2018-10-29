@@ -14,7 +14,8 @@ import zarr
 
 
 DSS_CLIENT = hca.dss.DSSClient()
-DSS_CLIENT.host = f"https://dss.{os.environ['DEPLOYMENT_STAGE']}.data.humancellatlas.org/v1"
+DSS_ENV = "integration" if os.getenv('DEPLOYMENT_STAGE') == "dev" else os.getenv('DEPLOYMENT_STAGE', "integration")
+DSS_CLIENT.host = f"https://dss.{DSS_ENV}.data.humancellatlas.org/v1"
 
 S3 = s3fs.S3FileSystem(anon=True)
 
