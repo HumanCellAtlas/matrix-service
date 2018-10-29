@@ -7,6 +7,7 @@ import pandas
 import zarr
 
 from matrix.common.dss_zarr_store import DSSZarrStore
+from matrix.common.exceptions import MatrixException
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.request_tracker import RequestTracker, Subtask
 from matrix.common.logging import Logging
@@ -46,7 +47,25 @@ class Worker:
         logger.debug(f"Worker running with parameters: worker_chunk_spec={worker_chunk_spec}, format={format}")
         # TO DO pass in the parameters in worker chunk spec flat
         self._parse_worker_chunk_spec(worker_chunk_spec)
-        num_bundles = len(self._bundle_uuids)
+
+        exp_df, qc_df = self._parse_bundles_to_dataframes(self._bundle_uuids)
+
+        s3_zarr_store = S3ZarrStore(request_id=self._request_id, exp_df=exp_df, qc_df=qc_df)
+        s3_zarr_store.write_from_pandas_dfs(sum(self._num_rows))
+
+        self.request_tracker.complete_subtask_execution(Subtask.WORKER)
+
+        if self.request_tracker.is_reducer_ready():
+            logger.debug("All workers have completed. Invoking reducer.")
+
+            s3_zarr_store.write_column_data(self.zarr_group)
+            reducer_payload = {
+                'request_id': self._request_id
+            }
+            self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
+
+    def _parse_bundles_to_dataframes(self, bundle_uuids: typing.List[str]):
+        num_bundles = len(bundle_uuids)
         exp_dfs = []
         qc_dfs = []
 
@@ -58,9 +77,16 @@ class Worker:
                 chunk_idx = future_to_chunk_map[future]
                 try:
                     exp_df, qc_df = future.result()
+                except MatrixException as e:
+                    self.request_tracker.log_error(e.title)
+                    raise
                 except Exception as e:
-                    logger.debug(f"Parsing bundle uuid {self._bundle_uuids[chunk_idx]} from DSS "
-                                 f"to pandas.DataFrame caused exception {e}")
+                    if 'status' in e and e.status == 404:
+                        self.request_tracker.log_error(f"Invalid bundle {bundle_uuids[chunk_idx]}. "
+                                                       f"Bundle not found.")
+                    else:
+                        self.request_tracker.log_error(f"Parsing bundle uuid {bundle_uuids[chunk_idx]} from DSS "
+                                                       f"to pandas.DataFrame caused exception {e}")
                     raise
                 exp_dfs.append(exp_df)
                 qc_dfs.append(qc_df)
@@ -77,19 +103,7 @@ class Worker:
         else:
             exp_df, qc_df = None, None
 
-        s3_zarr_store = S3ZarrStore(request_id=self._request_id, exp_df=exp_df, qc_df=qc_df)
-        s3_zarr_store.write_from_pandas_dfs(sum(self._num_rows))
-
-        if self.request_tracker.is_reducer_ready():
-            logger.debug("Mappers and workers are complete. Invoking reducer.")
-
-            s3_zarr_store.write_column_data(self.zarr_group)
-            reducer_payload = {
-                'request_id': self._request_id
-            }
-            self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
-
-        self.request_tracker.complete_subtask_execution(Subtask.WORKER)
+        return exp_df, qc_df
 
     def _parse_chunk_to_dataframe(self, i: int):
         dss_zarr_store = DSSZarrStore(bundle_uuid=self._bundle_uuids[i],

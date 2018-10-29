@@ -1,6 +1,9 @@
 from enum import Enum
 
 from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
+from matrix.common.logging import Logging
+
+logger = Logging.get_logger(__name__)
 
 
 class Subtask(Enum):
@@ -25,6 +28,8 @@ class RequestTracker:
     Provides an interface for tracking a request's parameters and state.
     """
     def __init__(self, request_id: str):
+        Logging.set_correlation_id(logger, request_id)
+
         self.request_id = request_id
         self._format = None
 
@@ -136,4 +141,5 @@ class RequestTracker:
         Logs the latest error this request reported overwriting the previously logged error.
         :param message: str The error message to log
         """
+        logger.debug(message)
         self.dynamo_handler.write_request_error(self.request_id, message)
