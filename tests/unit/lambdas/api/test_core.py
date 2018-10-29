@@ -25,6 +25,7 @@ class TestCore(unittest.TestCase):
         }
         response = post_matrix(body)
         body.update({'request_id': mock.ANY})
+        body.update({'bundle_fqids_url': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         self.assertEqual(type(response.body['request_id']), str)

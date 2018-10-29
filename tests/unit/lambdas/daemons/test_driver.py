@@ -21,7 +21,7 @@ class TestDriver(unittest.TestCase):
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
 
-        self._driver.run(bundle_fqids, format)
+        self._driver.run(bundle_fqids, None, format)
 
         num_mappers = math.ceil(len(bundle_fqids) / self._bundles_per_worker)
         mock_dynamo_create_state_table_entry.assert_called_once_with(self.request_id, num_mappers, format)
