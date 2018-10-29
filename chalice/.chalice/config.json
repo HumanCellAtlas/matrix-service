@@ -28,6 +28,20 @@
         "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-integration",
         "S3_RESULTS_BUCKET": "dcp-matrix-service-results-integration"
       }
+    },
+    "staging": {
+      "api_gateway_stage": "staging",
+      "environment_variables": {
+        "DEPLOYMENT_STAGE": "staging",
+        "API_HOST": "matrix.staging.data.humancellatlas.org",
+        "LAMBDA_DRIVER_FUNCTION_NAME": "dcp-matrix-service-driver-staging",
+        "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-staging",
+        "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-staging",
+        "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-staging",
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-staging",
+        "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-staging",
+        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-staging"
+      }
     }
   },
   "lambda_timeout": 30,
