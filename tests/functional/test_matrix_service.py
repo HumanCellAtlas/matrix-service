@@ -60,7 +60,7 @@ class TestMatrixService(unittest.TestCase):
             INPUT_BUNDLE_IDS[self.deployment_stage], "loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
         self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_matrix_service_without_specified_output(self):
