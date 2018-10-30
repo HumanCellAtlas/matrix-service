@@ -65,9 +65,7 @@ class Driver:
         items.
         """
         iter_args = [iter(bundle_fqids)] * bundles_per_group
-        logger.debug(f"iter_args: {iter_args}")
         for bundle_fqid_group in itertools.zip_longest(*iter_args):
-            logger.debug("Yielding")
             yield list(filter(None, bundle_fqid_group))
 
     @staticmethod
