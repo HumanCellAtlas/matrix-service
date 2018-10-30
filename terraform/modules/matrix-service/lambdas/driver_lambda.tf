@@ -42,6 +42,8 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       "Sid": "DynamoPolicy",
       "Effect": "Allow",
       "Action": [
+        "dynamodb:UpdateItem",
+        "dynamodb:GetItem",
         "dynamodb:PutItem"
       ],
       "Resource": [
