@@ -37,8 +37,8 @@ class Driver:
                      f"bundles_per_worker={self.bundles_per_worker}")
 
         if bundle_fqids_url:
-            data = requests.get(bundle_fqids_url)
-            resolved_bundle_fqids = self._parse_download_manifest(data)
+            response = requests.get(bundle_fqids_url)
+            resolved_bundle_fqids = self._parse_download_manifest(response.text)
         else:
             resolved_bundle_fqids = bundle_fqids
 
