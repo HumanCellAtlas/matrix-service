@@ -41,6 +41,7 @@ class Driver:
             resolved_bundle_fqids = self._parse_download_manifest(response.text)
         else:
             resolved_bundle_fqids = bundle_fqids
+        logger.debug(f"resolved bundles: {resolved_bundle_fqids}")
 
         num_expected_mappers = int(math.ceil(len(resolved_bundle_fqids) / self.bundles_per_worker))
         self.request_tracker.init_request(num_expected_mappers, format)
@@ -53,6 +54,7 @@ class Driver:
                 'request_id': self.request_id,
                 'bundle_fqids': bundle_fqid_group,
             }
+            logger.debug(f"Invoking {LambdaName.MAPPER} with {mapper_payload}")
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
 
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
@@ -63,7 +65,9 @@ class Driver:
         items.
         """
         iter_args = [iter(bundle_fqids)] * bundles_per_group
+        logger.debug(f"iter_args: {iter_args}")
         for bundle_fqid_group in itertools.zip_longest(*iter_args):
+            logger.debug("Yielding")
             yield list(filter(None, bundle_fqid_group))
 
     @staticmethod
