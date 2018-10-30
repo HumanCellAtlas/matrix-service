@@ -1,6 +1,7 @@
 from enum import Enum
 
 from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
+from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
@@ -27,13 +28,23 @@ class RequestTracker:
     """
     Provides an interface for tracking a request's parameters and state.
     """
-    def __init__(self, request_id: str):
-        Logging.set_correlation_id(logger, request_id)
+    def __init__(self, request_hash: str):
+        Logging.set_correlation_id(logger, request_hash)
 
-        self.request_id = request_id
+        self.request_hash = request_hash
         self._format = None
 
         self.dynamo_handler = DynamoHandler()
+
+    @property
+    def is_initialized(self) -> bool:
+        try:
+            self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
+                                               self.request_hash)
+        except MatrixException:
+            return False
+
+        return True
 
     @property
     def format(self) -> str:
@@ -43,7 +54,7 @@ class RequestTracker:
         """
         if not self._format:
             self._format = self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                              self.request_id)[OutputTableField.FORMAT.value]
+                                                              self.request_hash)[OutputTableField.FORMAT.value]
         return self._format
 
     @property
@@ -53,20 +64,20 @@ class RequestTracker:
         :return: str The error message if one exists, else empty string
         """
         error = self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                   self.request_id)[OutputTableField.ERROR_MESSAGE.value]
+                                                   self.request_hash)[OutputTableField.ERROR_MESSAGE.value]
 
         if error:
             return error
         return ""
 
-    def init_request(self, num_mappers: int, format: str):
+    def initialize_request(self, num_mappers: int, format: str):
         """
         Creates a new request in the relevant DynamoDB tables for state and output tracking.
         :param num_mappers: Number of expected mapper nodes this request will run.
         :param format: The request's user specified output file format of the resultant expression matrix.
         """
-        self.dynamo_handler.create_state_table_entry(self.request_id, num_mappers, format)
-        self.dynamo_handler.create_output_table_entry(self.request_id, format)
+        self.dynamo_handler.create_state_table_entry(self.request_hash, num_mappers, format)
+        self.dynamo_handler.create_output_table_entry(self.request_hash, format)
 
     def expect_subtask_execution(self, subtask: Subtask):
         """
@@ -83,7 +94,7 @@ class RequestTracker:
         }
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self.request_id,
+                                                  self.request_hash,
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1)
 
@@ -102,7 +113,7 @@ class RequestTracker:
         }
 
         self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
-                                                  self.request_id,
+                                                  self.request_hash,
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1)
 
@@ -112,7 +123,7 @@ class RequestTracker:
         i.e. if all expected mappers and workers have completed.
         :return: bool True if ready, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, self.request_id)
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, self.request_hash)
 
         mappers_complete = (request_state[StateTableField.EXPECTED_MAPPER_EXECUTIONS.value] ==
                             request_state[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value])
@@ -127,7 +138,7 @@ class RequestTracker:
         i.e. if all expected reducers and converters have completed.
         :return: bool True if complete, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, self.request_id)
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, self.request_hash)
 
         reducer_complete = (request_state[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value] ==
                             request_state[StateTableField.COMPLETED_REDUCER_EXECUTIONS.value])
@@ -142,4 +153,4 @@ class RequestTracker:
         :param message: str The error message to log
         """
         logger.debug(message)
-        self.dynamo_handler.write_request_error(self.request_id, message)
+        self.dynamo_handler.write_request_error(self.request_hash, message)

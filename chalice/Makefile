@@ -10,6 +10,7 @@ export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                  LAMBDA_REDUCER_FUNCTION_NAME \
                                  DYNAMO_STATE_TABLE_NAME \
                                  DYNAMO_OUTPUT_TABLE_NAME \
+                                 DYNAMO_CACHE_TABLE_NAME \
                                  S3_RESULTS_BUCKET
 
 clean:

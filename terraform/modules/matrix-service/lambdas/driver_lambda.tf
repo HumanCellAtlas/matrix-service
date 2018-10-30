@@ -48,7 +48,8 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       ],
       "Resource": [
         "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
-        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}",
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-cache-table-${var.deployment_stage}"
       ]
     },
     {
@@ -79,6 +80,7 @@ resource "aws_lambda_function" "matrix_service_driver_lambda" {
         LAMBDA_MAPPER_FUNCTION_NAME="dcp-matrix-service-mapper-${var.deployment_stage}"
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
         DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
+        DYNAMO_CACHE_TABLE_NAME="dcp-matrix-service-cache-table-${var.deployment_stage}"
     }
   }
 }

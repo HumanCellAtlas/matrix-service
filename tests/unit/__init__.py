@@ -13,6 +13,7 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = "sk"
 os.environ['LAMBDA_DRIVER_FUNCTION_NAME'] = f"dcp-matrix-service-driver-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_STATE_TABLE_NAME'] = f"dcp-matrix-service-state-table-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_OUTPUT_TABLE_NAME'] = f"dcp-matrix-service-output-table-{os.environ['DEPLOYMENT_STAGE']}"
+os.environ['DYNAMO_CACHE_TABLE_NAME'] = f"dcp-matrix-service-cache-table-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['S3_RESULTS_BUCKET'] = f"dcp-matrix-service-results-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_LOCK_TABLE_NAME'] = f"dcp-matrix-service-lock-table-{os.environ['DEPLOYMENT_STAGE']}"
 

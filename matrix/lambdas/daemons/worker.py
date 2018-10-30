@@ -21,10 +21,10 @@ class Worker:
     """
     The worker (third) task in a distributed filter merge job.
     """
-    def __init__(self, request_id: str):
-        Logging.set_correlation_id(logger, value=request_id)
+    def __init__(self, request_hash: str):
+        Logging.set_correlation_id(logger, value=request_hash)
 
-        self._request_id = request_id
+        self._request_hash = request_hash
         self._deployment_stage = os.environ['DEPLOYMENT_STAGE']
 
         self._bundle_uuids = []
@@ -34,8 +34,8 @@ class Worker:
         self._num_rows = []
         self.zarr_group = None
 
-        self.request_tracker = RequestTracker(self._request_id)
-        self.lambda_handler = LambdaHandler(self._request_id)
+        self.request_tracker = RequestTracker(self._request_hash)
+        self.lambda_handler = LambdaHandler()
 
     def run(self, worker_chunk_spec: typing.List[dict]):
         """Process and write one chunk of dss bundle matrix to s3 and
@@ -50,7 +50,7 @@ class Worker:
 
         exp_df, qc_df = self._parse_bundles_to_dataframes(self._bundle_uuids)
 
-        s3_zarr_store = S3ZarrStore(request_id=self._request_id, exp_df=exp_df, qc_df=qc_df)
+        s3_zarr_store = S3ZarrStore(request_hash=self._request_hash, exp_df=exp_df, qc_df=qc_df)
         s3_zarr_store.write_from_pandas_dfs(sum(self._num_rows))
 
         self.request_tracker.complete_subtask_execution(Subtask.WORKER)
@@ -60,7 +60,7 @@ class Worker:
 
             s3_zarr_store.write_column_data(self.zarr_group)
             reducer_payload = {
-                'request_id': self._request_id
+                'request_hash': self._request_hash
             }
             self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
 

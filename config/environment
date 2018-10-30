@@ -28,6 +28,7 @@ LAMBDA_WORKER_FUNCTION_NAME="dcp-matrix-service-worker-${DEPLOYMENT_STAGE}"
 LAMBDA_REDUCER_FUNCTION_NAME="dcp-matrix-service-reducer-${DEPLOYMENT_STAGE}"
 DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${DEPLOYMENT_STAGE}"
 DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${DEPLOYMENT_STAGE}"
+DYNAMO_CACHE_TABLE_NAME="dcp-matrix-service-cache-table-${DEPLOYMENT_STAGE}"
 S3_RESULTS_BUCKET="dcp-matrix-service-results-${DEPLOYMENT_STAGE}"
 set +a
 

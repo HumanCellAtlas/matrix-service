@@ -30,10 +30,10 @@ ZARR_OUTPUT_CONFIG = {
 
 class S3ZarrStore:
 
-    def __init__(self, request_id: str, exp_df=None, qc_df=None):
-        self._request_id = request_id
+    def __init__(self, request_hash: str, exp_df=None, qc_df=None):
+        self._request_hash = request_hash
         self._results_bucket = os.environ['S3_RESULTS_BUCKET']
-        self.s3_results_prefix = f"s3://{self._results_bucket}/{self._request_id}.zarr"
+        self.s3_results_prefix = f"s3://{self._results_bucket}/{self._request_hash}.zarr"
         self._cells_per_chunk = ZARR_OUTPUT_CONFIG['cells_per_chunk']
         self.dynamo_handler = DynamoHandler()
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
@@ -93,7 +93,7 @@ class S3ZarrStore:
                 values = self.qc_df.select_dtypes("object").values
             elif dset == "cell_id":
                 values = self.exp_df.index.values
-            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/{chunk_idx}"
+            full_dest_key = f"s3://{self._results_bucket}/{self._request_hash}.zarr/{dset}/{chunk_idx}"
             print(f"Writing {dset} to {full_dest_key}")
             if values.ndim == 2:
                 chunk_shape = (self._cells_per_chunk, values.shape[1])
@@ -141,7 +141,7 @@ class S3ZarrStore:
         self._write_zgroup_metadata()
 
         num_output_rows = int(self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                                 self._request_id)[OutputTableField.ROW_COUNT.value])
+                                                                 self._request_hash)[OutputTableField.ROW_COUNT.value])
         for zarray in [ZarrayName.EXPRESSION,
                        ZarrayName.CELL_METADATA_NUMERIC,
                        ZarrayName.CELL_METADATA_STRING,
@@ -183,7 +183,7 @@ class S3ZarrStore:
         self.s3_file_system.open(zarray_key, "wb").write(json.dumps(zarray_metadata).encode())
 
     def _read_zarray(self, zarray: ZarrayName):
-        s3_location = f"s3://{self._results_bucket}/{self._request_id}.zarr/{zarray.value}/.zarray"
+        s3_location = f"s3://{self._results_bucket}/{self._request_hash}.zarr/{zarray.value}/.zarray"
         data = self.s3_file_system.open(s3_location, 'rb').read()
         return json.loads(data)
 
@@ -207,13 +207,13 @@ class S3ZarrStore:
         """
         # TO DO TEST THIS FUNCTION
         for dset in ["gene_id", "cell_metadata_numeric_name", "cell_metadata_string_name"]:
-            full_dest_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/0"
+            full_dest_key = f"s3://{self._results_bucket}/{self._request_hash}.zarr/{dset}/0"
             if not self.s3_file_system.exists(full_dest_key):
                 with Lock(full_dest_key):
                     arr = numpy.array(getattr(group, dset))
                     self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
 
-                zarray_key = f"s3://{self._results_bucket}/{self._request_id}.zarr/{dset}/.zarray"
+                zarray_key = f"s3://{self._results_bucket}/{self._request_hash}.zarr/{dset}/.zarray"
                 zarray = {
                     "chunks": [arr.shape[0]],
                     "compressor": ZARR_OUTPUT_CONFIG['compressor'].get_config(),
@@ -239,7 +239,7 @@ class S3ZarrStore:
         """
         field_enum = OutputTableField.ROW_COUNT
         output_start_row_idx, output_end_row_idx = self.dynamo_handler.increment_table_field(
-            DynamoTable.OUTPUT_TABLE, self._request_id, field_enum, nrows)
+            DynamoTable.OUTPUT_TABLE, self._request_hash, field_enum, nrows)
         return output_start_row_idx, output_end_row_idx
 
     def _get_output_chunk_boundaries(self, output_start_row_idx: int, output_end_row_idx: int):
