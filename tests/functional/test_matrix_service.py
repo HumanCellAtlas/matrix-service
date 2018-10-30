@@ -37,6 +37,9 @@ INPUT_BUNDLE_IDS = {
     ]
 }
 
+INPUT_BUNDLE_URL = \
+    "https://s3.amazonaws.com/dcp-matrix-test-data/{deployment_stage}_test_bundles.tsv"
+
 
 class TestMatrixService(unittest.TestCase):
 
@@ -50,14 +53,14 @@ class TestMatrixService(unittest.TestCase):
 
     def test_zarr_output_matrix_service(self):
         request_id = self._post_matrix_service_request(
-            INPUT_BUNDLE_IDS[self.deployment_stage], "zarr")
+            bundle_fqids=INPUT_BUNDLE_IDS[self.deployment_stage], format="zarr")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_loom_output_matrix_service(self):
         request_id = self._post_matrix_service_request(
-            INPUT_BUNDLE_IDS[self.deployment_stage], "loom")
+            bundle_fqids=INPUT_BUNDLE_IDS[self.deployment_stage], format="loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
@@ -65,20 +68,20 @@ class TestMatrixService(unittest.TestCase):
 
     def test_matrix_service_without_specified_output(self):
         request_id = self._post_matrix_service_request(
-            INPUT_BUNDLE_IDS[self.deployment_stage])
+            bundle_fqids=INPUT_BUNDLE_IDS[self.deployment_stage])
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
     def test_matrix_service_invalid_bundle(self):
         test_bundle_uuids = ["bundle1.version", "bundle2.version"]
-        request_id = self._post_matrix_service_request(test_bundle_uuids, "loom")
+        request_id = self._post_matrix_service_request(bundle_fqids=test_bundle_uuids, format="loom")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
 
     def test_matrix_service_bundle_not_found(self):
         test_bundle_uuids = ["00000000-0000-0000-0000-000000000000.version"]
-        request_id = self._post_matrix_service_request(test_bundle_uuids, "loom")
+        request_id = self._post_matrix_service_request(bundle_fqids=test_bundle_uuids, format="loom")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
 
@@ -89,7 +92,7 @@ class TestMatrixService(unittest.TestCase):
         num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 200))
         bundle_fqids = json.loads(open(f"{self.res_dir}/pancreas_ss2_2544_demo_bundles.json", "r").read())[:num_bundles]
 
-        request_id = self._post_matrix_service_request(bundle_fqids, "zarr")
+        request_id = self._post_matrix_service_request(bundle_fqids=bundle_fqids, format="zarr")
 
         # wait for request to complete
         time.sleep(2)
@@ -98,10 +101,29 @@ class TestMatrixService(unittest.TestCase):
 
         self._analyze_zarr_matrix_results(request_id, bundle_fqids)
 
-    def _post_matrix_service_request(self, bundle_fqids, format=None):
-        data = {
-            'bundle_fqids': bundle_fqids
-        }
+    def test_bundle_url(self):
+        timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
+        bundle_fqids_url = INPUT_BUNDLE_URL.format(deployment_stage=self.deployment_stage)
+
+        request_id = self._post_matrix_service_request(
+            bundle_fqids_url=bundle_fqids_url,
+            format="zarr")
+
+        # wait for request to complete
+        time.sleep(2)
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
+        bundle_fqids = ['.'.join(el.split('\t')) for el in
+                        requests.get(bundle_fqids_url).text.strip().split('\n')[1:]]
+
+        self._analyze_zarr_matrix_results(request_id, bundle_fqids)
+
+    def _post_matrix_service_request(self, bundle_fqids=None, bundle_fqids_url=None, format=None):
+        data = {}
+        if bundle_fqids:
+            data["bundle_fqids"] = bundle_fqids
+        if bundle_fqids_url:
+            data["bundle_fqids_url"] = bundle_fqids_url
         if format:
             data["format"] = format
         response = self._make_request(description="POST REQUEST TO MATRIX SERVICE",

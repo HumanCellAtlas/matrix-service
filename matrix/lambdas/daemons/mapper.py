@@ -38,7 +38,7 @@ class Mapper:
 
         if worker_chunk_specs:
             self.request_tracker.expect_subtask_execution(Subtask.WORKER)
-            logger.debug(f"Invoking 1 worker lambda with {len(worker_chunk_specs)} chunks.")
+            logger.debug(f"Invoking 1 {LambdaName.WORKER} worker lambda with {len(worker_chunk_specs)} chunks.")
             self.lambda_handler.invoke(LambdaName.WORKER, self._get_worker_payload(worker_chunk_specs))
             logger.debug(f"Worker invoked {worker_chunk_specs}")
 
