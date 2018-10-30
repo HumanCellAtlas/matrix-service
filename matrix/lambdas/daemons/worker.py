@@ -81,12 +81,10 @@ class Worker:
                     self.request_tracker.log_error(e.title)
                     raise
                 except Exception as e:
-                    if 'status' in e and e.status == 404:
-                        self.request_tracker.log_error(f"Invalid bundle {bundle_uuids[chunk_idx]}. "
-                                                       f"Bundle not found.")
+                    if hasattr(e, 'status') and e.status == 404:
+                        self.request_tracker.log_error(f"Unable to find bundle {bundle_uuids[chunk_idx]}. {e}")
                     else:
-                        self.request_tracker.log_error(f"Parsing bundle uuid {bundle_uuids[chunk_idx]} from DSS "
-                                                       f"to pandas.DataFrame caused exception {e}")
+                        self.request_tracker.log_error(f"Failed to read bundle {bundle_uuids[chunk_idx]} from DSS. {e}")
                     raise
                 exp_dfs.append(exp_df)
                 qc_dfs.append(qc_df)

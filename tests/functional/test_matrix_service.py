@@ -70,11 +70,17 @@ class TestMatrixService(unittest.TestCase):
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
 
-    def test_matrix_service_bundle_not_found(self):
+    def test_matrix_service_invalid_bundle(self):
         test_bundle_uuids = ["bundle1.version", "bundle2.version"]
         request_id = self._post_matrix_service_request(test_bundle_uuids, "loom")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
-            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=180)
+            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
+
+    def test_matrix_service_bundle_not_found(self):
+        test_bundle_uuids = ["00000000-0000-0000-0000-000000000000.version"]
+        request_id = self._post_matrix_service_request(test_bundle_uuids, "loom")
+        WaitFor(self._poll_get_matrix_service_request, request_id)\
+            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
 
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")

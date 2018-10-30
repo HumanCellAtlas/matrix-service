@@ -38,20 +38,21 @@ class Reducer:
 
     def _schedule_matrix_conversion(self):
         # TODO: write tests and clean up
+        format = self.request_tracker.format
         source_zarr_path = f"s3://{self.s3_results_bucket}/{self.request_id}.zarr"
-        target_path = f"s3://{self.s3_results_bucket}/{self.request_id}.{self.format}"
+        target_path = f"s3://{self.s3_results_bucket}/{self.request_id}.{format}"
         job_queue_arn = f"arn:aws:batch:us-east-1:861229788715:" \
                         f"job-queue/dcp-matrix-converter-queue-{self.deployment_stage}"
         job_def_arn = f"arn:aws:batch:us-east-1:861229788715:" \
                       f"job-definition/dcp-matrix-converter-job-definition-{self.deployment_stage}"
-        command = ['python3', '/matrix_converter.py', self.request_id, source_zarr_path, target_path, self.format]
+        command = ['python3', '/matrix_converter.py', self.request_id, source_zarr_path, target_path, format]
         environment = {
             'DEPLOYMENT_STAGE': self.deployment_stage,
             'DYNAMO_STATE_TABLE_NAME': DynamoTable.STATE_TABLE.value,
             'DYNAMO_OUTPUT_TABLE_NAME': DynamoTable.OUTPUT_TABLE.value
         }
         job_name = "-".join([
-            "conversion", self.deployment_stage, self.request_id, self.format])
+            "conversion", self.deployment_stage, self.request_id, format])
         self._enqueue_batch_job(queue_arn=job_queue_arn,
                                 job_name=job_name,
                                 job_def_arn=job_def_arn,
