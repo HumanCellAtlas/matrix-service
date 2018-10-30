@@ -30,4 +30,3 @@ deploy: clean build
 	@echo -e "#########################################################\n"
 	./build_deploy_config.sh $(DEPLOYMENT_STAGE)
 	chalice deploy --no-autogen-policy --stage $(DEPLOYMENT_STAGE) --api-gateway-stage $(DEPLOYMENT_STAGE)
-	rm -rf chalicelib
