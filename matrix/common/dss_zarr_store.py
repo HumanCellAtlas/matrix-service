@@ -145,11 +145,10 @@ class DSSZarrStore(MutableMapping):
 
     def _validate_zarr(self):
         expected_fields = ['expression', 'cell_id', 'cell_metadata_string', 'cell_metadata_numeric',
-                           'cell_metadata_string_name', 'cell_metadata_numeric_name', 'gene_id', 'gene_metadata',
-                           'gene_metadata_name']
+                           'cell_metadata_string_name', 'cell_metadata_numeric_name', 'gene_id']
         if any(field not in self._root for field in expected_fields):
             raise MatrixException(400, f"Unable to process bundle {self.bundle_uuid}.{self.bundle_version}. "
-                                       f"No expression data found.")
+                                       f"Invalid or no expression data found.")
 
     def __setitem__(self, key, value):
         raise NotImplementedError("The HCA Data Storage System is read-only.")
