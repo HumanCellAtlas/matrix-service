@@ -141,4 +141,4 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         self.handler.write_request_error(self.request_id, "test error")
         output = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_id)
-        self.assertEqual(output[OutputTableField.ERROR.value], "test error")
+        self.assertEqual(output[OutputTableField.ERROR_MESSAGE.value], "test error")

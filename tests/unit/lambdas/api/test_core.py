@@ -79,7 +79,7 @@ class TestCore(unittest.TestCase):
     def test_get_matrix_processing(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = False
-        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "",
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
                                             OutputTableField.FORMAT.value: "test_format"}
 
         response = get_matrix(request_id)
@@ -91,7 +91,7 @@ class TestCore(unittest.TestCase):
     def test_get_matrix_failed(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = False
-        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "test error",
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "test error",
                                             OutputTableField.FORMAT.value: "test_format"}
 
         response = get_matrix(request_id)
@@ -104,7 +104,7 @@ class TestCore(unittest.TestCase):
     def test_get_zarr_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = True
-        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "",
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
                                             OutputTableField.FORMAT.value: "zarr"}
 
         response = get_matrix(request_id)
@@ -117,7 +117,7 @@ class TestCore(unittest.TestCase):
     def test_get_loom_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = True
-        mock_get_table_item.return_value = {OutputTableField.ERROR.value: "",
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
                                             OutputTableField.FORMAT.value: "loom"}
 
         response = get_matrix(request_id)

@@ -53,7 +53,7 @@ class RequestTracker:
         :return: str The error message if one exists, else empty string
         """
         error = self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                   self.request_id)[OutputTableField.ERROR.value]
+                                                   self.request_id)[OutputTableField.ERROR_MESSAGE.value]
 
         if error:
             return error

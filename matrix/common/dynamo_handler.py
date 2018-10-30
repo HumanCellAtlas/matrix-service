@@ -38,7 +38,7 @@ class OutputTableField(TableField):
     REQUEST_ID = "RequestId"
     ROW_COUNT = "RowCount"
     FORMAT = "Format"
-    ERROR = "Error"
+    ERROR_MESSAGE = "ErrorMessage"
 
 
 class DynamoTable(Enum):
@@ -111,7 +111,7 @@ class DynamoHandler:
                 OutputTableField.REQUEST_ID.value: request_id,
                 OutputTableField.ROW_COUNT.value: 0,
                 OutputTableField.FORMAT.value: format,
-                OutputTableField.ERROR.value: 0,
+                OutputTableField.ERROR_MESSAGE.value: 0,
             }
         )
 
@@ -123,7 +123,7 @@ class DynamoHandler:
         """
         self._output_table.update_item(
             Key={'RequestId': request_id},
-            UpdateExpression=f"SET {OutputTableField.ERROR.value} = :m",
+            UpdateExpression=f"SET {OutputTableField.ERROR_MESSAGE.value} = :m",
             ExpressionAttributeValues={':m': message}
         )
 
