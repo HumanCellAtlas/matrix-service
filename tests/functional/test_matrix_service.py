@@ -101,7 +101,6 @@ class TestMatrixService(unittest.TestCase):
             format="zarr")
 
         # wait for request to complete
-        time.sleep(2)
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
         bundle_fqids = ['.'.join(el.split('\t')) for el in
@@ -127,7 +126,6 @@ class TestMatrixService(unittest.TestCase):
         # Need a sleep since the driver creates entry in state table.
         # Driver's execution may occur after completion of post request.
         # Fix by adding entry to state table directly in post request.
-        time.sleep(2)
         return data["request_id"]
 
     def _poll_get_matrix_service_request(self, request_id):

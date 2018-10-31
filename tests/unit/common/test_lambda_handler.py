@@ -13,7 +13,7 @@ class TestLambdaHandler(unittest.TestCase):
     """
     def setUp(self):
         self.request_id = str(uuid.uuid4())
-        self.handler = LambdaHandler(self.request_id)
+        self.handler = LambdaHandler()
         self.mock_handler = Stubber(self.handler._client)
 
     def test_invoke(self):

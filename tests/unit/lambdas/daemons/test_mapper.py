@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 import uuid
 
@@ -14,8 +15,8 @@ from matrix.lambdas.daemons.mapper import Mapper
 class TestMapper(unittest.TestCase):
 
     def setUp(self):
-        self.request_id = str(uuid.uuid4())
-        self._mapper = Mapper(self.request_id)
+        self.request_hash = hashlib.sha256().hexdigest()
+        self._mapper = Mapper(self.request_hash)
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_worker_payload")
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
@@ -69,13 +70,13 @@ class TestMapper(unittest.TestCase):
     def test_get_worker_payload(self):
         test_chunk_spec = []
         expected_payload = {
-            'request_id': self.request_id,
+            'request_hash': self.request_hash,
             'worker_chunk_spec': test_chunk_spec
         }
 
         payload = self._mapper._get_worker_payload(test_chunk_spec)
 
-        self.assertTrue("request_id" in payload)
+        self.assertTrue("request_hash" in payload)
         self.assertTrue("worker_chunk_spec" in payload)
 
         self.assertEqual(payload, expected_payload)

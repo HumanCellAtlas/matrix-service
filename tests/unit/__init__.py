@@ -65,13 +65,13 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
             TableName=os.environ['DYNAMO_STATE_TABLE_NAME'],
             KeySchema=[
                 {
-                    'AttributeName': "RequestId",
+                    'AttributeName': "RequestHash",
                     'KeyType': "HASH",
                 }
             ],
             AttributeDefinitions=[
                 {
-                    'AttributeName': "RequestId",
+                    'AttributeName': "RequestHash",
                     'AttributeType': "S",
                 }
             ],
@@ -85,6 +85,28 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
     def create_test_output_table():
         boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
             TableName=os.environ['DYNAMO_OUTPUT_TABLE_NAME'],
+            KeySchema=[
+                {
+                    'AttributeName': "RequestHash",
+                    'KeyType': "HASH",
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': "RequestHash",
+                    'AttributeType': "S",
+                }
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 15,
+                'WriteCapacityUnits': 15,
+            },
+        )
+
+    @staticmethod
+    def create_test_cache_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
+            TableName=os.environ['DYNAMO_CACHE_TABLE_NAME'],
             KeySchema=[
                 {
                     'AttributeName': "RequestId",

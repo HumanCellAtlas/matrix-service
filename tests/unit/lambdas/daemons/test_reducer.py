@@ -1,4 +1,4 @@
-import uuid
+import hashlib
 from unittest import mock
 
 from matrix.lambdas.daemons.reducer import Reducer
@@ -11,7 +11,7 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
     def setUp(self):
         super(TestReducer, self).setUp()
 
-        self.request_id = str(uuid.uuid4())
+        self.request_hash = hashlib.sha256().hexdigest()
         self.create_test_output_table()
 
         self.dynamo_handler = DynamoHandler()
@@ -23,9 +23,9 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
                       mock_complete_subtask_execution,
                       mock_write_group_metadata,
                       mock_schedule_matrix_conversion):
-        self.dynamo_handler.create_output_table_entry(self.request_id, "zarr")
+        self.dynamo_handler.create_output_table_entry(self.request_hash, "zarr")
 
-        self.reducer = Reducer(self.request_id)
+        self.reducer = Reducer(self.request_hash)
         self.reducer.run()
 
         self.assertEqual(mock_schedule_matrix_conversion.call_count, 0)
@@ -39,9 +39,9 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
                       mock_complete_subtask_execution,
                       mock_write_group_metadata,
                       mock_schedule_matrix_conversion):
-        self.dynamo_handler.create_output_table_entry(self.request_id, "loom")
+        self.dynamo_handler.create_output_table_entry(self.request_hash, "loom")
 
-        self.reducer = Reducer(self.request_id)
+        self.reducer = Reducer(self.request_hash)
         self.reducer.run()
 
         mock_schedule_matrix_conversion.assert_called_once_with()

@@ -57,7 +57,7 @@ class RequestCache(object):
 
         Sets a null hash value.
         """
-        self._dynamo_handler.write_request_hash(self.request_id, NULL_REQUEST_HASH)
+        self._dynamo_handler.write_request_hash(self._request_id, NULL_REQUEST_HASH)
 
     def retrieve_hash(self) -> typing.Union[str, None]:
         """Look up the hash value for the request.
@@ -67,11 +67,11 @@ class RequestCache(object):
 
         Raises RequestNotFound if the request id isn't in the cache table.
         """
-        request_hash = self._dynamo_handler.get_request_hash(self.request_id)
+        request_hash = self._dynamo_handler.get_request_hash(self._request_id)
 
         # If the request_id isn't present at all, raise
         if not request_hash:
-            raise RequestNotFound(f"Request {self.request_id} was not found.")
+            raise RequestNotFound(f"Request {self._request_id} was not found.")
 
         # If the request_id is there but has a null hash, it means the driver
         # hasn't run yet.
@@ -84,5 +84,5 @@ class RequestCache(object):
     def set_hash(self, bundle_fqids, format_):
         """Calculate, set, and return the hash for this request."""
         request_hash = self._hash_request(bundle_fqids, format_)
-        self._dynamo_handler.write_request_hash(self.request_id, request_hash)
+        self._dynamo_handler.write_request_hash(self._request_id, request_hash)
         return request_hash
