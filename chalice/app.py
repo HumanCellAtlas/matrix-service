@@ -49,14 +49,14 @@ def get_chalice_app(flask_app):
     for route, methods in routes.items():
         app.route(route, methods=list(set(methods) - {"OPTIONS"}), cors=True)(dispatch)
 
-    # with open(os.path.join(pkg_root, "index.html")) as fh:
-    #     swagger_ui_html = fh.read()
-    #
-    # @app.route("/")
-    # def serve_swagger_ui():
-    #     return chalice.Response(status_code=200,
-    #                             headers={"Content-Type": "text/html"},
-    #                             body=swagger_ui_html)
+    with open(os.path.join(pkg_root, "index.html")) as fh:
+        swagger_ui_html = fh.read()
+
+    @app.route("/")
+    def serve_swagger_ui():
+        return chalice.Response(status_code=200,
+                                headers={"Content-Type": "text/html"},
+                                body=swagger_ui_html)
 
     return app
 
