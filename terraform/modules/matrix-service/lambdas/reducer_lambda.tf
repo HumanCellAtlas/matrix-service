@@ -70,7 +70,7 @@ resource "aws_iam_role_policy" "matrix_service_reducer_lambda" {
         "batch:SubmitJob"
       ],
       "Resource": [
-        "arn:aws:batch:*:${var.account_id}:*"
+        "*"
       ]
     }
   ]
