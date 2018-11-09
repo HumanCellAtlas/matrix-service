@@ -58,6 +58,25 @@ def get_chalice_app(flask_app):
                                 headers={"Content-Type": "text/html"},
                                 body=swagger_ui_html)
 
+    @app.route("/version")
+    def version():
+        data = {
+            'version_info': {
+                'version': os.getenv('MATRIX_VERSION')
+            }
+        }
+
+        return chalice.Response(status_code=200,
+                                header={'Content-Type': "application/json"},
+                                body=data)
+
+    @app.route("/internal/health")
+    def health():
+        return chalice.Response(status_code=200,
+                                headers={'Content-Type': "text/html"},
+                                body="OK")
+
     return app
+
 
 app = get_chalice_app(create_app().app)

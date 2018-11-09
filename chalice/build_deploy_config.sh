@@ -62,6 +62,13 @@ if [[ $# != 1 ]]; then
     exit 1
 fi
 
+# Set service version according to the latest tag
+if [[ "$(git tag --points-at HEAD)" != "" ]]; then
+    export MATRIX_VERSION=$(git tag --points-at HEAD | tail -n 1)
+else
+    export MATRIX_VERSION=$(git describe --tags --always)
+fi
+
 export stage=$1
 config_json=".chalice/config.json"
 export app_name=$(cat "$config_json" | jq -r .app_name)

@@ -1,6 +1,7 @@
 include ../common.mk
 
 export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
+                                    MATRIX_VERSION \
                                     API_HOST \
                                     LAMBDA_DRIVER_FUNCTION_NAME \
                                     LAMBDA_MAPPER_FUNCTION_NAME \
