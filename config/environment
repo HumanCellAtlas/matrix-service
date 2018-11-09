@@ -8,10 +8,17 @@ SERVICE_NAME='matrix'
 DCP_DNS_DOMAIN='data.humancellatlas.org'
 DEPLOYMENT_STAGE="${DEPLOYMENT_STAGE:-dev}"
 MATRIX_SERVICE_VERSION=`(git describe --tags --always)`
+
 if [[ ${DEPLOYMENT_STAGE} = prod ]] ; then
     API_HOST=${SERVICE_NAME}.${DCP_DNS_DOMAIN}
 else
     API_HOST=${SERVICE_NAME}.${DEPLOYMENT_STAGE}.${DCP_DNS_DOMAIN}
+fi
+
+if [[ ${DEPLOYMENT_STAGE} = 'staging' ]] ; then
+    DSS_STAGE="${DEPLOYMENT_STAGE}"
+else
+    DSS_STAGE='integration'
 fi
 
 AWS_DEFAULT_REGION='us-east-1'

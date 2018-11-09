@@ -55,10 +55,8 @@ class DSSZarrStore(MutableMapping):
         :param bundle_version: (optional) version tag for bundle in dss
         :param replica: (optional) "aws", "gcp", or "azure" to reflect dss cloud
         """
-
-        deployment_stage = os.getenv('DEPLOYMENT_STAGE', "integration")
-        dss_env = "integration" if deployment_stage == "dev" else deployment_stage
-        self._dss_client = self._get_dss_client(dss_env)
+        dss_stage = os.getenv('DSS_STAGE', "integration")
+        self._dss_client = self._get_dss_client(dss_stage)
 
         self._bundle_uuid = bundle_uuid
         self._bundle_version = bundle_version
