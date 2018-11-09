@@ -1,5 +1,5 @@
 terraform {
-  required_version = "=0.11.8"
+  required_version = "=0.11.10"
 
   backend "s3" {
     bucket  = "org-humancellatlas-861229788715-terraform"
