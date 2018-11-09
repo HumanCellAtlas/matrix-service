@@ -104,7 +104,7 @@ resource "aws_batch_compute_environment" "converter_compute_env" {
     bid_percentage = 100
     spot_iam_fleet_role = "${aws_iam_role.AmazonEC2SpotFleetRole.arn}"
     max_vcpus = 256
-    min_vcpus = 8
+    min_vcpus = 4
     // You must set desired_vcpus otherwise you get error: "desiredvCpus should be between minvCpus and maxvCpus"
     // However this is actually not settable in AWS.  It will not let you change it.
     // Here we use an external data source to dynamically set the desired vcpus to match current state.
@@ -214,8 +214,8 @@ resource "aws_batch_job_definition" "converter_job_def" {
 {
   "command": [],
   "image": "humancellatlas/matrix-converter:1",
-  "memory": 4096,
-  "vcpus": 4,
+  "memory": 2048,
+  "vcpus": 2,
   "jobRoleArn": "${aws_iam_role.converter_job_role.arn}",
   "volumes": [{
     "host": {
