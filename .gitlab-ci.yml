@@ -24,6 +24,7 @@ unit_tests:
   except:
     - schedules
   only:
+    - predev
     - master
     - integration
     - staging
@@ -33,6 +34,7 @@ unit_tests:
 functional_tests:
   stage: functional_tests
   only:
+    - predev
     - master
     - integration
     - staging
@@ -43,6 +45,7 @@ functional_tests:
 terraform:
   stage: terraform
   only:
+    - predev
     - master
     - integration
     - staging
@@ -56,6 +59,7 @@ deploy:
     - schedules
   stage: deploy
   only:
+    - predev
     - master
     - integration
     - staging

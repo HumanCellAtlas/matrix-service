@@ -42,6 +42,20 @@
         "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-staging",
         "S3_RESULTS_BUCKET": "dcp-matrix-service-results-staging"
       }
+    },
+    "predev": {
+      "api_gateway_stage": "predev",
+      "environment_variables": {
+        "DEPLOYMENT_STAGE": "predev",
+        "API_HOST": "matrix.predev.data.humancellatlas.org",
+        "LAMBDA_DRIVER_FUNCTION_NAME": "dcp-matrix-service-driver-predev",
+        "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-predev",
+        "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-predev",
+        "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-predev",
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-predev",
+        "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-predev",
+        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-predev"
+      }
     }
   },
   "lambda_timeout": 30,
