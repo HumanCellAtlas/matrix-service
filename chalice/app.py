@@ -67,7 +67,7 @@ def get_chalice_app(flask_app):
         }
 
         return chalice.Response(status_code=200,
-                                header={'Content-Type': "application/json"},
+                                headers={'Content-Type': "application/json"},
                                 body=data)
 
     @app.route("/internal/health")
