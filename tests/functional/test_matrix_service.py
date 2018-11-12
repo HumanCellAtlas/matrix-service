@@ -9,6 +9,9 @@ import s3fs
 from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MatrixRequestStatus
+from matrix.common.dynamo_handler import (CacheTableField, DynamoHandler,
+                                          OutputTableField, StateTableField)
+from matrix.common.request_cache import RequestCache
 
 
 INPUT_BUNDLE_IDS = {
@@ -42,39 +45,62 @@ class TestMatrixService(unittest.TestCase):
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
 
+    def tearDown(self):
+        """Try to remove any table entries created for the tests, especially entries
+        will result in future tests returning cached results.
+        """
+        dynamo_handler = DynamoHandler()
+        request_hash = RequestCache(self.request_id).retrieve_hash()
+
+        print(dynamo_handler._state_table.delete_item(
+            Key={StateTableField.REQUEST_HASH.value: request_hash}
+        ))
+
+        print(dynamo_handler._output_table.delete_item(
+            Key={OutputTableField.REQUEST_HASH.value: request_hash}
+        ))
+
+        print(dynamo_handler._cache_table.delete_item(
+            Key={CacheTableField.REQUEST_ID.value: self.request_id}
+        ))
+
     def test_zarr_output_matrix_service(self):
-        request_id = self._post_matrix_service_request(
+        self.request_id = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage], format="zarr")
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.dss_stage])
+        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_stage])
 
     def test_loom_output_matrix_service(self):
-        request_id = self._post_matrix_service_request(
+        self.request_id = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage], format="loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
-        self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.dss_stage])
+        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_stage])
 
     def test_matrix_service_without_specified_output(self):
-        request_id = self._post_matrix_service_request(
+        self.request_id = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage])
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.dss_stage])
+        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_stage])
 
     def test_matrix_service_invalid_bundle(self):
         test_bundle_uuids = ["bundle1.version", "bundle2.version"]
-        request_id = self._post_matrix_service_request(bundle_fqids=test_bundle_uuids, format="loom")
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        self.request_id = self._post_matrix_service_request(
+            bundle_fqids=test_bundle_uuids, format="loom")
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
+        time.sleep(8)
 
     def test_matrix_service_bundle_not_found(self):
         test_bundle_uuids = ["00000000-0000-0000-0000-000000000000.version"]
-        request_id = self._post_matrix_service_request(bundle_fqids=test_bundle_uuids, format="loom")
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        self.request_id = self._post_matrix_service_request(
+            bundle_fqids=test_bundle_uuids, format="loom")
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
+        time.sleep(8)
 
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")
@@ -83,30 +109,31 @@ class TestMatrixService(unittest.TestCase):
         num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 200))
         bundle_fqids = json.loads(open(f"{self.res_dir}/pancreas_ss2_2544_demo_bundles.json", "r").read())[:num_bundles]
 
-        request_id = self._post_matrix_service_request(bundle_fqids=bundle_fqids, format="zarr")
+        self.request_id = self._post_matrix_service_request(
+            bundle_fqids=bundle_fqids, format="zarr")
 
         # wait for request to complete
         time.sleep(2)
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
 
-        self._analyze_zarr_matrix_results(request_id, bundle_fqids)
+        self._analyze_zarr_matrix_results(self.request_id, bundle_fqids)
 
     def test_bundle_url(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
         bundle_fqids_url = INPUT_BUNDLE_URL.format(dss_stage=self.dss_stage)
 
-        request_id = self._post_matrix_service_request(
+        self.request_id = self._post_matrix_service_request(
             bundle_fqids_url=bundle_fqids_url,
             format="zarr")
 
         # wait for request to complete
-        WaitFor(self._poll_get_matrix_service_request, request_id)\
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
         bundle_fqids = ['.'.join(el.split('\t')) for el in
                         requests.get(bundle_fqids_url).text.strip().split('\n')[1:]]
 
-        self._analyze_zarr_matrix_results(request_id, bundle_fqids)
+        self._analyze_zarr_matrix_results(self.request_id, bundle_fqids)
 
     def _post_matrix_service_request(self, bundle_fqids=None, bundle_fqids_url=None, format=None):
         data = {}
@@ -123,9 +150,6 @@ class TestMatrixService(unittest.TestCase):
                                       data=json.dumps(data),
                                       headers=self.headers)
         data = json.loads(response)
-        # Need a sleep since the driver creates entry in state table.
-        # Driver's execution may occur after completion of post request.
-        # Fix by adding entry to state table directly in post request.
         return data["request_id"]
 
     def _poll_get_matrix_service_request(self, request_id):
