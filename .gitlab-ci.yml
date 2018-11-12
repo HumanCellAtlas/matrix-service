@@ -16,7 +16,11 @@ before_script:
   - rm /tmp/terraform.zip
   - export PATH=$PATH:`pwd`/external_binaries/
   - export DEPLOYMENT_STAGE=$CI_COMMIT_REF_NAME
-  - if [ "$DEPLOYMENT_STAGE" == "master" ]; then export DEPLOYMENT_STAGE=dev; fi
+  - if [ "$DEPLOYMENT_STAGE" == "master" ]; then
+  -   export DEPLOYMENT_STAGE=dev
+  - elif [[ "$DEPLOYMENT_STAGE" != "integration" || "$DEPLOYMENT_STAGE" != "staging" ]]; then
+  -   export DEPLOYMENT_STAGE=predev
+  - fi
   - source config/environment
 
 unit_tests:

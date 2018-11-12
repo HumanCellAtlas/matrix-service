@@ -12,15 +12,6 @@ from matrix.common.constants import MatrixRequestStatus
 
 
 INPUT_BUNDLE_IDS = {
-    "dev": [
-        # matrix-service dev points to DSS integration.
-        # These bundles exist in DSS integration.
-        "0f997914-43c2-45e2-b79f-99167295b263.2018-10-17T204940.626010Z",
-        "167a2b69-f52f-4a0a-9691-d1db62ef12de.2018-10-17T201019.320177Z",
-        "b2965ca9-4aca-4baf-9606-215508d1e475.2018-10-17T200207.329078Z",
-        "8d567bed-a9aa-4a39-9467-75510b965257.2018-10-17T191234.528671Z",
-        "ba9c63ac-6db5-48bc-a2e3-7be4ddd03d97.2018-10-17T173508.111787Z",
-    ],
     "integration": [
         "0f997914-43c2-45e2-b79f-99167295b263.2018-10-17T204940.626010Z",
         "167a2b69-f52f-4a0a-9691-d1db62ef12de.2018-10-17T201019.320177Z",
@@ -38,13 +29,13 @@ INPUT_BUNDLE_IDS = {
 }
 
 INPUT_BUNDLE_URL = \
-    "https://s3.amazonaws.com/dcp-matrix-test-data/{deployment_stage}_test_bundles.tsv"
+    "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_stage}_test_bundles.tsv"
 
 
 class TestMatrixService(unittest.TestCase):
 
     def setUp(self):
-        self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
+        self.dss_stage = os.environ['DSS_STAGE']
         self.api_url = f"https://{os.environ['API_HOST']}/v0"
         self.res_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "res")
         self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
@@ -53,25 +44,25 @@ class TestMatrixService(unittest.TestCase):
 
     def test_zarr_output_matrix_service(self):
         request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.deployment_stage], format="zarr")
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage], format="zarr")
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
+        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.dss_stage])
 
     def test_loom_output_matrix_service(self):
         request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.deployment_stage], format="loom")
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage], format="loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=600)
-        self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
+        self._analyze_loom_matrix_results(request_id, INPUT_BUNDLE_IDS[self.dss_stage])
 
     def test_matrix_service_without_specified_output(self):
         request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.deployment_stage])
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage])
         WaitFor(self._poll_get_matrix_service_request, request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.deployment_stage])
+        self._analyze_zarr_matrix_results(request_id, INPUT_BUNDLE_IDS[self.dss_stage])
 
     def test_matrix_service_invalid_bundle(self):
         test_bundle_uuids = ["bundle1.version", "bundle2.version"]
@@ -103,7 +94,7 @@ class TestMatrixService(unittest.TestCase):
 
     def test_bundle_url(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
-        bundle_fqids_url = INPUT_BUNDLE_URL.format(deployment_stage=self.deployment_stage)
+        bundle_fqids_url = INPUT_BUNDLE_URL.format(dss_stage=self.dss_stage)
 
         request_id = self._post_matrix_service_request(
             bundle_fqids_url=bundle_fqids_url,

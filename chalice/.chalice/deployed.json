@@ -1,32 +1,12 @@
 {
-  "dev": {
-    "api_handler_name": "matrix-service-api-dev",
-    "api_handler_arn": "arn:aws:lambda:us-east-1:861229788715:function:matrix-service-api-dev",
+  "predev": {
+    "api_handler_name": "matrix-service-api-predev",
+    "api_handler_arn": "arn:aws:lambda:us-east-1:861229788715:function:matrix-service-api-predev",
     "lambda_functions": {},
     "backend": "api",
     "chalice_version": "1.1.1",
-    "rest_api_id": "5qdmeox37i",
-    "api_gateway_stage": "dev",
-    "region": "us-east-1"
-  },
-  "integration": {
-    "api_handler_name": "matrix-service-api-integration",
-    "api_handler_arn": "arn:aws:lambda:us-east-1:861229788715:function:matrix-service-api-integration",
-    "lambda_functions": {},
-    "backend": "api",
-    "chalice_version": "1.1.1",
-    "rest_api_id": "1qk3t9qje9",
-    "api_gateway_stage": "integration",
-    "region": "us-east-1"
-  },
-  "staging": {
-    "api_handler_name": "matrix-service-api-staging",
-    "api_handler_arn": "arn:aws:lambda:us-east-1:861229788715:function:matrix-service-api-staging",
-    "lambda_functions": {},
-    "backend": "api",
-    "chalice_version": "1.1.1",
-    "rest_api_id": "idjlauk07e",
-    "api_gateway_stage": "staging",
+    "rest_api_id": "yeau8x92y9",
+    "api_gateway_stage": "predev",
     "region": "us-east-1"
   }
 }
