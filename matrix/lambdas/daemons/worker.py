@@ -50,6 +50,12 @@ class Worker:
 
         exp_df, qc_df = self._parse_bundles_to_dataframes(self._bundle_uuids)
 
+        # If parsing the bundles didn't work, say one or more bundles could not
+        # be found, then exp_df, qc_df will be None, None. In that case an
+        # error is already logged, and we can just return.
+        if exp_df is None:
+            return
+
         s3_zarr_store = S3ZarrStore(request_hash=self._request_hash, exp_df=exp_df, qc_df=qc_df)
         s3_zarr_store.write_from_pandas_dfs(sum(self._num_rows))
 
@@ -79,13 +85,13 @@ class Worker:
                     exp_df, qc_df = future.result()
                 except MatrixException as e:
                     self.request_tracker.log_error(e.title)
-                    raise
+                    return None, None
                 except Exception as e:
                     if hasattr(e, 'status') and e.status == 404:
                         self.request_tracker.log_error(f"Unable to find bundle {bundle_uuids[chunk_idx]}. {e}")
                     else:
                         self.request_tracker.log_error(f"Failed to read bundle {bundle_uuids[chunk_idx]} from DSS. {e}")
-                    raise
+                    return None, None
                 exp_dfs.append(exp_df)
                 qc_dfs.append(qc_df)
 
@@ -99,7 +105,7 @@ class Worker:
             exp_df = pandas.concat(exp_dfs, axis=0, copy=False)
             qc_df = pandas.concat(qc_dfs, axis=0, copy=False)
         else:
-            exp_df, qc_df = None, None
+            exp_df, qc_df = pandas.DataFrame(), pandas.DataFrame()
 
         return exp_df, qc_df
 
