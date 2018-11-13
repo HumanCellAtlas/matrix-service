@@ -48,8 +48,11 @@ class Driver:
         request_tracker = RequestTracker(request_hash)
 
         if request_tracker.is_initialized:
-            logger.debug(f"Halting because {request_hash} already exists.")
-            return
+            if not request_tracker.error:
+                logger.debug(f"Halting because {request_hash} already exists and has not "
+                             f"(yet) failed.")
+                return
+
         logger.debug("Request hash not found, so starting the whole show.")
 
         num_expected_mappers = int(math.ceil(len(resolved_bundle_fqids) / self.bundles_per_worker))
