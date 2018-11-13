@@ -92,7 +92,6 @@ class TestMatrixService(unittest.TestCase):
             bundle_fqids=test_bundle_uuids, format="loom")
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
-        time.sleep(8)
 
     def test_matrix_service_bundle_not_found(self):
         test_bundle_uuids = ["00000000-0000-0000-0000-000000000000.version"]
@@ -100,7 +99,6 @@ class TestMatrixService(unittest.TestCase):
             bundle_fqids=test_bundle_uuids, format="loom")
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
-        time.sleep(8)
 
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")
