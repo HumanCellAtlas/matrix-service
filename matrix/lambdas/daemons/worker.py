@@ -84,7 +84,7 @@ class Worker:
                 try:
                     exp_df, qc_df = future.result()
                 except MatrixException as e:
-                    self.request_tracker.log_error(e.title)
+                    self.request_tracker.log_error(f"Failed to read zarr store: {e}")
                     return None, None
                 except Exception as e:
                     if hasattr(e, 'status') and e.status == 404:
