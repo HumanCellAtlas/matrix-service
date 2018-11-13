@@ -11,7 +11,7 @@ NULL_REQUEST_HASH = "null"
 
 
 class RequestIdNotFound(Exception):
-    """Exception for request ids missing the the request cache table."""
+    """Exception for request ids missing in the request cache table."""
     pass
 
 

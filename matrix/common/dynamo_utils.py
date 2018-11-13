@@ -29,7 +29,7 @@ class Lock(object):
             example, if you're locking an S3 object, this would be the bucket/key
             for the object.
           expiration_in_ms: Optionally set an expiration time for the lock. This
-            is helpful the the acquirer dies gracelessly, for example.
+            is helpful if the acquirer dies gracelessly, for example.
         """
         self._lock_key = lock_key
         self._expiration_in_ms = expiration_in_ms
