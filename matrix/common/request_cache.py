@@ -10,7 +10,7 @@ logger = Logging.get_logger(__name__)
 NULL_REQUEST_HASH = "null"
 
 
-class RequestNotFound(Exception):
+class RequestIdNotFound(Exception):
     """Exception for request ids missing the the request cache table."""
     pass
 
@@ -65,13 +65,13 @@ class RequestCache(object):
         Returns None if the request has been initialized but the hash has not yet
         been set.
 
-        Raises RequestNotFound if the request id isn't in the cache table.
+        Raises RequestIdNotFound if the request id isn't in the cache table.
         """
         request_hash = self._dynamo_handler.get_request_hash(self._request_id)
 
         # If the request_id isn't present at all, raise
         if not request_hash:
-            raise RequestNotFound(f"Request {self._request_id} was not found.")
+            raise RequestIdNotFound(f"Request {self._request_id} was not found.")
 
         # If the request_id is there but has a null hash, it means the driver
         # hasn't run yet.

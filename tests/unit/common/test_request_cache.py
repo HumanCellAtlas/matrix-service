@@ -3,7 +3,7 @@ import hashlib
 import random
 import uuid
 
-from matrix.common.request_cache import RequestCache, RequestNotFound
+from matrix.common.request_cache import RequestCache, RequestIdNotFound
 from tests.unit import MatrixTestCaseUsingMockAWS
 
 
@@ -20,7 +20,7 @@ class TestRequestCache(MatrixTestCaseUsingMockAWS):
 
     def test_uninitialized_request(self):
 
-        with self.assertRaises(RequestNotFound):
+        with self.assertRaises(RequestIdNotFound):
             self.request_cache.retrieve_hash()
 
     def test_set_and_retrieve_hash(self):

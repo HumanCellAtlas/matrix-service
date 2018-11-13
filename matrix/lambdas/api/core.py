@@ -7,7 +7,7 @@ from connexion.lifecycle import ConnexionResponse
 
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
-from matrix.common.request_cache import RequestCache, RequestNotFound
+from matrix.common.request_cache import RequestCache, RequestIdNotFound
 from matrix.common.request_tracker import RequestTracker
 
 
@@ -86,7 +86,7 @@ def get_matrix(request_id: str):
     # 404.
     try:
         request_hash = RequestCache(request_id).retrieve_hash()
-    except RequestNotFound:
+    except RequestIdNotFound:
         return ConnexionResponse(status_code=requests.codes.not_found,
                                  body={'message': f"Unable to find job with request ID {request_id}."})
 

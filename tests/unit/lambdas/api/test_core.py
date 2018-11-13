@@ -8,7 +8,7 @@ from unittest import mock
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.dynamo_handler import OutputTableField
 from matrix.common.lambda_handler import LambdaName
-from matrix.common.request_cache import RequestNotFound
+from matrix.common.request_cache import RequestIdNotFound
 from matrix.lambdas.api.core import post_matrix, get_matrix
 
 
@@ -72,7 +72,7 @@ class TestCore(unittest.TestCase):
         status = 404
         message = "test_message"
         request_id = str(uuid.uuid4())
-        mock_get_request_hash.side_effect = RequestNotFound(status, message)
+        mock_get_request_hash.side_effect = RequestIdNotFound(status, message)
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, status)
