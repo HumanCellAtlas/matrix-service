@@ -19,7 +19,7 @@ def handler(args):
         if comp_env['computeEnvironmentName'] == compute_environment_name:
             desired_vcpus = str(comp_env['computeResources']['desiredvCpus'])
             if int(desired_vcpus) < 4:
-                desired_vcpus = 4
+                desired_vcpus = '4'
             output = {'desired_vcpus': desired_vcpus}
 
     json.dump(output, sys.stdout)
