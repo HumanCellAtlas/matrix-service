@@ -169,8 +169,8 @@ def main(args):
     """Entry point."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("request_id",
-                        help=("Request id of the filter merge job"))
+    parser.add_argument("request_hash",
+                        help=("Request hash of the filter merge job"))
     parser.add_argument("source_zarr_path",
                         help=("Path to the root of the zarr store containing "
                               "the matrix to be converted."))
@@ -180,20 +180,20 @@ def main(args):
                         help="Target format for conversion.",
                         choices=SUPPORTED_FORMATS)
     args = parser.parse_args(args)
-    print(f"request id of job is {args.request_id}")
+    print(f"request hash of job is {args.request_hash}")
     print(f"source path of job is {args.source_zarr_path}")
     print(f"target path of job is {args.target_path}")
     print(f"expected format of job is {args.format}")
 
     zarr_root = open_zarr(args.source_zarr_path)
-    print(f"Beginning conversion of job {args.request_id}")
+    print(f"Beginning conversion of job {args.request_hash}")
     local_converted_path = globals()["zarr_to_" + args.format](zarr_root)
-    print(f"Completed conversion of job {args.request_id}")
+    print(f"Completed conversion of job {args.request_hash}")
 
-    print(f"Uploading converted matrix for job {args.request_id}")
+    print(f"Uploading converted matrix for job {args.request_hash}")
     upload_converted_matrix(local_converted_path, args.target_path)
-    print(f"Uploaded converted matrix for job {args.request_id}")
-    RequestTracker(args.request_id).complete_subtask_execution(Subtask.CONVERTER)
+    print(f"Uploaded converted matrix for job {args.request_hash}")
+    RequestTracker(args.request_hash).complete_subtask_execution(Subtask.CONVERTER)
 
 
 if __name__ == "__main__":

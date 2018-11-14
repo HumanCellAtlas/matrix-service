@@ -6,6 +6,7 @@ import requests
 
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.logging import Logging
+from matrix.common.request_cache import RequestCache
 from matrix.common.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
@@ -21,8 +22,7 @@ class Driver:
         self.request_id = request_id
         self.bundles_per_worker = bundles_per_worker
 
-        self.request_tracker = RequestTracker(self.request_id)
-        self.lambda_handler = LambdaHandler(self.request_id)
+        self.lambda_handler = LambdaHandler()
 
     def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str):
         """
@@ -43,21 +43,33 @@ class Driver:
             resolved_bundle_fqids = bundle_fqids
         logger.debug(f"resolved bundles: {resolved_bundle_fqids}")
 
+        request_hash = RequestCache(self.request_id).set_hash(resolved_bundle_fqids, format)
+        logger.debug(f"Calculated and set hash {request_hash} for request {self.request_id}")
+        request_tracker = RequestTracker(request_hash)
+
+        if request_tracker.is_initialized:
+            if not request_tracker.error:
+                logger.debug(f"Halting because {request_hash} already exists and has not "
+                             f"(yet) failed.")
+                return
+
+        logger.debug("Request hash not found, so starting the whole show.")
+
         num_expected_mappers = int(math.ceil(len(resolved_bundle_fqids) / self.bundles_per_worker))
-        self.request_tracker.init_request(num_expected_mappers, format)
+        request_tracker.initialize_request(num_expected_mappers, format)
 
         logger.debug(f"Invoking {num_expected_mappers} Mapper(s) with approximately "
                      f"{self.bundles_per_worker} bundles per Mapper.")
 
         for bundle_fqid_group in self._group_bundles(resolved_bundle_fqids, self.bundles_per_worker):
             mapper_payload = {
-                'request_id': self.request_id,
+                'request_hash': request_hash,
                 'bundle_fqids': bundle_fqid_group,
             }
             logger.debug(f"Invoking {LambdaName.MAPPER} with {mapper_payload}")
             self.lambda_handler.invoke(LambdaName.MAPPER, mapper_payload)
 
-        self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
+        request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     @staticmethod
     def _group_bundles(bundle_fqids, bundles_per_group):

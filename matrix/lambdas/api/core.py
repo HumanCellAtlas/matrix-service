@@ -6,8 +6,8 @@ import uuid
 from connexion.lifecycle import ConnexionResponse
 
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
-from matrix.common.exceptions import MatrixException
 from matrix.common.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.request_cache import RequestCache, RequestIdNotFound
 from matrix.common.request_tracker import RequestTracker
 
 
@@ -58,13 +58,15 @@ def post_matrix(body: dict):
         bundle_fqids_url = None
 
     request_id = str(uuid.uuid4())
+    RequestCache(request_id).initialize()
+
     driver_payload = {
         'request_id': request_id,
         'bundle_fqids': bundle_fqids,
         'bundle_fqids_url': bundle_fqids_url,
         'format': format,
     }
-    lambda_handler = LambdaHandler(request_id)
+    lambda_handler = LambdaHandler()
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
 
     return ConnexionResponse(status_code=requests.codes.accepted,
@@ -78,20 +80,56 @@ def post_matrix(body: dict):
 
 
 def get_matrix(request_id: str):
+
+    # There are a few cases to handle here. First, if the request_id is not in
+    # the cache table at all, then this id has never been made and we should
+    # 404.
     try:
-        request_tracker = RequestTracker(request_id)
-        format = request_tracker.format
-    except MatrixException as ex:
-        return ConnexionResponse(status_code=ex.status,
+        request_hash = RequestCache(request_id).retrieve_hash()
+    except RequestIdNotFound:
+        return ConnexionResponse(status_code=requests.codes.not_found,
                                  body={'message': f"Unable to find job with request ID {request_id}."})
+
+    # But, there are two other states we need to handle:
+    # 1. The request_id has been written into the cache table but the driver
+    #    function hasn't started yet. Then there's no hash associated with the
+    #    id.
+    # 2. The driver function for the request_hash has started, but it hasn't
+    #    yet written anything into the output or state tables. In this case
+    #    queries against those table won't return anything.
+
+    in_progress_response = ConnexionResponse(
+        status_code=requests.codes.ok,
+        body={
+            'request_id': request_id,
+            'status': MatrixRequestStatus.IN_PROGRESS.value,
+            'matrix_location': "",
+            'eta': "",
+            'message': f"Request {request_id} has been accepted and is currently being "
+                       f"processed. Please try again later.",
+        })
+
+    # Check for case 1
+    if request_hash is None:
+        # If the id is in the hash table, but the hash isn't in the request
+        # table, it just means the driver hasn't run yet
+        return in_progress_response
+
+    request_tracker = RequestTracker(request_hash)
+
+    # Check for case 2
+    if not request_tracker.is_initialized:
+        return in_progress_response
+
+    format = request_tracker.format
 
     # Complete case
     if request_tracker.is_request_complete():
         s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
         if format == MatrixFormat.ZARR.value:
-            matrix_location = f"s3://{s3_results_bucket}/{request_id}.{format}"
+            matrix_location = f"s3://{s3_results_bucket}/{request_hash}.{format}"
         else:
-            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_id}.{format}"
+            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}"
 
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={

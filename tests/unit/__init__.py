@@ -13,6 +13,7 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = "sk"
 os.environ['LAMBDA_DRIVER_FUNCTION_NAME'] = f"dcp-matrix-service-driver-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_STATE_TABLE_NAME'] = f"dcp-matrix-service-state-table-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_OUTPUT_TABLE_NAME'] = f"dcp-matrix-service-output-table-{os.environ['DEPLOYMENT_STAGE']}"
+os.environ['DYNAMO_CACHE_TABLE_NAME'] = f"dcp-matrix-service-cache-table-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['S3_RESULTS_BUCKET'] = f"dcp-matrix-service-results-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_LOCK_TABLE_NAME'] = f"dcp-matrix-service-lock-table-{os.environ['DEPLOYMENT_STAGE']}"
 
@@ -64,13 +65,13 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
             TableName=os.environ['DYNAMO_STATE_TABLE_NAME'],
             KeySchema=[
                 {
-                    'AttributeName': "RequestId",
+                    'AttributeName': "RequestHash",
                     'KeyType': "HASH",
                 }
             ],
             AttributeDefinitions=[
                 {
-                    'AttributeName': "RequestId",
+                    'AttributeName': "RequestHash",
                     'AttributeType': "S",
                 }
             ],
@@ -84,6 +85,28 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
     def create_test_output_table():
         boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
             TableName=os.environ['DYNAMO_OUTPUT_TABLE_NAME'],
+            KeySchema=[
+                {
+                    'AttributeName': "RequestHash",
+                    'KeyType': "HASH",
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': "RequestHash",
+                    'AttributeType': "S",
+                }
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 15,
+                'WriteCapacityUnits': 15,
+            },
+        )
+
+    @staticmethod
+    def create_test_cache_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
+            TableName=os.environ['DYNAMO_CACHE_TABLE_NAME'],
             KeySchema=[
                 {
                     'AttributeName': "RequestId",
