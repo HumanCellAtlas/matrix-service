@@ -11,11 +11,20 @@ import numpy
 import requests
 import s3fs
 import zarr
+from hca import HCAConfig
 
 
-DSS_CLIENT = hca.dss.DSSClient()
 DSS_STAGE = os.getenv('DSS_STAGE', "integration")
-DSS_CLIENT.host = f"https://dss.{DSS_STAGE}.data.humancellatlas.org/v1"
+DSS_CONFIG = HCAConfig()
+DSS_CONFIG['DSSClient'] = {}
+if DSS_STAGE == "prod":
+    DSS_CONFIG['DSSClient']['swagger_url'] =\
+        "https://dss.data.humancellatlas.org/v1/swagger.json"
+else:
+    DSS_CONFIG['DSSClient']['swagger_url'] =\
+        f"https://dss.{DSS_STAGE}.data.humancellatlas.org/v1/swagger.json"
+
+DSS_CLIENT = hca.dss.DSSClient(config=DSS_CONFIG)
 
 S3 = s3fs.S3FileSystem(anon=True)
 

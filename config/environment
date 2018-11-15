@@ -15,7 +15,7 @@ else
     API_HOST=${SERVICE_NAME}.${DEPLOYMENT_STAGE}.${DCP_DNS_DOMAIN}
 fi
 
-if [[ ${DEPLOYMENT_STAGE} = 'staging' ]] ; then
+if [[ ${DEPLOYMENT_STAGE} == 'staging' || ${DEPLOYMENT_STAGE} == 'prod' ]] ; then
     DSS_STAGE="${DEPLOYMENT_STAGE}"
 else
     DSS_STAGE='integration'

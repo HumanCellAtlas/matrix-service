@@ -136,7 +136,12 @@ class DSSZarrStore(MutableMapping):
         # TODO: Fix user set config dir issue in DSS
         dss_config = HCAConfig()
         dss_config['DSSClient'] = {}
-        dss_config['DSSClient']['swagger_url'] = f"https://dss.{dss_instance}.data.humancellatlas.org/v1/swagger.json"
+        if dss_instance == "prod":
+            dss_config['DSSClient']['swagger_url'] =\
+                "https://dss.data.humancellatlas.org/v1/swagger.json"
+        else:
+            dss_config['DSSClient']['swagger_url'] =\
+                f"https://dss.{dss_instance}.data.humancellatlas.org/v1/swagger.json"
 
         client = hca.dss.DSSClient(config=dss_config)
         return client
