@@ -5,27 +5,15 @@ import os
 import shutil
 import tempfile
 
-import hca.dss
 import loompy
 import numpy
 import requests
 import s3fs
 import zarr
-from hca import HCAConfig
 
+from matrix.common.dss_zarr_store import DSSZarrStore
 
-DSS_STAGE = os.getenv('DSS_STAGE', "integration")
-DSS_CONFIG = HCAConfig()
-DSS_CONFIG['DSSClient'] = {}
-if DSS_STAGE == "prod":
-    DSS_CONFIG['DSSClient']['swagger_url'] =\
-        "https://dss.data.humancellatlas.org/v1/swagger.json"
-else:
-    DSS_CONFIG['DSSClient']['swagger_url'] =\
-        f"https://dss.{DSS_STAGE}.data.humancellatlas.org/v1/swagger.json"
-
-DSS_CLIENT = hca.dss.DSSClient(config=DSS_CONFIG)
-
+DSS_CLIENT = DSSZarrStore.get_dss_client()
 S3 = s3fs.S3FileSystem(anon=True)
 
 
