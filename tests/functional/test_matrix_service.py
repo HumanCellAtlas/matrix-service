@@ -14,6 +14,14 @@ from matrix.common.dynamo_handler import (CacheTableField, DynamoHandler,
 from matrix.common.request_cache import RequestCache
 
 
+MATRIX_ENV_TO_DSS_ENV = {
+    'predev': "integration",
+    'dev': "integration",
+    'integration': "integration",
+    'staging': "staging",
+    'prod': "prod",
+}
+
 INPUT_BUNDLE_IDS = {
     "integration": [
         "0f997914-43c2-45e2-b79f-99167295b263.2018-10-17T204940.626010Z",
@@ -28,17 +36,24 @@ INPUT_BUNDLE_IDS = {
         "5b8a7ea4-9911-4529-89c7-4ba36044322d.2018-10-18T161249.988019Z",
         "6a362d71-c6df-4797-9fa8-686b7e2d406c.2018-10-18T161937.774601Z",
         "39afcc07-2b14-4844-a459-9c1c29dc676f.2018-10-18T163113.248957Z",
+    ],
+    "prod": [
+        "0552e6b3-ee09-425e-adbb-01fb9467e6f3.2018-11-06T231250.330922Z",
+        "79e14c18-7bf7-4883-92a1-b7b26c3067d4.2018-11-06T232117.884033Z",
+        "1134eb98-e7e9-45af-b2d8-b9886b633929.2018-11-06T231738.177145Z",
+        "1d6de514-115f-4ed6-8d11-22ad02e394bc.2018-11-06T231755.376078Z",
+        "2ec96e8c-6d28-4d98-9a19-7c95bbe13ce2.2018-11-06T231809.821560Z",
     ]
 }
 
 INPUT_BUNDLE_URL = \
-    "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_stage}_test_bundles.tsv"
+    "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_env}_test_bundles.tsv"
 
 
 class TestMatrixService(unittest.TestCase):
 
     def setUp(self):
-        self.dss_stage = os.environ['DSS_STAGE']
+        self.dss_env = MATRIX_ENV_TO_DSS_ENV[os.environ['DEPLOYMENT_STAGE']]
         self.api_url = f"https://{os.environ['API_HOST']}/v0"
         self.res_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "res")
         self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
@@ -66,25 +81,25 @@ class TestMatrixService(unittest.TestCase):
 
     def test_zarr_output_matrix_service(self):
         self.request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage], format="zarr")
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="zarr")
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_stage])
+        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
     def test_loom_output_matrix_service(self):
         self.request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage], format="loom")
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
         # timeout seconds is increased to 600 as batch may tak time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_stage])
+        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
     def test_matrix_service_without_specified_output(self):
         self.request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_stage])
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env])
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_stage])
+        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
     def test_matrix_service_invalid_bundle(self):
         test_bundle_uuids = ["bundle1.version", "bundle2.version"]
@@ -119,7 +134,7 @@ class TestMatrixService(unittest.TestCase):
 
     def test_bundle_url(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
-        bundle_fqids_url = INPUT_BUNDLE_URL.format(dss_stage=self.dss_stage)
+        bundle_fqids_url = INPUT_BUNDLE_URL.format(dss_env=self.dss_env)
 
         self.request_id = self._post_matrix_service_request(
             bundle_fqids_url=bundle_fqids_url,

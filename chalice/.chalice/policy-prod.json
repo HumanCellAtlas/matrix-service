@@ -1,0 +1,41 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction"
+      ],
+      "Resource": "arn:aws:lambda:us-east-1:109067257620:function:dcp-matrix-service-driver-prod"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:109067257620:table/dcp-matrix-service-state-table-prod",
+        "arn:aws:dynamodb:us-east-1:109067257620:table/dcp-matrix-service-output-table-prod",
+        "arn:aws:dynamodb:us-east-1:109067257620:table/dcp-matrix-service-cache-table-prod"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:109067257620:table/dcp-matrix-service-cache-table-prod"
+      ]
+    }
+  ]
+}

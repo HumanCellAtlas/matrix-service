@@ -1,0 +1,44 @@
+image: python:3.6
+
+stages:
+  - terraform
+  - deploy
+  - functional_tests
+
+before_script:
+  - apt-get -y update
+  - apt-get -y install jq moreutils gettext unzip zip
+  - pip install -r requirements-dev.txt
+  - mkdir ./external_binaries
+  - curl https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip -o /tmp/terraform.zip
+  - unzip /tmp/terraform.zip -d ./external_binaries/
+  - rm /tmp/terraform.zip
+  - export PATH=$PATH:`pwd`/external_binaries/
+  - export DEPLOYMENT_STAGE=prod
+  - source config/environment
+
+functional_tests:
+  stage: functional_tests
+  only:
+    - prod
+  script:
+    - source config/environment
+    - make functional-tests
+
+terraform:
+  stage: terraform
+  only:
+    - prod
+  script:
+    - cd terraform/envs/$DEPLOYMENT_STAGE
+    - make init
+    - make plan
+
+deploy:
+  except:
+    - schedules
+  stage: deploy
+  only:
+    - prod
+  script:
+    - make deploy

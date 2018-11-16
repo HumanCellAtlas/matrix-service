@@ -16,6 +16,7 @@ class Reducer:
         Logging.set_correlation_id(logger, value=request_hash)
 
         self.request_hash = request_hash
+        self.account_id = os.environ['ACCOUNT_ID']
         self.s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
 
@@ -41,9 +42,9 @@ class Reducer:
         format = self.request_tracker.format
         source_zarr_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.zarr"
         target_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.{format}"
-        job_queue_arn = f"arn:aws:batch:us-east-1:861229788715:" \
+        job_queue_arn = f"arn:aws:batch:us-east-1:{self.account_id}:" \
                         f"job-queue/dcp-matrix-converter-queue-{self.deployment_stage}"
-        job_def_arn = f"arn:aws:batch:us-east-1:861229788715:" \
+        job_def_arn = f"arn:aws:batch:us-east-1:{self.account_id}:" \
                       f"job-definition/dcp-matrix-converter-job-definition-{self.deployment_stage}"
         command = ['python3', '/matrix_converter.py', self.request_hash, source_zarr_path, target_path, format]
         environment = {

@@ -10,6 +10,9 @@ import zarr
 from hca import HCAConfig
 
 from matrix.common.exceptions import MatrixException
+from matrix.common.logging import Logging
+
+logger = Logging.get_logger(__name__)
 
 
 class DSSZarrStore(MutableMapping):
@@ -17,8 +20,6 @@ class DSSZarrStore(MutableMapping):
     Zarr compatible interface to expression matrices stored in a DCP analysis bundle.
     Parameters
     ----------
-    dss_client : hca.dss.DSSClient
-        Client used to access the DCP Data Storage System.
     bundle_uuid : str
         DCP uuid of the analysis bundle.
     bundle_version : str, optional
@@ -55,8 +56,7 @@ class DSSZarrStore(MutableMapping):
         :param bundle_version: (optional) version tag for bundle in dss
         :param replica: (optional) "aws", "gcp", or "azure" to reflect dss cloud
         """
-        dss_stage = os.getenv('DSS_STAGE', "integration")
-        self._dss_client = self._get_dss_client(dss_stage)
+        self._dss_client = self.get_dss_client()
 
         self._bundle_uuid = bundle_uuid
         self._bundle_version = bundle_version
@@ -89,6 +89,26 @@ class DSSZarrStore(MutableMapping):
 
         self._root = zarr.group(store=self)
         self._validate_zarr()
+
+    @staticmethod
+    def get_dss_client():
+        # Default DSS config is unreachable when a user defined config dir is supplied.
+        # This workaround supplies an explicit DSS config to avoid reading the config dir.
+        # TODO: Fix user set config dir issue in DSS
+        deployment_stage = os.getenv('DEPLOYMENT_STAGE')
+        dss_config = HCAConfig()
+        dss_config['DSSClient'] = {}
+
+        if deployment_stage == "prod":
+            dss_config['DSSClient']['swagger_url'] = "https://dss.data.humancellatlas.org/v1/swagger.json"
+        elif deployment_stage == "staging":
+            dss_config['DSSClient']['swagger_url'] = f"https://dss.staging.data.humancellatlas.org/v1/swagger.json"
+        else:
+            dss_config['DSSClient']['swagger_url'] = f"https://dss.integration.data.humancellatlas.org/v1/swagger.json"
+
+        client = hca.dss.DSSClient(config=dss_config)
+        logger.debug(f"Initialized DSSClient with host URL {client.host}")
+        return client
 
     @property
     def bundle_uuid(self):
@@ -129,17 +149,6 @@ class DSSZarrStore(MutableMapping):
     @property
     def gene_metadata_name(self):
         return self._root.gene_metadata_name
-
-    def _get_dss_client(self, dss_instance):
-        # Default DSS config is unreachable when a user defined config dir is supplied.
-        # This workaround supplies an explicit DSS config to avoid reading the config dir.
-        # TODO: Fix user set config dir issue in DSS
-        dss_config = HCAConfig()
-        dss_config['DSSClient'] = {}
-        dss_config['DSSClient']['swagger_url'] = f"https://dss.{dss_instance}.data.humancellatlas.org/v1/swagger.json"
-
-        client = hca.dss.DSSClient(config=dss_config)
-        return client
 
     def _validate_zarr(self):
         expected_fields = ['expression', 'cell_id', 'cell_metadata_string', 'cell_metadata_numeric',

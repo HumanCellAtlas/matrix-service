@@ -15,12 +15,6 @@ else
     API_HOST=${SERVICE_NAME}.${DEPLOYMENT_STAGE}.${DCP_DNS_DOMAIN}
 fi
 
-if [[ ${DEPLOYMENT_STAGE} = 'staging' ]] ; then
-    DSS_STAGE="${DEPLOYMENT_STAGE}"
-else
-    DSS_STAGE='integration'
-fi
-
 AWS_DEFAULT_REGION='us-east-1'
 LAMBDA_DRIVER_FUNCTION_NAME="dcp-matrix-service-driver-${DEPLOYMENT_STAGE}"
 LAMBDA_MAPPER_FUNCTION_NAME="dcp-matrix-service-mapper-${DEPLOYMENT_STAGE}"
