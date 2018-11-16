@@ -1,6 +1,7 @@
 # Expression Matrix Service
 
-[![Master Build Status](https://travis-ci.com/HumanCellAtlas/matrix-service.svg?branch=master)](https://travis-ci.org/HumanCellAtlas/matrix-service)
+[![Production Health Check](https://status.data.humancellatlas.org/service/matrix-health-check-prod.svg)](https://matrix.data.humancellatlas.org/)
+[![Master Deployment Status](https://status.dev.data.humancellatlas.org/build/HumanCellAtlas/matrix-service/master.svg)](https://allspark.dev.data.humancellatlas.org/HumanCellAtlas/matrix-service)
 
 ## Overview
 
