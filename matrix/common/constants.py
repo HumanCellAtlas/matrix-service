@@ -5,6 +5,7 @@ class MatrixFormat(Enum):
     ZARR = "zarr"
     LOOM = "loom"
     CSV = "csv"
+    MTX = "mtx"
 
 
 class MatrixRequestStatus(Enum):

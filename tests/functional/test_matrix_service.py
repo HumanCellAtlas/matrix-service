@@ -101,6 +101,13 @@ class TestMatrixService(unittest.TestCase):
         WaitFor(self._poll_get_matrix_service_request, self.request_id) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
 
+    def test_mtx_output_matrix_service(self):
+        self.request_id = self._post_matrix_service_request(
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="mtx")
+        # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
+        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+
     def test_matrix_service_without_specified_output(self):
         self.request_id = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env])
