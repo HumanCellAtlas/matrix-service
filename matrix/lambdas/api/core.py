@@ -126,6 +126,8 @@ def get_matrix(request_id: str):
     # Complete case
     if request_tracker.is_request_complete():
         s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
+
+        matrix_location = ""
         if format == MatrixFormat.ZARR.value:
             matrix_location = f"s3://{s3_results_bucket}/{request_hash}.{format}"
         elif format == MatrixFormat.LOOM.value:
