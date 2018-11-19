@@ -12,7 +12,7 @@ lint:
 	flake8 $(MODULES) --exclude $(EXCLUDE) *.py
 
 unit-tests:
-	PYTHONWARNINGS=ignore:ResourceWarning coverage run --source=upload \
+	PYTHONWARNINGS=ignore:ResourceWarning coverage run --source=matrix \
 		-m unittest discover --start-directory tests/unit --top-level-directory . --verbose
 
 functional-tests:
