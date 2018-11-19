@@ -1,7 +1,7 @@
 import hashlib
 import typing
 
-from matrix.common.dynamo_handler import DynamoHandler
+from matrix.common.aws.dynamo_handler import DynamoHandler
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)

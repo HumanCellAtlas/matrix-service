@@ -1,8 +1,8 @@
 import typing
 
-from matrix.common.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.logging import Logging
-from matrix.common.request_tracker import RequestTracker, Subtask
+from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
 

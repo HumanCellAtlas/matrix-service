@@ -3,7 +3,7 @@ import hashlib
 import random
 import uuid
 
-from matrix.common.request_cache import RequestCache, RequestIdNotFound
+from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from tests.unit import MatrixTestCaseUsingMockAWS
 
 

@@ -13,7 +13,7 @@ import s3fs
 import scipy.io
 import zarr
 
-from matrix.common.request_tracker import RequestTracker, Subtask
+from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 # These are the formats that users can request.
 SUPPORTED_FORMATS = [

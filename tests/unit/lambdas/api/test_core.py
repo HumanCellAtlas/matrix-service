@@ -6,15 +6,15 @@ import uuid
 from unittest import mock
 
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
-from matrix.common.dynamo_handler import OutputTableField
-from matrix.common.lambda_handler import LambdaName
-from matrix.common.request_cache import RequestIdNotFound
+from matrix.common.aws.dynamo_handler import OutputTableField
+from matrix.common.aws.lambda_handler import LambdaName
+from matrix.common.request.request_cache import RequestIdNotFound
 from matrix.lambdas.api.core import post_matrix, get_matrix
 
 
 class TestCore(unittest.TestCase):
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.write_request_hash")
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_ok(self, mock_lambda_invoke, mock_write_request_hash):
         bundle_fqids = ["id1", "id2"]
         format = MatrixFormat.ZARR.value
@@ -34,7 +34,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response.status_code, requests.codes.accepted)
 
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_ok_and_unexpected_format(self, mock_lambda_invoke):
         bundle_fqids = ["id1", "id2"]
         format = "fake"
@@ -46,7 +46,7 @@ class TestCore(unittest.TestCase):
         response = post_matrix(body)
         self.assertEqual(response.status_code, requests.codes.bad_request)
 
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_and_url(self, mock_lambda_invoke):
         bundle_fqids = ["id1", "id2"]
         bundle_fqids_url = "test_url"
@@ -60,14 +60,14 @@ class TestCore(unittest.TestCase):
         self.assertEqual(mock_lambda_invoke.call_count, 0)
         self.assertEqual(response.status_code, requests.codes.bad_request)
 
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_without_ids_or_url(self, mock_lambda_invoke):
         response = post_matrix({})
 
         self.assertEqual(mock_lambda_invoke.call_count, 0)
         self.assertEqual(response.status_code, requests.codes.bad_request)
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
     def test_get_matrix_not_found(self, mock_get_request_hash):
         status = 404
         message = "test_message"
@@ -78,9 +78,9 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.status_code, status)
         self.assertTrue(request_id in response.body['message'])
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_request_hash")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_matrix_processing(self, mock_is_request_complete, mock_get_table_item,
                                    mock_get_request_hash):
         request_id = str(uuid.uuid4())
@@ -93,9 +93,9 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.status_code, requests.codes.ok)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_request_hash")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_matrix_failed(self, mock_is_request_complete, mock_get_table_item,
                                mock_get_request_hash):
         request_id = str(uuid.uuid4())
@@ -109,9 +109,9 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.body['status'], MatrixRequestStatus.FAILED.value)
         self.assertEqual(response.body['message'], "test error")
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_request_hash")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_zarr_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
                                       mock_get_request_hash):
         request_id = str(uuid.uuid4())
@@ -127,9 +127,9 @@ class TestCore(unittest.TestCase):
                          f"s3://{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.zarr")
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_request_hash")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.is_request_complete")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_loom_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
                                       mock_get_request_hash):
         request_id = str(uuid.uuid4())

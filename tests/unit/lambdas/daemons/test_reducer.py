@@ -2,8 +2,8 @@ import hashlib
 from unittest import mock
 
 from matrix.lambdas.daemons.reducer import Reducer
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.request_tracker import Subtask
+from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.request.request_tracker import Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 
 
@@ -17,8 +17,8 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler = DynamoHandler()
 
     @mock.patch("matrix.lambdas.daemons.reducer.Reducer._schedule_matrix_conversion")
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore.write_group_metadata")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore.write_group_metadata")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     def test_run_zarr(self,
                       mock_complete_subtask_execution,
                       mock_write_group_metadata,
@@ -33,8 +33,8 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
         mock_complete_subtask_execution.assert_called_once_with(Subtask.REDUCER)
 
     @mock.patch("matrix.lambdas.daemons.reducer.Reducer._schedule_matrix_conversion")
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore.write_group_metadata")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore.write_group_metadata")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     def test_run_loom(self,
                       mock_complete_subtask_execution,
                       mock_write_group_metadata,

@@ -7,8 +7,8 @@ from unittest import mock
 from ... import MatrixTestCaseUsingMockAWS
 from ... import test_bundle_spec
 from matrix.lambdas.daemons.worker import Worker
-from matrix.common.lambda_handler import LambdaName
-from matrix.common.request_tracker import Subtask
+from matrix.common.aws.lambda_handler import LambdaName
+from matrix.common.request.request_tracker import Subtask
 
 
 class TestWorker(MatrixTestCaseUsingMockAWS):
@@ -30,14 +30,14 @@ class TestWorker(MatrixTestCaseUsingMockAWS):
         }]
         self.worker = Worker(self.request_hash)
 
-    @mock.patch('matrix.common.s3_zarr_store.S3ZarrStore.write_from_pandas_dfs')
-    @mock.patch('matrix.common.dss_zarr_store.DSSZarrStore.__init__')
+    @mock.patch('matrix.common.zarr.s3_zarr_store.S3ZarrStore.write_from_pandas_dfs')
+    @mock.patch('matrix.common.zarr.dss_zarr_store.DSSZarrStore.__init__')
     @mock.patch('zarr.group')
     @mock.patch('matrix.lambdas.daemons.worker.convert_dss_zarr_root_to_subset_pandas_dfs')
-    @mock.patch('matrix.common.request_tracker.RequestTracker.complete_subtask_execution')
-    @mock.patch('matrix.common.request_tracker.RequestTracker.is_reducer_ready')
-    @mock.patch('matrix.common.s3_zarr_store.S3ZarrStore.write_column_data')
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch('matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution')
+    @mock.patch('matrix.common.request.request_tracker.RequestTracker.is_reducer_ready')
+    @mock.patch('matrix.common.zarr.s3_zarr_store.S3ZarrStore.write_column_data')
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_run(self,
                  mock_lambda_handler_invoke,
                  mock_write_column_data,

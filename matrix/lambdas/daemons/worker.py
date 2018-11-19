@@ -6,13 +6,13 @@ import typing
 import pandas
 import zarr
 
-from matrix.common.dss_zarr_store import DSSZarrStore
+from matrix.common.zarr.dss_zarr_store import DSSZarrStore
 from matrix.common.exceptions import MatrixException
-from matrix.common.lambda_handler import LambdaHandler, LambdaName
-from matrix.common.request_tracker import RequestTracker, Subtask
+from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.logging import Logging
-from matrix.common.pandas_utils import convert_dss_zarr_root_to_subset_pandas_dfs
-from matrix.common.s3_zarr_store import S3ZarrStore
+from matrix.common.zarr.pandas_utils import convert_dss_zarr_root_to_subset_pandas_dfs
+from matrix.common.zarr.s3_zarr_store import S3ZarrStore
 
 logger = Logging.get_logger(__name__)
 

@@ -9,9 +9,9 @@ import s3fs
 from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MatrixRequestStatus
-from matrix.common.dynamo_handler import (CacheTableField, DynamoHandler,
-                                          OutputTableField, StateTableField)
-from matrix.common.request_cache import RequestCache
+from matrix.common.aws.dynamo_handler import (CacheTableField, DynamoHandler,
+                                              OutputTableField, StateTableField)
+from matrix.common.request.request_cache import RequestCache
 
 
 MATRIX_ENV_TO_DSS_ENV = {

@@ -11,7 +11,7 @@ import requests
 import s3fs
 import zarr
 
-from matrix.common.dss_zarr_store import DSSZarrStore
+from matrix.common.zarr.dss_zarr_store import DSSZarrStore
 
 DSS_CLIENT = DSSZarrStore.get_dss_client()
 S3 = s3fs.S3FileSystem(anon=True)

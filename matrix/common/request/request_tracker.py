@@ -1,6 +1,6 @@
 from enum import Enum
 
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
 from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
 

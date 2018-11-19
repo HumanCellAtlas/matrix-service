@@ -4,11 +4,11 @@ import uuid
 
 import boto3
 
-from .. import MatrixTestCaseUsingMockAWS
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.dynamo_handler import StateTableField
-from matrix.common.dynamo_handler import OutputTableField
-from matrix.common.dynamo_handler import DynamoTable
+from tests.unit import MatrixTestCaseUsingMockAWS
+from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.aws.dynamo_handler import StateTableField
+from matrix.common.aws.dynamo_handler import OutputTableField
+from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.exceptions import MatrixException
 
 
