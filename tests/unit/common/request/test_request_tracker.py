@@ -1,8 +1,8 @@
 import hashlib
 from unittest import mock
 
-from matrix.common.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
-from matrix.common.request_tracker import RequestTracker, Subtask
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
+from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 
 
@@ -29,15 +29,15 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler.write_request_error(self.request_hash, "test error")
         self.assertEqual(self.request_tracker.error, "test error")
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.create_output_table_entry")
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.create_state_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_output_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_state_table_entry")
     def test_initialize_request(self, mock_create_state_table_entry, mock_create_output_table_entry):
         self.request_tracker.initialize_request(1, "test_format")
 
         mock_create_state_table_entry.assert_called_once_with(self.request_hash, 1, "test_format")
         mock_create_output_table_entry.assert_called_once_with(self.request_hash, "test_format")
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.increment_table_field")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_expect_subtask_execution(self, mock_increment_table_field):
         self.request_tracker.expect_subtask_execution(Subtask.DRIVER)
 
@@ -46,7 +46,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                                                            StateTableField.EXPECTED_DRIVER_EXECUTIONS,
                                                            1)
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.increment_table_field")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_complete_subtask_execution(self, mock_increment_table_field):
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
@@ -77,7 +77,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                                                   1)
         self.assertTrue(self.request_tracker.is_request_complete())
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.write_request_error")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_error")
     def test_log_error(self, mock_write_request_error):
         self.request_tracker.log_error("test error")
         mock_write_request_error.assert_called_once_with(self.request_hash, "test error")

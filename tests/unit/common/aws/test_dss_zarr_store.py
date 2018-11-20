@@ -6,8 +6,8 @@ import numpy
 import pytest
 import zarr
 
-from matrix.common.dss_zarr_store import DSSZarrStore
-from .. import test_bundle_spec
+from matrix.common.zarr.dss_zarr_store import DSSZarrStore
+from tests.unit import test_bundle_spec
 
 
 class TestDSSZarrStore(unittest.TestCase):

@@ -3,10 +3,10 @@ import os
 import boto3
 
 from matrix.common.constants import MatrixFormat
-from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.logging import Logging
-from matrix.common.request_tracker import RequestTracker, Subtask
-from matrix.common.s3_zarr_store import S3ZarrStore
+from matrix.common.request.request_tracker import RequestTracker, Subtask
+from matrix.common.zarr.s3_zarr_store import S3ZarrStore
 
 logger = Logging.get_logger(__name__)
 

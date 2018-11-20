@@ -6,9 +6,9 @@ import uuid
 from connexion.lifecycle import ConnexionResponse
 
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
-from matrix.common.lambda_handler import LambdaHandler, LambdaName
-from matrix.common.request_cache import RequestCache, RequestIdNotFound
-from matrix.common.request_tracker import RequestTracker
+from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
+from matrix.common.request.request_tracker import RequestTracker
 
 
 def post_matrix(body: dict):

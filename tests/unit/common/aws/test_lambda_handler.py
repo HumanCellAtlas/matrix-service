@@ -3,8 +3,8 @@ import uuid
 
 from botocore.stub import Stubber
 
-from matrix.common.lambda_handler import LambdaHandler
-from matrix.common.lambda_handler import LambdaName
+from matrix.common.aws.lambda_handler import LambdaHandler
+from matrix.common.aws.lambda_handler import LambdaName
 
 
 class TestLambdaHandler(unittest.TestCase):

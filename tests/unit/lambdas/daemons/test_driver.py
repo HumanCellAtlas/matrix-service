@@ -4,8 +4,8 @@ import uuid
 from mock import call
 from unittest import mock
 
-from matrix.common.lambda_handler import LambdaName
-from matrix.common.request_tracker import Subtask
+from matrix.common.aws.lambda_handler import LambdaName
+from matrix.common.request.request_tracker import Subtask
 from matrix.lambdas.daemons.driver import Driver
 
 
@@ -15,12 +15,12 @@ class TestDriver(unittest.TestCase):
         self._bundles_per_worker = 100
         self._driver = Driver(self.request_id, self._bundles_per_worker)
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.write_request_hash")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.is_initialized",
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized",
                 new_callable=mock.PropertyMock)
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.initialize_request")
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.initialize_request")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_run(self, mock_lambda_invoke, mock_initialize_request,
                  mock_complete_subtask_execution, mock_is_initialized, mock_write_request_hash):
         bundle_fqids = ["id1.version", "id2.version"]

@@ -8,10 +8,10 @@ import zarr
 import numpy
 
 from matrix.common.constants import ZarrayName
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.dynamo_handler import DynamoTable
-from matrix.common.dynamo_handler import OutputTableField
-from matrix.common.dynamo_utils import Lock
+from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.aws.dynamo_handler import DynamoTable
+from matrix.common.aws.dynamo_handler import OutputTableField
+from matrix.common.aws.dynamo_utils import Lock
 from matrix.common.exceptions import MatrixException
 
 

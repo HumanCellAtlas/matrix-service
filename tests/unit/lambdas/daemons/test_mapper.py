@@ -6,9 +6,9 @@ import pytest
 
 from unittest import mock
 
-from matrix.common.dss_zarr_store import DSSZarrStore
-from matrix.common.lambda_handler import LambdaName
-from matrix.common.request_tracker import Subtask
+from matrix.common.zarr.dss_zarr_store import DSSZarrStore
+from matrix.common.aws.lambda_handler import LambdaName
+from matrix.common.request.request_tracker import Subtask
 from matrix.lambdas.daemons.mapper import Mapper
 
 
@@ -20,9 +20,9 @@ class TestMapper(unittest.TestCase):
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_worker_payload")
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.expect_subtask_execution")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.expect_subtask_execution")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_run_ok(self,
                     mock_lambda_invoke,
                     mock_complete_subtask_execution,
@@ -46,9 +46,9 @@ class TestMapper(unittest.TestCase):
         mock_complete_subtask_execution.assert_called_once_with(Subtask.MAPPER)
 
     @mock.patch("matrix.lambdas.daemons.mapper.Mapper._get_chunk_specs")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.expect_subtask_execution")
-    @mock.patch("matrix.common.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.expect_subtask_execution")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_run_no_chunks(self,
                            mock_lambda_invoke,
                            mock_complete_subtask_execution,

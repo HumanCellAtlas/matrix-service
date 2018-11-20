@@ -7,11 +7,11 @@ from pandas import DataFrame
 from unittest import mock
 
 from matrix.common.constants import ZarrayName
-from matrix.common.dynamo_handler import DynamoHandler
-from matrix.common.s3_zarr_store import S3ZarrStore, ZARR_OUTPUT_CONFIG
-from .. import MatrixTestCaseUsingMockAWS
-from matrix.common.dynamo_handler import OutputTableField
-from matrix.common.dynamo_handler import DynamoTable
+from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.zarr.s3_zarr_store import S3ZarrStore, ZARR_OUTPUT_CONFIG
+from tests.unit import MatrixTestCaseUsingMockAWS
+from matrix.common.aws.dynamo_handler import OutputTableField
+from matrix.common.aws.dynamo_handler import DynamoTable
 
 
 class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
@@ -55,7 +55,7 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         self.assertEqual(start_chunk_idx, 3)
         self.assertEqual(end_chunk_idx, 5)
 
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_row_data_to_results_chunk")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore._write_row_data_to_results_chunk")
     def test_write_from_pandas_dfs_from_zero_num_rows(self, mock_write_row_data):
         num_rows = 5000
         self.s3_zarr_store.write_from_pandas_dfs(num_rows)
@@ -70,7 +70,7 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         mock_write_row_data.assert_has_calls(expected_calls)
         self.assertEqual(mock_write_row_data.call_count, 2)
 
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_row_data_to_results_chunk")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore._write_row_data_to_results_chunk")
     def test_write_from_pandas_dfs_from_preexisting_rows(self, mock_write_row_data):
         field_enum = OutputTableField.ROW_COUNT
         self.dynamo_handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_id, field_enum, 50)
@@ -87,9 +87,9 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         mock_write_row_data.assert_has_calls(expected_calls)
         self.assertEqual(mock_write_row_data.call_count, 2)
 
-    @mock.patch("matrix.common.dynamo_handler.DynamoHandler.get_table_item")
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_zarray_metadata")
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._write_zgroup_metadata")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore._write_zarray_metadata")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore._write_zgroup_metadata")
     def test_write_group_metadata(self,
                                   mock_write_zgroup_metadata,
                                   mock_write_zarray_metadata,
@@ -118,8 +118,8 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         data = json.loads(self.s3_zarr_store.s3_file_system.open(s3_zgroup_location, "rb").read())
         self.assertEqual(data['zarr_format'], 2)
 
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._fill_value")
-    @mock.patch("matrix.common.s3_zarr_store.S3ZarrStore._get_zarray_column_count")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore._fill_value")
+    @mock.patch("matrix.common.zarr.s3_zarr_store.S3ZarrStore._get_zarray_column_count")
     def test_write_zarray_metadata(self, mock_get_zarray_column_count, mock_fill_value):
         zarray = ZarrayName.EXPRESSION
         row_count = 0
