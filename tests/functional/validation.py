@@ -95,6 +95,7 @@ def calculate_ss2_metrics_loom(loom_url):
     return {"expression_sum": expression_sum, "expression_nonzero": expression_nonzero,
             "cell_count": cell_count}
 
+
 def calculate_ss2_metrics_mtx(mtx_zip_url):
     """Calculate metrics for the mtx zip archive."""
 
@@ -114,6 +115,7 @@ def calculate_ss2_metrics_mtx(mtx_zip_url):
         "expression_nonzero": len(matrix.data),
         "cell_count": matrix.shape[0]
     }
+
 
 def calculate_ss2_metrics_csv(csv_zip_url):
     """Calculte metrics for the zipped csv."""
