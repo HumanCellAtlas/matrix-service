@@ -4,6 +4,7 @@ import io
 import os
 import shutil
 import tempfile
+import zipfile
 
 import loompy
 import numpy
@@ -91,3 +92,28 @@ def calculate_ss2_metrics_loom(loom_url):
 
     return {"expression_sum": expression_sum, "expression_nonzero": expression_nonzero,
             "cell_count": cell_count}
+
+def calculate_ss2_metrics_mtx(mtx_zip_url):
+    temp_dir = tempfile.mkdtemp(suffix="mtx_zip_test")
+    local_mtx_zip_path = os.path.join(temp_dir, os.path.basename(mtx_zip_url))
+    response = requests.get(mtx_zip_url, stream=True)
+    with open(local_mtx_zip_path, "wb") as local_mtx_zip_file:
+        shutil.copyfileobj(response.raw, local_mtx_zip_file)
+    
+    mtx_zip = zipfile.ZipFile(local_mtx_zip_path)
+    mtx_name = [n for n in mtx_zip.namelist() if n.endswith("matrix.mtx")][0]
+
+    matrix = scipy.io.mmread(mtx_zip.read(mtx_tar.getmember(mtx_name)))
+
+    return {
+        "expression_sum": numpy.sum(matrix),
+        "expression_nonzero": len(matrix.data),
+        "cell_count": matrix.shape[0]
+    }
+
+def calculate_ss2_metrics_csv(csvgz_url):
+    temp_dir = tempfile.mkdtemp(suffix="csvgz_test")
+    local_csvgz_path = os.path.join(temp_dir, os.path.basename(csvgz_url))
+    response = requests.get(csvgz_url, stream=True)
+    with open(local_csvgz_path, "wb") as local_csvgz_file:
+        shutil.copyfileobj(response.raw, local_csvgz_file)
