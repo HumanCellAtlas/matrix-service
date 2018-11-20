@@ -5,7 +5,6 @@ import boto3
 
 from moto import mock_dynamodb2, mock_s3
 
-os.environ['ACCOUNT_ID'] = "test_account_id"
 os.environ['DEPLOYMENT_STAGE'] = "dev"
 os.environ['AWS_DEFAULT_REGION'] = "us-east-1"
 os.environ['AWS_ACCESS_KEY_ID'] = "ak"
@@ -16,6 +15,8 @@ os.environ['DYNAMO_OUTPUT_TABLE_NAME'] = f"dcp-matrix-service-output-table-{os.e
 os.environ['DYNAMO_CACHE_TABLE_NAME'] = f"dcp-matrix-service-cache-table-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['S3_RESULTS_BUCKET'] = f"dcp-matrix-service-results-{os.environ['DEPLOYMENT_STAGE']}"
 os.environ['DYNAMO_LOCK_TABLE_NAME'] = f"dcp-matrix-service-lock-table-{os.environ['DEPLOYMENT_STAGE']}"
+os.environ['BATCH_CONVERTER_JOB_QUEUE_ARN'] = "test-job-queue"
+os.environ['BATCH_CONVERTER_JOB_DEFINITION_ARN'] = "test-job-definition"
 
 test_bundle_spec = {
     "uuid": "ba9c63ac-6db5-48bc-a2e3-7be4ddd03d97",

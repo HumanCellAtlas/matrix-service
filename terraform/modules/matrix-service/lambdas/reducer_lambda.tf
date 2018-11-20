@@ -89,12 +89,13 @@ resource "aws_lambda_function" "matrix_service_reducer_lambda" {
 
   environment {
     variables = {
-      ACCOUNT_ID = "${var.account_id}"
       DEPLOYMENT_STAGE = "${var.deployment_stage}"
       DYNAMO_STATE_TABLE_NAME = "dcp-matrix-service-state-table-${var.deployment_stage}"
       DYNAMO_OUTPUT_TABLE_NAME = "dcp-matrix-service-output-table-${var.deployment_stage}"
       DYNAMO_CACHE_TABLE_NAME = "dcp-matrix-service-cache-table-${var.deployment_stage}"
       S3_RESULTS_BUCKET = "dcp-matrix-service-results-${var.deployment_stage}"
+      BATCH_CONVERTER_JOB_QUEUE_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-queue/dcp-matrix-converter-queue-${var.deployment_stage}"
+      BATCH_CONVERTER_JOB_DEFINITION_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-definition/dcp-matrix-converter-job-definition-${var.deployment_stage}"
     }
   }
 }
