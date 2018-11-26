@@ -14,12 +14,12 @@ class TestLambdaHandler(unittest.TestCase):
     def setUp(self):
         self.request_id = str(uuid.uuid4())
         self.handler = LambdaHandler()
-        self.mock_handler = Stubber(self.handler._client)
+        self.mock_lambda_client = Stubber(self.handler._client)
 
     def test_invoke(self):
         expected_params = {'FunctionName': LambdaName.DRIVER.value,
                            'InvocationType': "Event",
                            'Payload': b"{}"}
-        self.mock_handler.add_response('invoke', {}, expected_params)
-        self.mock_handler.activate()
+        self.mock_lambda_client.add_response('invoke', {}, expected_params)
+        self.mock_lambda_client.activate()
         self.handler.invoke(LambdaName.DRIVER, {})
