@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import requests
 import uuid
 
@@ -9,6 +10,11 @@ from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from matrix.common.request.request_tracker import RequestTracker
+
+VALID_URL_PATTERNS = [
+    "https://s3\.amazonaws\.com/dcp-matrix-test-data/(.*)?",
+    "https://service(\.dev|\.integration|\.staging|)\.explore\.data\.humancellatlas\.org/repository/files/export(\?.+)?"
+]
 
 
 def post_matrix(body: dict):
@@ -51,8 +57,16 @@ def post_matrix(body: dict):
                                  })
 
     if has_url:
-        bundle_fqids_url = body['bundle_fqids_url']
-        bundle_fqids = None
+        if any(re.match(url_pattern, body['bundle_fqids_url']) for url_pattern in VALID_URL_PATTERNS):
+            bundle_fqids_url = body['bundle_fqids_url']
+            bundle_fqids = None
+        else:
+            return ConnexionResponse(status_code=requests.codes.bad_request,
+                                     body={
+                                         'message': f"Invalid parameter supplied. "
+                                                    f"`bundle_fqids_url` host {body['bundle_fqids_url']} is not "
+                                                    f"recognized. Please supply a valid URL from the HCA Data Browser."
+                                     })
     else:
         bundle_fqids = body['bundle_fqids']
         bundle_fqids_url = None

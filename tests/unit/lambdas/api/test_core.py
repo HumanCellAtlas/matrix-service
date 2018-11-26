@@ -34,6 +34,50 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response.status_code, requests.codes.accepted)
 
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
+    def test_post_matrix_with_url(self, mock_lambda_invoke, mock_write_request_hash):
+        valid_urls = [
+            "https://service.dev.explore.data.humancellatlas.org/repository/files/export",
+            "https://service.integration.explore.data.humancellatlas.org/repository/files/export?",
+            "https://service.staging.explore.data.humancellatlas.org/repository/files/export?test=test",
+            "https://service.explore.data.humancellatlas.org/repository/files/export?test=test&test=test",
+            "https://s3.amazonaws.com/dcp-matrix-test-data/test_data.tsv"
+        ]
+        format = MatrixFormat.ZARR.value
+
+        with self.subTest("Valid URL"):
+            for bundle_fqids_url in valid_urls:
+                body = {
+                    'bundle_fqids_url': bundle_fqids_url,
+                    'format': format
+                }
+
+                response = post_matrix(body)
+                body.update({'request_id': mock.ANY})
+                body.update({'bundle_fqids': None})
+
+                mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
+                mock_write_request_hash.assert_called_once_with(mock.ANY, "null")
+                self.assertEqual(type(response.body['request_id']), str)
+                self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
+                self.assertEqual(response.status_code, requests.codes.accepted)
+                mock_lambda_invoke.reset_mock()
+                mock_write_request_hash.reset_mock()
+
+        with self.subTest("Invalid URL"):
+            bundle_fqids_url = "https://bad.url.com"
+
+            body = {
+                'bundle_fqids_url': bundle_fqids_url,
+                'format': format
+            }
+
+            response = post_matrix(body)
+
+            self.assertEqual(mock_lambda_invoke.call_count, 0)
+            self.assertEqual(response.status_code, requests.codes.bad_request)
+
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_ok_and_unexpected_format(self, mock_lambda_invoke):
         bundle_fqids = ["id1", "id2"]
