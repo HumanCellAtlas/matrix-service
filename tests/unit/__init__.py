@@ -5,16 +5,16 @@ import boto3
 
 from moto import mock_dynamodb2, mock_s3
 
-os.environ['DEPLOYMENT_STAGE'] = "dev"
+os.environ['DEPLOYMENT_STAGE'] = "test_deployment_stage"
 os.environ['AWS_DEFAULT_REGION'] = "us-east-1"
-os.environ['AWS_ACCESS_KEY_ID'] = "ak"
-os.environ['AWS_SECRET_ACCESS_KEY'] = "sk"
-os.environ['LAMBDA_DRIVER_FUNCTION_NAME'] = f"dcp-matrix-service-driver-{os.environ['DEPLOYMENT_STAGE']}"
-os.environ['DYNAMO_STATE_TABLE_NAME'] = f"dcp-matrix-service-state-table-{os.environ['DEPLOYMENT_STAGE']}"
-os.environ['DYNAMO_OUTPUT_TABLE_NAME'] = f"dcp-matrix-service-output-table-{os.environ['DEPLOYMENT_STAGE']}"
-os.environ['DYNAMO_CACHE_TABLE_NAME'] = f"dcp-matrix-service-cache-table-{os.environ['DEPLOYMENT_STAGE']}"
-os.environ['S3_RESULTS_BUCKET'] = f"dcp-matrix-service-results-{os.environ['DEPLOYMENT_STAGE']}"
-os.environ['DYNAMO_LOCK_TABLE_NAME'] = f"dcp-matrix-service-lock-table-{os.environ['DEPLOYMENT_STAGE']}"
+os.environ['AWS_ACCESS_KEY_ID'] = "test_ak"
+os.environ['AWS_SECRET_ACCESS_KEY'] = "test_sk"
+os.environ['LAMBDA_DRIVER_FUNCTION_NAME'] = "test_driver_name"
+os.environ['DYNAMO_STATE_TABLE_NAME'] = "test_state_table_name"
+os.environ['DYNAMO_OUTPUT_TABLE_NAME'] = "test_output_table_name"
+os.environ['DYNAMO_CACHE_TABLE_NAME'] = "test_cache_table_name"
+os.environ['DYNAMO_LOCK_TABLE_NAME'] = "test_lock_table_name"
+os.environ['S3_RESULTS_BUCKET'] = "test_results_bucket"
 os.environ['BATCH_CONVERTER_JOB_QUEUE_ARN'] = "test-job-queue"
 os.environ['BATCH_CONVERTER_JOB_DEFINITION_ARN'] = "test-job-definition"
 
