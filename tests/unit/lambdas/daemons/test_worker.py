@@ -4,11 +4,11 @@ import os
 from pandas import DataFrame
 from unittest import mock
 
-from ... import MatrixTestCaseUsingMockAWS
-from ... import test_bundle_spec
 from matrix.lambdas.daemons.worker import Worker
 from matrix.common.aws.lambda_handler import LambdaName
 from matrix.common.request.request_tracker import Subtask
+from tests import test_bundle_spec
+from tests.unit import MatrixTestCaseUsingMockAWS
 
 
 class TestWorker(MatrixTestCaseUsingMockAWS):
