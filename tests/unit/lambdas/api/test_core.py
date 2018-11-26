@@ -161,7 +161,7 @@ class TestCore(unittest.TestCase):
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
         self.assertEqual(response.body['matrix_location'],
-                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.csv.gz")
+                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.csv.zip")
 
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
 
@@ -180,6 +180,6 @@ class TestCore(unittest.TestCase):
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
         self.assertEqual(response.body['matrix_location'],
-                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.mtx.gz")
+                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.mtx.zip")
 
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
