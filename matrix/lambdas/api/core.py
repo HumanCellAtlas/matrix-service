@@ -133,7 +133,7 @@ def get_matrix(request_id: str):
         elif format == MatrixFormat.LOOM.value:
             matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}"
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}.gz"
+            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}.zip"
 
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={

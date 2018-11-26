@@ -108,7 +108,7 @@ def calculate_ss2_metrics_mtx(mtx_zip_url):
     mtx_zip = zipfile.ZipFile(local_mtx_zip_path)
     mtx_name = [n for n in mtx_zip.namelist() if n.endswith("matrix.mtx")][0]
 
-    matrix = scipy.io.mmread(mtx_zip.read(mtx_name))
+    matrix = scipy.io.mmread(io.BytesIO(mtx_zip.read(mtx_name)))
 
     return {
         "expression_sum": numpy.sum(matrix),
