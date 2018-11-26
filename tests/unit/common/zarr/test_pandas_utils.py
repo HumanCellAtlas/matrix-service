@@ -7,7 +7,7 @@ import zarr
 from matrix.common.zarr.pandas_utils import convert_dss_zarr_root_to_subset_pandas_dfs
 from matrix.common.zarr.pandas_utils import apply_filter_to_matrix_pandas_dfs
 from matrix.common.zarr.dss_zarr_store import DSSZarrStore
-from tests.unit import test_bundle_spec
+from tests import test_bundle_spec
 
 
 class TestPandasUtils(unittest.TestCase):
