@@ -34,6 +34,27 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response.status_code, requests.codes.accepted)
 
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
+    def test_post_matrix_with_url_ok(self, mock_lambda_invoke, mock_write_request_hash):
+        format = MatrixFormat.ZARR.value
+        bundle_fqids_url = "test_url"
+
+        body = {
+            'bundle_fqids_url': bundle_fqids_url,
+            'format': format
+        }
+
+        response = post_matrix(body)
+        body.update({'request_id': mock.ANY})
+        body.update({'bundle_fqids': None})
+
+        mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
+        mock_write_request_hash.assert_called_once_with(mock.ANY, "null")
+        self.assertEqual(type(response.body['request_id']), str)
+        self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response.status_code, requests.codes.accepted)
+
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_ok_and_unexpected_format(self, mock_lambda_invoke):
         bundle_fqids = ["id1", "id2"]
