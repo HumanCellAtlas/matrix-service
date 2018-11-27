@@ -11,15 +11,13 @@ batch_client = boto3.client('batch', region_name='us-east-1')
 
 
 def handler(args):
-    output = {'desired_vcpus': '0'}
+    output = {'desired_vcpus': '4'}
     compute_environment_name = args['compute_environment_name']
     compute_environments = batch_client.describe_compute_environments()['computeEnvironments']
 
     for comp_env in compute_environments:
         if comp_env['computeEnvironmentName'] == compute_environment_name:
             desired_vcpus = str(comp_env['computeResources']['desiredvCpus'])
-            if int(desired_vcpus) < 4:
-                desired_vcpus = '4'
             output = {'desired_vcpus': desired_vcpus}
 
     json.dump(output, sys.stdout)
