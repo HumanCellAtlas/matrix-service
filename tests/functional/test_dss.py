@@ -1,4 +1,5 @@
 import binascii
+import os
 import unittest
 
 import numpy
@@ -11,6 +12,8 @@ from tests import test_bundle_spec
 
 class TestDss(unittest.TestCase):
 
+    @unittest.skipIf(os.environ['DEPLOYMENT_STAGE'] == "staging" or os.environ['DEPLOYMENT_STAGE'] == "prod",
+                     "Test bundle only exists in integration DSS environment.")
     def test_dss_store_read(self):
         """Test using the DSSZarrStore with zarr."""
 
