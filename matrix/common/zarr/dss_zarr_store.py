@@ -10,9 +10,6 @@ import zarr
 from hca import HCAConfig
 
 from matrix.common.exceptions import MatrixException
-from matrix.common.logging import Logging
-
-logger = Logging.get_logger(__name__)
 
 
 class DSSZarrStore(MutableMapping):
@@ -107,7 +104,6 @@ class DSSZarrStore(MutableMapping):
             dss_config['DSSClient']['swagger_url'] = f"https://dss.integration.data.humancellatlas.org/v1/swagger.json"
 
         client = hca.dss.DSSClient(config=dss_config)
-        logger.debug(f"Initialized DSSClient with host URL {client.host}")
         return client
 
     @property
