@@ -10,7 +10,7 @@ from matrix.common.zarr.dss_zarr_store import DSSZarrStore
 from tests import test_bundle_spec
 
 
-class TestDss(unittest.TestCase):
+class TestDSS(unittest.TestCase):
 
     @unittest.skipIf(os.environ['DEPLOYMENT_STAGE'] == "staging" or os.environ['DEPLOYMENT_STAGE'] == "prod",
                      "Test bundle only exists in integration DSS environment.")

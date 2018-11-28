@@ -13,7 +13,10 @@ import s3fs
 import scipy.io
 import zarr
 
+from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
+
+logger = Logging.get_logger(__file__)
 
 # These are the formats that users can request.
 SUPPORTED_FORMATS = [
@@ -37,7 +40,6 @@ def zarr_to_loom(zarr_root):
     str
         Local path to the converted loom file.
     """
-
     temp_dir = tempfile.mkdtemp()
     loom_path = os.path.join(temp_dir, "matrix.loom")
 
@@ -109,7 +111,6 @@ def zarr_to_mtx(zarr_root):
     str
         Local path to a zip archive with the two csv files and the mtx file.
     """
-
     temp_dir = tempfile.mkdtemp()
     mtx_path = os.path.join(temp_dir, "matrix.mtx")
     dataframe = pandas.DataFrame(zarr_root.expression[:])
@@ -173,7 +174,7 @@ def main(args):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("request_hash",
-                        help=("Request hash of the filter merge job"))
+                        help="Request hash of the filter merge job")
     parser.add_argument("source_zarr_path",
                         help=("Path to the root of the zarr store containing "
                               "the matrix to be converted."))
@@ -183,19 +184,18 @@ def main(args):
                         help="Target format for conversion.",
                         choices=SUPPORTED_FORMATS)
     args = parser.parse_args(args)
-    print(f"request hash of job is {args.request_hash}")
-    print(f"source path of job is {args.source_zarr_path}")
-    print(f"target path of job is {args.target_path}")
-    print(f"expected format of job is {args.format}")
+
+    Logging.set_correlation_id(logger, value=args.request_hash)
+
+    logger.debug(f"Starting matrix conversion job with parameters:"
+                 f"{args.request_hash}, {args.source_zarr_path}, {args.target_path}, {args.format}")
 
     zarr_root = open_zarr(args.source_zarr_path)
-    print(f"Beginning conversion of job {args.request_hash}")
     local_converted_path = globals()["zarr_to_" + args.format](zarr_root)
-    print(f"Completed conversion of job {args.request_hash}")
+    logger.debug(f"Conversion to {args.format} complete, beginning upload to S3")
 
-    print(f"Uploading converted matrix for job {args.request_hash}")
     upload_converted_matrix(local_converted_path, args.target_path)
-    print(f"Uploaded converted matrix for job {args.request_hash}")
+    logger.debug("Upload to S3 complete, job finished")
     RequestTracker(args.request_hash).complete_subtask_execution(Subtask.CONVERTER)
 
 
