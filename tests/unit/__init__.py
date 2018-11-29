@@ -97,6 +97,28 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         )
 
     @staticmethod
+    def create_test_lock_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
+            TableName=os.environ['DYNAMO_LOCK_TABLE_NAME'],
+            KeySchema=[
+                {
+                    'AttributeName': "LockKey",
+                    'KeyType': "HASH",
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': "LockKey",
+                    'AttributeType': "S",
+                }
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 150,
+                'WriteCapacityUnits': 150,
+            },
+        )
+
+    @staticmethod
     def create_s3_results_bucket():
         boto3.resource("s3", region_name=os.environ['AWS_DEFAULT_REGION']) \
              .create_bucket(Bucket=os.environ['S3_RESULTS_BUCKET'])

@@ -49,6 +49,15 @@ class CacheTableField(TableField):
     REQUEST_HASH = "RequestHash"
 
 
+class LockTableField(TableField):
+    """
+    Field names for the lock table in DynamoDB.
+    """
+    LOCK_KEY = "LockKey"
+    LOCK_HOLDER = "LockHolder"
+    EXPIRATON_TIME = "ExpirationTime"
+
+
 class DynamoTable(Enum):
     """
     Names of dynamo tables in matrix service
@@ -56,6 +65,7 @@ class DynamoTable(Enum):
     STATE_TABLE = os.getenv("DYNAMO_STATE_TABLE_NAME")
     OUTPUT_TABLE = os.getenv("DYNAMO_OUTPUT_TABLE_NAME")
     CACHE_TABLE = os.getenv("DYNAMO_CACHE_TABLE_NAME")
+    LOCK_TABLE = os.getenv("DYNAMO_LOCK_TABLE_NAME")
 
 
 class DynamoHandler:

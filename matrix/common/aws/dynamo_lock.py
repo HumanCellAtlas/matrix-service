@@ -1,10 +1,8 @@
-"""TODO TEST AND/OR REFACTOR THIS CLASS OUT OF IMPLEMENTATION.
+"""TODO: REFACTOR THIS CLASS OUT OF IMPLEMENTATION.
 
 Implement a Lock object using DynamoDB. Can be used to acquire locks in distributed
 environments like multiple independent lambdas.
 """
-import os
-
 import datetime
 import time
 import uuid
@@ -12,12 +10,13 @@ import uuid
 import boto3
 import botocore
 
+from matrix.common.aws.dynamo_handler import DynamoTable, LockTableField
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
 
 
-class Lock(object):
+class DynamoLock(object):
     """Implement a lock with DynamoDB."""
 
     timestamp_fmt = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -34,7 +33,7 @@ class Lock(object):
         self._lock_key = lock_key
         self._expiration_in_ms = expiration_in_ms
         self._lock_id = str(uuid.uuid4())
-        self._lock_table_name = os.environ['DYNAMO_LOCK_TABLE_NAME']
+        self._lock_table_name = DynamoTable.LOCK_TABLE.value
 
     def __enter__(self):
         """Support `with DynamoLock(...)`"""
@@ -85,9 +84,9 @@ class Lock(object):
                 try:
                     lock_table.put_item(
                         Item={
-                            "LockKey": self._lock_key,
-                            "LockHolder": self._lock_id,
-                            "ExpirationTime": self._expiration_time()
+                            LockTableField.LOCK_KEY.value: self._lock_key,
+                            LockTableField.LOCK_HOLDER.value: self._lock_id,
+                            LockTableField.EXPIRATON_TIME.value: self._expiration_time()
 
                         },
                         ConditionExpression="attribute_not_exists(LockKey)"
@@ -100,15 +99,16 @@ class Lock(object):
                     else:
                         raise
             # If the lock has expired, we can also try to acquire it.
-            elif self._has_expired(db_response["Item"]["ExpirationTime"]):
+            elif self._has_expired(db_response["Item"][LockTableField.EXPIRATON_TIME.value]):
                 try:
                     lock_table.update_item(
-                        Key={"LockKey": self._lock_key},
-                        UpdateExpression="SET LockHolder = :n, Expiration = :e",
-                        ConditionExpression="LockHolder = :f",
+                        Key={LockTableField.LOCK_KEY.value: self._lock_key},
+                        UpdateExpression=f"SET {LockTableField.LOCK_KEY.value} = :n, "
+                                         f"{LockTableField.EXPIRATON_TIME.value} = :e",
+                        ConditionExpression=f"{LockTableField.LOCK_HOLDER.value} = :f",
                         ExpressionAttributeValues={":n": self._lock_id,
                                                    ":e": self._expiration_time(),
-                                                   ":f": db_response["Item"]["LockHolder"]}
+                                                   ":f": db_response["Item"][LockTableField.LOCK_HOLDER.value]}
                     )
                     return
                 except botocore.exceptions.ClientError as exc:
@@ -117,7 +117,7 @@ class Lock(object):
                     else:
                         raise
             # Or maybe we hold the lock ourselves, then just return
-            elif db_response["Item"]["LockHolder"] == self._lock_id:
+            elif db_response["Item"][LockTableField.LOCK_HOLDER.value] == self._lock_id:
                 return
             logger.debug(f"Waiting for lock on {self._lock_key}")
             # Chill out for a bit
@@ -130,7 +130,7 @@ class Lock(object):
         lock_table = self._get_boto3_table()
 
         lock_table.delete_item(
-            Key={"LockKey": self._lock_key},
-            ConditionExpression="LockHolder = :i",
+            Key={LockTableField.LOCK_KEY.value: self._lock_key},
+            ConditionExpression=f"{LockTableField.LOCK_HOLDER.value} = :i",
             ExpressionAttributeValues={":i": self._lock_id}
         )

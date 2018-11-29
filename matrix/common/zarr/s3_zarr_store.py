@@ -11,7 +11,7 @@ from matrix.common.constants import ZarrayName
 from matrix.common.aws.dynamo_handler import DynamoHandler
 from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.aws.dynamo_handler import OutputTableField
-from matrix.common.aws.dynamo_utils import Lock
+from matrix.common.aws.dynamo_lock import DynamoLock
 from matrix.common.exceptions import MatrixException
 
 
@@ -104,7 +104,7 @@ class S3ZarrStore:
 
             # Reading and writing zarr chunks is pretty straightforward, you
             # just pass it through the compression and cast it to a numpy array
-            with Lock(full_dest_key):
+            with DynamoLock(full_dest_key):
                 # This is a graceless workaround for the issue identified here:
                 # https://github.com/pangeo-data/pangeo/issues/196
                 # Sometimes blosc.decode raises a RuntimeError that goes away on retry
@@ -207,7 +207,7 @@ class S3ZarrStore:
         for dset in ["gene_id", "cell_metadata_numeric_name", "cell_metadata_string_name"]:
             full_dest_key = f"s3://{self._results_bucket}/{self._request_hash}.zarr/{dset}/0"
             if not self.s3_file_system.exists(full_dest_key):
-                with Lock(full_dest_key):
+                with DynamoLock(full_dest_key):
                     arr = numpy.array(getattr(group, dset))
                     self.s3_file_system.open(full_dest_key, 'wb').write(ZARR_OUTPUT_CONFIG['compressor'].encode(arr))
 
@@ -222,7 +222,7 @@ class S3ZarrStore:
                     "shape": [arr.shape[0]],
                     "zarr_format": 2
                 }
-                with Lock(zarray_key):
+                with DynamoLock(zarray_key):
                     self.s3_file_system.open(zarray_key, 'wb').write(json.dumps(zarray).encode())
 
     def _get_output_row_boundaries(self, nrows: int):
