@@ -115,7 +115,7 @@ class S3ZarrStore:
                     try:
                         arr = numpy.frombuffer(
                             ZARR_OUTPUT_CONFIG['compressor'].decode(
-                                self.s3_file_system.open(full_dest_key, 'rb').read()),
+                                self.s3_file_system.open(full_dest_key, 'rb').read()).base,
                             dtype=dtype).reshape(chunk_shape, order=ZARR_OUTPUT_CONFIG['order'])
                         break
                     except FileNotFoundError:
