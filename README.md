@@ -4,6 +4,13 @@
 [![Master Deployment Status](https://status.dev.data.humancellatlas.org/build/HumanCellAtlas/matrix-service/master.svg)](https://allspark.dev.data.humancellatlas.org/HumanCellAtlas/matrix-service/pipelines)
 [![Test Coverage](https://codecov.io/gh/HumanCellAtlas/matrix-service/branch/master/graph/badge.svg)](https://codecov.io/gh/HumanCellAtlas/matrix-service)
 
+## Table of Contents
+**[Motivation and Challenges](#motivation-and-challenges)**
+
+**[Design Overview](#design-overview)**
+
+**[Getting Started](#getting-started)**
+
 ## Motivation and Challenges
 
 The Human Cell Atlas (HCA) Data Coordination Platform (DCP) ingests,
