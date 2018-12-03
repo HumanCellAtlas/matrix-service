@@ -1,5 +1,4 @@
-"""TODO: REFACTOR THIS CLASS OUT OF IMPLEMENTATION.
-
+"""
 Implement a Lock object using DynamoDB. Can be used to acquire locks in distributed
 environments like multiple independent lambdas.
 """

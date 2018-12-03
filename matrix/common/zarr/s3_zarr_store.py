@@ -83,7 +83,6 @@ class S3ZarrStore:
             input_bounds: (tuple) Beginning and end of boundaries for input rows
             output_bounds: (tuple) Beginning and end of boundaries in output rows
         """
-        # TODO TEST THIS FUNCTION
         for dset in ["expression", "cell_metadata_numeric", "cell_metadata_string", "cell_id"]:
             if dset == "expression":
                 values = self.exp_df.values

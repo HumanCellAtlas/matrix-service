@@ -2,11 +2,11 @@ import json
 import os
 import uuid
 
-from mock import call
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from unittest import mock
 
 from matrix.common.constants import ZarrayName
+from matrix.common.exceptions import MatrixException
 from matrix.common.aws.dynamo_handler import DynamoHandler
 from matrix.common.zarr.s3_zarr_store import S3ZarrStore, ZARR_OUTPUT_CONFIG
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -29,8 +29,10 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler = DynamoHandler()
         self.dynamo_handler.create_output_table_entry(self.request_id, "zarr")
 
-        exp_df = DataFrame()
-        qc_df = DataFrame()
+        test_array = [0] * ZARR_OUTPUT_CONFIG['cells_per_chunk']
+        exp_df = DataFrame(data=test_array, index=test_array)
+        qc_df = DataFrame({'cell_metadata_numeric': Series(test_array, dtype="float32"),
+                           'cell_metadata_string': Series(test_array, dtype="object")})
         self.s3_zarr_store = S3ZarrStore(self.request_id, exp_df, qc_df)
 
     def test_get_output_row_boundaries(self):
@@ -102,10 +104,10 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         mock_write_zgroup_metadata.assert_called_once_with()
 
         expected_calls = [
-            call(ZarrayName.EXPRESSION, num_rows),
-            call(ZarrayName.CELL_METADATA_NUMERIC, num_rows),
-            call(ZarrayName.CELL_METADATA_STRING, num_rows),
-            call(ZarrayName.CELL_ID, num_rows),
+            mock.call(ZarrayName.EXPRESSION, num_rows),
+            mock.call(ZarrayName.CELL_METADATA_NUMERIC, num_rows),
+            mock.call(ZarrayName.CELL_METADATA_STRING, num_rows),
+            mock.call(ZarrayName.CELL_ID, num_rows),
         ]
         mock_write_zarray_metadata.assert_has_calls(expected_calls)
         self.assertEqual(mock_write_zarray_metadata.call_count, 4)
@@ -141,10 +143,48 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
         self.assertEqual(data['shape'], [row_count, 1])
         self.assertEqual(data['zarr_format'], 2)
 
-    def test_read_zarray(self):
-        # TODO
-        pass
+    @mock.patch("matrix.common.aws.dynamo_lock.DynamoLock.__exit__")
+    @mock.patch("matrix.common.aws.dynamo_lock.DynamoLock.__enter__")
+    @mock.patch("zarr.storage.default_compressor.decode")
+    @mock.patch("tests.unit.common.zarr.test_s3_zarr_store.TestFileStub.write")
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test_write_row_data_to_results_chunk(self,
+                                             mock_s3_open,
+                                             mock_write,
+                                             mock_decode,
+                                             mock_lock_enter,
+                                             mock_lock_exit):
+        cells_per_chunk = ZARR_OUTPUT_CONFIG['cells_per_chunk']
+        mock_decode.return_value = None
+        mock_s3_open.return_value = TestFileStub()
 
-    def test_get_zarray_column_count(self):
-        # TODO
-        pass
+        self.s3_zarr_store._write_row_data_to_results_chunk(0, (0, cells_per_chunk), (0, cells_per_chunk))
+
+        self.assertEqual(mock_write.call_count, 4)
+
+    @mock.patch("json.loads")
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test_get_zarray_column_count(self, mock_s3_open, mock_json_loads):
+        cases = {
+            ZarrayName.EXPRESSION: 1,
+            ZarrayName.CELL_METADATA_NUMERIC: 2,
+            ZarrayName.CELL_METADATA_STRING: 3,
+            ZarrayName.CELL_ID: 0
+        }
+
+        for case in cases:
+            with self.subTest(f"{case.value} zarray"):
+                mock_json_loads.return_value = {'chunks': [cases[case]]}
+                column_count = self.s3_zarr_store._get_zarray_column_count(case)
+                self.assertEqual(column_count, cases[case])
+
+        with self.assertRaises(MatrixException):
+            self.s3_zarr_store._get_zarray_column_count(ZarrayName.GENE_ID)
+
+
+class TestFileStub:
+    def read(self):
+        return ""
+
+    def write(self, data):
+        return
