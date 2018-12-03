@@ -111,16 +111,14 @@ class S3ZarrStore:
                 # TODO: factor out the retry logic
                 num_tries = 0
                 delay = 1
+                arr = numpy.empty(shape=chunk_shape, dtype=dtype, order=ZARR_OUTPUT_CONFIG["order"])
                 while True:
                     try:
-                        arr = numpy.frombuffer(
-                            ZARR_OUTPUT_CONFIG['compressor'].decode(
-                                self.s3_file_system.open(full_dest_key, 'rb').read()).base,
-                            dtype=dtype).reshape(chunk_shape, order=ZARR_OUTPUT_CONFIG['order'])
+                        ZARR_OUTPUT_CONFIG['compressor'].decode(
+                            self.s3_file_system.open(full_dest_key, 'rb').read(), arr),
                         break
                     except FileNotFoundError:
-                        arr = numpy.zeros(shape=chunk_shape,
-                                          dtype=dtype)
+                        arr.fill(self._fill_value(arr.dtype))
                         print("Created new array")
                         break
                     except RuntimeError:
