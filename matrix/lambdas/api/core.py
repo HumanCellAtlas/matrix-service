@@ -126,12 +126,14 @@ def get_matrix(request_id: str):
     # Complete case
     if request_tracker.is_request_complete():
         s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
+
+        matrix_location = ""
         if format == MatrixFormat.ZARR.value:
             matrix_location = f"s3://{s3_results_bucket}/{request_hash}.{format}"
         elif format == MatrixFormat.LOOM.value:
             matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}"
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}.gz"
+            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}.zip"
 
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={

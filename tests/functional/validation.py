@@ -4,11 +4,14 @@ import io
 import os
 import shutil
 import tempfile
+import zipfile
 
 import loompy
 import numpy
+import pandas
 import requests
 import s3fs
+import scipy
 import zarr
 
 from matrix.common.zarr.dss_zarr_store import DSSZarrStore
@@ -91,3 +94,46 @@ def calculate_ss2_metrics_loom(loom_url):
 
     return {"expression_sum": expression_sum, "expression_nonzero": expression_nonzero,
             "cell_count": cell_count}
+
+
+def calculate_ss2_metrics_mtx(mtx_zip_url):
+    """Calculate metrics for the mtx zip archive."""
+
+    temp_dir = tempfile.mkdtemp(suffix="mtx_zip_test")
+    local_mtx_zip_path = os.path.join(temp_dir, os.path.basename(mtx_zip_url))
+    response = requests.get(mtx_zip_url, stream=True)
+    with open(local_mtx_zip_path, "wb") as local_mtx_zip_file:
+        shutil.copyfileobj(response.raw, local_mtx_zip_file)
+
+    mtx_zip = zipfile.ZipFile(local_mtx_zip_path)
+    mtx_name = [n for n in mtx_zip.namelist() if n.endswith("matrix.mtx")][0]
+
+    matrix = scipy.io.mmread(io.BytesIO(mtx_zip.read(mtx_name)))
+
+    return {
+        "expression_sum": numpy.sum(matrix),
+        "expression_nonzero": len(matrix.data),
+        "cell_count": matrix.shape[0]
+    }
+
+
+def calculate_ss2_metrics_csv(csv_zip_url):
+    """Calculte metrics for the zipped csv."""
+
+    temp_dir = tempfile.mkdtemp(suffix="csv_zip_test")
+    local_csv_zip_path = os.path.join(temp_dir, os.path.basename(csv_zip_url))
+    response = requests.get(csv_zip_url, stream=True)
+    with open(local_csv_zip_path, "wb") as local_csv_zip_file:
+        shutil.copyfileobj(response.raw, local_csv_zip_file)
+
+    csv_zip = zipfile.ZipFile(local_csv_zip_path)
+    pdata = pandas.read_csv(
+        io.StringIO(csv_zip.read(csv_zip.namelist()[0]).decode()),
+        header=0,
+        index_col=0)
+
+    return {
+        "expression_sum": numpy.sum(pdata.values),
+        "expression_nonzero": numpy.count_nonzero(pdata.values),
+        "cell_count": pdata.shape[0]
+    }

@@ -100,6 +100,7 @@ class TestMatrixService(unittest.TestCase):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, self.request_id) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+        self._analyze_csv_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
     def test_mtx_output_matrix_service(self):
         self.request_id = self._post_matrix_service_request(
@@ -107,6 +108,7 @@ class TestMatrixService(unittest.TestCase):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, self.request_id) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+        self._analyze_mtx_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
     def test_matrix_service_without_specified_output(self):
         self.request_id = self._post_matrix_service_request(
@@ -208,6 +210,22 @@ class TestMatrixService(unittest.TestCase):
         self.assertEqual(matrix_location.endswith("loom"), True)
         loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
         self._compare_metrics(direct_metrics, loom_metrics)
+
+    def _analyze_mtx_matrix_results(self, request_id, input_bundles):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("mtx.zip"), True)
+        mtx_metrics = validation.calculate_ss2_metrics_mtx(matrix_location)
+        self._compare_metrics(direct_metrics, mtx_metrics)
+
+    def _analyze_csv_matrix_results(self, request_id, input_bundles):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("csv.zip"), True)
+        csv_metrics = validation.calculate_ss2_metrics_csv(matrix_location)
+        self._compare_metrics(direct_metrics, csv_metrics)
 
     def _compare_metrics(self, metrics_1, metrics_2):
         for metric in metrics_1:
