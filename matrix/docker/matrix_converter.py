@@ -3,8 +3,8 @@
 import sys
 import argparse
 import os
-import tarfile
 import tempfile
+import zipfile
 
 import loompy
 import numpy
@@ -84,28 +84,30 @@ def zarr_to_csv(zarr_root):
     """
 
     temp_dir = tempfile.mkdtemp()
-    csv_path = os.path.join(temp_dir, "matrix.csv.gz")
+    csv_path = os.path.join(temp_dir, "matrix.csv.zip")
 
     dataframe = pandas.DataFrame(zarr_root.expression[:], index=zarr_root.cell_id[:],
                                  columns=zarr_root.gene_id[:])
-    dataframe.to_csv(csv_path, compression="gzip")
+    dataframe.to_csv(csv_path, compression="zip")
     return csv_path
 
 
 def zarr_to_mtx(zarr_root):
     """
-    Convert a zarr group to an mtx file.
+    Convert a zarr group to an mtx zip file.
     The expression values are placed into a matrix market mtx file. The
-    gene_ids and cell_ids are put in separate csv files. This mimics how files
-    are delivered to 10x.
+    gene_ids and cell_ids are put in separate csv files. This (sort of) mimics
+    how files are delivered from 10x.
+
     Parameters
     ----------
     zarr_root : str
         S3 path to the root of the zarr store.
+
     Returns
     -------
     str
-        Local path to a tarbsall with the two csv files and the mtx file.
+        Local path to a zip archive with the two csv files and the mtx file.
     """
 
     temp_dir = tempfile.mkdtemp()
@@ -120,11 +122,12 @@ def zarr_to_mtx(zarr_root):
     numpy.savetxt(cell_id_path, zarr_root.cell_id[:], fmt="%s")
     numpy.savetxt(gene_id_path, zarr_root.gene_id[:], fmt="%s")
 
-    tar_path = os.path.join(tempfile.mkdtemp(), "matrix.tar.gz")
-    with tarfile.open(tar_path, "w:gz") as tar:
-        tar.add(temp_dir, arcname="matrix")
-
-    return tar_path
+    zip_path = os.path.join(tempfile.mkdtemp(), "matrix.zip")
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for output_path in os.listdir(temp_dir):
+            zip_file.write(os.path.join(temp_dir, output_path),
+                           arcname=os.path.join("matrix", output_path))
+    return zip_path
 
 
 def open_zarr(zarr_s3_path, anon=False):

@@ -3,6 +3,7 @@ import os
 import boto3
 
 from matrix.common.aws.dynamo_handler import DynamoTable
+from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
@@ -27,8 +28,9 @@ class BatchHandler:
                              self.request_hash,
                              format])
 
+        is_compressed = format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value
         source_zarr_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.zarr"
-        target_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.{format}"
+        target_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.{format}" + (".zip" if is_compressed else "")
         command = ['python3', '/matrix_converter.py', self.request_hash, source_zarr_path, target_path, format]
 
         environment = {

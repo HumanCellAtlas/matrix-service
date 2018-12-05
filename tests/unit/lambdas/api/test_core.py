@@ -145,3 +145,41 @@ class TestCore(unittest.TestCase):
                          f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.loom")
 
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
+
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
+    def test_get_csv_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
+                                     mock_get_request_hash):
+        request_id = str(uuid.uuid4())
+        request_hash = hashlib.sha256().hexdigest()
+        mock_is_request_complete.return_value = True
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
+                                            OutputTableField.FORMAT.value: "csv"}
+        mock_get_request_hash.return_value = request_hash
+
+        response = get_matrix(request_id)
+        self.assertEqual(response.status_code, requests.codes.ok)
+        self.assertEqual(response.body['matrix_location'],
+                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.csv.zip")
+
+        self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
+
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
+    def test_get_mtx_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
+                                     mock_get_request_hash):
+        request_id = str(uuid.uuid4())
+        request_hash = hashlib.sha256().hexdigest()
+        mock_is_request_complete.return_value = True
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
+                                            OutputTableField.FORMAT.value: "mtx"}
+        mock_get_request_hash.return_value = request_hash
+
+        response = get_matrix(request_id)
+        self.assertEqual(response.status_code, requests.codes.ok)
+        self.assertEqual(response.body['matrix_location'],
+                         f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.mtx.zip")
+
+        self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
