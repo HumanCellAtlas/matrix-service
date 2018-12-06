@@ -35,12 +35,21 @@ class TestRequestCache(MatrixTestCaseUsingMockAWS):
         hash_2 = RequestCache(str(uuid.uuid4())).set_hash(copy_bundle_fqids, format_)
         hash_3 = RequestCache(str(uuid.uuid4())).set_hash(bundle_fqids, format_ + '_')
 
-        self.assertEqual(hash_1, hash_2)
-        self.assertNotEqual(hash_2, hash_3)
+        with self.subTest("Deterministic hash algorithm"):
+            self.assertEqual(hash_1, hash_2)
+            self.assertNotEqual(hash_2, hash_3)
 
-        retrieved_hash = self.request_cache.retrieve_hash()
-        self.assertEqual(retrieved_hash, hash_1)
+            retrieved_hash = self.request_cache.retrieve_hash()
+            self.assertEqual(retrieved_hash, hash_1)
+
+        with self.subTest("Non-deterministic hash algorithm"):
+            hash_4 = RequestCache(str(uuid.uuid4())).set_hash(copy_bundle_fqids, format_, False)
+            self.assertNotEqual(hash_2, hash_4)
 
     def test_initialize(self):
         self.request_cache.initialize()
         self.assertIsNone(self.request_cache.retrieve_hash())
+
+    def test_generate_salt(self):
+        salt = RequestCache._generate_salt(10)
+        self.assertEqual(len(salt), 10)

@@ -1,4 +1,6 @@
 import hashlib
+import secrets
+import string
 import typing
 
 from matrix.common.aws.dynamo_handler import DynamoHandler
@@ -41,9 +43,13 @@ class RequestCache(object):
         self._dynamo_handler = DynamoHandler()
 
     @staticmethod
-    def _hash_request(bundle_fqids: typing.List[str], format_: str) -> str:
+    def _hash_request(bundle_fqids: typing.List[str], format_: str, deterministic=True) -> str:
         """Calculate the hash of a request defined by fqids and a requested format."""
         hash_obj = hashlib.sha256()
+
+        if not deterministic:
+            salt = RequestCache._generate_salt(32)
+            hash_obj.update(salt.encode())
 
         for fqid in sorted(bundle_fqids):
             hash_obj.update(fqid.encode())
@@ -51,6 +57,10 @@ class RequestCache(object):
             hash_obj.update(format_.encode())
 
         return hash_obj.hexdigest()
+
+    @staticmethod
+    def _generate_salt(size: int) -> str:
+        return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(size))
 
     def initialize(self) -> None:
         """Initialize the request id in the request cache table.
@@ -81,8 +91,8 @@ class RequestCache(object):
         # Otherwise return the real hash
         return request_hash
 
-    def set_hash(self, bundle_fqids, format_):
+    def set_hash(self, bundle_fqids, format_, deterministic=True):
         """Calculate, set, and return the hash for this request."""
-        request_hash = self._hash_request(bundle_fqids, format_)
+        request_hash = self._hash_request(bundle_fqids, format_, deterministic)
         self._dynamo_handler.write_request_hash(self._request_id, request_hash)
         return request_hash

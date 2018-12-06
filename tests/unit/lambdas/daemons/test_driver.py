@@ -31,7 +31,7 @@ class TestDriver(unittest.TestCase):
         format = "test_format"
 
         mock_is_initialized.return_value = False
-        self._driver.run(bundle_fqids, None, format)
+        self._driver.run(bundle_fqids, None, format, False)
 
         mock_is_initialized.assert_called_once()
         mock_write_request_hash.assert_called_once()
@@ -69,7 +69,7 @@ class TestDriver(unittest.TestCase):
 
         mock_parse_download_manifest.return_value = bundle_fqids
         mock_is_initialized.return_value = False
-        self._driver.run(None, bundle_fqids_url, format)
+        self._driver.run(None, bundle_fqids_url, format, False)
 
         mock_parse_download_manifest.assert_called_once()
         mock_is_initialized.assert_called_once()
@@ -106,7 +106,7 @@ class TestDriver(unittest.TestCase):
 
         mock_is_initialized.return_value = True
         mock_error.return_value = 0
-        self._driver.run(bundle_fqids, None, format)
+        self._driver.run(bundle_fqids, None, format, False)
 
         mock_is_initialized.assert_called_once()
         mock_error.assert_called_once()

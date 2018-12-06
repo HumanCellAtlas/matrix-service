@@ -16,6 +16,7 @@ def post_matrix(body: dict):
     has_url = 'bundle_fqids_url' in body
 
     format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
+    ignore_cache = body['ignore_cache'] if 'ignore_cache' in body else False
     expected_formats = [mf.value for mf in MatrixFormat]
     api_host = os.environ['API_HOST']
 
@@ -66,6 +67,7 @@ def post_matrix(body: dict):
         'bundle_fqids': bundle_fqids,
         'bundle_fqids_url': bundle_fqids_url,
         'format': format,
+        'ignore_cache': ignore_cache,
     }
     lambda_handler = LambdaHandler()
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)

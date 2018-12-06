@@ -24,16 +24,17 @@ class Driver:
 
         self.lambda_handler = LambdaHandler()
 
-    def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str):
+    def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str, ignore_cache: bool):
         """
         Initialize a filter merge job and spawn a mapper task for each bundle_fqid.
 
         :param bundle_fqids: List of bundle fqids to be queried on
         :param bundle_fqids_url: URL from which bundle_fqids can be retrieved
         :param format: MatrixFormat file format of output expression matrix
+        :param ignore_cache: Skips request cache if True, else checks cache for existing request
         """
         logger.debug(f"Driver running with parameters: bundle_fqids={bundle_fqids}, "
-                     f"bundle_fqids_url={bundle_fqids_url}, format={format}, "
+                     f"bundle_fqids_url={bundle_fqids_url}, format={format}, ignore_cache={ignore_cache}"
                      f"bundles_per_worker={self.bundles_per_worker}")
 
         if bundle_fqids_url:
@@ -43,7 +44,9 @@ class Driver:
             resolved_bundle_fqids = bundle_fqids
         logger.debug(f"resolved bundles: {resolved_bundle_fqids}")
 
-        request_hash = RequestCache(self.request_id).set_hash(resolved_bundle_fqids, format)
+        request_hash = RequestCache(self.request_id).set_hash(resolved_bundle_fqids,
+                                                              format,
+                                                              deterministic=not ignore_cache)
         logger.debug(f"Calculated and set hash {request_hash} for request {self.request_id}")
         request_tracker = RequestTracker(request_hash)
 

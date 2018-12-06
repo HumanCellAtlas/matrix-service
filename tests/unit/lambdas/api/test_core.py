@@ -25,8 +25,11 @@ class TestCore(unittest.TestCase):
         }
 
         response = post_matrix(body)
-        body.update({'request_id': mock.ANY})
-        body.update({'bundle_fqids_url': None})
+        body.update({
+            'request_id': mock.ANY,
+            'bundle_fqids_url': None,
+            'ignore_cache': False
+        })
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         mock_write_request_hash.assert_called_once_with(mock.ANY, "null")
@@ -46,8 +49,11 @@ class TestCore(unittest.TestCase):
         }
 
         response = post_matrix(body)
-        body.update({'request_id': mock.ANY})
-        body.update({'bundle_fqids': None})
+        body.update({
+            'request_id': mock.ANY,
+            'bundle_fqids': None,
+            'ignore_cache': False
+        })
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         mock_write_request_hash.assert_called_once_with(mock.ANY, "null")

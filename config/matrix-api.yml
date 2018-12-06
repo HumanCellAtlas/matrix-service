@@ -25,6 +25,8 @@ definitions:
         format: url
       format:
         $ref: '#/definitions/MatrixFormat'
+      ignore_cache:
+        type: boolean
   MatrixFormat:
     type: string
     enum:
