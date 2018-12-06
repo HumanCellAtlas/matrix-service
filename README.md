@@ -63,13 +63,15 @@ DynamoDB tables are used to track the state and progress of a request. The follo
 
 ### File formats
 
-The DCP MS enables users to prepare expression matrices in several file formats by supplying the `format` parameter when
-submitting a POST request to the matrix endpoint. The following is a list of supported file formats:
+The DCP MS enables users to prepare expression matrices in several formats by supplying the `format` parameter in the
+POST request to the `/matrix` endpoint. The following is a list of supported file formats:
 
 - [.zarr](https://zarr.readthedocs.io/en/stable/) (default)
 - [.loom](http://loompy.org/)
 - [.csv](https://en.wikipedia.org/wiki/Comma-separated_values)
 - [.mtx](https://math.nist.gov/MatrixMarket/formats.html)
+
+The API also makes this information available via the `/matrix/formats` endpoint.
 
 ## Getting Started
 

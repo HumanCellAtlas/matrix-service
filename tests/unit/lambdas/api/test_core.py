@@ -9,7 +9,7 @@ from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.aws.dynamo_handler import OutputTableField
 from matrix.common.aws.lambda_handler import LambdaName
 from matrix.common.request.request_cache import RequestIdNotFound
-from matrix.lambdas.api.core import post_matrix, get_matrix
+from matrix.lambdas.api.core import post_matrix, get_matrix, get_formats
 
 
 class TestCore(unittest.TestCase):
@@ -204,3 +204,7 @@ class TestCore(unittest.TestCase):
                          f"https://s3.amazonaws.com/{os.environ['S3_RESULTS_BUCKET']}/{request_hash}.mtx.zip")
 
         self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
+
+    def test_get_formats(self):
+        response = get_formats()
+        self.assertEqual(response.body, [item.value for item in MatrixFormat])

@@ -166,3 +166,8 @@ def get_matrix(request_id: str):
                                  'message': f"Request {request_id} has been accepted and is currently being processed. "
                                             f"Please try again later.",
                              })
+
+
+def get_formats():
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body=[item.value for item in MatrixFormat])
