@@ -5,6 +5,7 @@ import boto3
 
 from moto import mock_dynamodb2, mock_s3
 
+os.environ['API_HOST'] = "test_api_host"
 os.environ['DEPLOYMENT_STAGE'] = "test_deployment_stage"
 os.environ['AWS_DEFAULT_REGION'] = "us-east-1"
 os.environ['AWS_ACCESS_KEY_ID'] = "test_ak"

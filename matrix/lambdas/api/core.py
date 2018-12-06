@@ -17,6 +17,7 @@ def post_matrix(body: dict):
 
     format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
     expected_formats = [mf.value for mf in MatrixFormat]
+    api_host = os.environ['API_HOST']
 
     # Validate input parameters
     if format not in expected_formats:
@@ -24,14 +25,14 @@ def post_matrix(body: dict):
                                  body={
                                      'message': "Invalid parameters supplied. "
                                                 "Please supply a valid `format`. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                                f"Visit {api_host} for more information."
                                  })
     if has_ids and has_url:
         return ConnexionResponse(status_code=requests.codes.bad_request,
                                  body={
                                      'message': "Invalid parameters supplied. "
                                                 "Please supply either one of `bundle_fqids` or `bundle_fqids_url`. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                                f"Visit {api_host} for more information."
                                  })
 
     if not has_ids and not has_url:
@@ -39,7 +40,7 @@ def post_matrix(body: dict):
                                  body={
                                      'message': "Missing required parameter. "
                                                 "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                                f"Visit {api_host} for more information."
                                  })
 
     if not has_url and len(json.dumps(body['bundle_fqids'])) > 128000:
@@ -47,7 +48,7 @@ def post_matrix(body: dict):
                                  body={
                                      'message': "List of bundle fqids is too large. "
                                                 "Consider using bundle_fqids_url instead. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
+                                                f"Visit {api_host} for more information."
                                  })
 
     if has_url:
