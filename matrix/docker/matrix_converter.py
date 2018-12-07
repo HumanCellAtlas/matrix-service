@@ -15,6 +15,7 @@ import zarr
 
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 
 logger = Logging.get_logger(__file__)
 
@@ -197,6 +198,15 @@ def main(args):
     upload_converted_matrix(local_converted_path, args.target_path)
     logger.debug("Upload to S3 complete, job finished")
     RequestTracker(args.request_hash).complete_subtask_execution(Subtask.CONVERTER)
+    cloudwatch_handler = CloudwatchHandler()
+    cloudwatch_handler.put_metric_data(
+        metric_name=MetricName.CONVERSION_COMPLETION,
+        metric_value=1
+    )
+    cloudwatch_handler.put_metric_data(
+        metric_name=MetricName.REQUEST_COMPLETION,
+        metric_value=1
+    )
 
 
 if __name__ == "__main__":

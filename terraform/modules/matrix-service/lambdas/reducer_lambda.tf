@@ -72,6 +72,13 @@ resource "aws_iam_role_policy" "matrix_service_reducer_lambda" {
       "Resource": [
         "*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*"
     }
   ]
 }

@@ -5,6 +5,7 @@ from mock import call
 from unittest import mock
 
 from matrix.common.aws.lambda_handler import LambdaName
+from matrix.common.aws.cloudwatch_handler import MetricName
 from matrix.common.request.request_tracker import Subtask
 from matrix.lambdas.daemons.driver import Driver
 
@@ -15,6 +16,7 @@ class TestDriver(unittest.TestCase):
         self._bundles_per_worker = 100
         self._driver = Driver(self.request_id, self._bundles_per_worker)
 
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized",
                 new_callable=mock.PropertyMock)
@@ -26,7 +28,8 @@ class TestDriver(unittest.TestCase):
                           mock_initialize_request,
                           mock_complete_subtask_execution,
                           mock_is_initialized,
-                          mock_write_request_hash):
+                          mock_write_request_hash,
+                          mock_cw_put):
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
 
@@ -35,6 +38,7 @@ class TestDriver(unittest.TestCase):
 
         mock_is_initialized.assert_called_once()
         mock_write_request_hash.assert_called_once()
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.CACHE_MISS, metric_value=1)
 
         num_mappers = math.ceil(len(bundle_fqids) / self._bundles_per_worker)
         mock_initialize_request.assert_called_once_with(num_mappers, format)
@@ -47,6 +51,7 @@ class TestDriver(unittest.TestCase):
 
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized",
                 new_callable=mock.PropertyMock)
@@ -62,7 +67,8 @@ class TestDriver(unittest.TestCase):
                           mock_initialize_request,
                           mock_complete_subtask_execution,
                           mock_is_initialized,
-                          mock_write_request_hash):
+                          mock_write_request_hash,
+                          mock_cw_put):
         bundle_fqids_url = "test_url"
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
@@ -74,6 +80,7 @@ class TestDriver(unittest.TestCase):
         mock_parse_download_manifest.assert_called_once()
         mock_is_initialized.assert_called_once()
         mock_write_request_hash.assert_called_once()
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.CACHE_MISS, metric_value=1)
 
         num_mappers = math.ceil(len(bundle_fqids) / self._bundles_per_worker)
         mock_initialize_request.assert_called_once_with(num_mappers, format)
@@ -86,6 +93,7 @@ class TestDriver(unittest.TestCase):
 
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized",
                 new_callable=mock.PropertyMock)
@@ -100,7 +108,8 @@ class TestDriver(unittest.TestCase):
                                 mock_complete_subtask_execution,
                                 mock_error,
                                 mock_is_initialized,
-                                mock_write_request_hash):
+                                mock_write_request_hash,
+                                mock_cw_put):
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
 
@@ -111,6 +120,7 @@ class TestDriver(unittest.TestCase):
         mock_is_initialized.assert_called_once()
         mock_error.assert_called_once()
         mock_write_request_hash.assert_called_once()
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.CACHE_HIT, metric_value=1)
 
         self.assertEqual(mock_initialize_request.call_count, 0)
         self.assertEqual(mock_lambda_invoke.call_count, 0)

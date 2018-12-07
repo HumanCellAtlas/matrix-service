@@ -3,6 +3,7 @@ from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.zarr.s3_zarr_store import S3ZarrStore
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 
 logger = Logging.get_logger(__name__)
 
@@ -14,6 +15,7 @@ class Reducer:
         self.request_hash = request_hash
         self.batch_handler = BatchHandler(self.request_hash)
         self.request_tracker = RequestTracker(self.request_hash)
+        self.cloudwatch_handler = CloudwatchHandler()
 
     def run(self):
         """
@@ -26,5 +28,14 @@ class Reducer:
 
         if self.request_tracker.format != MatrixFormat.ZARR.value:
             self.batch_handler.schedule_matrix_conversion(self.request_tracker.format)
+            self.cloudwatch_handler.put_metric_data(
+                metric_name=MetricName.CONVERSION_REQUEST,
+                metric_value=1
+            )
+        else:
+            self.cloudwatch_handler.put_metric_data(
+                metric_name=MetricName.REQUEST_COMPLETION,
+                metric_value=1
+            )
 
         self.request_tracker.complete_subtask_execution(Subtask.REDUCER)

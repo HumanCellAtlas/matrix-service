@@ -71,6 +71,13 @@ resource "aws_iam_role_policy" "matrix_service_worker_lambda" {
         "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
         "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*"
     }
   ]
 }
