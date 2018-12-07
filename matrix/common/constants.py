@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class MatrixFormat(Enum):
+    """
+    Supported expression matrix output formats.
+    Keep up-to-date with config/matrix-api.yml (MatrixFormat)
+    """
     ZARR = "zarr"
     LOOM = "loom"
     CSV = "csv"

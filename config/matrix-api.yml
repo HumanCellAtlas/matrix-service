@@ -112,3 +112,18 @@ paths:
           description: "Request not found"
           schema:
             $ref: '#/definitions/MatrixResponseError'
+  /matrix/formats:
+    get:
+      summary: "Returns supported output formats."
+      description: "Returns the list of expression matrix formats that can be requested from this service."
+      operationId: matrix.lambdas.api.core.get_formats
+      tags:
+        - API
+      responses:
+        "200":
+          description: "Success"
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/MatrixFormat'
+
