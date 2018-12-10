@@ -3,6 +3,9 @@ import hashlib
 import random
 import uuid
 
+from unittest import mock
+
+from matrix.common.aws.cloudwatch_handler import MetricName
 from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from tests.unit import MatrixTestCaseUsingMockAWS
 
@@ -41,6 +44,8 @@ class TestRequestCache(MatrixTestCaseUsingMockAWS):
         retrieved_hash = self.request_cache.retrieve_hash()
         self.assertEqual(retrieved_hash, hash_1)
 
-    def test_initialize(self):
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_initialize(self, mock_cw_put):
         self.request_cache.initialize()
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertIsNone(self.request_cache.retrieve_hash())

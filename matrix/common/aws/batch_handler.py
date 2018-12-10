@@ -5,6 +5,7 @@ import boto3
 from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 
 logger = Logging.get_logger(__name__)
 
@@ -21,6 +22,7 @@ class BatchHandler:
         self.job_def_arn = os.environ['BATCH_CONVERTER_JOB_DEFINITION_ARN']
 
         self._client = boto3.client("batch", region_name=os.environ['AWS_DEFAULT_REGION'])
+        self._cloudwatch_handler = CloudwatchHandler()
 
     def schedule_matrix_conversion(self, format):
         job_name = "-".join(["conversion",
@@ -45,6 +47,10 @@ class BatchHandler:
                                 job_def_arn=self.job_def_arn,
                                 command=command,
                                 environment=environment)
+        self._cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.CONVERSION_REQUEST,
+            metric_value=1
+        )
 
     def _enqueue_batch_job(self, job_name, job_queue_arn, job_def_arn, command, environment):
         job = self._client.submit_job(

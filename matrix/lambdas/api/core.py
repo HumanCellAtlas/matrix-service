@@ -7,12 +7,10 @@ from connexion.lifecycle import ConnexionResponse
 
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
-from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from matrix.common.request.request_tracker import RequestTracker
 
 lambda_handler = LambdaHandler()
-cloudwatch_handler = CloudwatchHandler()
 
 
 def post_matrix(body: dict):
@@ -63,10 +61,6 @@ def post_matrix(body: dict):
 
     request_id = str(uuid.uuid4())
     RequestCache(request_id).initialize()
-    cloudwatch_handler.put_metric_data(
-        metric_name=MetricName.REQUEST,
-        metric_value=1
-    )
     driver_payload = {
         'request_id': request_id,
         'bundle_fqids': bundle_fqids,

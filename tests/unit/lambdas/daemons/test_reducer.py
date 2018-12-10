@@ -53,4 +53,3 @@ class TestReducer(MatrixTestCaseUsingMockAWS):
         mock_schedule_matrix_conversion.assert_called_once_with("loom")
         mock_write_group_metadata.assert_called_once_with()
         mock_complete_subtask_execution.assert_called_once_with(Subtask.REDUCER)
-        mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_REQUEST, metric_value=1)

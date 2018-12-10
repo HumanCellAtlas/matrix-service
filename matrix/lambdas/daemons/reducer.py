@@ -28,10 +28,6 @@ class Reducer:
 
         if self.request_tracker.format != MatrixFormat.ZARR.value:
             self.batch_handler.schedule_matrix_conversion(self.request_tracker.format)
-            self.cloudwatch_handler.put_metric_data(
-                metric_name=MetricName.CONVERSION_REQUEST,
-                metric_value=1
-            )
         else:
             self.cloudwatch_handler.put_metric_data(
                 metric_name=MetricName.REQUEST_COMPLETION,
