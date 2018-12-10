@@ -4,6 +4,7 @@ from unittest import mock
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
+from matrix.common.aws.cloudwatch_handler import MetricName
 
 
 class TestRequestTracker(MatrixTestCaseUsingMockAWS):
@@ -77,7 +78,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                                                   1)
         self.assertTrue(self.request_tracker.is_request_complete())
 
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_error")
-    def test_log_error(self, mock_write_request_error):
+    def test_log_error(self, mock_write_request_error, mock_cw_put):
         self.request_tracker.log_error("test error")
         mock_write_request_error.assert_called_once_with(self.request_hash, "test error")
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST_ERROR, metric_value=1)
