@@ -54,6 +54,13 @@ resource "aws_iam_role_policy" "matrix_service_mapper_lambda" {
         "lambda:InvokeFunction"
       ],
       "Resource": "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-worker-${var.deployment_stage}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*"
     }
   ]
 }

@@ -6,6 +6,7 @@ import zarr
 
 from matrix.common.request.request_tracker import Subtask
 from matrix.docker.matrix_converter import main, SUPPORTED_FORMATS
+from matrix.common.aws.cloudwatch_handler import MetricName
 
 PATH_TO_ZARR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "..",
@@ -25,6 +26,7 @@ class TestMatrixConverter(unittest.TestCase):
             with self.subTest(f"Converting to {file_format}"):
                 self._test_converter_with_file_format(file_format)
 
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("s3fs.S3FileSystem.put")
     @mock.patch("scipy.io.mmwrite")
@@ -44,7 +46,8 @@ class TestMatrixConverter(unittest.TestCase):
                                          mock_zipfile_write,
                                          mock_mmwrite,
                                          mock_s3_put,
-                                         mock_complete_subtask_execution):
+                                         mock_complete_subtask_execution,
+                                         mock_cw_put):
         mock_s3_fs.return_value = None
         mock_s3_map.return_value = None
         mock_group.return_value = self.group
@@ -61,6 +64,11 @@ class TestMatrixConverter(unittest.TestCase):
 
         mock_s3_put.assert_called_once()
         mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER)
+        calls = [
+            mock.call(metric_name=MetricName.CONVERSION_COMPLETION, metric_value=1),
+            mock.call(metric_name=MetricName.REQUEST_COMPLETION, metric_value=1),
+        ]
+        mock_cw_put.assert_has_calls(calls)
 
     def test_unsupported_format(self):
         with self.assertRaises(SystemExit):

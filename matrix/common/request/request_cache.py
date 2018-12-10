@@ -2,6 +2,7 @@ import hashlib
 import typing
 
 from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
@@ -39,6 +40,7 @@ class RequestCache(object):
     def __init__(self, request_id: str) -> None:
         self._request_id = request_id
         self._dynamo_handler = DynamoHandler()
+        self._cloudwatch_handler = CloudwatchHandler()
 
     @staticmethod
     def _hash_request(bundle_fqids: typing.List[str], format_: str) -> str:
@@ -58,6 +60,10 @@ class RequestCache(object):
         Sets a null hash value.
         """
         self._dynamo_handler.write_request_hash(self._request_id, NULL_REQUEST_HASH)
+        self._cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.REQUEST,
+            metric_value=1
+        )
 
     def retrieve_hash(self) -> typing.Union[str, None]:
         """Look up the hash value for the request.

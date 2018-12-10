@@ -5,6 +5,7 @@ import typing
 import requests
 
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.logging import Logging
 from matrix.common.request.request_cache import RequestCache
 from matrix.common.request.request_tracker import RequestTracker, Subtask
@@ -23,6 +24,7 @@ class Driver:
         self.bundles_per_worker = bundles_per_worker
 
         self.lambda_handler = LambdaHandler()
+        self.cloudwatch_handler = CloudwatchHandler()
 
     def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str):
         """
@@ -49,10 +51,18 @@ class Driver:
 
         if request_tracker.is_initialized:
             if not request_tracker.error:
+                self.cloudwatch_handler.put_metric_data(
+                    metric_name=MetricName.CACHE_HIT,
+                    metric_value=1
+                )
                 logger.debug(f"Halting because {request_hash} already exists and has not "
                              f"(yet) failed.")
                 return
 
+        self.cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.CACHE_MISS,
+            metric_value=1
+        )
         logger.debug("Request hash not found, so starting the whole show.")
 
         num_expected_mappers = int(math.ceil(len(resolved_bundle_fqids) / self.bundles_per_worker))

@@ -8,14 +8,17 @@ from unittest import mock
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.aws.dynamo_handler import OutputTableField
 from matrix.common.aws.lambda_handler import LambdaName
+from matrix.common.aws.cloudwatch_handler import MetricName
 from matrix.common.request.request_cache import RequestIdNotFound
 from matrix.lambdas.api.core import post_matrix, get_matrix, get_formats
 
 
 class TestCore(unittest.TestCase):
+
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
-    def test_post_matrix_with_ids_ok(self, mock_lambda_invoke, mock_write_request_hash):
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_post_matrix_with_ids_ok(self, mock_cw_put, mock_lambda_invoke, mock_write_request_hash):
         bundle_fqids = ["id1", "id2"]
         format = MatrixFormat.ZARR.value
 
@@ -30,13 +33,15 @@ class TestCore(unittest.TestCase):
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         mock_write_request_hash.assert_called_once_with(mock.ANY, "null")
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response.body['request_id']), str)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response.status_code, requests.codes.accepted)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_hash")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
-    def test_post_matrix_with_url_ok(self, mock_lambda_invoke, mock_write_request_hash):
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_post_matrix_with_url_ok(self, mock_cw_put, mock_lambda_invoke, mock_write_request_hash):
         format = MatrixFormat.ZARR.value
         bundle_fqids_url = "test_url"
 
@@ -51,6 +56,7 @@ class TestCore(unittest.TestCase):
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         mock_write_request_hash.assert_called_once_with(mock.ANY, "null")
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response.body['request_id']), str)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response.status_code, requests.codes.accepted)

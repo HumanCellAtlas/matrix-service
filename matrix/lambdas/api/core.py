@@ -10,6 +10,8 @@ from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from matrix.common.request.request_tracker import RequestTracker
 
+lambda_handler = LambdaHandler()
+
 
 def post_matrix(body: dict):
     has_ids = 'bundle_fqids' in body
@@ -59,14 +61,12 @@ def post_matrix(body: dict):
 
     request_id = str(uuid.uuid4())
     RequestCache(request_id).initialize()
-
     driver_payload = {
         'request_id': request_id,
         'bundle_fqids': bundle_fqids,
         'bundle_fqids_url': bundle_fqids_url,
         'format': format,
     }
-    lambda_handler = LambdaHandler()
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
 
     return ConnexionResponse(status_code=requests.codes.accepted,

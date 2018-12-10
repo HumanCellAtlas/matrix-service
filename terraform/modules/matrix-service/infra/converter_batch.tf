@@ -169,6 +169,13 @@ resource "aws_iam_policy" "converter_job_policy" {
             "s3:HeadBucket"
         ],
         "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "cloudwatch:PutMetricData"
+        ],
+        "Resource": "*"
       }
     ]
 }
@@ -213,7 +220,7 @@ resource "aws_batch_job_definition" "converter_job_def" {
     container_properties = <<CONTAINER_PROPERTIES
 {
   "command": [],
-  "image": "humancellatlas/matrix-converter:3",
+  "image": "humancellatlas/matrix-converter:5",
   "memory": 2048,
   "vcpus": 2,
   "jobRoleArn": "${aws_iam_role.converter_job_role.arn}",

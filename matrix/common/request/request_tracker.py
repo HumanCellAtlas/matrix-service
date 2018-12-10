@@ -3,6 +3,7 @@ from enum import Enum
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
 from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 
 logger = Logging.get_logger(__name__)
 
@@ -35,6 +36,7 @@ class RequestTracker:
         self._format = None
 
         self.dynamo_handler = DynamoHandler()
+        self.cloudwatch_handler = CloudwatchHandler()
 
     @property
     def is_initialized(self) -> bool:
@@ -154,3 +156,7 @@ class RequestTracker:
         """
         logger.debug(message)
         self.dynamo_handler.write_request_error(self.request_hash, message)
+        self.cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.REQUEST_ERROR,
+            metric_value=1
+        )
