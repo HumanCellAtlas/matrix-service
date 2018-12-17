@@ -5,11 +5,12 @@ class WaitFor:
 
     EXPONENTIAL_BACKOFF_FACTOR = 1.618
 
-    def __init__(self, func, *args):
+    def __init__(self, func, *args, backoff_factor=EXPONENTIAL_BACKOFF_FACTOR):
         self.func = func
         self.func_args = args
         self.start_time = None
         self.backoff_seconds = 1.0
+        self.backoff_factor = backoff_factor
 
     def to_return_value(self, value=None, timeout_seconds=60):
         self.start_time = time.time()
@@ -46,7 +47,7 @@ class WaitFor:
         next_check_at = time.time() + self.backoff_seconds
         while time.time() < next_check_at:
             time.sleep(1)
-        self.backoff_seconds = min(60.0, self.backoff_seconds * self.EXPONENTIAL_BACKOFF_FACTOR)
+        self.backoff_seconds = min(60.0, self.backoff_seconds * self.backoff_factor)
 
     def _elapsed_time(self):
         elapsed_delta = time.time() - self.start_time

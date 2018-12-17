@@ -17,3 +17,5 @@ chalice/vendor/
 data/
 .python-version
 docker-images/matrix-converter/code/
+tests/locust/*-*-*-*-*/**
+tests/locust/*.csv
