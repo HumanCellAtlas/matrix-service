@@ -87,12 +87,16 @@ def zarr_to_csv(zarr_root):
     """
 
     temp_dir = tempfile.mkdtemp()
-    csv_path = os.path.join(temp_dir, "matrix.csv.zip")
+    csv_path = os.path.join(temp_dir, "matrix.csv")
+    csv_zip_path = os.path.join(temp_dir, "matrix.csv.zip")
 
     dataframe = pandas.DataFrame(zarr_root.expression[:], index=zarr_root.cell_id[:],
                                  columns=zarr_root.gene_id[:])
-    dataframe.to_csv(csv_path, compression="zip")
-    return csv_path
+    dataframe.to_csv(csv_path)
+    with zipfile.ZipFile(csv_zip_path, mode="w", compression=zipfile.ZIP_DEFLATED) as z:
+        z.write(csv_path, arcname=os.path.basename(csv_path))
+
+    return csv_zip_path
 
 
 def zarr_to_mtx(zarr_root):
