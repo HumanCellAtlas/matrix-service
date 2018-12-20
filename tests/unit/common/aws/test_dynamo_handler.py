@@ -67,7 +67,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
     def test_create_output_table_entry(self):
-        self.handler.create_output_table_entry(self.request_hash, self.format)
+        self.handler.create_output_table_entry(self.request_hash, 1, self.format)
         response, entry = self._get_output_table_response_and_entry()
 
         self.assertEqual(len(response['Responses'][self.output_table_name]), 1)
@@ -89,7 +89,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_MAPPER_EXECUTIONS.value], 0)
 
     def test_increment_table_field_output_table_path(self):
-        self.handler.create_output_table_entry(self.request_hash, self.format)
+        self.handler.create_output_table_entry(self.request_hash, 1, self.format)
 
         response, entry = self._get_output_table_response_and_entry()
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
@@ -114,36 +114,38 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
     def test_get_state_table_entry(self):
         self.handler.create_state_table_entry(self.request_hash, 1)
-        entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, self.request_hash)
+        entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, request_hash=self.request_hash)
         self.assertEqual(entry[StateTableField.EXPECTED_REDUCER_EXECUTIONS.value], 1)
 
         key_dict = {"RequestHash": self.request_hash}
         field_enum = StateTableField.COMPLETED_WORKER_EXECUTIONS
         self.handler._increment_field(self.handler._state_table, key_dict, field_enum, 15)
-        entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, self.request_hash)
+        entry = self.handler.get_table_item(DynamoTable.STATE_TABLE, request_hash=self.request_hash)
         self.assertEqual(entry[StateTableField.COMPLETED_WORKER_EXECUTIONS.value], 15)
 
     def test_get_output_table_entry(self):
-        self.handler.create_output_table_entry(self.request_hash, self.format)
-        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_hash)
+        self.handler.create_output_table_entry(self.request_hash, 1, self.format)
+        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_hash=self.request_hash)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
         self.handler.increment_table_field(DynamoTable.OUTPUT_TABLE, self.request_hash, OutputTableField.ROW_COUNT, 5)
-        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_hash)
+        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_hash=self.request_hash)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 5)
 
     def test_get_table_item(self):
+        self.assertRaises(ValueError, self.handler.get_table_item,
+                          DynamoTable.OUTPUT_TABLE, self.request_id, self.request_hash)
         self.assertRaises(MatrixException, self.handler.get_table_item, DynamoTable.OUTPUT_TABLE, self.request_hash)
 
-        self.handler.create_output_table_entry(self.request_hash, self.format)
-        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_hash)
+        self.handler.create_output_table_entry(self.request_hash, 1, self.format)
+        entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_hash=self.request_hash)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
 
     def test_write_request_error(self):
-        self.handler.create_output_table_entry(self.request_hash, self.format)
+        self.handler.create_output_table_entry(self.request_hash, 1, self.format)
 
         self.handler.write_request_error(self.request_hash, "test error")
-        output = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, self.request_hash)
+        output = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_hash=self.request_hash)
         self.assertEqual(output[OutputTableField.ERROR_MESSAGE.value], "test error")
 
     def test_request_cache(self):

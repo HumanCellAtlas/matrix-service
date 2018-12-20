@@ -19,7 +19,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.create_test_state_table()
 
         self.dynamo_handler.create_state_table_entry(self.request_hash, 1, "test_format")
-        self.dynamo_handler.create_output_table_entry(self.request_hash, "test_format")
+        self.dynamo_handler.create_output_table_entry(self.request_hash, 1, "test_format")
 
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
@@ -33,10 +33,10 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_output_table_entry")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_state_table_entry")
     def test_initialize_request(self, mock_create_state_table_entry, mock_create_output_table_entry):
-        self.request_tracker.initialize_request(1, "test_format")
+        self.request_tracker.initialize_request(1, 1, "test_format")
 
         mock_create_state_table_entry.assert_called_once_with(self.request_hash, 1, "test_format")
-        mock_create_output_table_entry.assert_called_once_with(self.request_hash, "test_format")
+        mock_create_output_table_entry.assert_called_once_with(self.request_hash, 1, "test_format")
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_expect_subtask_execution(self, mock_increment_table_field):
@@ -84,3 +84,24 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.request_tracker.log_error("test error")
         mock_write_request_error.assert_called_once_with(self.request_hash, "test error")
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST_ERROR, metric_value=1)
+
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_complete_request(self, mock_cw_put):
+        duration = 1
+
+        self.request_tracker.complete_request(duration)
+
+        expected_calls = [
+            mock.call(metric_name=MetricName.REQUEST_COMPLETION, metric_value=1),
+            mock.call(metric_name=MetricName.DURATION, metric_value=duration, metric_dimensions=[
+                {
+                    'Name': "Number of Bundles",
+                    'Value': mock.ANY
+                },
+                {
+                    'Name': "Output Format",
+                    'Value': mock.ANY
+                },
+            ]),
+        ]
+        mock_cw_put.assert_has_calls(expected_calls)

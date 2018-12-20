@@ -137,8 +137,9 @@ class S3ZarrStore:
         """
         self._write_zgroup_metadata()
 
-        num_output_rows = int(self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                                 self._request_hash)[OutputTableField.ROW_COUNT.value])
+        num_output_rows =\
+            int(self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
+                                                   request_hash=self._request_hash)[OutputTableField.ROW_COUNT.value])
         for zarray in [ZarrayName.EXPRESSION,
                        ZarrayName.CELL_METADATA_NUMERIC,
                        ZarrayName.CELL_METADATA_STRING,

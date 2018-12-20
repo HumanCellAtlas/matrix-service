@@ -41,9 +41,10 @@ class TestDriver(unittest.TestCase):
         mock_cw_put.assert_called_once_with(metric_name=MetricName.CACHE_MISS, metric_value=1)
 
         num_mappers = math.ceil(len(bundle_fqids) / self._bundles_per_worker)
-        mock_initialize_request.assert_called_once_with(num_mappers, format)
+        mock_initialize_request.assert_called_once_with(len(bundle_fqids), num_mappers, format)
         expected_calls = [
-            call(LambdaName.MAPPER, {'request_hash': mock.ANY,
+            call(LambdaName.MAPPER, {'request_id': mock.ANY,
+                                     'request_hash': mock.ANY,
                                      'bundle_fqids': bundle_fqids})
         ]
         mock_lambda_invoke.assert_has_calls(expected_calls)
@@ -83,9 +84,10 @@ class TestDriver(unittest.TestCase):
         mock_cw_put.assert_called_once_with(metric_name=MetricName.CACHE_MISS, metric_value=1)
 
         num_mappers = math.ceil(len(bundle_fqids) / self._bundles_per_worker)
-        mock_initialize_request.assert_called_once_with(num_mappers, format)
+        mock_initialize_request.assert_called_once_with(len(bundle_fqids), num_mappers, format)
         expected_calls = [
-            call(LambdaName.MAPPER, {'request_hash': mock.ANY,
+            call(LambdaName.MAPPER, {'request_id': mock.ANY,
+                                     'request_hash': mock.ANY,
                                      'bundle_fqids': bundle_fqids})
         ]
         mock_lambda_invoke.assert_has_calls(expected_calls)

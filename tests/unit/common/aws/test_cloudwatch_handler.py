@@ -16,7 +16,7 @@ class TestClouddwatchHandler(unittest.TestCase):
         self.mock_cloudwatch_client = Stubber(self.handler._client)
 
     def test_put_metric_data(self):
-        metric_data = {'MetricName': MetricName.REQUEST.value, 'Value': 1}
+        metric_data = {'MetricName': MetricName.REQUEST.value, 'Value': 1, 'Dimensions': ()}
         expected_params = {'MetricData': [metric_data],
                            'Namespace': f"dcp-matrix-service-{self.deploment_stage}"}
         self.mock_cloudwatch_client.add_response('put_metric_data', {}, expected_params)

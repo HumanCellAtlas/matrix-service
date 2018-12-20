@@ -21,9 +21,10 @@ class Worker:
     """
     The worker (third) task in a distributed filter merge job.
     """
-    def __init__(self, request_hash: str):
+    def __init__(self, request_id: str, request_hash: str):
         Logging.set_correlation_id(logger, value=request_hash)
 
+        self._request_id = request_id
         self._request_hash = request_hash
         self._deployment_stage = os.environ['DEPLOYMENT_STAGE']
 
@@ -66,7 +67,8 @@ class Worker:
 
             s3_zarr_store.write_column_data(self.zarr_group)
             reducer_payload = {
-                'request_hash': self._request_hash
+                'request_id': self._request_id,
+                'request_hash': self._request_hash,
             }
             self.lambda_handler.invoke(LambdaName.REDUCER, reducer_payload)
 
