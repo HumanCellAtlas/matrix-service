@@ -4,6 +4,7 @@ from unittest import mock
 
 import zarr
 
+from matrix.common import date
 from matrix.common.request.request_tracker import Subtask
 from matrix.docker.matrix_converter import main, SUPPORTED_FORMATS
 from matrix.common.aws.cloudwatch_handler import MetricName
@@ -26,7 +27,10 @@ class TestMatrixConverter(unittest.TestCase):
             with self.subTest(f"Converting to {file_format}"):
                 self._test_converter_with_file_format(file_format)
 
+    @mock.patch("matrix.common.request.request_cache.RequestCache.creation_date",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_request")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("s3fs.S3FileSystem.put")
     @mock.patch("scipy.io.mmwrite")
@@ -47,12 +51,15 @@ class TestMatrixConverter(unittest.TestCase):
                                          mock_mmwrite,
                                          mock_s3_put,
                                          mock_complete_subtask_execution,
-                                         mock_cw_put):
+                                         mock_complete_request,
+                                         mock_cw_put,
+                                         mock_creation_date):
         mock_s3_fs.return_value = None
         mock_s3_map.return_value = None
         mock_group.return_value = self.group
+        mock_creation_date.return_value = date.get_datetime_now(as_string=True)
 
-        main(["test_hash", "test_source_path", "test_target_path", file_format])
+        main(["test_id", "test_hash", "test_source_path", "test_target_path", file_format])
 
         if file_format == "loom":
             mock_loompy_create.assert_called_once()
@@ -64,11 +71,8 @@ class TestMatrixConverter(unittest.TestCase):
 
         mock_s3_put.assert_called_once()
         mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER)
-        calls = [
-            mock.call(metric_name=MetricName.CONVERSION_COMPLETION, metric_value=1),
-            mock.call(metric_name=MetricName.REQUEST_COMPLETION, metric_value=1),
-        ]
-        mock_cw_put.assert_has_calls(calls)
+        mock_complete_request.assert_called_once_with(duration=mock.ANY)
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_COMPLETION, metric_value=1)
 
     def test_unsupported_format(self):
         with self.assertRaises(SystemExit):

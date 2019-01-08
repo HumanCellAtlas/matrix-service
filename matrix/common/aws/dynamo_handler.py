@@ -6,6 +6,7 @@ import boto3
 import botocore
 import requests
 
+from matrix.common import date
 from matrix.common.constants import MatrixFormat
 from matrix.common.exceptions import MatrixException
 
@@ -36,6 +37,7 @@ class OutputTableField(TableField):
     Field names for Output table in DynamoDB.
     """
     REQUEST_HASH = "RequestHash"
+    NUM_BUNDLES = "NumBundles"
     ROW_COUNT = "RowCount"
     FORMAT = "Format"
     ERROR_MESSAGE = "ErrorMessage"
@@ -47,6 +49,7 @@ class CacheTableField(TableField):
     """
     REQUEST_ID = "RequestId"
     REQUEST_HASH = "RequestHash"
+    CREATION_DATE = "CreationDate"
 
 
 class LockTableField(TableField):
@@ -90,6 +93,8 @@ class DynamoHandler:
             return self._state_table
         elif dynamo_table == DynamoTable.OUTPUT_TABLE:
             return self._output_table
+        elif dynamo_table == DynamoTable.CACHE_TABLE:
+            return self._cache_table
 
     def create_state_table_entry(self,
                                  request_hash: str,
@@ -120,16 +125,18 @@ class DynamoHandler:
             }
         )
 
-    def create_output_table_entry(self, request_hash: str, format: str):
+    def create_output_table_entry(self, request_hash: str, num_bundles: int, format: str):
         """
         Put a new item in the DynamoDB Table responsible for counting output rows
 
         :param request_hash: UUID identifying a filter merge job request.
+        :param num_bundles: the number of bundles in the request.
         :param format: expected file format for filter merge job request.
         """
         self._output_table.put_item(
             Item={
                 OutputTableField.REQUEST_HASH.value: request_hash,
+                OutputTableField.NUM_BUNDLES.value: num_bundles,
                 OutputTableField.ROW_COUNT.value: 0,
                 OutputTableField.FORMAT.value: format,
                 OutputTableField.ERROR_MESSAGE.value: 0,
@@ -148,18 +155,35 @@ class DynamoHandler:
             ExpressionAttributeValues={':m': message}
         )
 
-    def get_table_item(self, table: DynamoTable, request_hash: str):
-        """Retrieves dynamobdb item corresponding with request_hash in specified table
+    def get_table_item(self, table: DynamoTable, request_id: str="", request_hash: str=""):
+        """Retrieves dynamobdb item corresponding with request_id or request_hash in the specified table.
+        The correct key must be supplied for a given table:
+
+        State table: request_hash
+        Output table: request_hash
+        Cache table: request_id
+
         Input:
             table: (DynamoTable) enum
-            request_hash: (str) request id key in table
+            request_id: (str) request id key in table
+            request_hash: (str) request hash key in table
         Output:
             item: dynamodb item
         """
+        if bool(request_id) == bool(request_hash):
+            raise ValueError("Exactly one of request_id or request_hash must be supplied.")
+        elif table == DynamoTable.CACHE_TABLE and bool(request_hash):
+            raise ValueError(f"Expected request_id but received request_hash. "
+                             f"Please supply request_id to access items in {table.value}.")
+        elif table != DynamoTable.CACHE_TABLE and bool(request_id):
+            raise ValueError(f"Expected request_hash but received request_id. "
+                             f"Please supply request_hash to access items in {table.value}.")
+
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
         try:
+            table_key = {'RequestHash': request_hash} if bool(request_hash) else {'RequestId': request_id}
             item = dynamo_table.get_item(
-                Key={'RequestHash': request_hash},
+                Key=table_key,
                 ConsistentRead=True
             )['Item']
         except KeyError:
@@ -251,9 +275,11 @@ class DynamoHandler:
             request_hash: (int) hash of the request
             request_id: (uuid) request id to associate with the hash
         """
+
         self._cache_table.put_item(
             Item={
                 CacheTableField.REQUEST_ID.value: request_id,
-                CacheTableField.REQUEST_HASH.value: request_hash
+                CacheTableField.REQUEST_HASH.value: request_hash,
+                CacheTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True)
             }
         )

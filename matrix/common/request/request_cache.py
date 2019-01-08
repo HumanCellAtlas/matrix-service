@@ -1,7 +1,7 @@
 import hashlib
 import typing
 
-from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, CacheTableField
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.logging import Logging
 
@@ -42,6 +42,8 @@ class RequestCache(object):
         self._dynamo_handler = DynamoHandler()
         self._cloudwatch_handler = CloudwatchHandler()
 
+        self._creation_date = ""
+
     @staticmethod
     def _hash_request(bundle_fqids: typing.List[str], format_: str) -> str:
         """Calculate the hash of a request defined by fqids and a requested format."""
@@ -53,6 +55,14 @@ class RequestCache(object):
             hash_obj.update(format_.encode())
 
         return hash_obj.hexdigest()
+
+    @property
+    def creation_date(self):
+        """"""
+        if not self._creation_date:
+            item = self._dynamo_handler.get_table_item(DynamoTable.CACHE_TABLE, request_id=self._request_id)
+            self._creation_date = item[CacheTableField.CREATION_DATE.value]
+        return self._creation_date
 
     def initialize(self) -> None:
         """Initialize the request id in the request cache table.

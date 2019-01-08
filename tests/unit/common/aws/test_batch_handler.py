@@ -16,7 +16,7 @@ class TestBatchHandler(unittest.TestCase):
         self.request_id = str(uuid.uuid4())
         self.request_hash = hashlib.sha256().hexdigest()
 
-        self.batch_handler = BatchHandler(self.request_hash)
+        self.batch_handler = BatchHandler(self.request_id, self.request_hash)
         self.mock_batch_client = Stubber(self.batch_handler._client)
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")

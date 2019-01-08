@@ -27,7 +27,7 @@ class TestS3ZarrStore(MatrixTestCaseUsingMockAWS):
 
         self.request_id = str(uuid.uuid4())
         self.dynamo_handler = DynamoHandler()
-        self.dynamo_handler.create_output_table_entry(self.request_id, "zarr")
+        self.dynamo_handler.create_output_table_entry(self.request_id, 1, "zarr")
 
         test_array = [0] * ZARR_OUTPUT_CONFIG['cells_per_chunk']
         exp_df = DataFrame(data=test_array, index=test_array)

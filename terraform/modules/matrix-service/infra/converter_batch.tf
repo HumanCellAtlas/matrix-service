@@ -158,7 +158,9 @@ resource "aws_iam_policy" "converter_job_policy" {
           "dynamodb:GetItem"
         ],
         "Resource": [
-          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}"
+          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
+          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-cache-table-${var.deployment_stage}",
+          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
         ]
       },
       {
@@ -220,7 +222,7 @@ resource "aws_batch_job_definition" "converter_job_def" {
     container_properties = <<CONTAINER_PROPERTIES
 {
   "command": [],
-  "image": "humancellatlas/matrix-converter:6",
+  "image": "humancellatlas/matrix-converter:7",
   "memory": 2048,
   "vcpus": 2,
   "jobRoleArn": "${aws_iam_role.converter_job_role.arn}",

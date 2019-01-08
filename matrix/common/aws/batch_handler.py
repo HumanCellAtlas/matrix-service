@@ -11,9 +11,10 @@ logger = Logging.get_logger(__name__)
 
 
 class BatchHandler:
-    def __init__(self, request_hash):
+    def __init__(self, request_id, request_hash):
         Logging.set_correlation_id(logger, value=request_hash)
 
+        self.request_id = request_id
         self.request_hash = request_hash
 
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
@@ -33,7 +34,13 @@ class BatchHandler:
         is_compressed = format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value
         source_zarr_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.zarr"
         target_path = f"s3://{self.s3_results_bucket}/{self.request_hash}.{format}" + (".zip" if is_compressed else "")
-        command = ['python3', '/matrix_converter.py', self.request_hash, source_zarr_path, target_path, format]
+        command = ['python3',
+                   '/matrix_converter.py',
+                   self.request_id,
+                   self.request_hash,
+                   source_zarr_path,
+                   target_path,
+                   format]
 
         environment = {
             'DEPLOYMENT_STAGE': self.deployment_stage,

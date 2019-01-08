@@ -14,9 +14,10 @@ class Mapper:
     Mapper takes a single bundle (uuid, version) as input, reads the associated expression matrix
     from the DSS, and invokes a Worker task for each chunk (row subset) of the expression matrix.
     """
-    def __init__(self, request_hash: str):
+    def __init__(self, request_id: str, request_hash: str):
         Logging.set_correlation_id(logger, value=request_hash)
 
+        self.request_id = request_id
         self.request_hash = request_hash
 
         self.request_tracker = RequestTracker(self.request_hash)
@@ -52,6 +53,7 @@ class Mapper:
         :return: Worker lambda data payload
         """
         return {
+            'request_id': self.request_id,
             'request_hash': self.request_hash,
             'worker_chunk_spec': worker_chunk_spec
         }

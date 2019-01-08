@@ -13,7 +13,9 @@ import s3fs
 import scipy.io
 import zarr
 
+from matrix.common import date
 from matrix.common.logging import Logging
+from matrix.common.request.request_cache import RequestCache
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 
@@ -178,6 +180,8 @@ def main(args):
     """Entry point."""
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("request_id",
+                        help="Request id of the filter merge job")
     parser.add_argument("request_hash",
                         help="Request hash of the filter merge job")
     parser.add_argument("source_zarr_path",
@@ -193,7 +197,7 @@ def main(args):
     Logging.set_correlation_id(logger, value=args.request_hash)
 
     logger.debug(f"Starting matrix conversion job with parameters:"
-                 f"{args.request_hash}, {args.source_zarr_path}, {args.target_path}, {args.format}")
+                 f"{args.request_id}, {args.request_hash}, {args.source_zarr_path}, {args.target_path}, {args.format}")
 
     zarr_root = open_zarr(args.source_zarr_path)
     local_converted_path = globals()["zarr_to_" + args.format](zarr_root)
@@ -201,16 +205,19 @@ def main(args):
 
     upload_converted_matrix(local_converted_path, args.target_path)
     logger.debug("Upload to S3 complete, job finished")
-    RequestTracker(args.request_hash).complete_subtask_execution(Subtask.CONVERTER)
+
+    request_cache = RequestCache(args.request_id)
+    request_tracker = RequestTracker(args.request_hash)
+    request_tracker.complete_subtask_execution(Subtask.CONVERTER)
+
     cloudwatch_handler = CloudwatchHandler()
     cloudwatch_handler.put_metric_data(
         metric_name=MetricName.CONVERSION_COMPLETION,
         metric_value=1
     )
-    cloudwatch_handler.put_metric_data(
-        metric_name=MetricName.REQUEST_COMPLETION,
-        metric_value=1
-    )
+    request_tracker.complete_request(duration=(date.get_datetime_now() -
+                                               date.to_datetime(request_cache.creation_date))
+                                     .total_seconds())
 
 
 if __name__ == "__main__":

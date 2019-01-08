@@ -21,6 +21,7 @@ class Driver:
         Logging.set_correlation_id(logger, value=request_id)
 
         self.request_id = request_id
+        self.request_cache = RequestCache(request_id)
         self.bundles_per_worker = bundles_per_worker
 
         self.lambda_handler = LambdaHandler()
@@ -66,13 +67,16 @@ class Driver:
         logger.debug("Request hash not found, so starting the whole show.")
 
         num_expected_mappers = int(math.ceil(len(resolved_bundle_fqids) / self.bundles_per_worker))
-        request_tracker.initialize_request(num_expected_mappers, format)
+        request_tracker.initialize_request(len(resolved_bundle_fqids),
+                                           num_expected_mappers,
+                                           format)
 
         logger.debug(f"Invoking {num_expected_mappers} Mapper(s) with approximately "
                      f"{self.bundles_per_worker} bundles per Mapper.")
 
         for bundle_fqid_group in self._group_bundles(resolved_bundle_fqids, self.bundles_per_worker):
             mapper_payload = {
+                'request_id': self.request_id,
                 'request_hash': request_hash,
                 'bundle_fqids': bundle_fqid_group,
             }
