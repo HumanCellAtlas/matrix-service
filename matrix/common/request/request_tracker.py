@@ -176,7 +176,7 @@ class RequestTracker:
             metric_dimensions=[
                 {
                     'Name': "Number of Bundles",
-                    'Value': self.num_bundles
+                    'Value': str(self.num_bundles)
                 },
                 {
                     'Name': "Output Format",
