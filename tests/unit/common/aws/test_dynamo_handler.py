@@ -134,8 +134,21 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
     def test_get_table_item(self):
         self.assertRaises(ValueError, self.handler.get_table_item,
-                          DynamoTable.OUTPUT_TABLE, self.request_id, self.request_hash)
-        self.assertRaises(MatrixException, self.handler.get_table_item, DynamoTable.OUTPUT_TABLE, self.request_hash)
+                          DynamoTable.OUTPUT_TABLE,
+                          request_id=self.request_id,
+                          request_hash=self.request_hash)
+
+        self.assertRaises(ValueError, self.handler.get_table_item,
+                          DynamoTable.OUTPUT_TABLE,
+                          request_id=self.request_id)
+
+        self.assertRaises(ValueError, self.handler.get_table_item,
+                          DynamoTable.CACHE_TABLE,
+                          request_hash=self.request_hash)
+
+        self.assertRaises(MatrixException, self.handler.get_table_item,
+                          DynamoTable.OUTPUT_TABLE,
+                          request_hash=self.request_hash)
 
         self.handler.create_output_table_entry(self.request_hash, 1, self.format)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_hash=self.request_hash)

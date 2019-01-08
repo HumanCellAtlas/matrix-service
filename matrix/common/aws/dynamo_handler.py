@@ -93,6 +93,8 @@ class DynamoHandler:
             return self._state_table
         elif dynamo_table == DynamoTable.OUTPUT_TABLE:
             return self._output_table
+        elif dynamo_table == DynamoTable.CACHE_TABLE:
+            return self._cache_table
 
     def create_state_table_entry(self,
                                  request_hash: str,
@@ -153,17 +155,29 @@ class DynamoHandler:
             ExpressionAttributeValues={':m': message}
         )
 
-    def get_table_item(self, table: DynamoTable, request_hash: str="", request_id: str=""):
-        """Retrieves dynamobdb item corresponding with request_hash in specified table
+    def get_table_item(self, table: DynamoTable, request_id: str="", request_hash: str=""):
+        """Retrieves dynamobdb item corresponding with request_id or request_hash in the specified table.
+        The correct key must be supplied for a given table:
+
+        State table: request_hash
+        Output table: request_hash
+        Cache table: request_id
+
         Input:
             table: (DynamoTable) enum
-            request_hash: (str) request hash key in table
             request_id: (str) request id key in table
+            request_hash: (str) request hash key in table
         Output:
             item: dynamodb item
         """
-        if bool(request_hash) == bool(request_id):
-            raise ValueError("Exactly one of request_hash or request_id must be supplied.")
+        if bool(request_id) == bool(request_hash):
+            raise ValueError("Exactly one of request_id or request_hash must be supplied.")
+        elif table == DynamoTable.CACHE_TABLE and bool(request_hash):
+            raise ValueError(f"Expected request_id but received request_hash. "
+                             f"Please supply request_id to access items in {table.value}.")
+        elif table != DynamoTable.CACHE_TABLE and bool(request_id):
+            raise ValueError(f"Expected request_hash but received request_id. "
+                             f"Please supply request_hash to access items in {table.value}.")
 
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
         try:
