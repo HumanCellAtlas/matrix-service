@@ -62,6 +62,17 @@ class RequestTracker:
         return self._num_bundles
 
     @property
+    def num_bundles_interval(self) -> str:
+        """
+        Returns the interval string that num_bundles corresponds to.
+        :return: the interval string e.g. "0-499"
+        """
+        interval_size = 500
+
+        index = int(self.num_bundles / interval_size)
+        return f"{index * interval_size}-{(index * interval_size) + interval_size - 1}"
+
+    @property
     def format(self) -> str:
         """
         The request's user specified output file format of the resultant expression matrix.
@@ -176,11 +187,21 @@ class RequestTracker:
             metric_dimensions=[
                 {
                     'Name': "Number of Bundles",
-                    'Value': str(self.num_bundles)
+                    'Value': self.num_bundles_interval
                 },
                 {
                     'Name': "Output Format",
                     'Value': self.format
+                },
+            ]
+        )
+        self.cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.DURATION,
+            metric_value=duration,
+            metric_dimensions=[
+                {
+                    'Name': "Number of Bundles",
+                    'Value': self.num_bundles_interval
                 },
             ]
         )

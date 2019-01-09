@@ -24,6 +24,21 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
 
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.num_bundles",
+                new_callable=mock.PropertyMock)
+    def test_num_bundles_interval(self, mock_num_bundles):
+        mock_num_bundles.return_value = 0
+        self.assertEqual(self.request_tracker.num_bundles_interval, "0-499")
+
+        mock_num_bundles.return_value = 1
+        self.assertEqual(self.request_tracker.num_bundles_interval, "0-499")
+
+        mock_num_bundles.return_value = 500
+        self.assertEqual(self.request_tracker.num_bundles_interval, "500-999")
+
+        mock_num_bundles.return_value = 1234
+        self.assertEqual(self.request_tracker.num_bundles_interval, "1000-1499")
+
     def test_error(self):
         self.assertEqual(self.request_tracker.error, "")
 
@@ -100,6 +115,12 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                 },
                 {
                     'Name': "Output Format",
+                    'Value': mock.ANY
+                },
+            ]),
+            mock.call(metric_name=MetricName.DURATION, metric_value=duration, metric_dimensions=[
+                {
+                    'Name': "Number of Bundles",
                     'Value': mock.ANY
                 },
             ]),
