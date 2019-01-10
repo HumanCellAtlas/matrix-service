@@ -20,4 +20,4 @@ functional-tests:
 		-m unittest discover --start-directory tests/functional --top-level-directory . --verbose
 
 load-tests:
-	cd tests/locust && locust --host=https://matrix.staging.data.humancellatlas.org --no-web --client=$(NUM_CLIENTS) --hatch-rate=1 --run-time=$(RUN_TIME) --csv=results
+	cd tests/locust && locust --host=https://matrix.staging.data.humancellatlas.org --no-web --client=$(NUM_CLIENTS) --hatch-rate=1 --run-time=$(RUN_TIME)

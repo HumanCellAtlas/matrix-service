@@ -1,18 +1,17 @@
+import boto3
 import json
 import os
 import random
 import requests
 import sys
 import time
-import uuid
 
-import matplotlib.pyplot as plt
-import pandas as pd
 from locust import HttpLocust, TaskSet, task, events, stats
 
 pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))  # noqa
 sys.path.insert(0, pkg_root)  # noqa
 
+from matrix.common import date
 from tests.functional.wait_for import WaitFor
 
 stats.CSV_STATS_INTERVAL_SEC = 5
@@ -24,7 +23,7 @@ class UserBehavior(TaskSet):
     Defines the set of tasks that a simulated user will execute against the system
     """
     INPUT_SIZES = [1]
-    INPUT_SIZES.extend([(i + 1) * 200 for i in range(5)])
+    INPUT_SIZES.extend([(i + 1) * 300 for i in range(6)])
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -62,78 +61,54 @@ class LocustTest(HttpLocust):
     max_wait = 5000
 
     def setup(self):
-        self.uuid = str(uuid.uuid4())
-        print(f"Running test with test ID {self.uuid}")
-        os.mkdir(self.uuid)
+        self.timestamp = date.get_datetime_now(as_string=True)
+        print(f"Running test with timestamp {self.timestamp}")
 
     def teardown(self):
-        os.rename("results_requests.csv", f"{self.uuid}/results_requests.csv")
-        os.rename("results_distribution.csv", f"{self.uuid}/results_distribution.csv")
-        self.plot_results()
+        self.export_results_to_s3()
 
-    def export_grafana_panels_to_s3(self):
+    def export_results_to_s3(self):
         """
-        Exports and uploads Processing Times panels from Grafana to S3 buckets
+        Exports and uploads Grafana dashboards to S3
         """
-        return
+        s3 = boto3.resource("s3", region_name=os.environ['AWS_DEFAULT_REGION'])
 
-    def plot_results(self):
-        """
-        Generates plots of the processing time results for each and all output formats
-        """
-        print(f"Plotting results for test ID {self.uuid}")
-        df = pd.read_csv(f"{self.uuid}/results_requests.csv")
-        df = df.drop(len(df) - 1)
-        format_to_color = {
-            'zarr': 'm',
-            'loom': 'c',
-            'mtx': 'r',
-            'csv': 'y',
-        }
-        format_to_size = {
-            'zarr': 32,
-            'loom': 22,
-            'mtx': 12,
-            'csv': 2,
+        snapshot_obj = self._export_grafana_snapshot()
+        version = self._get_matrix_version()
+
+        results = {
+            'grafana': {
+                'snapshot_url': snapshot_obj['url'],
+                'delete_snapshot_url': snapshot_obj['deleteUrl']
+            },
+            'matrix_version': version,
+            'timestamp': self.timestamp
         }
 
-        results = {}
+        s3.Bucket("dcp-matrix-service-performance-results"). \
+            put_object(Key=f"{os.environ['DEPLOYMENT_STAGE']}-{self.timestamp}.txt",
+                       Body=json.dumps(results).encode('utf-8'))
 
-        # generate graphs per format
-        for matrix_format in OUTPUT_FORMATS:
-            format_results = results[matrix_format] = df[df['Method'] == matrix_format]
+    def _get_matrix_version(self):
+        response = requests.get(f"https://matrix.{os.environ['DEPLOYMENT_STAGE']}.data.humancellatlas.org/version")
+        return json.loads(response.content)['version_info']['version']
 
-            plt.errorbar(x=format_results['Average Content Size'],
-                         y=format_results['Average response time'],
-                         label=matrix_format,
-                         fmt=f"{format_to_color[matrix_format]}_",
-                         yerr=(format_results['Max response time'] - format_results['Average response time'],
-                               format_results['Average response time'] - format_results['Min response time']))
-            plt.xlabel("# of bundles")
-            plt.ylabel("Response time (s)")
-            plt.legend(loc="lower right")
-            plt.title(f"{matrix_format.capitalize()} Request Profile")
-            plt.savefig(f"{self.uuid}/{matrix_format}_plot.pdf")
-            plt.close()
+    def _export_grafana_snapshot(self):
+        secrets = boto3.client('secretsmanager', region_name=os.environ['AWS_DEFAULT_REGION'])
+        auth = secrets.get_secret_value(SecretId="grafana/admin_credentials")['SecretString']
 
-        # generate graph with all formats
-        for matrix_format in OUTPUT_FORMATS:
-            format_results = results[matrix_format]
-            plt.errorbar(x=format_results['Average Content Size'],
-                         y=format_results['Average response time'],
-                         label=matrix_format,
-                         fmt=f"{format_to_color[matrix_format]}_",
-                         yerr=(format_results['Max response time'] - format_results['Average response time'],
-                               format_results['Average response time'] - format_results['Min response time']),
-                         elinewidth=format_to_size[matrix_format],
-                         markersize=format_to_size[matrix_format] + 8)
+        dashboard_url = f"https://{auth}@metrics.dev.data.humancellatlas.org/" \
+                        f"api/dashboards/uid/matrix-{os.environ['DEPLOYMENT_STAGE']}"
+        snapshot_url = f"https://{auth}@metrics.dev.data.humancellatlas.org/api/snapshots"
 
-        plt.xlabel("# of bundles")
-        plt.ylabel("Processing time (s)")
-        plt.legend(loc="lower right")
-        plt.title("Matrix Service Request Profile")
-        plt.savefig(f"{self.uuid}/combined_plot.pdf")
-        print(f"Plots and results generated in {self.uuid}/")
+        response = requests.get(dashboard_url)
+        dashboard_obj = json.loads(response.content)['dashboard']
+
+        response = requests.post(snapshot_url,
+                                 data=json.dumps({'dashboard': dashboard_obj}),
+                                 headers={'Content-Type': "application/json"})
+
+        return json.loads(response.content)
 
 
 class MatrixClient:
