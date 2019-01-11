@@ -122,7 +122,7 @@ def zarr_to_mtx(zarr_root):
     mtx_path = os.path.join(temp_dir, "matrix.mtx")
     dataframe = pandas.DataFrame(zarr_root.expression[:])
 
-    sparse_mat = scipy.sparse.coo_matrix(dataframe.values)
+    sparse_mat = scipy.sparse.coo_matrix(dataframe.values).transpose()
     scipy.io.mmwrite(mtx_path, sparse_mat)
 
     cell_id_path = os.path.join(temp_dir, "cell_id.csv")
