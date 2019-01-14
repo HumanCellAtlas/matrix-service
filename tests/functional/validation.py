@@ -113,7 +113,7 @@ def calculate_ss2_metrics_mtx(mtx_zip_url):
     return {
         "expression_sum": numpy.sum(matrix),
         "expression_nonzero": len(matrix.data),
-        "cell_count": matrix.shape[0]
+        "cell_count": matrix.shape[1]
     }
 
 
