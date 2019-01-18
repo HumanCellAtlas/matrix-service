@@ -58,7 +58,7 @@ distributing queries across multiple nodes.
 
 The expression values themselves can be organized into one big fact table:
 
-``` 
+```
 expression (
     expr_projectkey       VARCHAR(60) NOT NULL SORTKEY,
     expr_cellkey          VARCHAR(60) NOT NULL DISTKEY,
@@ -118,3 +118,49 @@ The tables above are just illustrative examples, and this overlaps a great
 deal with the work being done for the query service.
 
 ### Big EC2 Instance
+
+
+### Test queries
+
+
+Find full expression matrix from the "1M Immune Cells" project.
+```
+SELECT e.expr_cellkey, e.expr_featurekey, e.expr_value
+FROM expression as e,
+     project as p
+WHERE e.expr_projectkey = p.proj_key
+  AND p.proj_short_title = '1M Immune Cells'
+```
+
+Find the full expression matrix from lucky cells from diseased donors.
+```
+SELECT e.expr_cellkey, e.expr_featurekey, e.expr_value
+FROM expression as e,
+     cell as c,
+     donor_organism as d
+WHERE e.expr_cellkey = c.cellkey
+  AND c.is_lucky IS TRUE
+  AND d.donor_disease <> 'PATO:0000461'
+```
+Find the average expression of CD24 in non-diseased caucasians.
+```
+SELECT AVG(e.expr_value)
+FROM expression as e,
+     donor_organism
+WHERE donor_organism.donor_ethnicity = 'HANCESTRO:0005'
+  AND donor_organism.donor_disease = 'PATO:0000461'
+  AND e.expr_featurekey = 'ENSG00000272398'
+  AND e.expr_exprtype = 'Count'
+  AND e.expr_donorkey = donor_organism.donor_key
+```
+
+Find the paper title for all cells expressing CD24.
+``` 
+SELECT DISTINCT(pub.pub_title)
+FROM expression as e,
+     project as p,
+     publication as pub
+WHERE e.expr_projectkey = p.proj_key
+  AND p.proj_key = pub.proj_key
+  AND e.expr_featurekey = 'ENSG00000272398'
+```
