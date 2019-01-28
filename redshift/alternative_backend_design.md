@@ -282,4 +282,107 @@ $1/hour to operate.
 This is the time to complete the query. The TTFB can be tuned to be quite fast
 by setting the size of files that each slice should write to S3.
 
-### Single Instance Solutions
+### Apache Drill (Single Instance)
+
+Given the modest size of expression data (~4.5TB), it may be sufficient to opt
+for simpler infrastructure and store all data on a single instance. Apache Drill
+is a distributed query engine that offers columnar query execution on schema-free
+data models. Drill also supports querying from multiple, aggregate datasources
+such as Hadoop, S3 and local files via standard APIs including ANSI SQL. Though
+Drill is capable of scaling to a cluster of nodes, we are interested in Drill on
+a single instance as an architecturally lightweight solution.
+
+#### Data Organization
+
+For consistency, the same data schemas as [above](#aws-redshift) will be used 
+to benchmark query performance. Since the design uses a single node, the same
+considerations addressing data distribution do not apply.
+
+Drill supports querying various file formats including plaintext files (CSV,
+TSV, PSV) as well as Hadoop file formats such as `parquet`. To leverage
+Drill's columnar query execution, expression data will be stored in `parquet`
+files on disk - one file per table.
+
+#### EC2 Instance
+
+Amazon offers a class of storage-optimized EC2 instances (I3) that provide low
+latency I/O to large NVMe SSDs. The following table describes the instance used
+to perform test queries and benchmarking.
+
+| EC2 AMI | vCPUs | Memory | Storage |  Cost |
+|---------|-------|--------|---------|-------|
+|[i3.4xlarge](https://www.ec2instances.info/?selected=i3.4xlarge)|  16   |122GiB  |3.8TB NVMe SSD|$1.248/hr (OD) $0.857/hr (R)|
+
+The query performance of a single instance is largely dependent on the level of
+parallelization it can achieve. This is bounded by the number of cores
+(translated from vCPUs). This test uses the 3rd largest I3 instance with 16
+cores, following 32 (i3.8xlarge) and 64 cores (i3.16xlarge) that may be an option
+if necessary.
+
+For the anticipated size of data and query loads, memory and storage are
+manageable given the two larger I3 instances.
+
+#### Test Queries
+
+For reasonable results, the same queries as [above](#aws-redshift) will be used
+to perform benchmarking. They are rewritten here as SQL queries against Drill.
+
+A) Find full expression matrix from the "1M Immune Cells" project:
+```
+SELECT c.cellkey, e.featurekey, e.exprtype, e.exprvalue
+FROM dfs.`/mnt/data/expression_100m.parquet` AS e
+    JOIN dfs.`/mnt/data/cell.parquet` AS c ON e.cellkey=c.cellkey
+    JOIN dfs.`/mnt/data/project.parquet` AS p ON e.projectkey=p.projectkey
+WHERE p.short_name='1M Immune Cells';
+```
+
+B) Find the full expression matrix from lucky cells from diseased donors:
+```
+SELECT c.cellkey, e.featurekey, e.exprvalue
+FROM dfs.`/mnt/data/expression_100m.parquet` AS e
+    JOIN dfs.`/mnt/data/cell.parquet` AS c ON e.cellkey=c.cellkey
+    JOIN dfs.`/mnt/data/donor.parquet` AS d ON e.donorkey=d.donorkey
+WHERE c.cell_is_lucky IS TRUE
+    AND d.donor_disease='PATO:0000461';
+```
+
+C) Find the average expression of CD24 in non-diseased caucasians:
+```
+SELECT AVG(e.exprvalue)
+FROM dfs.`/mnt/data/expression_100m.parquet` AS e
+    JOIN dfs.`/mnt/data/donor.parquet` AS d ON e.donorkey=d.donorkey
+WHERE d.ethnicity='HANCESTRO:0005'
+    AND d.disease='PATO:0000461'
+    AND e.expr_featurekey='ENSG00000272398'
+    AND e.expr_exprtype='Count';
+```
+
+D) Find the paper title for all cells expressing CD24:
+```
+SELECT DISTINCT(pub.pub_title)
+FROM dfs.`/mnt/data/expression_100m.parquet` AS e
+    JOIN dfs.`/mnt/data/cell.parquet` AS c ON e.cellkey=c.cellkey
+    JOIN dfs.`/mnt/data/project.parquet` AS p ON e.projectkey=p.projectkey
+    JOIN dfs.`/mnt/data/publication.parquet` AS pub ON p.key=pub.projectkey
+WHERE e.featurekey='ENSG00000272398';
+```
+
+#### Results
+
+**Important note**: These results do not reflect the full dataset used in the
+[Redshift experiment](#aws-redshift). A parquet file for the full expression
+table (~400 million rows) was not generated. Instead, these queries used half
+(~200 million rows) of the expression table. Otherwise, the data are the same.
+
+| Query | Time |
+|-------|------|
+| A |  2min  |
+| B |  5min |
+| C |  30s |
+| D |  15s |
+
+These results suggest Drill's performance on a single node may be passable given
+optimizations. Query A and B are unacceptable, however by increasing
+parallelization using the larger two i3 instances, they may improve to an acceptable
+range. These instances cost $3.97/hr and $7.93/hr respectively (on demand),
+significantly more expensive than alternatives.
