@@ -2,10 +2,10 @@
 
 ## Motivation
 
-In an experiment designed to explore the shortcomings of the current design of the Matrix Service
-and the advantages of alternate designs, Redshift was determined to be a desired alternative to 
-the current architecture. The experiment and an analysis of the factors considered in this
-decision can be found in this [doc](https://github.com/HumanCellAtlas/matrix-service/blob/mckinsel-redshift/redshift/alternative_backend_design.md#apache-drill-single-instance).
+An experiment designed to explore the shortcomings of the Matrix Service's current design
+and the advantages of alternate designs chose Redshift as a suitable alternative current
+architecture. The experiment and an analysis of the factors considered are captured in this
+[doc](https://github.com/HumanCellAtlas/matrix-service/blob/mckinsel-redshift/redshift/alternative_backend_design.md#apache-drill-single-instance).
 
 ## Design
 
@@ -20,43 +20,35 @@ The following subsections propose a design of the new architecture organized by 
 
 [insert LucidChart architecture diagram]
 
-### ETL (move to dedicated ETL design doc)
-
-The query service and matrix service have identified a common requirement to consume data in the
-DSS and represent it in various representations. This process does not only benefit these services,
-but is essential to any process consuming data from the DSS. This is the motivation behind the new
-ETL library.
-
-The new architecture will implement the ETL library to implement the initialization and syncing of
-data between Redshift and the DSS.
-
 ### Redshift
 
 #### Schema
 
-#### Query execution
-
 #### Data Initailization
 
-- Initialization script: 
-    - Bash script
-    - Spins up an EC2 instance
-    - Stages data on local filesystem using ETL library functions
-        - issues ES queries to ETL to stage all relevant data locally (expression data, relevant metadata)
-    - [ETL] Per Bundle Callback: Hit DSS, stage expression data related to bundle
-    - [ETL] Final Callback: all files staged -> write PSVs -> upload to staging bucket in S3 -> load S3>Redshift
-    
+This section outlines the first-time initialization process for loading expression data and relevant metadata from the
+DSS into Redshift. The process will be implemented as a Python script running on an EC2 instance that will be kicked off
+and provisioned by a local bash script. In Python, [dcplib/ETL]() will be implemented to download all data required in
+Redshift from the DSS. The ETL library allows the client to supply two callbacks during extraction: 1) on download of a
+single bundle and 2) on completion of all requested data. The first callback will be responsible for downloading all
+auxiliary data related to the bundle (expression data). The second callback will be responsible for transforming all
+downloaded data to PSV files representing Redshift tables. Once transformed, these files will be uploaded to an S3
+bucket to be consumed by Redshift. Once uploaded, a [COPY query](https://docs.aws.amazon.com/redshift/latest/dg/t_Loading-data-from-S3.html)
+will be issued to Redshift to load all data from the S3 bucket into Redshift tables.
+
 #### DSS Updates
 
-- DSS notification endpoint on Matrix API:
-    - create DSS subscriptions for bundle creates and deletes routed to this endpoint
-    - on Create event:
-        - invoke Lambda (15min timeout)
-        - in Lambda, locally stage new bundle via ETL library, transform to PSV, upload to S3 staging bucket -> load S3>Redshift
-            - alternatively, ignore S3 staging bucket for notifications and simply update tables in Redshift
-    - on Delete event:
-        - invoke Lambda (15min timeout)
-        - in Lambda, delete all references to deleted bundle in Redshift tables
+Data in Redshift will stay up-to-date with the DSS via DSS subscriptions. A new endpoint on the Matrix Service API will
+subscribe to create and delete events in the DSS. These events will be processed in a Lambda invoked by the endpoint to
+bypass API Gateway's 30s timeout. For create events, the Lambda will download the new bundle via ETL, transform relevant
+data into PSV format and INSERT the new rows into their tables in Redshift. For delete events, a DELETE will be issued
+to all tables and rows relating to the deleted bundle. Handling delete events will require [the schema](#schema) to
+be such that all entries to be tied to a bundle UUID.
+
+_Caveat:_ This design does not maintain data integrity in the S3 staging bucket used during
+[Data Initialization](#data-initailization). The rationale for this is the design and time complexity to handle
+single bundle deletes across raw text files stored in S3. Supporting this would require scanning all files in the S3
+staging bucket which is unreasonable.
         
 ### POST /matrix Lambda
 
