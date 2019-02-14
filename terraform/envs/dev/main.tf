@@ -23,6 +23,8 @@ module "matrix_service_infra" {
   aws_region = "${var.aws_region}"
   converter_cluster_ami_id = "${var.converter_cluster_ami_id}"
   vpc_cidr_block = "${var.vpc_cidr_block}"
+  redshift_username = "${var.redshift_username}"
+  redshift_password = "${var.redshift_password}"
 }
 
 module "matrix_service_lambdas" {
