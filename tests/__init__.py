@@ -1,6 +1,6 @@
 test_bundle_spec = {
-    "uuid": "ba9c63ac-6db5-48bc-a2e3-7be4ddd03d97",
-    "version": "2018-10-17T173508.111787Z",
+    "uuid": "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0",
+    "version": "2019-02-11T171739.925160Z",
     "replica": "aws",
     "description": {
         "shapes": {
@@ -14,16 +14,16 @@ test_bundle_spec = {
         },
         "sums": {
             "expression": 1000000,
-            "cell_metadata_numeric": 5859988
+            "cell_metadata_numeric": 304981972
         },
         "digests": {
-            "cell_id": b'fefa87f9820656e61298827f94fc537c198b8b23',
-            "cell_metadata_numeric": b'49181b9040b3cfa386cb2282c00a25eddbf480d5',
+            "cell_id": b'9be25edb81479c653784439614b173b984e5a7f0',
+            "cell_metadata_numeric": b'b0c2c720ab7ff3615c4876e35d8b5d2238244c1e',
             "cell_metadata_numeric_name": b'f4e8156b933c1295afd5468c398991cd9712ba26',
             "cell_metadata_string": b'ef70f6bde79d7f61cf6eb89e16b29bec912565fb',
             "cell_metadata_string_name": b'bdd2ea7e0b4424872681f778c78cc8f0ee66cfa2',
-            "expression": b'b8b66e56cdff65c719eea8b9313e990ec01237b3',
-            "gene_id": b'c251ac69ceda370d512f37873715114c25fdfb39'
+            "expression": b'0001a5340948768ad916ca8dbc5aaecbaf164c83',
+            "gene_id": b'7144c05ff4f5faa1f51442994d2572aa84ee978f'
         }
     }
 }
