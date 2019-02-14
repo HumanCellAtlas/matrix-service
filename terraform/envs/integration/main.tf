@@ -3,7 +3,7 @@ terraform {
 
   backend "s3" {
     bucket  = "org-humancellatlas-861229788715-terraform"
-    key     = "matrix-service/envs/integration/terraform.tfvars"
+    key     = "matrix-service/envs/integration/terraform.tfstate"
     encrypt = true
     region  = "us-east-1"
     profile = "hca"
