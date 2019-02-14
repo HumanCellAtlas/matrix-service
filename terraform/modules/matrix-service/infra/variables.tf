@@ -17,3 +17,11 @@ variable "converter_cluster_ami_id" {
 variable "vpc_cidr_block" {
   type = "string"
 }
+
+variable "redshift_username" {
+  type = "string"
+}
+
+variable "redshift_password" {
+  type = "string"
+}
