@@ -8,10 +8,18 @@ init:
 	terraform init
 
 plan:
+	make retrieve-vars
 	terraform plan -detailed-exitcode
 
 apply:
+	make retrieve-vars
 	terraform apply --backup=-
+
+retrieve-vars:
+	aws s3 cp $(S3_TFVARS_FILE) terraform.tfvars
+
+upload-vars:
+	aws s3 cp terraform.tfvars $(S3_TFVARS_FILE)
 
 import:
 	# These resources are shared between deployments in the same account

@@ -19,3 +19,4 @@ data/
 docker-images/matrix-converter/code/
 tests/locust/*-*-*-*-*/**
 tests/locust/*.csv
+*terraform.tfvars
