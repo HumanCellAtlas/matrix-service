@@ -23,8 +23,6 @@ module "matrix_service_infra" {
   aws_region = "${var.aws_region}"
   converter_cluster_ami_id = "${var.converter_cluster_ami_id}"
   vpc_cidr_block = "${var.vpc_cidr_block}"
-  redshift_username = "${var.redshift_username}"
-  redshift_password = "${var.redshift_password}"
 }
 
 module "matrix_service_lambdas" {
@@ -34,4 +32,11 @@ module "matrix_service_lambdas" {
   aws_region = "${var.aws_region}"
   deployment_bucket_id = "${module.matrix_service_infra.deployment_bucket_id}"
   results_bucket_arn = "${module.matrix_service_infra.results_bucket_arn}"
+}
+
+module "matrix_service_redshift" {
+  source = "../../modules/matrix-service/redshift"
+  deployment_stage = "${var.deployment_stage}"
+  redshift_username = "${var.redshift_username}"
+  redshift_password = "${var.redshift_password}"
 }
