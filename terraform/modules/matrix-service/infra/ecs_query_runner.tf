@@ -40,7 +40,7 @@ resource "aws_cloudwatch_log_group" "query_runner" {
 }
 
 resource "aws_iam_role" "task_executor" {
-  name = "matrix-service-PgbouncerTaskExecutionRole-${var.deployment_stage}"
+  name = "matrix-service-task-execution-role-${var.deployment_stage}"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
