@@ -84,10 +84,9 @@ resource "aws_lambda_function" "matrix_service_driver_lambda" {
   environment {
     variables = {
         DEPLOYMENT_STAGE = "${var.deployment_stage}"
-        LAMBDA_MAPPER_FUNCTION_NAME="dcp-matrix-service-mapper-${var.deployment_stage}"
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
         DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
-        DYNAMO_CACHE_TABLE_NAME="dcp-matrix-service-cache-table-${var.deployment_stage}"
+        MATRIX_QUERY_BUCKET = "dcp-matrix-service-queries-${var.deployment_stage}"
     }
   }
 }
