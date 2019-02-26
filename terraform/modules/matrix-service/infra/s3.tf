@@ -47,3 +47,18 @@ output "deployment_bucket_id" {
 output "results_bucket_arn" {
   value = "${aws_s3_bucket.matrix-results.arn}"
 }
+
+resource "aws_s3_bucket" "matrix_queries" {
+  bucket = "dcp-matrix-service-queries-${var.deployment_stage}"
+
+  lifecycle_rule {
+    id      = "matrix_service_queries_expiration"
+
+    expiration {
+      days = 30
+    }
+
+    enabled = true
+  }
+  # Add tags later
+}
