@@ -36,11 +36,11 @@ import glob
 import json
 import os
 import pathlib
+import re
 
 import requests
 
 def resolve_ontology_ols(term):
-    """Get the ontology label for a term using the OLS API."""
 
     special_case = {
         "NCBITAXON": "NCBITaxon"
@@ -56,10 +56,15 @@ def resolve_ontology_ols(term):
         ontology, term_id = term.split(":")
     except ValueError:
         return None
-    
+
     ontology = special_case.get(ontology, ontology)
-    is_organoid = term_id.endswith(" (organoid)")
-    term_id = term_id.rstrip(" (organoid)")
+    special_match = re.match("(.*)(\ \(.*\))", term_id)
+    if special_match:
+        is_special = True
+        term_id = special_match.groups()[0]
+        special_type = special_match.groups()[1]
+    else:
+        is_special = False
 
     label = None
     for uri_template in uri_templates:
@@ -69,24 +74,22 @@ def resolve_ontology_ols(term):
         resp = requests.get(uri)
         if "label" in resp.json():
             label = resp.json()["label"]
-            if is_organoid:
-                label += " (organoid)"
+            if is_special:
+                label += special_type
             break
     return label
 
 def create_ontology_resolver(*metadata_dict_lists):
-    """Look through all the gathered metadata and create a dict that maps
-    from ontology term to ontology label.
-    """
 
     candidate_terms = set()
     for metadata_dict_list in metadata_dict_lists:
-        for metadata_dict in metadata_dict_list: 
+        for metadata_dict in metadata_dict_list:
             for k, v in metadata_dict.items():
                 if k == "key":
                     continue
                 if v:
                     candidate_terms.add(v)
+    print(candidate_terms)
 
     resolver = {}
     for candidate_term in candidate_terms:
@@ -98,6 +101,7 @@ def create_ontology_resolver(*metadata_dict_lists):
 
 
 def parse_donor_json(bundle_path):
+
     donor_json_paths = glob.glob(
         os.path.join(bundle_path, "donor_organism_*.json"))
 
@@ -106,7 +110,7 @@ def parse_donor_json(bundle_path):
     diseases = set()
     dev_stages = set()
     donorkeys = []
-    
+
     for donor_json_path in donor_json_paths:
         donor_dict = json.load(open(donor_json_path))
         key = donor_dict["provenance"]["document_id"]
@@ -136,9 +140,7 @@ def parse_donor_json(bundle_path):
         ethnicities.add(ethnicity)
         diseases.add(disease)
         dev_stages.add(dev_stage)
-    
-    # Some cells have multiple donors. Only record the donor information if
-    # it's the same across all of them.
+
     output = {
         "key": sorted(donorkeys)[0],
         "genus_species": next(iter(genera)) if len(genera) == 1 else "",
@@ -152,10 +154,8 @@ def parse_donor_json(bundle_path):
     return output
 
 def parse_organ(bundle_path):
-    """Get the organ and organ_part. Have to look at the whole bundle to see if
-    it's an organoid.
-    """
 
+    # First see if it's an orgnaoid
     organoid_json_paths = glob.glob(os.path.join(bundle_path, "organoid_*.json"))
 
     if organoid_json_paths:
@@ -169,6 +169,15 @@ def parse_organ(bundle_path):
             return {"organ": next(iter(model_organs)) + " (organoid)",
                     "organ_part": next(iter(model_organs)) + " (organoid)"}
         return {"organ": "", "organ_part": ""}
+
+    # Now see if it's a cell line with a selected cell type
+    cell_line_json_paths = glob.glob(os.path.join(bundle_path, "cell_line_*.json"))
+    if cell_line_json_paths:
+        cell_suspension_path = os.path.join(bundle_path, "cell_suspension_0.json")
+        cell_suspension_json = json.load(open(cell_suspension_path))
+        selected_cell_type = cell_suspension_json["selected_cell_type"][0]["ontology"]
+        return {"organ": selected_cell_type + " (cell line)",
+                "organ_part": selected_cell_type + " (cell line)"}
 
     specimen_json_paths = glob.glob(os.path.join(bundle_path, "specimen_from_organism_*.json"))
     organs = set()
