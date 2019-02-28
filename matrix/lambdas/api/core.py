@@ -123,8 +123,18 @@ def get_matrix(request_id: str):
 
     format = request_tracker.format
 
+    # Failed case
+    if request_tracker.error:
+        return ConnexionResponse(status_code=requests.codes.ok,
+                                 body={
+                                     'request_id': request_id,
+                                     'status': MatrixRequestStatus.FAILED.value,
+                                     'matrix_location': "",
+                                     'eta': "",
+                                     'message': request_tracker.error,
+                                 })
     # Complete case
-    if request_tracker.is_request_complete():
+    elif request_tracker.is_request_complete():
         s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
 
         matrix_location = ""
@@ -145,17 +155,6 @@ def get_matrix(request_id: str):
                                                 f"The resultant expression matrix is available for download at "
                                                 f"{matrix_location}",
                                  })
-    # Failed case
-    elif request_tracker.error:
-        return ConnexionResponse(status_code=requests.codes.ok,
-                                 body={
-                                     'request_id': request_id,
-                                     'status': MatrixRequestStatus.FAILED.value,
-                                     'matrix_location': "",
-                                     'eta': "",
-                                     'message': request_tracker.error,
-                                 })
-
     # In progress case
     return ConnexionResponse(status_code=requests.codes.ok,
                              body={
