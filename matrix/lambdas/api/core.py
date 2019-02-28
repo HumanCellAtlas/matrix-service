@@ -84,8 +84,9 @@ def get_matrix(request_id: str):
     # There are a few cases to handle here. First, if the request_id is not in
     # the cache table at all, then this id has never been made and we should
     # 404.
+    request_cache = RequestCache(request_id)
     try:
-        request_hash = RequestCache(request_id).retrieve_hash()
+        request_hash = request_cache.retrieve_hash()
     except RequestIdNotFound:
         return ConnexionResponse(status_code=requests.codes.not_found,
                                  body={'message': f"Unable to find job with request ID {request_id}."})
@@ -155,6 +156,17 @@ def get_matrix(request_id: str):
                                                 f"The resultant expression matrix is available for download at "
                                                 f"{matrix_location}",
                                  })
+    # Timeout case
+    elif request_cache.timeout:
+        return ConnexionResponse(status_code=requests.codes.ok,
+                                 body={
+                                     'request_id': request_id,
+                                     'status': MatrixRequestStatus.FAILED.value,
+                                     'matrix_location': "",
+                                     'eta': "",
+                                     'message': request_tracker.error,
+                                 })
+
     # In progress case
     return ConnexionResponse(status_code=requests.codes.ok,
                              body={

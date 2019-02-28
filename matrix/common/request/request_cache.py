@@ -1,9 +1,12 @@
 import hashlib
 import typing
+from datetime import timedelta
 
+from matrix.common import date
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, CacheTableField
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.logging import Logging
+from matrix.common.request.request_tracker import RequestTracker
 
 logger = Logging.get_logger(__name__)
 
@@ -63,6 +66,14 @@ class RequestCache(object):
             item = self._dynamo_handler.get_table_item(DynamoTable.CACHE_TABLE, request_id=self._request_id)
             self._creation_date = item[CacheTableField.CREATION_DATE.value]
         return self._creation_date
+
+    @property
+    def timeout(self) -> bool:
+        timeout = date.to_datetime(self.creation_date) < date.get_datetime_now() - timedelta(hours=1)
+        if timeout:
+            RequestTracker(self.retrieve_hash()).log_error("This request has timed out after 1 hour."
+                                                           "Please try again by resubmitting the POST request.")
+        return timeout
 
     def initialize(self) -> None:
         """Initialize the request id in the request cache table.

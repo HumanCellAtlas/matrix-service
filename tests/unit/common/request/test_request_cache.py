@@ -2,9 +2,11 @@ import copy
 import hashlib
 import random
 import uuid
+from datetime import timedelta
 
 from unittest import mock
 
+from matrix.common import date
 from matrix.common.aws.cloudwatch_handler import MetricName
 from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -21,13 +23,26 @@ class TestRequestCache(MatrixTestCaseUsingMockAWS):
 
         self.create_test_cache_table()
 
-    def test_uninitialized_request(self):
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
+    @mock.patch("matrix.common.request.request_cache.RequestCache.retrieve_hash")
+    @mock.patch("matrix.common.request.request_cache.RequestCache.creation_date",
+                new_callable=mock.PropertyMock)
+    def test_timeout(self, mock_creation_date, mock_retrieve_hash, mock_log_error):
+        # no timeout
+        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(minutes=59))
+        self.assertFalse(self.request_cache.timeout)
 
+        # timeout
+        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=1, minutes=1))
+        mock_retrieve_hash.return_value = "test_request_hash"
+        self.assertTrue(self.request_cache.timeout)
+        mock_log_error.assert_called_once()
+
+    def test_uninitialized_request(self):
         with self.assertRaises(RequestIdNotFound):
             self.request_cache.retrieve_hash()
 
     def test_set_and_retrieve_hash(self):
-
         bundle_fqids = ["bundle1.version0", "bundle2.version0"]
         format_ = "test_format"
 

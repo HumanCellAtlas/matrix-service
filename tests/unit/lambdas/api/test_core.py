@@ -105,20 +105,41 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.status_code, status)
         self.assertTrue(request_id in response.body['message'])
 
+    @mock.patch("matrix.common.request.request_cache.RequestCache.timeout",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_matrix_processing(self, mock_is_request_complete, mock_get_table_item,
-                                   mock_get_request_hash):
+                                   mock_get_request_hash, mock_timeout):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = False
         mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
                                             OutputTableField.FORMAT.value: "test_format"}
         mock_get_request_hash.return_value = "test_hash"
+        mock_timeout.return_value = False
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
+
+    @mock.patch("matrix.common.request.request_cache.RequestCache.timeout",
+                new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
+    def test_get_matrix_timeout(self, mock_is_request_complete, mock_get_table_item,
+                                mock_get_request_hash, mock_timeout):
+        request_id = str(uuid.uuid4())
+        mock_is_request_complete.return_value = False
+        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
+                                            OutputTableField.FORMAT.value: "test_format"}
+        mock_get_request_hash.return_value = "test_hash"
+        mock_timeout.return_value = True
+
+        response = get_matrix(request_id)
+        self.assertEqual(response.status_code, requests.codes.ok)
+        self.assertEqual(response.body['status'], MatrixRequestStatus.FAILED.value)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_request_hash")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
