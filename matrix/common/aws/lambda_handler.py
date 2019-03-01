@@ -7,12 +7,9 @@ import boto3
 
 class LambdaName(Enum):
     """
-    Lambda function resource names used during filter merge.
+    Lambda function resource names used during matrix service request.
     """
     DRIVER = os.getenv("LAMBDA_DRIVER_FUNCTION_NAME")
-    MAPPER = os.getenv("LAMBDA_MAPPER_FUNCTION_NAME")
-    WORKER = os.getenv("LAMBDA_WORKER_FUNCTION_NAME")
-    REDUCER = os.getenv("LAMBDA_REDUCER_FUNCTION_NAME")
 
 
 class LambdaHandler:

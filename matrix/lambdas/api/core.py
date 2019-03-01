@@ -5,9 +5,9 @@ import uuid
 
 from connexion.lifecycle import ConnexionResponse
 
+from matrix.common.exceptions import MatrixException
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
-from matrix.common.request.request_cache import RequestCache, RequestIdNotFound
 from matrix.common.request.request_tracker import RequestTracker
 
 lambda_handler = LambdaHandler()
@@ -17,7 +17,7 @@ def post_matrix(body: dict):
     has_ids = 'bundle_fqids' in body
     has_url = 'bundle_fqids_url' in body
 
-    format = body['format'] if 'format' in body else MatrixFormat.ZARR.value
+    format = body['format'] if 'format' in body else MatrixFormat.LOOM.value
     expected_formats = [mf.value for mf in MatrixFormat]
 
     # Validate input parameters
@@ -60,7 +60,7 @@ def post_matrix(body: dict):
         bundle_fqids_url = None
 
     request_id = str(uuid.uuid4())
-    RequestCache(request_id).initialize()
+    RequestTracker(request_id).initialize_request(format)
     driver_payload = {
         'request_id': request_id,
         'bundle_fqids': bundle_fqids,
@@ -82,21 +82,12 @@ def post_matrix(body: dict):
 def get_matrix(request_id: str):
 
     # There are a few cases to handle here. First, if the request_id is not in
-    # the cache table at all, then this id has never been made and we should
+    # the state table at all, then this id has never been made and we should
     # 404.
-    try:
-        request_hash = RequestCache(request_id).retrieve_hash()
-    except RequestIdNotFound:
+    request_tracker = RequestTracker(request_id)
+    if not request_tracker.is_initialized:
         return ConnexionResponse(status_code=requests.codes.not_found,
                                  body={'message': f"Unable to find job with request ID {request_id}."})
-
-    # But, there are two other states we need to handle:
-    # 1. The request_id has been written into the cache table but the driver
-    #    function hasn't started yet. Then there's no hash associated with the
-    #    id.
-    # 2. The driver function for the request_hash has started, but it hasn't
-    #    yet written anything into the output or state tables. In this case
-    #    queries against those table won't return anything.
 
     in_progress_response = ConnexionResponse(
         status_code=requests.codes.ok,
@@ -109,31 +100,23 @@ def get_matrix(request_id: str):
                        f"processed. Please try again later.",
         })
 
-    # Check for case 1
-    if request_hash is None:
-        # If the id is in the hash table, but the hash isn't in the request
-        # table, it just means the driver hasn't run yet
+    # if the request tracker is not able to retrieve the format,
+    # it means that the driver has not created the relevant entry in the output table yet.
+
+    try:
+        format = request_tracker.format
+    except MatrixException:
         return in_progress_response
-
-    request_tracker = RequestTracker(request_hash)
-
-    # Check for case 2
-    if not request_tracker.is_initialized:
-        return in_progress_response
-
-    format = request_tracker.format
 
     # Complete case
     if request_tracker.is_request_complete():
-        s3_results_bucket = os.environ['S3_RESULTS_BUCKET']
+        matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
 
         matrix_location = ""
-        if format == MatrixFormat.ZARR.value:
-            matrix_location = f"s3://{s3_results_bucket}/{request_hash}.{format}"
-        elif format == MatrixFormat.LOOM.value:
-            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}"
+        if format == MatrixFormat.LOOM.value:
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}"
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{s3_results_bucket}/{request_hash}.{format}.zip"
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
 
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={

@@ -4,13 +4,9 @@ export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                  MATRIX_VERSION \
                                  API_HOST \
                                  LAMBDA_DRIVER_FUNCTION_NAME \
-                                 LAMBDA_MAPPER_FUNCTION_NAME \
-                                 LAMBDA_WORKER_FUNCTION_NAME \
-                                 LAMBDA_REDUCER_FUNCTION_NAME \
                                  DYNAMO_STATE_TABLE_NAME \
                                  DYNAMO_OUTPUT_TABLE_NAME \
-                                 DYNAMO_CACHE_TABLE_NAME \
-                                 S3_RESULTS_BUCKET
+                                 MATRIX_RESULTS_BUCKET
 
 clean:
 	git clean -df .

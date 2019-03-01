@@ -48,8 +48,7 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       ],
       "Resource": [
         "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
-        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}",
-        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-cache-table-${var.deployment_stage}"
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
       ]
     },
     {
@@ -66,6 +65,43 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
         "cloudwatch:PutMetricData"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+          "s3:ListAllMyBuckets",
+          "s3:HeadBucket"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:${var.aws_region}:${var.account_id}:secret:dcp/matrix/${var.deployment_stage}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:SendMessage"
+      ],
+      "Resource": [
+        "arn:aws:sqs:${var.aws_region}:${var.account_id}:dcp-matrix-query-queue-${var.deployment_stage}"
+      ]
     }
   ]
 }
@@ -87,6 +123,7 @@ resource "aws_lambda_function" "matrix_service_driver_lambda" {
         DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${var.deployment_stage}"
         DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${var.deployment_stage}"
         MATRIX_QUERY_BUCKET = "dcp-matrix-service-queries-${var.deployment_stage}"
+        MATRIX_RESULTS_BUCKET = "dcp-matrix-service-results-${var.deployment_stage}"
     }
   }
 }

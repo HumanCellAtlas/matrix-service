@@ -31,8 +31,7 @@
       ],
       "Resource": [
         "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-state-table-${DEPLOYMENT_STAGE}",
-        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-output-table-${DEPLOYMENT_STAGE}",
-        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-cache-table-${DEPLOYMENT_STAGE}"
+        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-output-table-${DEPLOYMENT_STAGE}"
       ]
     },
     {
@@ -41,7 +40,7 @@
         "dynamodb:PutItem"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-cache-table-${DEPLOYMENT_STAGE}"
+        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-state-table-${DEPLOYMENT_STAGE}"
       ]
     }
   ]

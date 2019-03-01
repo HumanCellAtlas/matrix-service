@@ -28,7 +28,6 @@ definitions:
   MatrixFormat:
     type: string
     enum:
-      - zarr
       - loom
       - csv
       - mtx
@@ -74,7 +73,7 @@ paths:
           description: "Use either bundle_fqids or bundle_fqids_url to specify input analysis bundles; bundle_fqids
             expects a list of fully-qualified IDs (bundle_uuid.bundle_version); bundle_fqids_url expects a
             URL that serves a Data Browser download manifest TSV file. Use the format field to specify the desired file
-            format of the output expression matrix. Supported format values are 'zarr', 'loom', 'csv' and 'mtx'."
+            format of the output expression matrix. Supported format values are 'loom', 'csv' and 'mtx'."
           required: true
           schema:
             $ref: '#/definitions/MatrixRequest'
@@ -92,8 +91,8 @@ paths:
       summary: "Retrieve the status, and result if available, of a matrix query request."
       description: "Returns the status, and URI of the result if available, of a matrix query request. The status of a
         request can be 'Complete', 'In Progress' or 'Failed'. If the request is 'Complete', the matrix_location field
-        will be populated with an S3 location for 'zarr' formats, and a URL for all other formats. If the request
-        'Failed', the error message will be available in the message field."
+        will be populated with a URL for all other formats. If the request 'Failed',
+        the error message will be available in the message field."
       operationId: matrix.lambdas.api.core.get_matrix
       tags:
         - API

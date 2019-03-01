@@ -14,10 +14,8 @@ import s3fs
 import scipy
 import zarr
 
-from matrix.common.zarr.dss_zarr_store import DSSZarrStore
-
-DSS_CLIENT = DSSZarrStore.get_dss_client()
 S3 = s3fs.S3FileSystem(anon=True)
+DSS_CLIENT = s3fs.S3FileSystem(anon=True)
 
 
 def calculate_ss2_metrics_direct(bundle_fqids):

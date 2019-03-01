@@ -9,9 +9,6 @@ import s3fs
 from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MatrixRequestStatus
-from matrix.common.aws.dynamo_handler import (CacheTableField, DynamoHandler,
-                                              OutputTableField, StateTableField)
-from matrix.common.request.request_cache import RequestCache
 
 
 MATRIX_ENV_TO_DSS_ENV = {
@@ -60,32 +57,6 @@ class TestMatrixService(unittest.TestCase):
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
 
-    def tearDown(self):
-        """Try to remove any table entries created for the tests, especially entries
-        will result in future tests returning cached results.
-        """
-        dynamo_handler = DynamoHandler()
-        request_hash = RequestCache(self.request_id).retrieve_hash()
-
-        print(dynamo_handler._state_table.delete_item(
-            Key={StateTableField.REQUEST_HASH.value: request_hash}
-        ))
-
-        print(dynamo_handler._output_table.delete_item(
-            Key={OutputTableField.REQUEST_HASH.value: request_hash}
-        ))
-
-        print(dynamo_handler._cache_table.delete_item(
-            Key={CacheTableField.REQUEST_ID.value: self.request_id}
-        ))
-
-    def test_zarr_output_matrix_service(self):
-        self.request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="zarr")
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
-
     def test_loom_output_matrix_service(self):
         self.request_id = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
@@ -115,7 +86,7 @@ class TestMatrixService(unittest.TestCase):
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env])
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_zarr_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
     def test_matrix_service_invalid_bundle(self):
         test_bundle_uuids = ["bundle1.version", "bundle2.version"]
@@ -139,14 +110,14 @@ class TestMatrixService(unittest.TestCase):
         bundle_fqids = json.loads(open(f"{self.res_dir}/pancreas_ss2_2544_demo_bundles.json", "r").read())[:num_bundles]
 
         self.request_id = self._post_matrix_service_request(
-            bundle_fqids=bundle_fqids, format="zarr")
+            bundle_fqids=bundle_fqids, format="loom")
 
         # wait for request to complete
         time.sleep(2)
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
 
-        self._analyze_zarr_matrix_results(self.request_id, bundle_fqids)
+        self._analyze_loom_matrix_results(self.request_id, bundle_fqids)
 
     def test_bundle_url(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
@@ -154,7 +125,7 @@ class TestMatrixService(unittest.TestCase):
 
         self.request_id = self._post_matrix_service_request(
             bundle_fqids_url=bundle_fqids_url,
-            format="zarr")
+            format="loom")
 
         # wait for request to complete
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
@@ -162,7 +133,7 @@ class TestMatrixService(unittest.TestCase):
         bundle_fqids = ['.'.join(el.split('\t')) for el in
                         requests.get(bundle_fqids_url).text.strip().split('\n')[1:]]
 
-        self._analyze_zarr_matrix_results(self.request_id, bundle_fqids)
+        self._analyze_loom_matrix_results(self.request_id, bundle_fqids)
 
     def _post_matrix_service_request(self, bundle_fqids=None, bundle_fqids_url=None, format=None):
         data = {}
@@ -191,17 +162,6 @@ class TestMatrixService(unittest.TestCase):
         data = json.loads(response)
         status = data["status"]
         return status
-
-    def _analyze_zarr_matrix_results(self, request_id, input_bundles):
-
-        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
-
-        matrix_location = self._retrieve_matrix_location(request_id)
-
-        self.assertEqual(matrix_location.endswith("zarr"), True)
-
-        zarr_metrics = validation.calculate_ss2_metrics_zarr(matrix_location)
-        self._compare_metrics(direct_metrics, zarr_metrics)
 
     def _analyze_loom_matrix_results(self, request_id, input_bundles):
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)

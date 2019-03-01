@@ -6,4 +6,51 @@ resource "aws_redshift_cluster" "default" {
   node_type          = "dc2.large"
   cluster_type       = "multi-node"
   number_of_nodes    = 4
+  iam_roles          = ["${aws_iam_role.matrix_redshift.arn}"]
+}
+
+resource "aws_iam_role" "matrix_redshift" {
+  name = "matrix-service-redshift-${var.deployment_stage}"
+
+  assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "redshift.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_role_policy" "matrix_redshift" {
+  name = "matrix-service-redshift-${var.deployment_stage}"
+  role = "${aws_iam_role.matrix_redshift.name}"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}/*",
+        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
+      ]
+    }
+  ]
+}
+EOF
 }
