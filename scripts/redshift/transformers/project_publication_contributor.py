@@ -3,23 +3,23 @@ import pathlib
 import typing
 from threading import Lock
 
-from . import MetadataToPsvTransformer
-from ..init_cluster import TableName
+from . import MetadataToPsvTransformer, TableName
 
 
 class ProjectPublicationContributorTransformer(MetadataToPsvTransformer):
+    """Reads project metadata and writes out rows for project, contributor and publication tables in PSV format."""
     WRITE_LOCK = Lock()
 
     def _write_rows_to_psvs(self, *args: typing.Tuple):
         with ProjectPublicationContributorTransformer.WRITE_LOCK:
             super(ProjectPublicationContributorTransformer, self)._write_rows_to_psvs(*args)
 
-    def _parse_from_metadatas(self, bundle_dir):
+    def _parse_from_metadatas(self, search_dir):
         projects = set()
         contributors = set()
         publications = set()
 
-        p = pathlib.Path(bundle_dir)
+        p = pathlib.Path(search_dir)
 
         for path_to_json in p.glob("**/project_*.json"):
             project_dict = json.load(open(path_to_json))

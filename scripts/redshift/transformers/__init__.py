@@ -1,7 +1,21 @@
 import os
 import typing
+from enum import Enum
 
-from ..init_cluster import STAGING_DIRECTORY
+
+class TableName(Enum):
+    """
+    Redshift table names.
+    """
+    FEATURE = "feature"
+    ANALYSIS = "analysis"
+    DONOR_ORGANISM = "donor_organism"
+    LIBRARY_PREPARATION = "library_preparation"
+    PROJECT = "project"
+    PUBLICATION = "publication"
+    CONTRIBUTOR = "contributor"
+    CELL = "cell"
+    EXPRESSION = "expression"
 
 
 class MetadataToPsvTransformer:
@@ -9,6 +23,7 @@ class MetadataToPsvTransformer:
     Abstract class for transforming DSS metadata to PSV rows.
     """
     PSV_EXT = ".psv"
+    STAGING_DIRECTORY = os.path.join(os.path.dirname(__file__), '..')
     OUTPUT_DIR = os.path.join(STAGING_DIRECTORY, 'output')
 
     def transform(self, bundle_dir: str):
@@ -37,11 +52,11 @@ class MetadataToPsvTransformer:
         for arg in args:
             table = arg[0]
             rows = arg[1]
-            out_file = MetadataToPsvTransformer.OUTPUT_DIR + table.value + MetadataToPsvTransformer.PSV_EXT
+            out_file = os.path.join(MetadataToPsvTransformer.OUTPUT_DIR, table.value + MetadataToPsvTransformer.PSV_EXT)
 
             with open(out_file, 'a') as fh:
                 for row in rows:
-                    fh.write(row)
+                    fh.write(row + "\n")
 
     @staticmethod
     def _generate_psv_row(*args):

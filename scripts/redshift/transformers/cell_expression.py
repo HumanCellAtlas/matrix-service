@@ -5,15 +5,16 @@ import hashlib
 import json
 import os
 import pathlib
-import scipy.io
 import typing
 
-from . import MetadataToPsvTransformer
-from ..init_cluster import TableName
+import scipy.io
+
+from . import MetadataToPsvTransformer, TableName
 from threading import Lock
 
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
+    """Reads SS2 and 10X bundles and writes out rows for expression and cell tables in PSV format."""
     WRITE_LOCK = Lock()
 
     def _write_rows_to_psvs(self, *args: typing.Tuple):
@@ -23,8 +24,11 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 rows = arg[1]
                 bundle_dir = arg[2]
 
+                out_dir = os.path.join(os.path.join(MetadataToPsvTransformer.OUTPUT_DIR), table.value)
+                os.makedirs(out_dir, exist_ok=True)
+
                 out_file_path = os.path.join(
-                    MetadataToPsvTransformer.OUTPUT_DIR,
+                    out_dir,
                     f"{os.path.split(os.path.normpath(bundle_dir))[-1]}.{table.value}.data.gz")
                 with gzip.open(out_file_path, 'w') as out_file:
                     out_file.writelines((row.encode() for row in rows))
@@ -37,7 +41,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         return (TableName.CELL, cell_lines, bundle_dir), (TableName.EXPRESSION, expression_lines, bundle_dir)
 
-    def _parse_10x_bundle(self, bundle_dir):
+    def _parse_ss2_bundle(self, bundle_dir):
         # Get the keys associated with this cell, except for cellkey
         keys = self._parse_keys(bundle_dir)
         cell_key = json.load(open(
@@ -97,7 +101,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         return cell_lines, expression_lines
 
-    def _parse_ss2_bundle(self, bundle_dir):
+    def _parse_10x_bundle(self, bundle_dir):
         keys = self._parse_keys(bundle_dir)
 
         matrix = scipy.io.mmread(os.path.join(bundle_dir, "matrix.mtx"))

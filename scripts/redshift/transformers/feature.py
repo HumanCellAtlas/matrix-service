@@ -5,16 +5,16 @@ import urllib.request
 
 from threading import Lock
 
-from . import MetadataToPsvTransformer
-from ..init_cluster import TableName
+from . import MetadataToPsvTransformer, TableName
 
 
 class FeatureTransformer(MetadataToPsvTransformer):
+    """Reads gencode annotation reference and writes out rows for feature table in PSV format."""
     WRITE_LOCK = Lock()
     ANNOTATION_FTP_URL = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_27/" \
                          "gencode.v27.chr_patch_hapl_scaff.annotation.gtf.gz"
     FILENAME = "gencode_annotation.gtf"
-    GZIP_FILENAME = f"{FILENAME}.gz"
+    GZIP_FILENAME = FILENAME + ".gz"
 
     def __init__(self):
         urllib.request.urlretrieve(self.ANNOTATION_FTP_URL, self.GZIP_FILENAME)
@@ -29,7 +29,7 @@ class FeatureTransformer(MetadataToPsvTransformer):
     def _parse_from_metadatas(self, filename):
         features = set()
 
-        for line in open(filename):
+        for line in open(self.FILENAME):
             # Skip comments
             if line.startswith("#"):
                 continue
@@ -71,4 +71,4 @@ class FeatureTransformer(MetadataToPsvTransformer):
         if id_.endswith("_PAR_Y"):
             shortened_id += "_PAR_Y"
 
-        self._generate_psv_row(shortened_id, name, feature_type, chrom, start, end, str(type_ == "gene"))
+        return self._generate_psv_row(shortened_id, name, feature_type, chrom, start, end, str(type_ == "gene"))

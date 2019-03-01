@@ -1,39 +1,23 @@
 import boto3
+import json
 import os
-import io
 import typing
-from enum import Enum
+from urllib.parse import urlparse
 
 import hca
 import psycopg2
 from dcplib.etl import DSSExtractor
 
-from .transformers import MetadataToPsvTransformer
-from .transformers.cell_expression import CellExpressionTransformer
-from .transformers.analysis import AnalysisTransformer
-from .transformers.feature import FeatureTransformer
-from .transformers.donor_organism import DonorTransformer
-from .transformers.library_preparation import LibraryTransformer
-from .transformers.project_publication_contributor import ProjectPublicationContributorTransformer
+from . import CREATE_TABLE_QUERY
+from transformers import MetadataToPsvTransformer, TableName
+from transformers.cell_expression import CellExpressionTransformer
+from transformers.analysis import AnalysisTransformer
+from transformers.feature import FeatureTransformer
+from transformers.donor_library import DonorLibraryTransformer
+from transformers.project_publication_contributor import ProjectPublicationContributorTransformer
 
 DEPLOYMENT_STAGE = os.environ['DEPLOYMENT_STAGE']
-STAGING_DIRECTORY = os.path.join(os.path.dirname(__file__), 'data')
 S3_BUCKET = f"dcp-matrix-service-redshift-preload-{DEPLOYMENT_STAGE}"
-
-
-class TableName(Enum):
-    """
-    Redshift table names.
-    """
-    CELL = "cell"
-    EXPRESSION = "expression"
-    FEATURE = "feature"
-    ANALYSIS = "analysis"
-    DONOR_ORGANISM = "donor_organism"
-    LIBRARY_PREPARATION = "library_preparation"
-    PROJECT = "project"
-    PUBLICATION = "publication"
-    CONTRIBUTOR = "contributor"
 
 
 def run_etl(query: dict, content_type_patterns: typing.List[str], filename_patterns: typing.List[str]):
@@ -43,84 +27,115 @@ def run_etl(query: dict, content_type_patterns: typing.List[str], filename_patte
     :param content_type_patterns: List of content-type patterns to match files to download
     :param filename_patterns: List of filename patterns to match files to download
     """
-    extractor = DSSExtractor(staging_directory=STAGING_DIRECTORY,
+    os.makedirs(MetadataToPsvTransformer.OUTPUT_DIR, exist_ok=True)
+    extractor = DSSExtractor(staging_directory=MetadataToPsvTransformer.STAGING_DIRECTORY,
                              content_type_patterns=content_type_patterns,
                              filename_patterns=filename_patterns,
                              dss_client=get_dss_client())
     extractor.extract(
         query=query,
-        transformer=bundle_to_psvs,
-        finalizer=upload_to_s3,
+        transformer=transform_bundle,
+        finalizer=transform_and_load,
         max_workers=256
     )
 
 
-def bundle_to_psvs(bundle_uuid: str, bundle_version: str, bundle_path: str, extractor: DSSExtractor):
+def transform_bundle(bundle_uuid: str, bundle_version: str, bundle_path: str, extractor: DSSExtractor):
     """
-    Transforms an input bundle into PSV rows for each Redshift table.
-    :param bundle_uuid: UUID of input bundle
-    :param bundle_version: Version of input bundle
-    :param bundle_path: Local path to downloaded bundle
-    :param extractor: Extractor object
+    Transforms a downloaded bundle into PSV rows - per bundle transformer passed to ETL.
+    :param bundle_uuid: Downloaded bundle UUID
+    :param bundle_version: Downloaded bundle version
+    :param bundle_path: Local path to downloaded bundle dir
+    :param extractor: ETL extractor object
     """
     transformers = [
-        CellExpressionTransformer(),
-        FeatureTransformer(),
-        AnalysisTransformer(),
-        LibraryTransformer(),
-        DonorTransformer(),
-        ProjectPublicationContributorTransformer()
+        CellExpressionTransformer()
     ]
 
     for transformer in transformers:
         transformer.transform(bundle_path)
 
 
+def transform_and_load(extractor: DSSExtractor):
+    """
+    Final transformer during ETL, invokes loader - finalizer passed to ETL.
+    :param extractor: ETL extractor object
+    """
+    transformers = [
+        FeatureTransformer(),
+        AnalysisTransformer(),
+        DonorLibraryTransformer(),
+        ProjectPublicationContributorTransformer()
+    ]
+
+    for transformer in transformers:
+        transformer.transform(os.path.join(extractor.sd, 'bundles'))
+
+    upload_to_s3()
+
+
 def upload_to_s3():
     """
-    Upload to S3 all PSV files in output/ dir.
+    Uploads to S3 all files in OUTPUT_DIR.
     """
-    for filename in os.listdir(MetadataToPsvTransformer.OUTPUT_DIR):
-        filepath = os.path.join(MetadataToPsvTransformer.OUTPUT_DIR, filename)
-        try:
-            s3 = boto3.client('s3')
-            s3.upload_file(filepath, S3_BUCKET, filename)
-        except Exception:
-            print(f"Unable to find {filename}")
+    for name in os.listdir(MetadataToPsvTransformer.OUTPUT_DIR):
+        path = os.path.join(MetadataToPsvTransformer.OUTPUT_DIR, name)
+        if os.path.isdir(path):
+            for filename in os.listdir(path):
+                _upload_file_to_s3(os.path.join(path, filename), f"{name}/{filename}")
+        else:
+            _upload_file_to_s3(path, name)
 
     load_redshift()
 
 
+def _upload_file_to_s3(path_to_file, s3_prefix):
+    """
+    Uploads a file to S3 preload bucket.
+    :param path_to_file: Local path to file to upload
+    :param s3_prefix: S3 prefix to upload to
+    """
+    try:
+        s3 = boto3.client('s3', region_name='us-east-1')
+        s3.upload_file(path_to_file, S3_BUCKET, s3_prefix)
+    except Exception as e:
+        print(e)
+
+
 def load_redshift():
     """
-    Loads PSVs into Redshift via COPY commands.
+    Creates tables and loads PSVs in S3 into Redshift via SQL COPY.
     """
+    conn_url = json.loads(boto3.client('secretsmanager', region_name='us-east-1').
+                          get_secret_value(SecretId='dcp/matrix/dev/database')['SecretString'])['database_uri']
+    url_parts = urlparse(conn_url)
     dbname = f"matrix_service_{DEPLOYMENT_STAGE}"
-    port = 5439
-    user = "root"
-    password = boto3.client('secretsmanager').get_secret_value('matrix-service/redshift/password')
-    host = f"dcp-matrix-service-cluster-{DEPLOYMENT_STAGE}.cjcuhlgpha1p.us-east-1.redshift.amazonaws.com"
 
-    conn_string = f"dbname='{dbname}' port='{port}' user='{user}' password='{password}' host='{host}'"
+    conn_string = f"dbname={dbname} user={url_parts.username} password={url_parts.password} " \
+                  f"host={url_parts.hostname} port={url_parts.port}"
     conn = psycopg2.connect(conn_string)
 
     for table in TableName:
-        s3_prefix = f"{S3_BUCKET}/{table.value}"
-        iam = f"matrix-service-etl-ec2-{DEPLOYMENT_STAGE}"
+        create_query = CREATE_TABLE_QUERY[table.value]
 
-        buf = io.StringIO(f"COPY {table.value} FROM '{s3_prefix}' iam_role {iam}")
-        if table == TableName.CELL or table == TableName.FEATURE:
-            buf.write(" COMPUPDATE ON")
-        if table == TableName.EXPRESSION:
-            buf.write(" GZIP COMPUPDATE ON COMPROWS 10000000")
-        buf.write(";")
+        s3_prefix = f"s3://{S3_BUCKET}/{table.value}"
+        iam = f"arn:aws:iam::861229788715:role/matrix-service-redshift-{DEPLOYMENT_STAGE}"
 
-        copy_stmt = buf.getvalue()
-        buf.close()
+        if table == TableName.FEATURE:
+            copy_stmt = f"COPY {table.value} FROM '{s3_prefix}' iam_role '{iam}' COMPUPDATE ON;"
+        elif table == TableName.CELL:
+            copy_stmt = f"COPY {table.value} FROM '{s3_prefix}' iam_role '{iam}' GZIP COMPUPDATE ON;"
+        elif table == TableName.EXPRESSION or table == TableName.CELL:
+            copy_stmt = f"COPY {table.value} FROM '{s3_prefix}' iam_role '{iam}' GZIP COMPUPDATE ON COMPROWS 10000000;"
+        else:
+            copy_stmt = f"COPY {table.value} FROM '{s3_prefix}' iam_role '{iam}';"
 
+        print(table.value, copy_stmt)
         cur = conn.cursor()
+        cur.execute(create_query)
         cur.execute(copy_stmt)
 
+    conn.commit()
     conn.close()
 
 
@@ -131,38 +146,77 @@ def get_dss_client():
     if DEPLOYMENT_STAGE == "prod":
         swagger_url = "https://dss.data.humancellatlas.org/v1/swagger.json"
     elif DEPLOYMENT_STAGE == "staging":
-        swagger_url = f"https://dss.staging.data.humancellatlas.org/v1/swagger.json"
+        swagger_url = "https://dss.staging.data.humancellatlas.org/v1/swagger.json"
     else:
-        swagger_url = f"https://dss.integration.data.humancellatlas.org/v1/swagger.json"
+        swagger_url = "https://dss.integration.data.humancellatlas.org/v1/swagger.json"
 
     client = hca.dss.DSSClient(swagger_url=swagger_url)
     return client
 
 
 if __name__ == '__main__':
-    # TODO: parameterize inputs
-    query = { # TODO: include 10X bundles
+    # All SS2 analysis bundles
+    query = {
         "query": {
             "bool": {
                 "must": [
                     {
                         "match": {
-                            "files.analysis_protocol_json.protocol_type.text": "analysis"
+                            "files.library_preparation_protocol_json.library_construction_approach.ontology": "EFO:0008931"
                         }
                     },
                     {
-                        "term": {
-                            "files.analysis_process_json.tasks.task_name": "SmartSeq2ZarrConversion"
+                        "match": {
+                            "files.sequencing_protocol_json.paired_end": True
+                        }
+                    },
+                    {
+                        "match": {
+                            "files.donor_organism_json.biomaterial_core.ncbi_taxon_id": 9606
+                        }
+                    },
+                    {
+                        "match": {
+                            "files.analysis_process_json.process_type.text": "analysis"
+                        }
+                    }
+                ],
+                "should": [
+                    {
+                        "match": {
+                            "files.dissociation_protocol_json.dissociation_method.ontology": "EFO:0009108"
+                        }
+                    },
+                    {
+                        "match": {
+                            "files.dissociation_protocol_json.dissociation_method.text": "mouth pipette"
+                        }
+                    }
+                ],
+                "must_not": [
+                    {
+                        "range": {
+                            "files.donor_organism_json.biomaterial_core.ncbi_taxon_id": {
+                                "lt": 9606
+                            }
+                        }
+                    },
+                    {
+                        "range": {
+                            "files.donor_organism_json.biomaterial_core.ncbi_taxon_id": {
+                                "gt": 9606
+                            }
                         }
                     }
                 ]
             }
         }
     }
+
     content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
     filename_patterns = ["*zarr*", # match expression data
-                         "rsem\.*\.results", "qc\.*\.txt", # match SS2 raw count files
-                         "*\.mtx", "genes*\.csv", "barcodes*\.csv"] # match 10X raw count files TODO: test 10X
+                         "*.results", # match SS2 raw count files
+                         "*.mtx", "genes.tsv", "barcodes.tsv"] # match 10X raw count files
 
     run_etl(query=query,
             content_type_patterns=content_type_patterns,
