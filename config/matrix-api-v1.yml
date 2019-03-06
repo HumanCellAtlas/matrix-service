@@ -1,0 +1,299 @@
+openapi: '3.0.2'
+info:
+  title: HCA Matrix Service
+  version: 1.0.0
+paths:
+  /matrix:
+    post:
+      summary: Request an expression matrix
+      description: >
+        Request an expression matrix using a set of filters to be
+        ANDed and applied to the HCA expression data.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatrixRequest'
+            examples:
+              KidneyHighGenes: # Cells from the kidney with >5000 detected
+                               # genes in mtx format and select metadata
+                               # fields
+                value:
+                  filters:
+                    - op: '='
+                      field: 'organ'
+                      value: 'kidney'
+                    - op: '>'
+                      field: 'genes_detected'
+                      value: 5000
+                  fields:
+                    - 'short_name'
+                    - 'organ'
+                    - 'genus_species'
+                    - 'genes_detected'
+                  format: 'mtx'
+              AllSS2Transcripts: # Transcript data for all SS2 cells, in loom                  # format and all metadata fields.
+                value:
+                  filters:
+                    - op: '='
+                      field: 'construction_approach_label'
+                      value: 'Smart-Seq2'
+                  feature: 'transcript'
+      responses:
+        '202':
+          description: 'Matrix request accepted.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixResponse'
+        '400':
+          description: 'Bad request.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /matrix/{request_id}:
+    get:
+      summary: 'Get status and result of a matrix request'
+      parameters:
+        - name: request_id
+          schema:
+            $ref: '#/components/schemas/RequestId'
+          required: True
+          in: path
+          description: 'ID returned by a previous matrix request.'
+      responses:
+        '200':
+          description: "Matrix request found."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixResponse'
+        '404':
+          description: "Matrix request id not found."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /filters:
+    get:
+      summary: Get a list of permitted filters
+      description: >
+        Get a list of filters that a POST to /matrix will accept.
+      responses:
+        '200':
+          description: 'Successfully return filter list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFilters'
+  /filters/{filter_name}:
+    get:
+      summary: 'Get a description of a filter'
+      description: >
+        Get detailed information about a filter that can be applied
+        to the HCA expression data.
+      parameters:
+        - name: filter_name
+          schema:
+            type: string
+          required: True
+          in: path
+          description: 'Filter to describe.'
+      responses:
+        '200':
+          description: "Filter found."
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NumericFieldDetail'
+                  - $ref: '#/components/schemas/CategoricalFieldDetail'
+        '404':
+          description: 'Filter not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /fields:
+    get:
+      summary: Get a lsit of available metadata fields
+      description: >
+        Get a list of metadata field names that a POST to 
+        /matrix will accept.
+      responses:
+        '200':
+          description: 'Successfully return field list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFields'
+  /fields/{field_name}:
+    get:
+      summary: 'Get a description of a metadata field'
+      description: >
+        Get detailed information about a an available metadata field.
+      parameters:
+        - name: field_name
+          schema:
+            type: string
+          required: True
+          in: path
+          description: 'Field to describe.'
+      responses:
+        '200':
+          description: "Field found."
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NumericFieldDetail'
+                  - $ref: '#/components/schemas/CategoricalFieldDetail'
+        '404':
+          description: 'Field not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+components:
+  schemas:
+    FilterOperation:
+      description: 'Comparison operations allowed in matrix filters.'
+      type: string
+      enum:
+        - '='
+        - '!='
+        - '>'
+        - '<'
+        - 'in'
+    MatrixFormat:
+      description: 'Format for the output matrix.'
+      type: string
+      default: 'loom'
+    MatrixFields:
+      description: 'Metadata fields to include in output matrix.'
+      type: array
+      items:
+        type: string
+    MatrixFilters:
+      description: 'Accepted filter names for a matrix request.'
+      type: array
+      items:
+        type: string
+    MatrixFeature:
+      description: >
+        Feature type to include in the output matrix. For example, 
+        genes vs. transcripts.
+      type: string
+      default: 'gene'
+    MatrixFilter:
+      description: 'Filter to apply in a matrix request.'
+      type: object
+      properties:
+        field:
+          type: string
+        op:
+          $ref: '#/components/schemas/FilterOperation'
+        value:
+          oneOf:
+            - type: string
+            - type: number
+    MatrixRequest:
+      description: 'Request for an expression matrix.'
+      type: object
+      properties:
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrixFilter'
+          minItems: 1
+        fields:
+          $ref: '#/components/schemas/MatrixFields'
+        format:
+          $ref: '#/components/schemas/MatrixFormat'
+        feature:
+          $ref: '#/components/schemas/MatrixFeature'
+      required:
+        - filters
+    MatrixStatus:
+      description: >
+        Status of a matrix request, for example whether it is still running
+        or has finished.
+      type: string
+    RequestId:
+      description: 'UUID identifying a matrix request.'
+      type: string
+      format: uuid
+    MatrixResponse:
+      type: object
+      properties:
+        request_id:
+          $ref: '#/components/schemas/RequestId'
+        status:
+          $ref: '#/components/schemas/MatrixStatus'
+        matrix_url:
+          type: string
+          description: 'URL where matrix can be retrieved.'
+        message:
+          type: string
+          description: 'Additional information about the matrix request.'
+        eta:
+          type: string
+          description: >
+            Estimated time remaining for the request to complete.
+      required:
+        - request_id
+        - status
+    MatrixErrorResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          description: 'HTTP status code of error.'
+        message:
+          type: string
+          description: 'Error message.'
+    FieldDetail:
+      type: object
+      required:
+        - filter_name
+        - filter_description
+        - filter_type
+      discriminator:
+        propertyName: filter_type
+      properties:
+        field_name:
+          type: string
+          description: 'Name of the field.'
+        field_description:
+          type: string
+          description: 'Description of the meaning of the field.'
+        field_type:
+          type: string
+          description: >
+            Type of the field, for example numeric or categorical.
+    NumericFieldDetail:
+      allOf:
+        - $ref: '#/components/schemas/FieldDetail'
+        - type: object
+          properties:
+            minimum:
+              type: number
+              description: >
+                Minimum value for this field in the HCA expression data.
+            maximum:
+              type: number
+              description: >
+                Maximum value for this field in the HCA expression data.
+    CategoricalFieldDetail:
+      allOf:
+        - $ref: '#/components/schemas/FieldDetail'
+        - type: object
+          properties:
+            cell_counts:
+              type: object
+              description: >
+                Count of cells associated with each possible value of
+                the field.
+              additionalProperties:
+                type: integer
