@@ -129,7 +129,7 @@ def to_mtx(expression_manifest, cell_manifest, gene_manifest, output_filename):
     # Read the cell metadata, reindex by the cellkeys in the expression matrix,
     # and write to another tsv
     cell_df = load_table(cell_manifest, index_col="cellkey")
-    cell_df.reindex(index=cellkeys)
+    cell_df = cell_df.reindex(index=cellkeys)
     cell_df.to_csv(os.path.join(results_dir, "cells.tsv"), sep='\t')
 
     # Create a zip file out of the three written files.
@@ -187,7 +187,7 @@ def to_loom(expression_manifest, cell_manifest, gene_manifest, output_filename):
     # Read in the cell metadata and reindex by the cellkeys from the expression
     # matrix. Set the "CellID" label convention from the loom docs.
     cell_df = load_table(cell_manifest, index_col="cellkey")
-    cell_df.reindex(index=cellkeys)
+    cell_df = cell_df.reindex(index=cellkeys)
     cell_df["cellkey"] = cell_df.index
     col_attrs = cell_df.to_dict("series")
     col_attrs["CellID"] = col_attrs.pop("cellkey")
@@ -235,7 +235,7 @@ def to_csv(expression_manifest, cell_manifest, gene_manifest, output_filename):
             filled.to_csv(exp_f, header=False, float_format='%g')
             cellkeys = cellkeys.union(filled.index)
     cell_df = load_table(cell_manifest, index_col="cellkey")
-    cell_df.reindex(index=cellkeys)
+    cell_df = cell_df.reindex(index=cellkeys)
     cell_df.to_csv(os.path.join(results_dir, "cells.csv"))
 
     zipf = zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED)
