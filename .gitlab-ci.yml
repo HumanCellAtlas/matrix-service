@@ -2,9 +2,6 @@ image: python:3.6
 
 stages:
   - unit_tests
-  - terraform
-  - deploy
-  - functional_tests
 
 before_script:
   - apt-get -y update
@@ -27,41 +24,5 @@ unit_tests:
   stage: unit_tests
   except:
     - schedules
-  only:
-    - master
-    - integration
-    - staging
   script:
-    - make test
-
-functional_tests:
-  stage: functional_tests
-  only:
-    - master
-    - integration
-    - staging
-  script:
-    - source config/environment
-    - make functional-tests
-
-terraform:
-  stage: terraform
-  only:
-    - master
-    - integration
-    - staging
-  script:
-    - cd terraform/envs/$DEPLOYMENT_STAGE
-    - make init
-    - make plan
-
-deploy:
-  except:
-    - schedules
-  stage: deploy
-  only:
-    - master
-    - integration
-    - staging
-  script:
-    - make deploy
+    - echo "foo"
