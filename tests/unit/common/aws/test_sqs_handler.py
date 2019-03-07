@@ -19,7 +19,7 @@ class TestSQSHandler(MatrixTestCaseUsingMockAWS):
         message_body = json.loads(messages['Messages'][0]['Body'])
         self.assertEqual(message_body['test_key'], "test_value")
 
-    def test_retrieve_messages_from_queue__returns_None_when_no_messages_found(self):
+    def test_receive_messages_from_queue__returns_None_when_no_messages_found(self):
         message = self.sqs_handler.receive_messages_from_queue("test_query_job_q_name", 1)
         self.assertEqual(message, None)
 

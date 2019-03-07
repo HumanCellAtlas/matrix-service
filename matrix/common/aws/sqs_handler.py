@@ -1,7 +1,6 @@
 import json
 
 import boto3
-from tenacity import retry, wait_fixed, stop_after_attempt
 
 from matrix.common.exceptions import MatrixException
 
@@ -14,7 +13,6 @@ class SQSHandler:
     def __init__(self):
         self.sqs = boto3.resource('sqs')
 
-    @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
     def add_message_to_queue(self, queue_url: str, payload: dict):
         response = self.sqs.meta.client.send_message(QueueUrl=queue_url,
                                                      MessageBody=json.dumps(payload))

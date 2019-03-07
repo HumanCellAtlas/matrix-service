@@ -2,9 +2,9 @@
 import json
 import os
 
-from matrix.common.aws.sqs_handler import SQSHandler
-from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.aws.batch_handler import BatchHandler
+from matrix.common.aws.s3_handler import S3Handler
+from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.config import MatrixInfraConfig
 from matrix.common.logging import Logging
@@ -32,7 +32,7 @@ class QueryRunner:
 
     def run(self, max_loops=None):
         loops = 0
-        while True and (max_loops is None or loops < max_loops):
+        while max_loops is None or loops < max_loops:
             loops += 1
             messages = self.sqs_handler.receive_messages_from_queue(self.query_job_q_url)
             if messages:
@@ -61,7 +61,6 @@ class QueryRunner:
                     if request_tracker.is_request_ready_for_conversion():
                         logger.info("Scheduling batch conversion job")
                         self.batch_handler.schedule_matrix_conversion(request_id, request_tracker.format)
-
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
                     request_tracker.log_error(e)

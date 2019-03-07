@@ -21,10 +21,9 @@ expression_query_template = """
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
     AND analysis.bundle_fqid IN {3}$$)
-    TO 's3://{0}/{1}/expression'
+    TO 's3://{0}/{1}/expression_'
     IAM_ROLE '{2}'
     GZIP
-    ALLOWOVERWRITE
     MANIFEST VERBOSE
     ;
 """
@@ -37,10 +36,9 @@ cell_query_template = """
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
     WHERE analysis.bundle_fqid IN {3}$$)
-    TO 's3://{0}/{1}/cell_metadata'
+    TO 's3://{0}/{1}/cell_metadata_'
     IAM_ROLE '{2}'
     GZIP
-    ALLOWOVERWRITE
     MANIFEST VERBOSE
     ;
 """
@@ -49,10 +47,9 @@ feature_query_template = """
     UNLOAD ($$SELECT *
     FROM feature
     WHERE feature.isgene$$)
-    to 's3://{0}/{1}/gene_metadata'
+    to 's3://{0}/{1}/gene_metadata_'
     IAM_ROLE '{2}'
     GZIP
-    ALLOWOVERWRITE
     MANIFEST VERBOSE;
 """
 

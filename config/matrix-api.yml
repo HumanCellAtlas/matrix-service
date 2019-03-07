@@ -91,7 +91,7 @@ paths:
       summary: "Retrieve the status, and result if available, of a matrix query request."
       description: "Returns the status, and URI of the result if available, of a matrix query request. The status of a
         request can be 'Complete', 'In Progress' or 'Failed'. If the request is 'Complete', the matrix_location field
-        will be populated with a URL for all other formats. If the request 'Failed',
+        will be populated with a URL to download the matrix. If the request 'Failed',
         the error message will be available in the message field."
       operationId: matrix.lambdas.api.core.get_matrix
       tags:

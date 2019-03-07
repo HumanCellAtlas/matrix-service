@@ -34,9 +34,9 @@ class BatchHandler:
                              format])
 
         is_compressed = format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value
-        source_expression_manifest = f"s3://{self.s3_results_bucket}/{request_id}/expressionmanifest"
-        source_cell_manifest = f"s3://{self.s3_results_bucket}/{request_id}/cell_metadatamanifest"
-        source_gene_manifest = f"s3://{self.s3_results_bucket}/{request_id}/gene_metadatamanifest"
+        source_expression_manifest = f"s3://{self.s3_results_bucket}/{request_id}/expression_manifest"
+        source_cell_manifest = f"s3://{self.s3_results_bucket}/{request_id}/cell_metadata_manifest"
+        source_gene_manifest = f"s3://{self.s3_results_bucket}/{request_id}/gene_metadata_manifest"
         target_path = f"s3://{self.s3_results_bucket}/{request_id}.{format}" + (".zip" if is_compressed else "")
         command = ['python3',
                    '/matrix_converter.py',
