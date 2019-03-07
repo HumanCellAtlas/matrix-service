@@ -34,7 +34,8 @@ resource "aws_iam_role_policy" "matrix_service_etl_ec2" {
       "Sid": "s3",
       "Effect": "Allow",
       "Action": [
-        "s3:*"
+        "s3:ListBucket",
+        "s3:PutObject"
       ],
       "Resource": [
         "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}",

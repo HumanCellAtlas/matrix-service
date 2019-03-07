@@ -6,10 +6,21 @@ resource "aws_redshift_cluster" "default" {
   node_type          = "dc2.large"
   cluster_type       = "multi-node"
   number_of_nodes    = 4
-  iam_roles          = ["${aws_iam_role.matrix_redshift.arn}"]
+  iam_roles          = ["${aws_iam_role.matrix_service_redshift.arn}"]
 }
 
-resource "aws_iam_role" "matrix_redshift" {
+resource "aws_security_group" "matrix_service_redshift_sg" {
+  name = "dcp-matrix-service-redshift-sg"
+
+  vpc_id = "vpc-3aa13b43"
+  ingress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+  }
+}
+
+resource "aws_iam_role" "matrix_service_redshift" {
   name = "matrix-service-redshift-${var.deployment_stage}"
 
   assume_role_policy = <<POLICY
@@ -29,9 +40,9 @@ resource "aws_iam_role" "matrix_redshift" {
 POLICY
 }
 
-resource "aws_iam_role_policy" "matrix_redshift" {
+resource "aws_iam_role_policy" "matrix_service_redshift" {
   name = "matrix-service-redshift-${var.deployment_stage}"
-  role = "${aws_iam_role.matrix_redshift.name}"
+  role = "${aws_iam_role.matrix_service_redshift.name}"
   policy = <<EOF
 {
   "Version": "2012-10-17",
