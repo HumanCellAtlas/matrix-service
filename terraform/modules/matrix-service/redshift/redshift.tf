@@ -9,17 +9,6 @@ resource "aws_redshift_cluster" "default" {
   iam_roles          = ["${aws_iam_role.matrix_service_redshift.arn}"]
 }
 
-resource "aws_security_group" "matrix_service_redshift_sg" {
-  name = "dcp-matrix-service-redshift-sg"
-
-  vpc_id = "vpc-3aa13b43"
-  ingress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-  }
-}
-
 resource "aws_iam_role" "matrix_service_redshift" {
   name = "matrix-service-redshift-${var.deployment_stage}"
 
