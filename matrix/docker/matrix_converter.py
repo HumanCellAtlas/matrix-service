@@ -264,22 +264,17 @@ def main(args):
     """Entry point."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--expression-manifest",
-                        help="S3 url to Redshift manifest for the expression table.",
-                        required=True)
-    parser.add_argument("--cell-metadata-manifest",
-                        help="S3 url to Redshift manifest for the cell table.",
-                        required=True)
-    parser.add_argument("--gene-metadata-manifest",
-                        help="S3 url to Redshift manifest for the gene table.",
-                        required=True)
-    parser.add_argument("--output-filename",
-                        help="Name of the output file to produce.",
-                        required=True)
-    parser.add_argument("--target-path",
-                        help="S3 prefix where the file should be written.",
-                        required=True)
-    parser.add_argument("--format",
+    parser.add_argument("request_id",
+                        help="ID of the request associated with this conversion.")
+    parser.add_argument("expression_manifest",
+                        help="S3 url to Redshift manifest for the expression table.")
+    parser.add_argument("cell_metadata_manifest",
+                        help="S3 url to Redshift manifest for the cell table.")
+    parser.add_argument("gene_metadata_manifest",
+                        help="S3 url to Redshift manifest for the gene table.")
+    parser.add_argument("target_path",
+                        help="S3 prefix where the file should be written.")
+    parser.add_argument("format",
                         help="Target format for conversion",
                         choices=SUPPORTED_FORMATS)
     args = parser.parse_args()
@@ -294,13 +289,15 @@ def main(args):
     cell_manifest = parse_manifest(args.cell_metadata_manifest)
     gene_manifest = parse_manifest(args.gene_metadata_manifest)
 
+    local_output_filename = os.path.basename(os.path.normpath(args.target_path))
+
     local_converted_path = globals()["to_" + args.format](
-        expression_manifest, cell_manifest, gene_manifest, args.output_filename)
+        expression_manifest, cell_manifest, gene_manifest, local_output_filename)
     LOGGER.debug(f"Conversion to {args.format} complete, beginning upload to S3")
 
     upload_converted_matrix(
         local_converted_path,
-        os.path.join(args.target_path, local_converted_path))
+        args.target_path)
     LOGGER.debug("Upload to S3 complete, job finished")
 
     # Logic for updating status tables, cloudwatch, etc should go here.
