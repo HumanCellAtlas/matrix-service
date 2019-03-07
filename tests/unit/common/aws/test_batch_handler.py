@@ -1,4 +1,3 @@
-import hashlib
 import uuid
 import os
 import unittest
@@ -14,18 +13,17 @@ class TestBatchHandler(unittest.TestCase):
 
     def setUp(self):
         self.request_id = str(uuid.uuid4())
-        self.request_hash = hashlib.sha256().hexdigest()
 
-        self.batch_handler = BatchHandler(self.request_id, self.request_hash)
+        self.batch_handler = BatchHandler()
         self.mock_batch_client = Stubber(self.batch_handler._client)
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler._enqueue_batch_job")
     def test_schedule_matrix_conversion(self, mock_enqueue_batch_job, mock_cw_put):
         format = "test_format"
-        job_name = f"conversion-{os.environ['DEPLOYMENT_STAGE']}-{self.request_hash}-{format}"
+        job_name = f"conversion-{os.environ['DEPLOYMENT_STAGE']}-{self.request_id}-{format}"
 
-        self.batch_handler.schedule_matrix_conversion(format)
+        self.batch_handler.schedule_matrix_conversion(self.request_id, format)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_REQUEST, metric_value=1)
         mock_enqueue_batch_job.assert_called_once_with(job_name=job_name,
                                                        job_queue_arn=os.environ['BATCH_CONVERTER_JOB_QUEUE_ARN'],

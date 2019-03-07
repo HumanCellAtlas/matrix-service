@@ -6,6 +6,7 @@ resource "aws_redshift_cluster" "default" {
   node_type          = "dc2.large"
   cluster_type       = "multi-node"
   number_of_nodes    = 4
+  iam_roles          = ["${aws_iam_role.matrix_service_redshift.arn}"]
 }
 
 resource "aws_security_group" "matrix_service_redshift_sg" {
@@ -29,7 +30,7 @@ resource "aws_iam_role" "matrix_service_redshift" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "ec2.amazonaws.com"
+        "Service": "redshift.amazonaws.com"
       },
       "Effect": "Allow",
       "Sid": ""
@@ -47,16 +48,17 @@ resource "aws_iam_role_policy" "matrix_service_redshift" {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "s3",
       "Effect": "Allow",
       "Action": [
-        "s3:ListBucket",
         "s3:PutObject",
-        "s3:GetObject"
+        "s3:GetObject",
+        "s3:ListBucket"
       ],
       "Resource": [
         "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}",
-        "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}/*"
+        "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}/*",
+        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
       ]
     }
   ]

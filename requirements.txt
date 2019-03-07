@@ -14,3 +14,6 @@ numpy==1.15.2
 loompy==2.0.15
 scipy==1.1.0
 zarr==2.2.0
+dcplib==1.4.0
+tenacity==5.0.2
+psycopg2==2.7.5

@@ -6,7 +6,36 @@ resource "aws_ecs_task_definition" "query_runner" {
   container_definitions = <<DEFINITION
 [
   {
-    "environment": [],
+    "environment": [
+      {
+        "name": "DEPLOYMENT_STAGE",
+        "value": "${var.deployment_stage}"
+      },
+      {
+        "name": "MATRIX_QUERY_BUCKET",
+        "value": "dcp-matrix-service-queries-${var.deployment_stage}"
+      },
+      {
+        "name": "MATRIX_RESULTS_BUCKET",
+        "value": "dcp-matrix-service-results-${var.deployment_stage}"
+      },
+      {
+        "name": "DYNAMO_STATE_TABLE_NAME",
+        "value": "dcp-matrix-service-state-table-${var.deployment_stage}"
+      },
+      {
+        "name": "DYNAMO_OUTPUT_TABLE_NAME",
+        "value": "dcp-matrix-service-output-table-${var.deployment_stage}"
+      },
+      {
+        "name": "BATCH_CONVERTER_JOB_QUEUE_ARN",
+        "value": "arn:aws:batch:${var.aws_region}:${var.account_id}:job-queue/dcp-matrix-converter-queue-${var.deployment_stage}"
+      },
+      {
+        "name": "BATCH_CONVERTER_JOB_DEFINITION_ARN",
+        "value": "arn:aws:batch:${var.aws_region}:${var.account_id}:job-definition/dcp-matrix-converter-job-definition-${var.deployment_stage}"
+      }
+    ],
     "ulimits": [
       {
         "softLimit": 4100,
@@ -104,6 +133,77 @@ resource "aws_iam_role_policy" "query_runner" {
             "Effect": "Allow",
             "Action": "logs:CreateLogGroup",
             "Resource": "${aws_cloudwatch_log_group.query_runner.arn}"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "secretsmanager:DescribeSecret",
+            "secretsmanager:GetSecretValue"
+          ],
+          "Resource": [
+            "arn:aws:secretsmanager:${var.aws_region}:${var.account_id}:secret:dcp/matrix/${var.deployment_stage}/*"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "sqs:SendMessage",
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage"
+          ],
+          "Resource": [
+            "arn:aws:sqs:${var.aws_region}:${var.account_id}:dcp-matrix-query-queue-${var.deployment_stage}",
+            "arn:aws:sqs:${var.aws_region}:${var.account_id}:dcp-matrix-query-deadletter-queue-${var.deployment_stage}"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+              "s3:ListAllMyBuckets",
+              "s3:HeadBucket"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:*"
+          ],
+          "Resource": [
+            "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}",
+            "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}/*"
+          ]
+        },
+        {
+          "Sid": "DynamoPolicy",
+          "Effect": "Allow",
+          "Action": [
+            "dynamodb:UpdateItem",
+            "dynamodb:GetItem",
+            "dynamodb:PutItem"
+          ],
+          "Resource": [
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "batch:Describe*",
+            "batch:RegisterJobDefinition",
+            "batch:SubmitJob"
+          ],
+          "Resource": [
+            "*"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "cloudwatch:PutMetricData"
+          ],
+          "Resource": "*"
         }
     ]
 }
@@ -118,7 +218,7 @@ resource "aws_ecs_service" "query_runner" {
   name            = "matrix-service-query-runner-${var.deployment_stage}"
   cluster         = "${aws_ecs_cluster.query_runner.id}"
   task_definition = "${aws_ecs_task_definition.query_runner.arn}"
-  desired_count   = 0
+  desired_count   = "${var.query_runner_concurrency}"
   launch_type     = "FARGATE"
 
   network_configuration {

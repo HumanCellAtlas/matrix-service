@@ -21,7 +21,7 @@ class Logging:
         return logger
 
     @staticmethod
-    def set_correlation_id(logger: logging.Logger, id_name: str="REQUEST_HASH", value: str=None):
+    def set_correlation_id(logger: logging.Logger, id_name: str="REQUEST_ID", value: str=None):
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s' +
                                       f' {id_name}:{value} %(message)s', datefmt="%Y-%m-%dT%H:%M:%S%z")
         logger.handlers[0].setFormatter(formatter)

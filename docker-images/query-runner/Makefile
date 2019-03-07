@@ -12,6 +12,7 @@ IMAGE=matrix-query-runner
 
 build:
 	mkdir -p code
+	cp -R requirements.txt code/
 	cp -R ../../matrix code/
 	cp -R ../../matrix/docker/query_runner.py code
 	docker build -t $(IMAGE) .
