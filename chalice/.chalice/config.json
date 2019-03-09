@@ -12,7 +12,11 @@
         "LAMBDA_MAPPER_FUNCTION_NAME": "dcp-matrix-service-mapper-dev",
         "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-dev",
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-dev",
-        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev"
+        "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev",
+        "MATRIX_VERSION": "9cd89b3",
+        "LAMBDA_NOTIFICATIONS_FUNCTION_NAME": "dcp-matrix-service-notifications-dev",
+        "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-dev",
+        "MATRIX_RESULTS_BUCKET": "dcp-matrix-service-results-dev"
       }
     },
     "integration": {
@@ -54,7 +58,9 @@
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-predev",
         "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-predev",
         "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-predev",
-        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-predev"
+        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-predev",
+        "MATRIX_VERSION": "56cf1ad",
+        "DYNAMO_CACHE_TABLE_NAME": "dcp-matrix-service-cache-table-predev"
       }
     },
     "prod": {

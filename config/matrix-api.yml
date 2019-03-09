@@ -56,6 +56,22 @@ definitions:
     properties:
       message:
         type: string
+  DssNotification:
+    type: object
+    properties:
+      transaction_id:
+        type: string
+      subscription_id:
+        type: string
+      event_type:
+        type: string
+      match:
+        type: object
+        properties:
+          bundle_uuid:
+            type: string
+          bundle_version:
+            type: string
 paths:
   /matrix:
     post:
@@ -125,4 +141,21 @@ paths:
             type: array
             items:
               $ref: '#/definitions/MatrixFormat'
-
+  /dss/notifications:
+    post:
+      summary: "Handles DSS notifications such as creates, updates and deletes."
+      description: "Handles DSS notifications such as bundle creates, updates and deletes and propagates changes to
+        Redshift."
+      operationId: matrix.lambdas.api.core.dss_notifications
+      parameters:
+        - in: body
+          name: body
+          description: "JSON body sent by DSS subscriptions endpoint"
+          required: true
+          schema:
+            $ref: '#/definitions/DssNotification'
+      responses:
+        "200":
+          description: "Success"
+          schema:
+            type: string

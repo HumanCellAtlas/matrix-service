@@ -17,10 +17,13 @@ fi
 
 AWS_DEFAULT_REGION='us-east-1'
 LAMBDA_DRIVER_FUNCTION_NAME="dcp-matrix-service-driver-${DEPLOYMENT_STAGE}"
+LAMBDA_NOTIFICATIONS_FUNCTION_NAME="dcp-matrix-service-notifications-${DEPLOYMENT_STAGE}"
 DYNAMO_STATE_TABLE_NAME="dcp-matrix-service-state-table-${DEPLOYMENT_STAGE}"
 DYNAMO_OUTPUT_TABLE_NAME="dcp-matrix-service-output-table-${DEPLOYMENT_STAGE}"
 MATRIX_RESULTS_BUCKET="dcp-matrix-service-results-${DEPLOYMENT_STAGE}"
 MATRIX_QUERY_BUCKET="dcp-matrix-service-queries-${DEPLOYMENT_STAGE}"
+MATRIX_PRELOAD_BUCKET="dcp-matrix-service-preload-${DEPLOYMENT_STAGE}"
+MATRIX_REDSHIFT_IAM_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/matrix-service-redshift-${DEPLOYMENT_STAGE}"
 BATCH_CONVERTER_JOB_QUEUE_ARN="arn:aws:batch:${AWS_DEFAULT_REGION}:${ACCOUNT_ID}:job-queue/dcp-matrix-converter-queue-${DEPLOYMENT_STAGE}"
 BATCH_CONVERTER_JOB_DEFINITION_ARN="arn:aws:batch:${AWS_DEFAULT_REGION}:${ACCOUNT_ID}:job-definition/dcp-matrix-converter-job-definition-${DEPLOYMENT_STAGE}"
 set +a
