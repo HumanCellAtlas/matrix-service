@@ -117,7 +117,7 @@ paths:
                 $ref: '#/components/schemas/MatrixErrorResponse'
   /fields:
     get:
-      summary: Get a lsit of available metadata fields
+      summary: Get a list of available metadata fields
       description: >
         Get a list of metadata field names that a POST to 
         /matrix will accept.
@@ -132,7 +132,7 @@ paths:
     get:
       summary: 'Get a description of a metadata field'
       description: >
-        Get detailed information about a an available metadata field.
+        Get detailed information about an available metadata field.
       parameters:
         - name: field_name
           schema:
