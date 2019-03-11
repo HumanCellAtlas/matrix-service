@@ -22,7 +22,7 @@ CREATE_QUERY_TEMPLATE = {
         CREATE {0}TABLE IF NOT EXISTS {2} (
             cellkey          VARCHAR(60) NOT NULL,
             projectkey       VARCHAR(60) NOT NULL,
-            donorkey         VARCHAR(60) NOT NULL,
+            donorkey      VARCHAR(60) NOT NULL,
             librarykey       VARCHAR(60) NOT NULL,
             analysiskey      VARCHAR(60) NOT NULL,
             barcode          VARCHAR(32),
@@ -58,6 +58,7 @@ CREATE_QUERY_TEMPLATE = {
             isgene           BOOLEAN,
             PRIMARY KEY(featurekey))
             DISTSTYLE ALL
+            SORTKEY(featurekey)
         ;
     """,
     'analysis': """
@@ -68,11 +69,12 @@ CREATE_QUERY_TEMPLATE = {
             awg_disposition     VARCHAR(12),
             PRIMARY KEY(analysiskey))
             DISTSTYLE ALL
+            SORTKEY(analysiskey)
         ;
     """,
     'donor_organism': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
-            donorkey           VARCHAR(40) NOT NULL,
+            donorkey                 VARCHAR(40) NOT NULL,
             genus_species_ontology      VARCHAR(40),
             genus_species_label         VARCHAR(40),
             ethnicity_ontology          VARCHAR(40),
