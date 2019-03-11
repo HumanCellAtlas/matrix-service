@@ -126,11 +126,9 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
             # Just make up a cell id
             h = hashlib.md5()
-            h.update(keys["project_key"].encode())
-            h.update(keys["donor_key"].encode())
-            h.update(cell_suspension_id.encode())
+            bundle_uuid = pathlib.Path(bundle_dir).parts[-1]
+            h.update(bundle_uuid.encode())
             h.update(barcode.encode())
-            h.update(str(lane_index).encode())
             cell_key = h.hexdigest()
 
             cell_to_barcode[cell_key] = barcode
