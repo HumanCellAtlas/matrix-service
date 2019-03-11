@@ -39,13 +39,13 @@ def calculate_ss2_metrics_direct(bundle_fqids):
         rsem_reader = csv.DictReader(io.StringIO(rsem_contents.decode()), delimiter="\t")
 
         bundle_expression_sum = 0
-        bundle_expression_nonzero = 0
+        bundle_expression_nonzeros = set()
         for row in rsem_reader:
-            bundle_expression_sum += float(row["TPM"])
-            if float(row['TPM']) != 0.0:
-                bundle_expression_nonzero += 1
+            bundle_expression_sum += float(row["expected_count"])
+            if float(row['expected_count']) != 0.0:
+                bundle_expression_nonzeros.add(row["gene_id"].split(".", 1)[0])
         return {"expression_sum": bundle_expression_sum,
-                "expression_nonzero": bundle_expression_nonzero,
+                "expression_nonzero": len(bundle_expression_nonzeros),
                 "cell_count": 1}
 
     expression_sum = 0
