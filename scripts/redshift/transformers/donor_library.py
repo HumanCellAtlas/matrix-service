@@ -192,6 +192,15 @@ class DonorLibraryTransformer(MetadataToPsvTransformer):
                         "organ_part": next(iter(model_organs)) + " (organoid)"}
             return {"organ": "", "organ_part": ""}
 
+        # Now see if it's a cell line with a selected cell type
+        cell_line_json_paths = glob.glob(os.path.join(bundle_path, "cell_line_*.json"))
+        if cell_line_json_paths:
+            cell_suspension_path = os.path.join(bundle_path, "cell_suspension_0.json")
+            cell_suspension_json = json.load(open(cell_suspension_path))
+            selected_cell_type = cell_suspension_json["selected_cell_type"][0]["ontology"]
+            return {"organ": selected_cell_type + " (cell line)",
+                    "organ_part": selected_cell_type + " (cell line)"}
+
         specimen_json_paths = glob.glob(os.path.join(bundle_path, "specimen_from_organism_*.json"))
         organs = set()
         organ_parts = set()
