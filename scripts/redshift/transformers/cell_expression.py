@@ -53,21 +53,26 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         with open(isoforms_path) as iso_file:
             reader = csv.DictReader(iso_file, delimiter='\t')
             for row in reader:
-                isoforms_values[row["transcript_id"].split(".")[0]] = {
-                    "TPM": float(row["TPM"]), "Count": float(row["expected_count"])}
+                transcript_id = row["transcript_id"].split(".")[0]
+                isoforms_values[transcript_id] = {
+                    "TPM": float(row["TPM"]) + isoforms_values.get(transcript_id, {}).get("TPM", 0),
+                    "Count": float(row["expected_count"]) + isoforms_values.get(transcript_id, {}).get("Count", 0)
+                }
 
         genes_path = glob.glob(os.path.join(bundle_dir, "*.genes.results"))[0]
         genes_values = {}
         with open(genes_path) as genes_file:
             reader = csv.DictReader(genes_file, delimiter='\t')
             for row in reader:
-                genes_values[row["gene_id"].split(".")[0]] = {
-                    "TPM": float(row["TPM"]), "Count": float(row["expected_count"])}
+                gene_id = row["gene_id"].split(".")[0]
+                genes_values[gene_id] = {
+                    "TPM": float(row["TPM"]) + genes_values.get(gene_id, {}).get("TPM", 0),
+                    "Count": float(row["expected_count"]) + genes_values.get(gene_id, {}).get("Count", 0)
+                }
 
         genes_detected = sum((1 for k in genes_values.values() if k["Count"] > 0))
         # Now prepare the for the redshift table
         # cell is easy because there's only one
-        is_lucky = str(ord(cell_key[-1]) % 5 == 0)
         cell_lines = ['|'.join([
             cell_key,
             keys["project_key"],
@@ -108,19 +113,16 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         genes = [g.split("\t")[0].split(".", 1)[0] for g in
                  open(os.path.join(bundle_dir, "genes.tsv")).readlines()]
         barcodes = [b.strip() for b in open(os.path.join(bundle_dir, "barcodes.tsv")).readlines()]
-        genes_detected = (matrix != 0).sum(0)
-        cell_suspension_id = json.load(open(
-            os.path.join(bundle_dir, "cell_suspension_0.json")))["provenance"]["document_id"]
-        sequence_file_path = list(pathlib.Path(bundle_dir).glob("sequence_file_*.json"))[0]
-        lane_index = json.load(open(sequence_file_path))["lane_index"]
 
         # columns are cells, rows are genes
         expression_lines = []
         cell_lines = set()
+        cell_gene_counts = {}
+        cell_to_barcode = {}
+
         for i, j, v in zip(matrix.row, matrix.col, matrix.data):
             barcode = barcodes[j]
             gene = genes[i]
-            gene_count = genes_detected.item((0, j))
 
             # Just make up a cell id
             h = hashlib.md5()
@@ -131,14 +133,23 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             h.update(str(lane_index).encode())
             cell_key = h.hexdigest()
 
-            # decide if this is a lucky cell
-            is_lucky = str(ord(cell_key[-1]) % 5 == 0)
+            cell_to_barcode[cell_key] = barcode
 
-            expression_line = '|'.join(
-                [cell_key,
-                 gene,
-                 "Count",
-                 str(v)]) + '\n'
+            if cell_key not in cell_gene_counts:
+                cell_gene_counts[cell_key] = {}
+            cell_gene_counts[cell_key][gene] = cell_gene_counts[cell_key].get(gene, 0) + v
+
+        for cell_key, gene_count_dict in cell_gene_counts.items():
+
+            for gene, count in gene_count_dict.items():
+                expression_line = '|'.join(
+                    [cell_key,
+                    gene,
+                    "Count",
+                    str(count)]) + '\n'
+                expression_lines.append(expression_line)
+
+            gene_count = len(gene_count_dict)
             cell_line = '|'.join(
                 [cell_key,
                  keys["project_key"],
