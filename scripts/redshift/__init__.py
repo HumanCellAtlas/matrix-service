@@ -37,8 +37,10 @@ CREATE_TABLE_QUERY = {
             featurestart     INTEGER,
             featureend       INTEGER,
             isgene           BOOLEAN,
-            PRIMARY KEY(featurekey)
-        );
+            PRIMARY KEY(featurekey))
+            DISTSTYLE ALL
+            SORTKEY(featurekey)
+        ;
     """,
     'analysis': """
         CREATE TABLE analysis (
@@ -46,8 +48,10 @@ CREATE_TABLE_QUERY = {
             bundle_fqid         VARCHAR(65) NOT NULL,
             protocol            VARCHAR(40),
             awg_disposition     VARCHAR(12),
-            PRIMARY KEY(analysiskey)
-        );
+            PRIMARY KEY(analysiskey))
+            DISTSTYLE ALL
+            SORTKEY(analysiskey)
+        ;
     """,
     'donor_organism': """
         CREATE TABLE donor_organism (
