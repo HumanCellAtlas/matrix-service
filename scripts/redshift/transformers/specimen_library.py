@@ -10,25 +10,25 @@ import requests
 from . import MetadataToPsvTransformer, TableName
 
 
-class DonorLibraryTransformer(MetadataToPsvTransformer):
+class SpecimenLibraryTransformer(MetadataToPsvTransformer):
     """
-    Reads donor organism and library preparation metadata and writes out rows for
-    donor_organism and library_preparation tables in PSV format.
+    Reads specimen and library preparation metadata and writes out rows for
+    specimen and library_preparation tables in PSV format.
     """
     WRITE_LOCK = Lock()
 
     def _write_rows_to_psvs(self, *args: typing.Tuple):
-        with DonorLibraryTransformer.WRITE_LOCK:
-            super(DonorLibraryTransformer, self)._write_rows_to_psvs(*args)
+        with SpecimenLibraryTransformer.WRITE_LOCK:
+            super(SpecimenLibraryTransformer, self)._write_rows_to_psvs(*args)
 
     def _parse_from_metadatas(self, search_dir: str):
         p = pathlib.Path(search_dir)
 
-        donor_infos = []
-        for donor_json_path in p.glob("**/donor_organism_*.json"):
-            donor_info = self.parse_donor_json(os.path.dirname(donor_json_path))
-            if donor_info:
-                donor_infos.append(donor_info)
+        specimen_infos = []
+        for specimen_json_path in p.glob("**/specimen_from_organism_*.json"):
+            specimen_info = self.parse_specimen_json(os.path.dirname(specimen_json_path))
+            if specimen_info:
+                specimen_infos.append(specimen_info)
 
         library_infos = []
         for library_json_path in p.glob("**/library_preparation_protocol_*.json"):
@@ -36,18 +36,18 @@ class DonorLibraryTransformer(MetadataToPsvTransformer):
             if library_info:
                 library_infos.append(library_info)
 
-        odict = self.create_ontology_resolver(donor_infos, library_infos)
+        odict = self.create_ontology_resolver(specimen_infos, library_infos)
 
-        donor_data = set()
-        for donor_info in donor_infos:
-            donor_data.add(
-                self._generate_psv_row(donor_info['key'],
-                                       donor_info['genus_species'], odict.get(donor_info['genus_species'], ""),
-                                       donor_info['ethnicity'], odict.get(donor_info["ethnicity"], ""),
-                                       donor_info['disease'], odict.get(donor_info["disease"], ""),
-                                       donor_info['development_stage'], odict.get(donor_info["development_stage"], ""),
-                                       donor_info["organ"], odict.get(donor_info["organ"], ""),
-                                       donor_info["organ_part"], odict.get(donor_info["organ_part"], "")))
+        specimen_data = set()
+        for specimen_info in specimen_infos:
+            specimen_data.add(
+                '|'.join([specimen_info['key'],
+                        specimen_info['genus_species'], odict.get(specimen_info['genus_species'], ""),
+                        specimen_info['ethnicity'], odict.get(specimen_info["ethnicity"], ""),
+                        specimen_info['disease'], odict.get(specimen_info["disease"], ""),
+                        specimen_info['development_stage'], odict.get(specimen_info["development_stage"], ""),
+                        specimen_info["organ"], odict.get(specimen_info["organ"], ""),
+                        specimen_info["organ_part"], odict.get(specimen_info["organ_part"], "")]))
 
         library_data = set()
         for library_info in library_infos:
@@ -60,7 +60,7 @@ class DonorLibraryTransformer(MetadataToPsvTransformer):
                                        library_info['end_bias'],
                                        library_info['strand']))
 
-        return (TableName.DONOR_ORGANISM, donor_data), (TableName.LIBRARY_PREPARATION, library_data)
+        return (TableName.SPECIMEN, specimen_data), (TableName.LIBRARY_PREPARATION, library_data)
 
     def resolve_ontology_ols(self, term):
         """Get the ontology label for a term using the OLS API."""
@@ -119,7 +119,9 @@ class DonorLibraryTransformer(MetadataToPsvTransformer):
 
         return resolver
 
-    def parse_donor_json(self, bundle_path):
+    def parse_specimen_json(self, bundle_path):
+        specimen_json_paths = glob.glob(
+            os.path.join(bundle_path, "specimen_from_organism_*.json"))
         donor_json_paths = glob.glob(
             os.path.join(bundle_path, "donor_organism_*.json"))
 
@@ -127,17 +129,31 @@ class DonorLibraryTransformer(MetadataToPsvTransformer):
         ethnicities = set()
         diseases = set()
         dev_stages = set()
-        donorkeys = []
+        specimenkeys = []
 
-        for donor_json_path in donor_json_paths:
-            donor_dict = json.load(open(donor_json_path))
-            key = donor_dict["provenance"]["document_id"]
+        for specimen_json_path in specimen_json_paths:
+            specimen_dict = json.load(open(specimen_json_path))
+            key = specimen_dict["provenance"]["document_id"]
+            specimenkeys.append(key)
 
-            genus_species_list = donor_dict.get("genus_species", [])
+            genus_species_list = specimen_dict.get("genus_species", [])
             if genus_species_list:
                 genus_species = genus_species_list[0].get("ontology", "").upper()
             else:
                 genus_species = ""
+            genera.add(genus_species)
+
+            disease_list = specimen_dict.get("diseases", [])
+            if disease_list:
+                disease = disease_list[0].get("ontology").upper()
+            else:
+                disease = ""
+
+            diseases.add(disease)
+
+        for donor_json_path in donor_json_paths:
+            donor_dict = json.load(open(donor_json_path))
+
 
             ethnicity_list = donor_dict.get("human_specific", {}).get("ethnicity", [])
             if ethnicity_list:
@@ -145,24 +161,16 @@ class DonorLibraryTransformer(MetadataToPsvTransformer):
             else:
                 ethnicity = ""
 
-            disease_list = donor_dict.get("diseases", [])
-            if disease_list:
-                disease = disease_list[0].get("ontology").upper()
-            else:
-                disease = ""
 
             dev_stage = donor_dict.get("development_stage", {}).get("ontology", "").upper()
 
-            donorkeys.append(key)
-            genera.add(genus_species)
             ethnicities.add(ethnicity)
-            diseases.add(disease)
             dev_stages.add(dev_stage)
 
-        # Some cells have multiple donors. Only record the donor information if
+        # Some cells have multiple donors/specimens. Only record the donor information if
         # it's the same across all of them.
         output = {
-            "key": sorted(donorkeys)[0],
+            "key": sorted(specimenkeys)[0],
             "genus_species": next(iter(genera)) if len(genera) == 1 else "",
             "ethnicity": next(iter(ethnicities)) if len(ethnicities) == 1 else "",
             "disease": next(iter(diseases)) if len(diseases) == 1 else "",

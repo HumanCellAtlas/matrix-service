@@ -13,7 +13,7 @@ from transformers import MetadataToPsvTransformer, TableName
 from transformers.cell_expression import CellExpressionTransformer
 from transformers.analysis import AnalysisTransformer
 from transformers.feature import FeatureTransformer
-from transformers.donor_library import DonorLibraryTransformer
+from transformers.specimen_library import SpecimenLibraryTransformer
 from transformers.project_publication_contributor import ProjectPublicationContributorTransformer
 
 DEPLOYMENT_STAGE = os.environ['DEPLOYMENT_STAGE']
@@ -64,7 +64,7 @@ def transform_and_load(extractor: DSSExtractor):
     transformers = [
         FeatureTransformer(),
         AnalysisTransformer(),
-        DonorLibraryTransformer(),
+        SpecimenLibraryTransformer(),
         ProjectPublicationContributorTransformer()
     ]
 

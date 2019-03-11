@@ -9,7 +9,7 @@ class TableName(Enum):
     """
     FEATURE = "feature"
     ANALYSIS = "analysis"
-    DONOR_ORGANISM = "donor_organism"
+    SPECIMEN = "specimen"
     LIBRARY_PREPARATION = "library_preparation"
     PROJECT = "project"
     PUBLICATION = "publication"
