@@ -4,14 +4,26 @@ from matrix.common.etl import run_etl, transform_bundle, finalizer_reload
 
 
 if __name__ == '__main__':
-    # All SS2 analysis bundles
+    # Match all SS2 and 10X analysis bundles
     query = {
         "query": {
             "bool": {
                 "must": [
                     {
-                        "match": {
-                            "files.library_preparation_protocol_json.library_construction_approach.ontology": "EFO:0008931"
+                        "bool": {
+                            "should": [
+                                {
+                                    "match": {
+                                        "files.library_preparation_protocol_json.library_construction_approach.ontology": "EFO:0008931"
+                                    }
+                                },
+                                {
+                                    "match": {
+                                        "files.library_preparation_protocol_json.library_construction_approach.ontology_label": "10X v2 sequencing"
+                                    }
+                                }
+                            ],
+                            "minimum_number_should_match": 1
                         }
                     },
                     {
@@ -23,7 +35,7 @@ if __name__ == '__main__':
                         "match": {
                             "files.analysis_process_json.process_type.text": "analysis"
                         }
-                    },
+                    }
                 ]
             }
         }

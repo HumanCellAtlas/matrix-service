@@ -14,7 +14,7 @@ from .transformers import MetadataToPsvTransformer
 from .transformers.cell_expression import CellExpressionTransformer
 from .transformers.analysis import AnalysisTransformer
 from .transformers.feature import FeatureTransformer
-from .transformers.donor_library import DonorLibraryTransformer
+from .transformers.specimen_library import SpecimenLibraryTransformer
 from .transformers.project_publication_contributor import ProjectPublicationContributorTransformer
 
 logger = Logging.get_logger(__name__)
@@ -89,7 +89,7 @@ def finalizer_reload(extractor: DSSExtractor):
     transformers = [
         FeatureTransformer(extractor.sd),
         AnalysisTransformer(extractor.sd),
-        DonorLibraryTransformer(extractor.sd),
+        SpecimenLibraryTransformer(extractor.sd),
         ProjectPublicationContributorTransformer(extractor.sd)
     ]
 
@@ -111,7 +111,7 @@ def finalizer_update(extractor: DSSExtractor):
     job_id = str(uuid.uuid4())
     transformers = [
         AnalysisTransformer(extractor.sd),
-        DonorLibraryTransformer(extractor.sd),
+        SpecimenLibraryTransformer(extractor.sd),
         ProjectPublicationContributorTransformer(extractor.sd)
     ]
 
@@ -186,14 +186,13 @@ def _populate_all_tables(job_id: str, temp=False):
             ])
         else:
             logger.info(f"ETL: Building queries to load {table_name} table")
-            transaction.extend([CREATE_QUERY_TEMPLATE[table.value].format("", table_name),
+            transaction.extend([CREATE_QUERY_TEMPLATE[table.value].format("", "", table_name),
                                 copy_stmt])
 
     logger.info(f"ETL: Populating Redshift tables. Committing transaction.")
     try:
         redshift.transaction(transaction)
     except psycopg2.Error as e:
-        # TODO: put this in a DLQ
         logger.error("Failed to populate Redshift tables. Rolling back.", e)
 
 
