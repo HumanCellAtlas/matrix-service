@@ -1,0 +1,78 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/biomaterial/13.0.0/donor_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "donor_ID_1",
+        "biomaterial_name": "This is a dummy donor",
+        "biomaterial_description": "This is a dummy donor description",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DRB1 0401 protective allele",
+        "supplementary_files": [
+            "metadata_dog.png"
+        ],
+        "biosd_biomaterial": "SAMN00000000",
+        "insdc_biomaterial": "SRS0000000"
+    },
+    "human_specific": {
+        "body_mass_index": 36.4,
+        "ethnicity": [
+            {
+                "text": "African American/Afro-Caribbean",
+                "ontology": "hancestro:0016",
+                "ontology_label": "African American or Afro-Caribbean"
+            }
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "sex": "unknown",
+    "is_living": "unknown",
+    "organism_age": "45-65",
+    "organism_age_unit": {
+        "text": "year",
+        "ontology": "UO:0000036",
+        "ontology_label": "year"
+    },
+    "development_stage": {
+        "text": "adult",
+        "ontology": "EFO:0001272",
+        "ontology_label": "adult"
+    },
+    "diseases": [
+        {
+            "text": "H syndrome",
+            "ontology": "MONDO:0011273",
+            "ontology_label": "H syndrome"
+        }
+    ],
+    "gestational_age": "22",
+    "gestational_age_unit": {
+        "text": "days",
+        "ontology": "UO:0000033",
+        "ontology_label": "day"
+    },
+    "height": "160",
+    "height_unit": {
+        "text": "centimeter",
+        "ontology": "UO:0000015",
+        "ontology_label": "centimeter"
+    },
+    "weight": "127",
+    "weight_unit": {
+        "text": "kg",
+        "ontology": "UO:0000009",
+        "ontology_label": "kilogram"
+    },
+    "provenance": {
+        "document_id": "138c5ad0-17e9-4ab1-b1ca-41b19455f859",
+        "submission_date": "2019-01-27T22:57:55.691Z",
+        "update_date": "2019-01-27T23:06:12.397Z"
+    }
+}

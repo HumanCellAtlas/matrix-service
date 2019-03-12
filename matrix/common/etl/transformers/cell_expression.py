@@ -76,9 +76,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 }
 
         genes_detected = sum((1 for k in genes_values.values() if k["Count"] > 0))
-        # Now prepare the for the redshift table
-        # cell is easy because there's only one
-        is_lucky = str(ord(cell_key[-1]) % 5 == 0)
+
         cell_lines = ['|'.join([
             cell_key,
             keys["project_key"],

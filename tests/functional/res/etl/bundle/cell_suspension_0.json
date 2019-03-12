@@ -1,0 +1,56 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/biomaterial/8.6.6/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "cell_ID_2436",
+        "biomaterial_name": "This is a dummy cell",
+        "biomaterial_description": "This is a dummy donor cell",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DRB1 0401 protective allele",
+        "supplementary_files": [
+            "metadata_dog.png"
+        ],
+        "biosd_biomaterial": "SAMN00000000",
+        "insdc_biomaterial": "SRS0000000"
+    },
+    "cell_morphology": {
+        "cell_morphology": "adherent cells, form single layer colonies",
+        "cell_size": "20-30",
+        "cell_size_unit": {
+            "text": "micrometer",
+            "ontology": "UO:0000017",
+            "ontology_label": "micrometer"
+        },
+        "percent_cell_viability": 98.7,
+        "cell_viability_method": "Fluorescein diacetate hydrolysis assay",
+        "cell_viability_result": "pass",
+        "percent_necrosis": 10
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "selected_cell_type": [
+        {
+            "text": "arcuate artery endothelial cell",
+            "ontology": "CL:1001213",
+            "ontology_label": "arcuate artery endothelial cell"
+        }
+    ],
+    "total_estimated_cells": 1,
+    "plate_based_sequencing": {
+        "plate_id": "2218",
+        "well_id": "A2436",
+        "cell_quality": "OK"
+    },
+    "provenance": {
+        "document_id": "635badd5-7d62-4db3-b509-f290a12a1336",
+        "submission_date": "2019-01-27T22:58:46.326Z",
+        "update_date": "2019-01-28T01:01:09.784Z"
+    }
+}

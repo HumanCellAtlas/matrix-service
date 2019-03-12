@@ -19,7 +19,9 @@ class FeatureTransformer(MetadataToPsvTransformer):
 
     def __init__(self, staging_dir):
         super(FeatureTransformer, self).__init__(staging_dir)
+        self._fetch_annotations()
 
+    def _fetch_annotations(self):
         urllib.request.urlretrieve(self.ANNOTATION_FTP_URL, self.GZIP_FILENAME)
         with gzip.open(self.GZIP_FILENAME, 'rb') as f_in:
             with open(self.FILENAME, 'wb') as f_out:

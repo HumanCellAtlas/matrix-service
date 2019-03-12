@@ -1,0 +1,64 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/project/10.0.0/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "scale/ss2_4000/2019-01-27T22:57:42Z",
+        "project_title": "SS2 1 Cell Integration Test",
+        "project_description": "Contains a small file set (SRR3562314) from the dataset 'Single cell transcriptome analysis of human pancreas' to speed up analysis. This test also contains extensive metadata for browser testing. Metadata is fabricated. Where possible the example value is used."
+    },
+    "supplementary_links": [
+        "https://github.com/czbiohub/tabula-muris; http://celltag.org/"
+    ],
+    "geo_series": "GSE00000",
+    "array_express_investigation": "E-AAAA-00",
+    "insdc_study": "PRJNA000000",
+    "contributors": [
+        {
+            "contact_name": "John,D,Doe",
+            "email": "dummy@email.com",
+            "phone": "(+1) 234-555-6789",
+            "institution": "EMBL-EBI",
+            "laboratory": "Division of Vaccine Discovery",
+            "address": "0000 Main Street, Nowheretown, MA, 12091",
+            "country": "USA",
+            "corresponding_contributor": true,
+            "project_role": "principal investigator",
+            "orcid_id": "0000-1111-2222-3333"
+        },
+        {
+            "contact_name": "Jane,,Smith",
+            "email": "dummy1@email.com",
+            "phone": "(+1) 234-555-6788",
+            "institution": "University of Washington",
+            "laboratory": "Department of Biology",
+            "address": "0001 Main Street, Nowheretown, MA, 12091",
+            "country": "USA",
+            "corresponding_contributor": false,
+            "project_role": "computational scientist",
+            "orcid_id": "0000-1111-2222-3333"
+        }
+    ],
+    "funders": [
+        {
+            "grant_title": "A title of a grant proposal.",
+            "grant_id": "BB/P0000001/1",
+            "organization": "Biotechnology and Biological Sciences Research Council (BBSRC)"
+        }
+    ],
+    "publications": [
+        {
+            "authors": [
+                "Doe JD"
+            ],
+            "publication_title": "Study of single cells in the human body",
+            "doi": "10.1016/j.cell.2016.07.054",
+            "pmid": 27565351,
+            "publication_url": "http://www.27565351example.com"
+        }
+    ],
+    "provenance": {
+        "document_id": "c3ba122b-9158-4447-b379-6f5983a2416d",
+        "submission_date": "2019-01-27T22:57:55.684Z",
+        "update_date": "2019-01-27T23:06:12.372Z"
+    }
+}

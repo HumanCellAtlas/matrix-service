@@ -46,12 +46,18 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         for specimen_info in specimen_infos:
             specimen_data.add(
                 self._generate_psv_row(specimen_info['key'],
-                                       specimen_info['genus_species'], odict.get(specimen_info['genus_species'], ""),
-                                       specimen_info['ethnicity'], odict.get(specimen_info["ethnicity"], ""),
-                                       specimen_info['disease'], odict.get(specimen_info["disease"], ""),
-                                       specimen_info['development_stage'], odict.get(specimen_info["development_stage"], ""),
-                                       specimen_info["organ"], odict.get(specimen_info["organ"], ""),
-                                       specimen_info["organ_part"], odict.get(specimen_info["organ_part"], "")))
+                                       specimen_info['genus_species'],
+                                       odict.get(specimen_info['genus_species'], ""),
+                                       specimen_info['ethnicity'],
+                                       odict.get(specimen_info["ethnicity"], ""),
+                                       specimen_info['disease'],
+                                       odict.get(specimen_info["disease"], ""),
+                                       specimen_info['development_stage'],
+                                       odict.get(specimen_info["development_stage"], ""),
+                                       specimen_info["organ"],
+                                       odict.get(specimen_info["organ"], ""),
+                                       specimen_info["organ_part"],
+                                       odict.get(specimen_info["organ_part"], "")))
 
         library_data = set()
         for library_info in library_infos:

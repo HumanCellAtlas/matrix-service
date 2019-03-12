@@ -144,13 +144,12 @@ paths:
   /dss/notifications:
     post:
       summary: "Handles DSS notifications such as creates, updates and deletes."
-      description: "Handles DSS notifications such as bundle creates, updates and deletes and propagates changes to
-        Redshift."
+      description: "Handles DSS notifications such as bundle creates, updates and deletes."
       operationId: matrix.lambdas.api.core.dss_notifications
       parameters:
         - in: body
           name: body
-          description: "JSON body sent by DSS subscriptions endpoint"
+          description: "DSS subscription event JSON payload"
           required: true
           schema:
             $ref: '#/definitions/DssNotification'

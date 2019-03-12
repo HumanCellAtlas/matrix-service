@@ -1,0 +1,13 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+    "schema_type": "file",
+    "file_core": {
+        "file_name": "635badd5-7d62-4db3-b509-f290a12a1336_qc.bam",
+        "file_format": "bam"
+    },
+    "provenance": {
+        "document_id": "d95cd8fa-1b3b-4392-9ae9-59885b2e424d",
+        "submission_date": "2019-01-28T12:57:02.216Z",
+        "update_date": "2019-01-28T13:24:23.925Z"
+    }
+}

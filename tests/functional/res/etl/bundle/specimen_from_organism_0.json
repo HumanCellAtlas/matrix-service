@@ -1,0 +1,72 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/biomaterial/7.0.0/specimen_from_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "specimen_ID_1",
+        "biomaterial_name": "This is a dummy specimen",
+        "biomaterial_description": "This is a dummy donor specimen",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DRB1 0401 protective allele",
+        "supplementary_files": [
+            "metadata_dog.png"
+        ],
+        "biosd_biomaterial": "SAMN00000000",
+        "insdc_biomaterial": "SRS0000000"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "organ": {
+        "text": "kidney",
+        "ontology": "UBERON:0002113",
+        "ontology_label": "kidney"
+    },
+    "organ_part": {
+        "text": "tongue taste bud",
+        "ontology": "UBERON:0014451",
+        "ontology_label": "tongue taste bud"
+    },
+    "diseases": [
+        {
+            "text": "H syndrome",
+            "ontology": "MONDO:0011273",
+            "ontology_label": "H syndrome"
+        }
+    ],
+    "state_of_specimen": {
+        "autolysis_score": "moderate",
+        "gross_description": "normal",
+        "gross_image": [
+            "my_gross_image_file.jpg"
+        ],
+        "ischemic_temperature": "warm",
+        "ischemic_time": 7200,
+        "microscopic_description": "Mixture of different cell sizes apparent.",
+        "microscopic_image": [
+            "my_microscopic_image_file.jpg"
+        ],
+        "postmortem_interval": 2400
+    },
+    "preservation_storage": {
+        "storage_method": "ambient temperature",
+        "storage_time": 5,
+        "storage_time_unit": {
+            "text": "days",
+            "ontology": "UO:0000033",
+            "ontology_label": "day"
+        },
+        "preservation_method": "cryopreservation in liquid nitrogen (dead tissue)"
+    },
+    "collection_time": "2017-03-19T07:22:00Z",
+    "provenance": {
+        "document_id": "80bd863b-d92c-4c5f-98b6-4c32d7b2e806",
+        "submission_date": "2019-01-27T22:57:55.698Z",
+        "update_date": "2019-01-28T00:59:08.829Z"
+    }
+}

@@ -76,7 +76,10 @@ def transform_bundle(bundle_uuid: str, bundle_version: str, bundle_path: str, ex
     ]
 
     for transformer in transformers:
-        transformer.transform(bundle_path)
+        try:
+            transformer.transform(bundle_path)
+        except Exception as e:
+            logger.error(f"Failed to transform bundle {bundle_uuid}.{bundle_version}.", e)
 
 
 def finalizer_reload(extractor: DSSExtractor):
@@ -94,7 +97,10 @@ def finalizer_reload(extractor: DSSExtractor):
     ]
 
     for transformer in transformers:
-        transformer.transform(os.path.join(extractor.sd, 'bundles'))
+        try:
+            transformer.transform(os.path.join(extractor.sd, 'bundles'))
+        except Exception as e:
+            logger.error(f"Failed to run transformer {transformer}", e)
 
     logger.info(f"ETL: All transformations complete.")
     _upload_to_s3(os.path.join(extractor.sd, MetadataToPsvTransformer.OUTPUT_DIRNAME), job_id)
@@ -116,7 +122,10 @@ def finalizer_update(extractor: DSSExtractor):
     ]
 
     for transformer in transformers:
-        transformer.transform(os.path.join(extractor.sd, 'bundles'))
+        try:
+            transformer.transform(os.path.join(extractor.sd, 'bundles'))
+        except Exception as e:
+            logger.error(f"Failed to run transformer {transformer}", e)
 
     logger.info(f"ETL: All transformations complete.")
     _upload_to_s3(os.path.join(extractor.sd, MetadataToPsvTransformer.OUTPUT_DIRNAME), job_id)
