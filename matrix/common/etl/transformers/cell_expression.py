@@ -82,7 +82,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         cell_lines = ['|'.join([
             cell_key,
             keys["project_key"],
-            keys["donor_key"],
+            keys["specimen_key"],
             keys["library_key"],
             keys["analysis_key"],
             "",
@@ -143,26 +143,25 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 cell_gene_counts[cell_key] = {}
             cell_gene_counts[cell_key][gene] = cell_gene_counts[cell_key].get(gene, 0) + v
 
-            for cell_key, gene_count_dict in cell_gene_counts.items():
+        for cell_key, gene_count_dict in cell_gene_counts.items():
 
-                for gene, count in gene_count_dict.items():
-                    expression_line = '|'.join(
-                        [cell_key,
-                         gene,
-                         "Count",
-                         str(count)]) + '\n'
-                    expression_lines.append(expression_line)
+            for gene, count in gene_count_dict.items():
+                expression_line = '|'.join(
+                    [cell_key,
+                     gene,
+                     "Count",
+                     str(count)]) + '\n'
+                expression_lines.append(expression_line)
 
             gene_count = len(gene_count_dict)
             cell_line = '|'.join(
                 [cell_key,
                  keys["project_key"],
-                 keys["donor_key"],
+                 keys["specimen_key"],
                  keys["library_key"],
                  keys["analysis_key"],
-                 barcode,
+                 cell_to_barcode[cell_key],
                  str(gene_count)]) + '\n'
-
             cell_lines.add(cell_line)
 
         return cell_lines, expression_lines
@@ -176,21 +175,17 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         ap_path = p.joinpath("analysis_protocol_0.json")
         ap_key = json.load(open(ap_path))["provenance"]["document_id"]
 
-        donor_paths = list(p.glob("donor_organism_*.json"))
-        if len(donor_paths) > 1:
-            donor_key = ""
-        else:
-            donor_key = json.load(open(donor_paths[0]))["provenance"]["document_id"]
+        specimen_paths = list(p.glob("specimen_from_organism_*.json"))
+        specimen_keys = [json.load(open(p))['provenance']['document_id'] for p in specimen_paths]
+        specimen_key = sorted(specimen_keys)[0]
 
         library_paths = list(p.glob("library_preparation_protocol_*.json"))
-        if len(library_paths) > 1:
-            library_key = ""
-        else:
-            library_key = json.load(open(library_paths[0]))["provenance"]["document_id"]
+        library_keys = [json.load(open(p))['provenance']['document_id'] for p in library_paths]
+        library_key = sorted(library_keys)[0]
 
         return {
             "project_key": project_key,
-            "donor_key": donor_key,
+            "specimen_key": specimen_key,
             "library_key": library_key,
             "analysis_key": ap_key
         }

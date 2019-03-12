@@ -22,14 +22,14 @@ CREATE_QUERY_TEMPLATE = {
         CREATE {0}TABLE IF NOT EXISTS {2} (
             cellkey          VARCHAR(60) NOT NULL,
             projectkey       VARCHAR(60) NOT NULL,
-            donorkey      VARCHAR(60) NOT NULL,
+            specimenkey      VARCHAR(60) NOT NULL,
             librarykey       VARCHAR(60) NOT NULL,
             analysiskey      VARCHAR(60) NOT NULL,
             barcode          VARCHAR(32),
             genes_detected   INTEGER,
             PRIMARY KEY(cellkey),
             FOREIGN KEY(projectkey) REFERENCES project{1}(projectkey),
-            FOREIGN KEY(donorkey) REFERENCES donor_organism{1}(donorkey),
+            FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),
             FOREIGN KEY(librarykey) REFERENCES library_preparation{1}(librarykey),
             FOREIGN KEY(analysiskey) REFERENCES analysis{1}(analysiskey))
             DISTKEY(cellkey)
@@ -72,9 +72,9 @@ CREATE_QUERY_TEMPLATE = {
             SORTKEY(analysiskey)
         ;
     """,
-    'donor_organism': """
+    'specimen': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
-            donorkey                 VARCHAR(40) NOT NULL,
+            specimenkey                 VARCHAR(40) NOT NULL,
             genus_species_ontology      VARCHAR(40),
             genus_species_label         VARCHAR(40),
             ethnicity_ontology          VARCHAR(40),
@@ -87,9 +87,9 @@ CREATE_QUERY_TEMPLATE = {
             organ_label                 VARCHAR(40),
             organ_part_ontology         VARCHAR(40),
             organ_part_label            VARCHAR(40),
-            PRIMARY KEY(donorkey))
+            PRIMARY KEY(specimenkey))
             DISTSTYLE ALL
-            SORTKEY(donorkey)
+            SORTKEY(specimenkey)
         ;
     """,
     'library_preparation': """

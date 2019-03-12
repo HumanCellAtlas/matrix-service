@@ -11,7 +11,7 @@ class TableName(Enum):
     """
     FEATURE = "feature"
     ANALYSIS = "analysis"
-    DONOR_ORGANISM = "donor_organism"
+    SPECIMEN = "specimen"
     LIBRARY_PREPARATION = "library_preparation"
     PROJECT = "project"
     PUBLICATION = "publication"
@@ -27,7 +27,7 @@ class RedshiftHandler:
     PRIMARY_KEY = {
         TableName.FEATURE: "featurekey",
         TableName.ANALYSIS: "analysiskey",
-        TableName.DONOR_ORGANISM: "donorkey",
+        TableName.SPECIMEN: "specimenkey",
         TableName.LIBRARY_PREPARATION: "librarykey",
         TableName.PROJECT: "projectkey",
         TableName.PUBLICATION: "projectkey",
