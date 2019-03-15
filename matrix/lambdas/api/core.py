@@ -156,7 +156,7 @@ def get_formats():
                              body=[item.value for item in MatrixFormat])
 
 
-def dss_notifications(body):
+def dss_notification(body):
     bundle_uuid = body['match']['bundle_uuid']
     bundle_version = body['match']['bundle_version']
     subscription_id = body['subscription_id']
@@ -167,7 +167,7 @@ def dss_notifications(body):
         'bundle_version': bundle_version,
         'event_type': event_type,
     }
-    lambda_handler.invoke(LambdaName.NOTIFICATIONS, payload)
+    lambda_handler.invoke(LambdaName.NOTIFICATION, payload)
 
     return ConnexionResponse(status_code=requests.codes.ok,
                              body=f"Received notification from subscription {subscription_id}: "

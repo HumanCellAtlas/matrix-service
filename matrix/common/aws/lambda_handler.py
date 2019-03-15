@@ -10,7 +10,7 @@ class LambdaName(Enum):
     Lambda function resource names used during matrix service request.
     """
     DRIVER = os.getenv("LAMBDA_DRIVER_FUNCTION_NAME")
-    NOTIFICATIONS = os.getenv("LAMBDA_NOTIFICATIONS_FUNCTION_NAME")
+    NOTIFICATION = os.getenv("LAMBDA_NOTIFICATION_FUNCTION_NAME")
 
 
 class LambdaHandler:

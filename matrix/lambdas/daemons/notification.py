@@ -9,10 +9,10 @@ from matrix.common.logging import Logging
 logger = Logging.get_logger(__name__)
 
 
-class NotificationsHandler:
+class NotificationHandler:
 
     def __init__(self, bundle_uuid, bundle_version, event_type):
-        logger.info(f"Running NotificationsHandler with parameters: {bundle_uuid}, {bundle_version}, {event_type}")
+        logger.info(f"Running NotificationHandler with parameters: {bundle_uuid}, {bundle_version}, {event_type}")
         self.bundle_uuid = bundle_uuid
         self.bundle_version = bundle_version
         self.event_type = event_type

@@ -1,5 +1,5 @@
-resource "aws_iam_role" "matrix_service_notifications_lambda" {
-  name = "matrix-service-notifications-daemon-${var.deployment_stage}"
+resource "aws_iam_role" "matrix_service_notification_lambda" {
+  name = "matrix-service-notification-daemon-${var.deployment_stage}"
 
   assume_role_policy = <<POLICY
 {
@@ -18,9 +18,9 @@ resource "aws_iam_role" "matrix_service_notifications_lambda" {
 POLICY
 }
 
-resource "aws_iam_role_policy" "matrix_service_notifications_lambda" {
-  name = "matrix-service-notifications-daemon-${var.deployment_stage}"
-  role = "${aws_iam_role.matrix_service_notifications_lambda.name}"
+resource "aws_iam_role_policy" "matrix_service_notification_lambda" {
+  name = "matrix-service-notification-daemon-${var.deployment_stage}"
+  role = "${aws_iam_role.matrix_service_notification_lambda.name}"
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -29,8 +29,8 @@ resource "aws_iam_role_policy" "matrix_service_notifications_lambda" {
       "Sid": "LogsPolicy",
       "Effect": "Allow",
       "Resource": [
-        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-notifications-${var.deployment_stage}",
-        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-notifications-${var.deployment_stage}:*:*"
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-notification-${var.deployment_stage}",
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-notification-${var.deployment_stage}:*:*"
       ],
       "Action": [
         "logs:CreateLogGroup",
@@ -78,12 +78,12 @@ resource "aws_iam_role_policy" "matrix_service_notifications_lambda" {
 EOF
 }
 
-resource "aws_lambda_function" "matrix_service_notifications_lambda" {
-  function_name    = "dcp-matrix-service-notifications-${var.deployment_stage}"
+resource "aws_lambda_function" "matrix_service_notification_lambda" {
+  function_name    = "dcp-matrix-service-notification-${var.deployment_stage}"
   s3_bucket        = "${var.deployment_bucket_id}"
-  s3_key           = "notifications_daemon.zip"
-  role             = "${aws_iam_role.matrix_service_notifications_lambda.arn}"
-  handler          = "app.notifications_handler"
+  s3_key           = "notification_daemon.zip"
+  role             = "${aws_iam_role.matrix_service_notification_lambda.arn}"
+  handler          = "app.notification_handler"
   runtime          = "python3.6"
   timeout          = 900
   memory_size      = 3008

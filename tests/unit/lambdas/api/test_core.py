@@ -9,7 +9,7 @@ from matrix.common.exceptions import MatrixException
 from matrix.common.aws.dynamo_handler import OutputTableField
 from matrix.common.aws.lambda_handler import LambdaName
 from matrix.common.aws.cloudwatch_handler import MetricName
-from matrix.lambdas.api.core import post_matrix, get_matrix, get_formats, dss_notifications
+from matrix.lambdas.api.core import post_matrix, get_matrix, get_formats, dss_notification
 
 
 class TestCore(unittest.TestCase):
@@ -198,7 +198,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response.body, [item.value for item in MatrixFormat])
 
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
-    def test_dss_notifications(self, mock_lambda_invoke):
+    def test_dss_notification(self, mock_lambda_invoke):
         body = {
             'subscription_id': "test_sub_id",
             'event_type': "test_event",
@@ -213,7 +213,7 @@ class TestCore(unittest.TestCase):
             'event_type': 'test_event'
         }
 
-        resp = dss_notifications(body)
-        mock_lambda_invoke.assert_called_once_with(LambdaName.NOTIFICATIONS, expected_payload)
+        resp = dss_notification(body)
+        mock_lambda_invoke.assert_called_once_with(LambdaName.NOTIFICATION, expected_payload)
 
         self.assertEqual(resp.status_code, requests.codes.ok)

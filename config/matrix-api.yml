@@ -141,11 +141,11 @@ paths:
             type: array
             items:
               $ref: '#/definitions/MatrixFormat'
-  /dss/notifications:
+  /dss/notification:
     post:
-      summary: "Handles DSS notifications such as creates, updates and deletes."
-      description: "Handles DSS notifications such as bundle creates, updates and deletes."
-      operationId: matrix.lambdas.api.core.dss_notifications
+      summary: "Handles a DSS notification event."
+      description: "Handles a DSS notification event such as bundle CREATE, DELETE and TOMBSTONE."
+      operationId: matrix.lambdas.api.core.dss_notification
       parameters:
         - in: body
           name: body

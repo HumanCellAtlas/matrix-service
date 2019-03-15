@@ -1,3 +1,3 @@
 build clean clobber deploy:
 	$(MAKE) -C driver $@
-	$(MAKE) -C notifications $@
+	$(MAKE) -C notification $@

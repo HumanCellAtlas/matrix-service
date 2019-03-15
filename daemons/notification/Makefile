@@ -1,7 +1,7 @@
 include ../../common.mk
 .PHONY: install build stage deploy clobber
 
-ZIP_FILE=notifications_daemon.zip
+ZIP_FILE=notification_daemon.zip
 BUCKET=dcp-matrix-service-lambda-deployment-$(DEPLOYMENT_STAGE)
 STAGED_FILE_KEY=$(ZIP_FILE)
 
@@ -25,6 +25,6 @@ stage: build
 	rm -rf target
 
 deploy: stage
-	aws lambda update-function-code --function-name dcp-matrix-service-notifications-$(DEPLOYMENT_STAGE) --s3-bucket $(BUCKET) --s3-key $(STAGED_FILE_KEY)
+	aws lambda update-function-code --function-name dcp-matrix-service-notification-$(DEPLOYMENT_STAGE) --s3-bucket $(BUCKET) --s3-key $(STAGED_FILE_KEY)
 
 clobber: ;
