@@ -56,6 +56,22 @@ definitions:
     properties:
       message:
         type: string
+  DssNotification:
+    type: object
+    properties:
+      transaction_id:
+        type: string
+      subscription_id:
+        type: string
+      event_type:
+        type: string
+      match:
+        type: object
+        properties:
+          bundle_uuid:
+            type: string
+          bundle_version:
+            type: string
 paths:
   /matrix:
     post:
@@ -125,4 +141,20 @@ paths:
             type: array
             items:
               $ref: '#/definitions/MatrixFormat'
-
+  /dss/notification:
+    post:
+      summary: "Handles a DSS notification event."
+      description: "Handles a DSS notification event such as bundle CREATE, DELETE and TOMBSTONE."
+      operationId: matrix.lambdas.api.core.dss_notification
+      parameters:
+        - in: body
+          name: body
+          description: "DSS subscription event JSON payload"
+          required: true
+          schema:
+            $ref: '#/definitions/DssNotification'
+      responses:
+        "200":
+          description: "Success"
+          schema:
+            type: string

@@ -1,5 +1,5 @@
 boto3==1.7.69
-dcplib==1.5.0
+dcplib==1.5.1
 hca==4.3.3
 requests==2.20.0
 scipy==1.1.0

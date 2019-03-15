@@ -44,8 +44,8 @@ resource "aws_iam_role_policy" "matrix_service_redshift" {
         "s3:ListBucket"
       ],
       "Resource": [
-        "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}",
-        "arn:aws:s3:::dcp-matrix-service-redshift-preload-${var.deployment_stage}/*",
+        "arn:aws:s3:::dcp-matrix-service-preload-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-preload-${var.deployment_stage}/*",
         "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
         "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
       ]
