@@ -5,7 +5,7 @@ resource "aws_s3_bucket" "matrix_service_preload" {
     id      = "matrix_service_preload_expiration"
 
     expiration {
-      days = 7
+      days = 30
     }
 
     enabled = true
