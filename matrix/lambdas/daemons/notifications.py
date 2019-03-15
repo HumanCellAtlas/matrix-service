@@ -57,4 +57,4 @@ class NotificationsHandler:
     def remove_bundle(self):
         delete_query = f"DELETE FROM analysis WHERE bundle_fqid='{self.bundle_uuid}.{self.bundle_version}'"
         logger.info(f"Executing query: {delete_query}")
-        self.redshift.run_query(delete_query)
+        self.redshift.transaction([delete_query])

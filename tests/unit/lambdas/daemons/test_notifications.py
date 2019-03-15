@@ -66,10 +66,10 @@ class TestNotificationsHandler(unittest.TestCase):
                                              deployment_stage=os.environ['DEPLOYMENT_STAGE'],
                                              max_workers=mock.ANY)
 
-    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.run_query")
-    def test_remove_bundle(self, mock_run_query):
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
+    def test_remove_bundle(self, mock_transaction):
         handler = NotificationsHandler(self.bundle_uuid, self.bundle_version, "TOMBSTONE")
         handler.remove_bundle()
 
-        mock_run_query.assert_called_once_with(f"DELETE FROM analysis WHERE bundle_fqid="
-                                               f"'{self.bundle_uuid}.{self.bundle_version}'")
+        mock_transaction.assert_called_once_with([f"DELETE FROM analysis WHERE bundle_fqid="
+                                                  f"'{self.bundle_uuid}.{self.bundle_version}'"])

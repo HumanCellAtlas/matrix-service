@@ -43,13 +43,6 @@ class RedshiftHandler:
     def database_uri(self):
         return self.redshift_config.database_uri
 
-    def run_query(self, query):
-        conn = pg.connect(self.database_uri)
-        cursor = conn.cursor()
-        cursor.execute(query)
-        conn.commit()
-        conn.close()
-
     def transaction(self, queries: typing.List[str]):
         conn = pg.connect(self.database_uri)
         cursor = conn.cursor()
