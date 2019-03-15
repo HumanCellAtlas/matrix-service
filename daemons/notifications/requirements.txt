@@ -2,4 +2,4 @@ dcplib==1.5.1
 hca==4.3.3
 psycopg2==2.7.7
 requests==2.20.0
-scipy==1.10.0
+scipy==1.1.0
