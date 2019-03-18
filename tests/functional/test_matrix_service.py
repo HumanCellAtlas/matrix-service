@@ -88,20 +88,6 @@ class TestMatrixService(unittest.TestCase):
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
-    def test_matrix_service_invalid_bundle(self):
-        test_bundle_uuids = ["bundle1.version", "bundle2.version"]
-        self.request_id = self._post_matrix_service_request(
-            bundle_fqids=test_bundle_uuids, format="loom")
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
-
-    def test_matrix_service_bundle_not_found(self):
-        test_bundle_uuids = ["00000000-0000-0000-0000-000000000000.version"]
-        self.request_id = self._post_matrix_service_request(
-            bundle_fqids=test_bundle_uuids, format="loom")
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
-
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")
     def test_matrix_service_ss2(self):

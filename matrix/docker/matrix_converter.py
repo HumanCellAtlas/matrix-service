@@ -1,0 +1,315 @@
+"""Script to convert the outputs of Redshift queries into different formats."""
+
+import argparse
+import json
+import os
+import sys
+import zipfile
+
+import loompy
+import pandas
+import s3fs
+import scipy.io
+import scipy.sparse
+
+from matrix.common import date
+from matrix.common.logging import Logging
+from matrix.common.constants import MatrixFormat
+from matrix.common.request.request_tracker import RequestTracker, Subtask
+
+LOGGER = Logging.get_logger(__file__)
+SUPPORTED_FORMATS = [item.value for item in MatrixFormat]
+
+
+class MatrixConverter:
+
+    def __init__(self, args):
+        self.args = args
+        self.format = args.format
+        self.request_tracker = RequestTracker(args.request_id)
+        self.expression_manifest = None
+        self.cell_manifest = None
+        self.gene_manifest = None
+
+        self.local_output_filename = os.path.basename(os.path.normpath(args.target_path))
+        self.target_path = args.target_path
+        self.FS = s3fs.S3FileSystem()
+
+    def run(self):
+        LOGGER.debug(f"Beginning matrix conversion run for {self.args.request_id}")
+        self.expression_manifest = self._parse_manifest(self.args.expression_manifest_key)
+        self.cell_manifest = self._parse_manifest(self.args.cell_metadata_manifest_key)
+        self.gene_manifest = self._parse_manifest(self.args.gene_metadata_manifest_key)
+
+        LOGGER.debug(f"Beginning conversion to {self.format}")
+        local_converted_path = getattr(self, f"_to_{self.format}")()
+        LOGGER.debug(f"Conversion to {self.format} completed")
+
+        LOGGER.debug(f"Beginning upload to S3")
+        self._upload_converted_matrix(local_converted_path, self.target_path)
+        LOGGER.debug("Upload to S3 complete, job finished")
+
+        self.request_tracker.complete_subtask_execution(Subtask.CONVERTER)
+        self.request_tracker.complete_request(duration=(date.get_datetime_now() -
+                                              date.to_datetime(self.request_tracker.creation_date))
+                                              .total_seconds())
+
+    def _parse_manifest(self, manifest_key):
+        """Parse a manifest file produced by a Redshift UNLOAD query.
+
+        Args:
+            manifest_key: S3 location of the manifest file.
+
+        Returns:
+            dict with three keys:
+                "columns": the column headers for the tables
+                "part_urls": full S3 urls for the files containing results from each
+                    Redshift slice
+                "record_count": total number of records returned by the query
+        """
+        manifest = json.load(self.FS.open(manifest_key))
+
+        return {
+            "columns": [e["name"] for e in manifest["schema"]["elements"]],
+            "part_urls": [e["url"] for e in manifest["entries"] if e["meta"]["record_count"]],
+            "record_count": manifest["meta"]["record_count"]
+        }
+
+    def _load_table(self, manifest, index_col=None):
+        """Function to read all the manifest parts and return
+        the concatenated dataframe
+
+        Args:
+            manifest: parsed manifest from _parse_manifest
+            index_col (optional): column to set as the dataframe index
+
+        Returns:
+            concatenated DataFrame
+        """
+
+        dfs = self._load_table_by_part(manifest)
+        return pandas.concat(dfs, copy=False)
+
+    def _load_table_by_part(self, manifest, index_col=None):
+        """Generator to read each table part file specified in a manifest and yield
+        dataframes for each part.
+
+        Args:
+            manifest: parsed manifest from _parse_manifest
+            index_col (optional): column to set as the dataframe index
+
+        Yields:
+            Dataframe read from one slice's Redshift output.
+        """
+
+        columns = manifest["columns"]
+        for part_url in manifest["part_urls"]:
+            df = pandas.read_csv(part_url, sep='|', header=None, names=columns,
+                                 true_values=["t"], false_values=["f"],
+                                 index_col=index_col)
+            yield df
+
+    def _to_mtx(self, expression_manifest, cell_manifest, gene_manifest, output_filename):
+        """Write a zip file with an mtx and two metadata tsvs from Redshift query
+        manifests.
+
+        Args:
+            expression_manifest, cell_manifest, gene_manifest: S3 URLs to the
+                manifest files created by the Redshift UNLOAD query.
+            output_filename: Name of the loom file to create.
+
+        Returns:
+           output_path: Path to the zip file.
+        """
+
+        # Add zip to the output filename and create the directory where we will
+        # write output files.
+        if not output_filename.endswith(".zip"):
+            output_filename += ".zip"
+        results_dir = os.path.splitext(output_filename)[0]
+        os.mkdir(results_dir)
+
+        # Load the gene metadata and write it out to a tsv
+        gene_df = self._load_table(gene_manifest, index_col="featurekey")
+        gene_df.to_csv(os.path.join(results_dir, "genes.tsv"), sep='\t')
+
+        cellkeys = pandas.Index([])
+        sparse_expression_cscs = []
+
+        for expression_part in self._load_table_by_part(expression_manifest,
+                                                        index_col=["featurekey", "cellkey"]):
+            # Pivot the cells to columns and fill in the missing gene values with
+            # zeros
+            unstacked = expression_part.unstack("cellkey")
+            unstacked.columns = unstacked.columns.get_level_values(1)
+            sparse_filled = scipy.sparse.csc_matrix(unstacked.reindex(index=gene_df.index)
+                                                    .fillna(0).round(2))
+            sparse_expression_cscs.append(sparse_filled)
+            cellkeys = cellkeys.union(unstacked.columns)
+
+        # Write out concatenated expression matrix
+        big_sparse_matrix = scipy.sparse.hstack(sparse_expression_cscs)
+        scipy.io.mmwrite(os.path.join(results_dir, "matrix.mtx"),
+                         big_sparse_matrix.astype('f'), precision=5)
+
+        # Read the cell metadata, reindex by the cellkeys in the expression matrix,
+        # and write to another tsv
+        cell_df = self._load_table(cell_manifest, index_col="cellkey")
+        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df.to_csv(os.path.join(results_dir, "cells.tsv"), sep='\t')
+
+        # Create a zip file out of the three written files.
+        zipf = zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED)
+        zipf.write(os.path.join(results_dir, "genes.tsv"))
+        zipf.write(os.path.join(results_dir, "matrix.mtx"))
+        zipf.write(os.path.join(results_dir, "cells.tsv"))
+
+        return output_filename
+
+    def _to_loom(self, expression_manifest, cell_manifest, gene_manifest, output_filename):
+        """Write a loom file from Redshift query manifests.
+
+        Args:
+            expression_manifest, cell_manifest, gene_manifest: S3 URLs to the
+                manifest files created by the Redshift UNLOAD query.
+            output_filename: Name of the loom file to create.
+
+        Returns:
+           output_path: Path to the new loom file.
+        """
+
+        # Put loom on the output filename if it's not already there.
+        if not output_filename.endswith(".loom"):
+            output_filename += ".loom"
+
+        # Read the row (gene) attributes and then set some conventional names
+        row_attrs = self._load_table(gene_manifest).to_dict("series")
+        # Not expected to be unique
+        row_attrs["Gene"] = row_attrs.pop("featurename")
+        row_attrs["Accession"] = row_attrs.pop("featurekey")
+        cellkeys = pandas.Index([])
+        sparse_expression_cscs = []
+
+        for expression_part in self._load_table_by_part(expression_manifest,
+                                                        index_col=["featurekey", "cellkey"]):
+            # Pivot the cellkey index to columns and tidy up the resulting
+            # multi-level columns
+            unstacked = expression_part.unstack("cellkey")
+            unstacked.columns = unstacked.columns.get_level_values(1)
+
+            # Reindex with the list of gene ids, filling in zeros for unobserved
+            # genes. The makes the martrix dense but assigns correct indices when
+            # we sparsify it.
+            sparse_filled = scipy.sparse.csc_matrix(unstacked.reindex(index=row_attrs["Accession"])
+                                                    .fillna(0))
+            sparse_expression_cscs.append(sparse_filled)
+
+            # Keep track of the cellkeys as we observe them so we can later
+            # correctly order the column attributes.
+            cellkeys = cellkeys.union(unstacked.columns)
+
+        big_sparse_matrix = scipy.sparse.hstack(sparse_expression_cscs)
+
+        # Read in the cell metadata and reindex by the cellkeys from the expression
+        # matrix. Set the "CellID" label convention from the loom docs.
+        cell_df = self._load_table(cell_manifest, index_col="cellkey")
+        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df["cellkey"] = cell_df.index
+        col_attrs = cell_df.to_dict("series")
+        col_attrs["CellID"] = col_attrs.pop("cellkey")
+
+        # I don't know, you have to do this or it doesn't work.
+        for key, val in col_attrs.items():
+            col_attrs[key] = val.values
+        for key, val in row_attrs.items():
+            row_attrs[key] = val.values
+        loompy.create(output_filename, big_sparse_matrix, row_attrs, col_attrs)
+
+        return output_filename
+
+    def _to_csv(self, expression_manifest, cell_manifest, gene_manifest, output_filename):
+        """Write a zip file with three csvs from Redshift query manifests.
+
+        Args:
+            expression_manifest, cell_manifest, gene_manifest: S3 URLs to the
+                manifest files created by the Redshift UNLOAD query.
+            output_filename: Name of the loom file to create.
+
+        Returns:
+           output_path: Path to the new zip file.
+        """
+
+        if not output_filename.endswith(".zip"):
+            output_filename += ".zip"
+
+        results_dir = os.path.splitext(output_filename)[0]
+        os.mkdir(results_dir)
+
+        gene_df = self._load_table(gene_manifest, index_col="featurekey")
+        gene_df.to_csv(os.path.join(results_dir, "genes.csv"))
+
+        cellkeys = pandas.Index([])
+        with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
+            exp_f.write(','.join(["cellkey"] + gene_df.index.tolist()))
+            exp_f.write('\n')
+
+            for expression_part in self._load_table_by_part(expression_manifest,
+                                                            index_col=["cellkey", "featurekey"]):
+                unstacked = expression_part.unstack()
+                unstacked.columns = unstacked.columns.get_level_values(1)
+                filled = unstacked.reindex(columns=gene_df.index).fillna(0)
+                filled.to_csv(exp_f, header=False, float_format='%g')
+                cellkeys = cellkeys.union(filled.index)
+        cell_df = self._load_table(cell_manifest, index_col="cellkey")
+        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df.to_csv(os.path.join(results_dir, "cells.csv"))
+
+        zipf = zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED)
+        zipf.write(os.path.join(results_dir, "genes.csv"))
+        zipf.write(os.path.join(results_dir, "expression.csv"))
+        zipf.write(os.path.join(results_dir, "cells.csv"))
+
+        return output_filename
+
+    def _upload_converted_matrix(self, local_path, remote_path):
+        """
+        Upload the converted matrix to S3.
+        Parameters
+        ----------
+        local_path : str
+            Path to the new, converted matrix file
+        remote_path : str
+            S3 path where the converted matrix will be uploaded
+        """
+        self.FS.put(local_path, remote_path)
+
+
+def main(args):
+    """Entry point."""
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("request_id",
+                        help="ID of the request associated with this conversion.")
+    parser.add_argument("expression_manifest_key",
+                        help="S3 url to Redshift manifest for the expression table.")
+    parser.add_argument("cell_metadata_manifest_key",
+                        help="S3 url to Redshift manifest for the cell table.")
+    parser.add_argument("gene_metadata_manifest_key",
+                        help="S3 url to Redshift manifest for the gene table.")
+    parser.add_argument("target_path",
+                        help="S3 prefix where the file should be written.")
+    parser.add_argument("format",
+                        help="Target format for conversion",
+                        choices=SUPPORTED_FORMATS)
+    args = parser.parse_args(args)
+    LOGGER.debug(
+        f"Starting matrix conversion job with parameters: "
+        f"{args.expression_manifest_key}, {args.cell_metadata_manifest_key}, "
+        f"{args.gene_metadata_manifest_key}, {args.target_path}, {args.format}")
+
+    matrix_converter = MatrixConverter(args)
+    matrix_converter.run()
+
+if __name__ == "__main__":
+    print(f"STARTED with argv: {sys.argv}")
+    main(sys.argv[1:])

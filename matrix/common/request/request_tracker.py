@@ -80,6 +80,15 @@ class RequestTracker:
         return self._format
 
     @property
+    def creation_date(self) -> str:
+        """
+        The creation date of matrix service request.
+        :return: str creation date
+        """
+        return self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE,
+                                                  request_id=self.request_id)[StateTableField.CREATION_DATE.value]
+
+    @property
     def error(self) -> str:
         """
         The user-friendly message describing the latest error the request raised.
@@ -161,6 +170,10 @@ class RequestTracker:
         Log the completion of a matrix request in CloudWatch Metrics
         :param duration: The time in seconds the request took to complete
         """
+        self.cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.CONVERSION_COMPLETION,
+            metric_value=1
+        )
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST_COMPLETION,
             metric_value=1

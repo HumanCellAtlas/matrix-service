@@ -6,6 +6,8 @@ import shutil
 import tempfile
 import zipfile
 
+import hca
+from hca import HCAConfig
 import loompy
 import numpy
 import pandas
@@ -15,7 +17,17 @@ import scipy
 import zarr
 
 S3 = s3fs.S3FileSystem(anon=True)
-DSS_CLIENT = s3fs.S3FileSystem(anon=True)
+
+deployment_stage = os.getenv('DEPLOYMENT_STAGE')
+dss_config = HCAConfig()
+dss_config['DSSClient'] = {}
+if deployment_stage == "prod":
+    dss_config['DSSClient']['swagger_url'] = "https://dss.data.humancellatlas.org/v1/swagger.json"
+elif deployment_stage == "staging":
+    dss_config['DSSClient']['swagger_url'] = f"https://dss.staging.data.humancellatlas.org/v1/swagger.json"
+else:
+    dss_config['DSSClient']['swagger_url'] = f"https://dss.integration.data.humancellatlas.org/v1/swagger.json"
+DSS_CLIENT = hca.dss.DSSClient(config=dss_config)
 
 
 def calculate_ss2_metrics_direct(bundle_fqids):
@@ -39,13 +51,13 @@ def calculate_ss2_metrics_direct(bundle_fqids):
         rsem_reader = csv.DictReader(io.StringIO(rsem_contents.decode()), delimiter="\t")
 
         bundle_expression_sum = 0
-        bundle_expression_nonzero = 0
+        bundle_expression_nonzeros = set()
         for row in rsem_reader:
-            bundle_expression_sum += float(row["TPM"])
-            if float(row['TPM']) != 0.0:
-                bundle_expression_nonzero += 1
+            bundle_expression_sum += float(row["expected_count"])
+            if float(row['expected_count']) != 0.0:
+                bundle_expression_nonzeros.add(row["gene_id"].split(".", 1)[0])
         return {"expression_sum": bundle_expression_sum,
-                "expression_nonzero": bundle_expression_nonzero,
+                "expression_nonzero": len(bundle_expression_nonzeros),
                 "cell_count": 1}
 
     expression_sum = 0
@@ -117,7 +129,6 @@ def calculate_ss2_metrics_mtx(mtx_zip_url):
 
 def calculate_ss2_metrics_csv(csv_zip_url):
     """Calculte metrics for the zipped csv."""
-
     temp_dir = tempfile.mkdtemp(suffix="csv_zip_test")
     local_csv_zip_path = os.path.join(temp_dir, os.path.basename(csv_zip_url))
     response = requests.get(csv_zip_url, stream=True)
@@ -125,13 +136,13 @@ def calculate_ss2_metrics_csv(csv_zip_url):
         shutil.copyfileobj(response.raw, local_csv_zip_file)
 
     csv_zip = zipfile.ZipFile(local_csv_zip_path)
-    pdata = pandas.read_csv(
-        io.StringIO(csv_zip.read(csv_zip.namelist()[0]).decode()),
+    exp_pdata = pandas.read_csv(
+        io.StringIO(csv_zip.read(csv_zip.namelist()[1]).decode()),
         header=0,
         index_col=0)
 
     return {
-        "expression_sum": numpy.sum(pdata.values),
-        "expression_nonzero": numpy.count_nonzero(pdata.values),
-        "cell_count": pdata.shape[0]
+        "expression_sum": numpy.sum(exp_pdata.values),
+        "expression_nonzero": numpy.count_nonzero(exp_pdata.values),
+        "cell_count": exp_pdata.shape[0]
     }

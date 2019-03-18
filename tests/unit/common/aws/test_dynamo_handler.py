@@ -1,5 +1,6 @@
 import os
 import uuid
+import mock
 
 import boto3
 
@@ -51,7 +52,10 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         entry = response['Responses'][self.output_table_name][0]
         return response, entry
 
-    def test_create_state_table_entry(self):
+    @mock.patch("matrix.common.date.get_datetime_now")
+    def test_create_state_table_entry(self, mock_get_datetime_now):
+        stub_date = '2019-03-18T180907.136216Z'
+        mock_get_datetime_now.return_value = stub_date
         self.handler.create_state_table_entry(self.request_id)
         response, entry = self._get_state_table_response_and_entry()
 
@@ -60,6 +64,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertTrue(all(field.value in entry for field in StateTableField))
         self.assertEqual(entry[StateTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)
         self.assertEqual(entry[StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value], 1)
+        self.assertEqual(entry[StateTableField.CREATION_DATE.value], stub_date)
 
     def test_create_output_table_entry(self):
         self.handler.create_output_table_entry(self.request_id, 1, self.format)
