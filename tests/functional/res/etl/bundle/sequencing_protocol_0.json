@@ -1,0 +1,29 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/protocol/sequencing/9.0.8/sequencing_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "sequencing_protocol_1",
+        "protocol_name": "A dummy sequencing protocol",
+        "protocol_description": "A dummy sequencing protocol description",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "instrument_manufacturer_model": {
+        "text": "Illumina NextSeq 500",
+        "ontology": "EFO:0009173",
+        "ontology_label": "Illumina NextSeq 500"
+    },
+    "local_machine_name": "Machine1",
+    "paired_end": true,
+    "sequencing_approach": {
+        "text": "RNA-Seq",
+        "ontology": "EFO:0008896",
+        "ontology_label": "RNA-Seq"
+    },
+    "provenance": {
+        "document_id": "f13b8399-70a3-468b-bd14-5f344d6162fb",
+        "submission_date": "2019-01-27T23:02:16.352Z",
+        "update_date": "2019-01-27T23:02:22.074Z"
+    }
+}

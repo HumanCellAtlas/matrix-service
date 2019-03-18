@@ -1,0 +1,177 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/system/1.1.4/links",
+    "schema_type": "link_bundle",
+    "schema_version": "1.1.4",
+    "links": [
+        {
+            "process": "66184e08-77a6-460d-84d0-fd6104261f91",
+            "inputs": [
+                "734ced4e-721a-42ad-b621-b377bf7527c1",
+                "16721e1b-b674-40c1-bdec-3566ace6152d"
+            ],
+            "input_type": "file",
+            "outputs": [
+                "08cc861b-43e0-4a6b-a243-12ff60bc2b83",
+                "ba46a21a-b740-4251-9142-c82da7412a65",
+                "d11a0ec9-6483-419f-bc3b-a0acf7526b1f",
+                "85c8ea18-bb07-44b1-b138-cd9c54c95436",
+                "01ab965f-51be-42c3-8595-9a28d2c589cd",
+                "856eeecb-c33a-47b8-b4f3-066466850e31",
+                "f40e083f-3b6c-4ff1-895b-68688b31cd37",
+                "c4cbd75c-82e6-4d48-b8d8-05dd888c65a4",
+                "7e23d312-224f-4036-b918-064b7a8613a2",
+                "15c88a21-d337-4e1c-a3d1-52f46a639722",
+                "654e6ce5-c9d3-4f44-9ffa-c1c9ddf17583",
+                "e5198f7e-90f0-4a29-9e6a-de94a4c6b85a",
+                "d95cd8fa-1b3b-4392-9ae9-59885b2e424d",
+                "78378de9-cf58-467a-bbbc-7fa45753446a",
+                "9943c8fe-876e-46cc-8cb2-627911f9a6ba",
+                "f89b42b4-ac49-4b33-8acb-90caf63afb9f",
+                "d1e4ec84-abaa-4637-9391-3e52846577cf",
+                "e7f4ea6f-388f-4922-93bc-9dcba6c87c5d",
+                "45bd6bdd-6b09-4446-9b60-5d4b3ce15006",
+                "44422ba2-329b-4876-afaa-2ee9f2ca5830",
+                "2cd051a2-6171-4ca9-8f20-8a0b6eaf76ef",
+                "9e8f3e0a-a78f-4331-b3ec-c4f15a40dc15",
+                "3eaf19c4-cd86-4f2b-90df-5ca44c7326fc",
+                "7686a5fa-5423-43ec-9725-a622509b93cc",
+                "4a335ae2-c455-4c6a-89e1-04f3ec950f04",
+                "f8862990-d194-4377-9a14-d9eb31560a2f",
+                "00a1f9a8-678d-46b2-93b4-aa0aef62f2a6",
+                "cecedb65-0e89-448b-b6e4-79d6412c5489",
+                "96a8d02e-d4e1-408c-9bbe-2b0ab0c7e5dc",
+                "c89d91fd-c8d0-4d1a-b35b-825cef2c0e72",
+                "30e137e2-561f-447e-a402-ff5b9b1c5789",
+                "a9e75a75-1033-4bca-97a3-cfae2cf60eaa",
+                "890b8b33-d6ab-42a7-96aa-d976171213aa"
+            ],
+            "output_type": "file",
+            "protocols": [
+                {
+                    "protocol_type": "analysis_protocol",
+                    "protocol_id": "f6ff0075-f93e-478a-8ba3-8c798e7f5021"
+                }
+            ]
+        },
+        {
+            "process": "db2efb21-7642-4951-9a71-addb8aa31b42",
+            "inputs": [
+                "635badd5-7d62-4db3-b509-f290a12a1336"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "734ced4e-721a-42ad-b621-b377bf7527c1",
+                "16721e1b-b674-40c1-bdec-3566ace6152d"
+            ],
+            "output_type": "file",
+            "protocols": [
+                {
+                    "protocol_type": "library_preparation_protocol",
+                    "protocol_id": "265ab074-6db1-4038-836c-fba3cc2d09cb"
+                },
+                {
+                    "protocol_type": "sequencing_protocol",
+                    "protocol_id": "f13b8399-70a3-468b-bd14-5f344d6162fb"
+                }
+            ]
+        },
+        {
+            "process": "7014fc89-d39b-4bbd-9155-243e455f0e6e",
+            "inputs": [
+                "80bd863b-d92c-4c5f-98b6-4c32d7b2e806"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "635badd5-7d62-4db3-b509-f290a12a1336"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "dissociation_protocol",
+                    "protocol_id": "b3997e06-5340-46b0-aa46-840bc73fadc1"
+                },
+                {
+                    "protocol_type": "enrichment_protocol",
+                    "protocol_id": "3132dc78-1c77-4158-8b60-e7bd987a79c3"
+                }
+            ]
+        },
+        {
+            "process": "28211cfb-f8bd-4dcf-97e8-df6a900c2bfe",
+            "inputs": [
+                "138c5ad0-17e9-4ab1-b1ca-41b19455f859"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "80bd863b-d92c-4c5f-98b6-4c32d7b2e806"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "collection_protocol",
+                    "protocol_id": "899cf9f4-aa1b-409a-ab72-924f7550d005"
+                }
+            ]
+        },
+        {
+            "process": "db2efb21-7642-4951-9a71-addb8aa31b42",
+            "inputs": [
+                "635badd5-7d62-4db3-b509-f290a12a1336"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "734ced4e-721a-42ad-b621-b377bf7527c1",
+                "16721e1b-b674-40c1-bdec-3566ace6152d"
+            ],
+            "output_type": "file",
+            "protocols": [
+                {
+                    "protocol_type": "library_preparation_protocol",
+                    "protocol_id": "265ab074-6db1-4038-836c-fba3cc2d09cb"
+                },
+                {
+                    "protocol_type": "sequencing_protocol",
+                    "protocol_id": "f13b8399-70a3-468b-bd14-5f344d6162fb"
+                }
+            ]
+        },
+        {
+            "process": "7014fc89-d39b-4bbd-9155-243e455f0e6e",
+            "inputs": [
+                "80bd863b-d92c-4c5f-98b6-4c32d7b2e806"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "635badd5-7d62-4db3-b509-f290a12a1336"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "dissociation_protocol",
+                    "protocol_id": "b3997e06-5340-46b0-aa46-840bc73fadc1"
+                },
+                {
+                    "protocol_type": "enrichment_protocol",
+                    "protocol_id": "3132dc78-1c77-4158-8b60-e7bd987a79c3"
+                }
+            ]
+        },
+        {
+            "process": "28211cfb-f8bd-4dcf-97e8-df6a900c2bfe",
+            "inputs": [
+                "138c5ad0-17e9-4ab1-b1ca-41b19455f859"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "80bd863b-d92c-4c5f-98b6-4c32d7b2e806"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "collection_protocol",
+                    "protocol_id": "899cf9f4-aa1b-409a-ab72-924f7550d005"
+                }
+            ]
+        }
+    ]
+}

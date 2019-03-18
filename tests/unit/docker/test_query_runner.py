@@ -32,11 +32,11 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.schedule_matrix_conversion")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_ready_for_conversion")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.run_query")
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.load_content_from_obj_key")
     def test_run__with_one_message_in_queue_and_not_ready_for_conversion(self,
                                                                          mock_load_obj,
-                                                                         mock_run_query,
+                                                                         mock_transaction,
                                                                          mock_complete_subtask,
                                                                          mock_is_ready_for_conversion,
                                                                          mock_schedule_conversion):
@@ -51,7 +51,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         self.query_runner.run(max_loops=1)
 
         mock_load_obj.assert_called_once_with("test_s3_obj_key")
-        mock_run_query.assert_called()
+        mock_transaction.assert_called()
         mock_complete_subtask.assert_called_once_with(Subtask.QUERY)
         mock_schedule_conversion.assert_not_called()
 
@@ -59,11 +59,11 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.schedule_matrix_conversion")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_ready_for_conversion")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.run_query")
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.load_content_from_obj_key")
     def test_run__with_one_message_in_queue_and_ready_for_conversion(self,
                                                                      mock_load_obj,
-                                                                     mock_run_query,
+                                                                     mock_transaction,
                                                                      mock_complete_subtask,
                                                                      mock_is_ready_for_conversion,
                                                                      mock_schedule_conversion,
@@ -83,11 +83,11 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.run_query")
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.load_content_from_obj_key")
     def test_run__with_one_message_in_queue_and_fails(self,
                                                       mock_load_obj,
-                                                      mock_run_query,
+                                                      mock_transaction,
                                                       mock_complete_subtask,
                                                       mock_request_format,
                                                       mock_log_error):

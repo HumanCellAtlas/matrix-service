@@ -1,0 +1,45 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/protocol/sequencing/4.4.4/library_preparation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "lib_prep_1",
+        "protocol_name": "A dummy library prep protocol",
+        "protocol_description": "A dummy library prep description",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "input_nucleic_acid_molecule": {
+        "text": "polyA RNA",
+        "ontology": "OBI:0000869",
+        "ontology_label": "polyA RNA"
+    },
+    "nucleic_acid_source": "single cell",
+    "library_construction_approach": {
+        "text": "Smart-seq2",
+        "ontology": "EFO:0008931",
+        "ontology_label": "Smart-seq2"
+    },
+    "library_construction_kit": {
+        "retail_name": "Nextera XT kit",
+        "catalog_number": "20014279",
+        "manufacturer": "Illumina",
+        "lot_number": "10001A",
+        "kit_titer": "Titer: Specification is 3.0x10^7"
+    },
+    "nucleic_acid_conversion_kit": {
+        "retail_name": "SureCell WTA 3' Library Prep Kit",
+        "catalog_number": "20014279",
+        "manufacturer": "Illumina",
+        "lot_number": "10001A",
+        "kit_titer": "Titer: Specification is 3.0x10^7"
+    },
+    "end_bias": "full length",
+    "primer": "poly-dT",
+    "strand": "unstranded",
+    "provenance": {
+        "document_id": "265ab074-6db1-4038-836c-fba3cc2d09cb",
+        "submission_date": "2019-01-27T23:02:16.345Z",
+        "update_date": "2019-01-27T23:02:22.123Z"
+    }
+}

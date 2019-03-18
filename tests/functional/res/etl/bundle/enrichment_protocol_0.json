@@ -1,0 +1,25 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/protocol/biomaterial_collection/2.2.8/enrichment_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "enrichment_protocol_1",
+        "protocol_name": "an example enrichment protocol",
+        "protocol_description": "an example enrichemnt protocol description",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "enrichment_method": {
+        "text": "FACS",
+        "ontology": "EFO:0009108",
+        "ontology_label": "fluorescence-activated cell sorting"
+    },
+    "markers": "CD4+ CD8-; HLA-G+",
+    "min_size_selected": 70,
+    "max_size_selected": 90,
+    "provenance": {
+        "document_id": "3132dc78-1c77-4158-8b60-e7bd987a79c3",
+        "submission_date": "2019-01-27T23:02:16.339Z",
+        "update_date": "2019-01-27T23:02:22.298Z"
+    }
+}
