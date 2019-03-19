@@ -63,7 +63,7 @@ class QueryRunner:
                         self.batch_handler.schedule_matrix_conversion(request_id, request_tracker.format)
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
-                    request_tracker.log_error(e)
+                    request_tracker.log_error(str(e))
                     logger.info(f"Adding {message} to {self.query_job_deadletter_q_url}")
                     self.sqs_handler.add_message_to_queue(self.query_job_deadletter_q_url, payload)
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")

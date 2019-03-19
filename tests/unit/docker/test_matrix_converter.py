@@ -53,14 +53,17 @@ class TestMatrixConverter(unittest.TestCase):
         mock_complete_request.assert_called_once
         mock_upload_converted_matrix.assert_called_once_with("local_matrix_path", "test_target")
 
-    def test__parse_manifest(self):
-        pass
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test__parse_manifest(self, mock_open):
+        manifest_file_path = "tests/functional/res/manifest.json"
 
-    def test__load_table(self):
-        pass
+        with open(manifest_file_path) as f:
+            mock_open.return_value = f
+            manifest = self.matrix_converter._parse_manifest("test_manifest_key")
 
-    def test__load_table_by_part(self):
-        pass
+        self.assertEqual(manifest['columns'], ['cellkey', 'featurekey', 'exrpvalue'])
+        self.assertEqual(manifest['record_count'], 0)
+        self.assertEqual(manifest['part_urls'], [])
 
     def test_converter_with_file_formats(self):
         for file_format in SUPPORTED_FORMATS:

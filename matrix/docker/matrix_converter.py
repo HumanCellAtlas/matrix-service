@@ -35,24 +35,31 @@ class MatrixConverter:
         self.target_path = args.target_path
         self.FS = s3fs.S3FileSystem()
 
+        Logging.set_correlation_id(LOGGER, value=args.request_id)
+
     def run(self):
-        LOGGER.debug(f"Beginning matrix conversion run for {self.args.request_id}")
-        self.expression_manifest = self._parse_manifest(self.args.expression_manifest_key)
-        self.cell_manifest = self._parse_manifest(self.args.cell_metadata_manifest_key)
-        self.gene_manifest = self._parse_manifest(self.args.gene_metadata_manifest_key)
+        try:
+            LOGGER.debug(f"Beginning matrix conversion run for {self.args.request_id}")
+            self.expression_manifest = self._parse_manifest(self.args.expression_manifest_key)
+            self.cell_manifest = self._parse_manifest(self.args.cell_metadata_manifest_key)
+            self.gene_manifest = self._parse_manifest(self.args.gene_metadata_manifest_key)
 
-        LOGGER.debug(f"Beginning conversion to {self.format}")
-        local_converted_path = getattr(self, f"_to_{self.format}")()
-        LOGGER.debug(f"Conversion to {self.format} completed")
+            LOGGER.debug(f"Beginning conversion to {self.format}")
+            local_converted_path = getattr(self, f"_to_{self.format}")()
+            LOGGER.debug(f"Conversion to {self.format} completed")
 
-        LOGGER.debug(f"Beginning upload to S3")
-        self._upload_converted_matrix(local_converted_path, self.target_path)
-        LOGGER.debug("Upload to S3 complete, job finished")
+            LOGGER.debug(f"Beginning upload to S3")
+            self._upload_converted_matrix(local_converted_path, self.target_path)
+            LOGGER.debug("Upload to S3 complete, job finished")
 
-        self.request_tracker.complete_subtask_execution(Subtask.CONVERTER)
-        self.request_tracker.complete_request(duration=(date.get_datetime_now() -
-                                              date.to_datetime(self.request_tracker.creation_date))
-                                              .total_seconds())
+            self.request_tracker.complete_subtask_execution(Subtask.CONVERTER)
+            self.request_tracker.complete_request(duration=(date.get_datetime_now() -
+                                                  date.to_datetime(self.request_tracker.creation_date))
+                                                  .total_seconds())
+        except Exception as e:
+            LOGGER.info(f"Matrix Conversion failed on {self.args.request_id} with error {str(e)}")
+            self.request_tracker.log_error(str(e))
+            raise e
 
     def _parse_manifest(self, manifest_key):
         """Parse a manifest file produced by a Redshift UNLOAD query.
@@ -109,14 +116,9 @@ class MatrixConverter:
                                  index_col=index_col)
             yield df
 
-    def _to_mtx(self, expression_manifest, cell_manifest, gene_manifest, output_filename):
+    def _to_mtx(self):
         """Write a zip file with an mtx and two metadata tsvs from Redshift query
         manifests.
-
-        Args:
-            expression_manifest, cell_manifest, gene_manifest: S3 URLs to the
-                manifest files created by the Redshift UNLOAD query.
-            output_filename: Name of the loom file to create.
 
         Returns:
            output_path: Path to the zip file.
@@ -124,19 +126,19 @@ class MatrixConverter:
 
         # Add zip to the output filename and create the directory where we will
         # write output files.
-        if not output_filename.endswith(".zip"):
-            output_filename += ".zip"
-        results_dir = os.path.splitext(output_filename)[0]
+        if not self.local_output_filename.endswith(".zip"):
+            self.local_output_filename += ".zip"
+        results_dir = os.path.splitext(self.local_output_filename)[0]
         os.mkdir(results_dir)
 
         # Load the gene metadata and write it out to a tsv
-        gene_df = self._load_table(gene_manifest, index_col="featurekey")
+        gene_df = self._load_table(self.gene_manifest, index_col="featurekey")
         gene_df.to_csv(os.path.join(results_dir, "genes.tsv"), sep='\t')
 
         cellkeys = pandas.Index([])
         sparse_expression_cscs = []
 
-        for expression_part in self._load_table_by_part(expression_manifest,
+        for expression_part in self._load_table_by_part(self.expression_manifest,
                                                         index_col=["featurekey", "cellkey"]):
             # Pivot the cells to columns and fill in the missing gene values with
             # zeros
@@ -154,43 +156,39 @@ class MatrixConverter:
 
         # Read the cell metadata, reindex by the cellkeys in the expression matrix,
         # and write to another tsv
-        cell_df = self._load_table(cell_manifest, index_col="cellkey")
-        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
+        cell_df.index = cellkeys
         cell_df.to_csv(os.path.join(results_dir, "cells.tsv"), sep='\t')
 
         # Create a zip file out of the three written files.
-        zipf = zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED)
+        zipf = zipfile.ZipFile(self.local_output_filename, 'w', zipfile.ZIP_DEFLATED)
         zipf.write(os.path.join(results_dir, "genes.tsv"))
         zipf.write(os.path.join(results_dir, "matrix.mtx"))
         zipf.write(os.path.join(results_dir, "cells.tsv"))
+        zipf.write("mtx_readme.txt")
 
-        return output_filename
+        return self.local_output_filename
 
-    def _to_loom(self, expression_manifest, cell_manifest, gene_manifest, output_filename):
+    def _to_loom(self):
         """Write a loom file from Redshift query manifests.
-
-        Args:
-            expression_manifest, cell_manifest, gene_manifest: S3 URLs to the
-                manifest files created by the Redshift UNLOAD query.
-            output_filename: Name of the loom file to create.
 
         Returns:
            output_path: Path to the new loom file.
         """
 
         # Put loom on the output filename if it's not already there.
-        if not output_filename.endswith(".loom"):
-            output_filename += ".loom"
+        if not self.local_output_filename.endswith(".loom"):
+            self.local_output_filename += ".loom"
 
         # Read the row (gene) attributes and then set some conventional names
-        row_attrs = self._load_table(gene_manifest).to_dict("series")
+        row_attrs = self._load_table(self.gene_manifest).to_dict("series")
         # Not expected to be unique
         row_attrs["Gene"] = row_attrs.pop("featurename")
         row_attrs["Accession"] = row_attrs.pop("featurekey")
         cellkeys = pandas.Index([])
         sparse_expression_cscs = []
 
-        for expression_part in self._load_table_by_part(expression_manifest,
+        for expression_part in self._load_table_by_part(self.expression_manifest,
                                                         index_col=["featurekey", "cellkey"]):
             # Pivot the cellkey index to columns and tidy up the resulting
             # multi-level columns
@@ -212,8 +210,8 @@ class MatrixConverter:
 
         # Read in the cell metadata and reindex by the cellkeys from the expression
         # matrix. Set the "CellID" label convention from the loom docs.
-        cell_df = self._load_table(cell_manifest, index_col="cellkey")
-        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
+        cell_df.index = cellkeys
         cell_df["cellkey"] = cell_df.index
         col_attrs = cell_df.to_dict("series")
         col_attrs["CellID"] = col_attrs.pop("cellkey")
@@ -223,53 +221,50 @@ class MatrixConverter:
             col_attrs[key] = val.values
         for key, val in row_attrs.items():
             row_attrs[key] = val.values
-        loompy.create(output_filename, big_sparse_matrix, row_attrs, col_attrs)
+        loompy.create(self.local_output_filename, big_sparse_matrix, row_attrs, col_attrs)
 
-        return output_filename
+        return self.local_output_filename
 
-    def _to_csv(self, expression_manifest, cell_manifest, gene_manifest, output_filename):
-        """Write a zip file with three csvs from Redshift query manifests.
-
-        Args:
-            expression_manifest, cell_manifest, gene_manifest: S3 URLs to the
-                manifest files created by the Redshift UNLOAD query.
-            output_filename: Name of the loom file to create.
+    def _to_csv(self):
+        """Write a zip file with csvs from Redshift query manifests and readme.
 
         Returns:
            output_path: Path to the new zip file.
         """
 
-        if not output_filename.endswith(".zip"):
-            output_filename += ".zip"
+        if not self.local_output_filename.endswith(".zip"):
+            self.local_output_filename += ".zip"
 
-        results_dir = os.path.splitext(output_filename)[0]
+        results_dir = os.path.splitext(self.local_output_filename)[0]
         os.mkdir(results_dir)
 
-        gene_df = self._load_table(gene_manifest, index_col="featurekey")
+        gene_df = self._load_table(self.gene_manifest, index_col="featurekey")
         gene_df.to_csv(os.path.join(results_dir, "genes.csv"))
 
         cellkeys = pandas.Index([])
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
-            exp_f.write(','.join(["cellkey"] + gene_df.index.tolist()))
+            gene_index_string_list = [str(x) for x in gene_df.index.tolist()]
+            exp_f.write(','.join(["cellkey"] + gene_index_string_list))
             exp_f.write('\n')
 
-            for expression_part in self._load_table_by_part(expression_manifest,
+            for expression_part in self._load_table_by_part(self.expression_manifest,
                                                             index_col=["cellkey", "featurekey"]):
                 unstacked = expression_part.unstack()
                 unstacked.columns = unstacked.columns.get_level_values(1)
                 filled = unstacked.reindex(columns=gene_df.index).fillna(0)
                 filled.to_csv(exp_f, header=False, float_format='%g')
                 cellkeys = cellkeys.union(filled.index)
-        cell_df = self._load_table(cell_manifest, index_col="cellkey")
-        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
+        cell_df.index = cellkeys
         cell_df.to_csv(os.path.join(results_dir, "cells.csv"))
 
-        zipf = zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED)
+        zipf = zipfile.ZipFile(self.local_output_filename, 'w', zipfile.ZIP_DEFLATED)
         zipf.write(os.path.join(results_dir, "genes.csv"))
         zipf.write(os.path.join(results_dir, "expression.csv"))
         zipf.write(os.path.join(results_dir, "cells.csv"))
+        zipf.write("csv_readme.txt")
 
-        return output_filename
+        return self.local_output_filename
 
     def _upload_converted_matrix(self, local_path, remote_path):
         """

@@ -21,7 +21,7 @@ S3 = s3fs.S3FileSystem(anon=True)
 deployment_stage = os.getenv('DEPLOYMENT_STAGE')
 dss_config = HCAConfig()
 dss_config['DSSClient'] = {}
-if deployment_stage == "prod":
+if deployment_stage == "prod" or deployment_stage == "dev":
     dss_config['DSSClient']['swagger_url'] = "https://dss.data.humancellatlas.org/v1/swagger.json"
 elif deployment_stage == "staging":
     dss_config['DSSClient']['swagger_url'] = f"https://dss.staging.data.humancellatlas.org/v1/swagger.json"

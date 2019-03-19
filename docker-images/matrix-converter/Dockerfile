@@ -10,6 +10,8 @@ RUN pip3 install -U pip \
 RUN sed -i -e "s/TkAgg/Agg/g" /usr/local/lib/python3.6/dist-packages/matplotlib/mpl-data/matplotlibrc
 
 ADD code /
+ADD csv_readme.txt /
+ADD mtx_readme.txt /
 
 ENV AWS_DEFAULT_REGION='us-east-1'
 
