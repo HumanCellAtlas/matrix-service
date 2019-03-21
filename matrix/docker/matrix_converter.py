@@ -135,6 +135,12 @@ class MatrixConverter:
         gene_df = self._load_table(self.gene_manifest, index_col="featurekey")
         gene_df.to_csv(os.path.join(results_dir, "genes.tsv"), sep='\t')
 
+        # Read the row (gene) attributes and then set some conventional names
+        row_attrs = self._load_table(self.gene_manifest).to_dict("series")
+        # Not expected to be unique
+        row_attrs["Gene"] = row_attrs.pop("featurename")
+        row_attrs["Accession"] = row_attrs.pop("featurekey")
+
         cellkeys = pandas.Index([])
         sparse_expression_cscs = []
 
@@ -144,15 +150,14 @@ class MatrixConverter:
             # zeros
             unstacked = expression_part.unstack("cellkey")
             unstacked.columns = unstacked.columns.get_level_values(1)
-            sparse_filled = scipy.sparse.csc_matrix(unstacked.reindex(index=gene_df.index)
-                                                    .fillna(0).round(2))
+            sparse_filled = scipy.sparse.csc_matrix(unstacked.reindex(index=row_attrs["Accession"]).fillna(0))
             sparse_expression_cscs.append(sparse_filled)
             cellkeys = cellkeys.union(unstacked.columns)
 
         # Write out concatenated expression matrix
         big_sparse_matrix = scipy.sparse.hstack(sparse_expression_cscs)
         scipy.io.mmwrite(os.path.join(results_dir, "matrix.mtx"),
-                         big_sparse_matrix.astype('f'), precision=5)
+                         big_sparse_matrix.astype('f'))
 
         # Read the cell metadata, reindex by the cellkeys in the expression matrix,
         # and write to another tsv
@@ -241,6 +246,12 @@ class MatrixConverter:
         gene_df = self._load_table(self.gene_manifest, index_col="featurekey")
         gene_df.to_csv(os.path.join(results_dir, "genes.csv"))
 
+        # Read the row (gene) attributes and then set some conventional names
+        row_attrs = self._load_table(self.gene_manifest).to_dict("series")
+        # Not expected to be unique
+        row_attrs["Gene"] = row_attrs.pop("featurename")
+        row_attrs["Accession"] = row_attrs.pop("featurekey")
+
         cellkeys = pandas.Index([])
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
             gene_index_string_list = [str(x) for x in gene_df.index.tolist()]
@@ -251,7 +262,7 @@ class MatrixConverter:
                                                             index_col=["cellkey", "featurekey"]):
                 unstacked = expression_part.unstack()
                 unstacked.columns = unstacked.columns.get_level_values(1)
-                filled = unstacked.reindex(columns=gene_df.index).fillna(0)
+                filled = unstacked.reindex(columns=row_attrs["Accession"]).fillna(0)
                 filled.to_csv(exp_f, header=False, float_format='%g')
                 cellkeys = cellkeys.union(filled.index)
         cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
