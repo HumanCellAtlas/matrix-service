@@ -13,7 +13,7 @@ from matrix.common.constants import MatrixRequestStatus
 
 MATRIX_ENV_TO_DSS_ENV = {
     'predev': "integration",
-    'dev': "integration",
+    'dev': "prod",
     'integration': "integration",
     'staging': "staging",
     'prod': "prod",
@@ -35,11 +35,11 @@ INPUT_BUNDLE_IDS = {
         "02f6c9d6-2cdc-43bf-86c4-fedf3b35d6af.2019-02-14T182414.491107Z",
     ],
     "prod": [
-        "0552e6b3-ee09-425e-adbb-01fb9467e6f3.2018-11-06T231250.330922Z",
-        "79e14c18-7bf7-4883-92a1-b7b26c3067d4.2018-11-06T232117.884033Z",
-        "1134eb98-e7e9-45af-b2d8-b9886b633929.2018-11-06T231738.177145Z",
-        "1d6de514-115f-4ed6-8d11-22ad02e394bc.2018-11-06T231755.376078Z",
-        "2ec96e8c-6d28-4d98-9a19-7c95bbe13ce2.2018-11-06T231809.821560Z",
+        "4d825362-dc29-4135-9f53-92c27955ddda.2019-02-02T072347.000888Z",
+        "ae066cbd-f9f8-438a-8c3c-43f5cd44a9eb.2019-02-02T042049.843007Z",
+        "684a7318-a405-450b-a616-f97ddbc34f8f.2019-02-01T183026.372619Z",
+        "e83d8b22-2090-4f34-868d-92a8749a401d.2019-02-02T021732.127000Z",
+        "2c1160e9-2324-4dfa-9776-d93f76d31fde.2018-11-21T140133.660897Z",
     ]
 }
 
@@ -87,20 +87,6 @@ class TestMatrixService(unittest.TestCase):
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
-
-    def test_matrix_service_invalid_bundle(self):
-        test_bundle_uuids = ["bundle1.version", "bundle2.version"]
-        self.request_id = self._post_matrix_service_request(
-            bundle_fqids=test_bundle_uuids, format="loom")
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
-
-    def test_matrix_service_bundle_not_found(self):
-        test_bundle_uuids = ["00000000-0000-0000-0000-000000000000.version"]
-        self.request_id = self._post_matrix_service_request(
-            bundle_fqids=test_bundle_uuids, format="loom")
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=60)
 
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")

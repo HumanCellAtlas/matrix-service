@@ -45,7 +45,7 @@ resource "aws_ecs_task_definition" "query_runner" {
     ],
     "memory": 1024,
     "cpu": 512,
-    "image": "humancellatlas/matrix-query-runner:1",
+    "image": "humancellatlas/matrix-query-runner:2",
     "name": "query-runner-${var.deployment_stage}",
     "logConfiguration": {
         "logDriver": "awslogs",

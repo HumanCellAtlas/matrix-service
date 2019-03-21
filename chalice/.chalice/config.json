@@ -13,7 +13,7 @@
         "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-dev",
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-dev",
         "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev",
-        "MATRIX_VERSION": "984285b",
+        "MATRIX_VERSION": "a1efa8d",
         "LAMBDA_NOTIFICATIONS_FUNCTION_NAME": "dcp-matrix-service-notifications-dev",
         "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-dev",
         "MATRIX_RESULTS_BUCKET": "dcp-matrix-service-results-dev",

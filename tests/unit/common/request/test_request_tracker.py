@@ -8,8 +8,12 @@ from matrix.common.aws.cloudwatch_handler import MetricName
 
 
 class TestRequestTracker(MatrixTestCaseUsingMockAWS):
-    def setUp(self):
+
+    @mock.patch("matrix.common.date.get_datetime_now")
+    def setUp(self, mock_get_datetime_now):
         super(TestRequestTracker, self).setUp()
+        self.stub_date = '2019-03-18T180907.136216Z'
+        mock_get_datetime_now.return_value = self.stub_date
 
         self.request_id = str(uuid.uuid4())
         self.request_tracker = RequestTracker(self.request_id)
@@ -23,6 +27,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
+
+    def test_creation_date(self):
+        self.assertEqual(self.request_tracker.creation_date, self.stub_date)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.num_bundles",
                 new_callable=mock.PropertyMock)
@@ -106,6 +113,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.request_tracker.complete_request(duration)
 
         expected_calls = [
+            mock.call(metric_name=MetricName.CONVERSION_COMPLETION, metric_value=1),
             mock.call(metric_name=MetricName.REQUEST_COMPLETION, metric_value=1),
             mock.call(metric_name=MetricName.DURATION, metric_value=duration, metric_dimensions=[
                 {

@@ -7,6 +7,7 @@ import botocore
 import requests
 
 from matrix.common.exceptions import MatrixException
+from matrix.common import date
 
 
 class TableField(Enum):
@@ -18,6 +19,7 @@ class StateTableField(TableField):
     Field names for State table in DynamoDB.
     """
     REQUEST_ID = "RequestId"
+    CREATION_DATE = "CreationDate"
     EXPECTED_DRIVER_EXECUTIONS = "ExpectedDriverExecutions"
     COMPLETED_DRIVER_EXECUTIONS = "CompletedDriverExecutions"
     EXPECTED_QUERY_EXECUTIONS = "ExpectedQueryExecutions"
@@ -86,6 +88,7 @@ class DynamoHandler:
                 StateTableField.COMPLETED_QUERY_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
+                StateTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True)
             }
         )
 
