@@ -6,7 +6,6 @@ import json
 import os
 import pathlib
 import typing
-from threading import Lock
 
 import scipy.io
 
@@ -16,27 +15,25 @@ from matrix.common.aws.redshift_handler import TableName
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
     """Reads SS2 and 10X bundles and writes out rows for expression and cell tables in PSV format."""
-    WRITE_LOCK = Lock()
 
     def __init__(self, staging_dir):
         super(CellExpressionTransformer, self).__init__(staging_dir)
 
     def _write_rows_to_psvs(self, *args: typing.Tuple):
-        with CellExpressionTransformer.WRITE_LOCK:
-            for arg in args:
-                table = arg[0]
-                rows = arg[1]
-                bundle_dir = arg[2]
+        for arg in args:
+            table = arg[0]
+            rows = arg[1]
+            bundle_dir = arg[2]
 
-                out_dir = os.path.join(self.output_dir, table.value)
-                os.makedirs(out_dir, exist_ok=True)
+            out_dir = os.path.join(self.output_dir, table.value)
+            os.makedirs(out_dir, exist_ok=True)
 
-                out_file_path = os.path.join(
-                    self.output_dir,
-                    table.value,
-                    f"{os.path.split(os.path.normpath(bundle_dir))[-1]}.{table.value}.data.gz")
-                with gzip.open(out_file_path, 'w') as out_file:
-                    out_file.writelines((row.encode() for row in rows))
+            out_file_path = os.path.join(
+                self.output_dir,
+                table.value,
+                f"{os.path.split(os.path.normpath(bundle_dir))[-1]}.{table.value}.data.gz")
+            with gzip.open(out_file_path, 'w') as out_file:
+                out_file.writelines((row.encode() for row in rows))
 
     def _parse_from_metadatas(self, bundle_dir):
         if os.path.isfile(os.path.join(bundle_dir, "matrix.mtx")):

@@ -1,4 +1,5 @@
 import boto3
+import concurrent.futures
 import os
 import typing
 import uuid
@@ -27,7 +28,9 @@ def run_etl(query: dict,
             finalizer_cb,
             staging_directory,
             deployment_stage: str,
-            max_workers: int=256):
+            max_workers: int=256,
+            max_dispatchers: int=1,
+            dispatcher_executor_class: concurrent.futures.Executor=concurrent.futures.ProcessPoolExecutor):
     """
     Extracts specified DSS bundles and files to local disk, transforms to PSV, uploads to S3, loads into Redshift.
     :param query: ES query to match bundles
@@ -58,7 +61,9 @@ def run_etl(query: dict,
         query=query,
         transformer=transformer_cb,
         finalizer=finalizer_cb,
-        max_workers=max_workers
+        max_workers=max_workers,
+        max_dispatchers=max_dispatchers,
+        dispatch_executor_class=dispatcher_executor_class
     )
 
 
