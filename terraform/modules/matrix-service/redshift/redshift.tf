@@ -7,6 +7,28 @@ resource "aws_redshift_cluster" "default" {
   cluster_type       = "multi-node"
   number_of_nodes    = 4
   iam_roles          = ["${aws_iam_role.matrix_service_redshift.arn}"]
+  vpc_security_group_ids = ["${aws_security_group.matrix_service_redshift.id}"]
+}
+
+resource "aws_security_group" "matrix_service_redshift" {
+  vpc_id = "${var.default_vpc_id}"
+  name = "matrix-service-redshift-sg-${var.deployment_stage}"
+
+  ingress {
+    protocol = "tcp"
+    self = true
+    from_port = 5439
+    to_port = 5439
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    protocol = "tcp"
+    from_port = 5439
+    to_port = 5439
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
 }
 
 resource "aws_iam_role" "matrix_service_redshift" {

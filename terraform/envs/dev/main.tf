@@ -39,4 +39,5 @@ module "matrix_service_redshift" {
   deployment_stage = "${var.deployment_stage}"
   redshift_username = "${var.redshift_username}"
   redshift_password = "${var.redshift_password}"
+  default_vpc_id = "${var.default_vpc_id}"
 }

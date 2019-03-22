@@ -9,3 +9,7 @@ variable "redshift_username" {
 variable "redshift_password" {
   type = "string"
 }
+
+variable "default_vpc_id" {
+  type = "string"
+}
