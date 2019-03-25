@@ -65,7 +65,7 @@ DEFINITION
 
 resource "aws_cloudwatch_log_group" "query_runner" {
   name              = "/aws/service/matrix-service-query-runner-${var.deployment_stage}"
-  retention_in_days = 90
+  retention_in_days = 1827
 }
 
 resource "aws_iam_role" "task_executor" {
