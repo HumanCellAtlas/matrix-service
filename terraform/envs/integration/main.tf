@@ -33,3 +33,12 @@ module "matrix_service_lambdas" {
   deployment_bucket_id = "${module.matrix_service_infra.deployment_bucket_id}"
   results_bucket_arn = "${module.matrix_service_infra.results_bucket_arn}"
 }
+
+module "matrix_service_redshift" {
+  source = "../../modules/matrix-service/redshift"
+  deployment_stage = "${var.deployment_stage}"
+  redshift_username = "${var.redshift_username}"
+  redshift_password = "${var.redshift_password}"
+  vpc_id = "${module.matrix_service_infra.vpc_id}"
+  vpc_subnet_ids = "${module.matrix_service_infra.vpc_subnet_ids}"
+}
