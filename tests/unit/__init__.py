@@ -26,7 +26,8 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
 
     TEST_CONFIG = {
         'query_job_q_url': 'test_query_job_q_name',
-        'query_job_deadletter_q_url': 'test_deadletter_query_job_q_name'
+        'query_job_deadletter_q_url': 'test_deadletter_query_job_q_name',
+        'notification_q_url': 'test_notification_q_url'
     }
     TEST_REDSHIFT_CONFIG = {
         'database_uri': 'test_database_uri',
@@ -49,6 +50,7 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         self.sqs = boto3.resource('sqs')
         self.sqs.create_queue(QueueName=f"test_query_job_q_name")
         self.sqs.create_queue(QueueName=f"test_deadletter_query_job_q_name")
+        self.sqs.create_queue(QueueName=f"test_notification_q_url")
 
     def tearDown(self):
         self.dynamo_mock.stop()

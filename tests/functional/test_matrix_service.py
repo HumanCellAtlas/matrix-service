@@ -88,6 +88,9 @@ class TestMatrixService(unittest.TestCase):
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
+    def test_dss_notification(self):
+        self._post_notification(bundle_fqid=INPUT_BUNDLE_IDS[self.dss_env][0])
+
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")
     def test_matrix_service_ss2(self):
@@ -137,6 +140,27 @@ class TestMatrixService(unittest.TestCase):
                                       headers=self.headers)
         data = json.loads(response)
         return data["request_id"]
+
+    def _post_notification(self, bundle_fqid):
+        data = {}
+        bundle_uuid = bundle_fqid.split('.')[0]
+        bundle_version = bundle_fqid.split('.')[1]
+
+        data["transaction_id"] = "test_transaction_id"
+        data["subscription_id"] = "test_subscription_id"
+        data["event_type"] = "CREATE"
+        data["match"] = {}
+        data["match"]["bundle_uuid"] = bundle_uuid
+        data["match"]["bundle_version"] = bundle_version
+
+        response = self._make_request(description="POST NOTIFICATION TO MATRIX SERVICE",
+                                      verb='POST',
+                                      url=f"{self.api_url}/dss/notification",
+                                      expected_status=200,
+                                      data=json.dumps(data),
+                                      headers=self.headers)
+        data = json.loads(response)
+        return data
 
     def _poll_get_matrix_service_request(self, request_id):
         url = f"{self.api_url}/matrix/{request_id}"
