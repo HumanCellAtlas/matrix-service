@@ -10,6 +10,10 @@ variable "redshift_password" {
   type = "string"
 }
 
-variable "default_vpc_id" {
+variable "vpc_id" {
   type = "string"
+}
+
+variable "vpc_subnet_ids" {
+  type = "list"
 }

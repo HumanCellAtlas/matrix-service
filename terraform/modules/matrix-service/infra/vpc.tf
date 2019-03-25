@@ -135,3 +135,11 @@ resource "aws_default_security_group" "sg" {
 data "aws_subnet_ids" "matrix_vpc" {
   vpc_id = "${aws_vpc.vpc.id}"
 }
+
+output "vpc_id" {
+  value = "${aws_vpc.vpc.id}"
+}
+
+output "vpc_subnet_ids" {
+  value = "${data.aws_subnet_ids.matrix_vpc.ids}"
+}
