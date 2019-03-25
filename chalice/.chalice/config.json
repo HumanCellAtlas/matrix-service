@@ -31,7 +31,10 @@
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-integration",
         "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-integration",
         "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-integration",
-        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-integration"
+        "S3_RESULTS_BUCKET": "dcp-matrix-service-results-integration",
+        "MATRIX_VERSION": "24b9953",
+        "LAMBDA_NOTIFICATION_FUNCTION_NAME": "dcp-matrix-service-notification-integration",
+        "MATRIX_RESULTS_BUCKET": "dcp-matrix-service-results-integration"
       }
     },
     "staging": {
