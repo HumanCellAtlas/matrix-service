@@ -1,9 +1,10 @@
 #!/bin/bash
-'-= Matrix Service Redshift Data Loader =-
+: '-= Matrix Service Redshift Data Loader =-
 
 Loads DSS data to a Matrix Service Redshift cluster specified by DEPLOYMENT_STAGE.
 - Launches and provisions an I3 AWS EC2 instance
-- Executes `load_redshift.py` on instance'
+- Executes `load_redshift.py` on instance
+'
 
 set -euo pipefail
 
@@ -12,12 +13,20 @@ if [ -z ${DEPLOYMENT_STAGE} ]; then
     exit
 else
     stage=${DEPLOYMENT_STAGE}
-    account_id=$(aws sts get-caller-identity | jq -r .Account)
-    echo "Loading DSS data into Matrix Service ${stage} cluster"
 fi;
+echo "Loading DSS data into Matrix Service ${stage} cluster"
+
+if [ $stage = "prod" ]; then
+    set AWS_PROFILE="hca-prod"
+else
+    set AWS_PROFILE="hca"
+fi;
+echo "Setting AWS_PROFILE to ${AWS_PROFILE}"
+
+account_id=$(aws sts get-caller-identity | jq -r .Account)
 
 instance_name="$(whoami)-$(date +'%Y-%m-%d-%H-%M')"
-aegea launch $instance_name --instance-type i3.2xlarge --ami aegea-base5 --wait-for-ssh
+aegea launch $instance_name --instance-type c5d.4xlarge --ami aegea-base5 --wait-for-ssh
 aegea ssh ubuntu@$instance_name "sudo mkfs -t ext4 /dev/nvme0n1 && sudo mount -t ext4 /dev/nvme0n1 /mnt && df -Th /mnt && sudo chmod 777 /mnt"
 aegea ssh ubuntu@$instance_name "yes | rm -rf /mnt/*"
 aegea scp -- load_redshift.sh load_redshift.py requirements.txt ../../config/environment ubuntu@$instance_name:/mnt

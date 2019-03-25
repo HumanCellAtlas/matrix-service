@@ -1,3 +1,5 @@
+import concurrent.futures
+import multiprocessing
 import os
 
 from matrix.common.etl import run_etl, transform_bundle, finalizer_reload
@@ -53,4 +55,6 @@ if __name__ == '__main__':
             finalizer_cb=finalizer_reload,
             staging_directory=os.path.abspath('/mnt'),
             deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-            max_workers=512)
+            max_workers=512,
+            max_dispatchers=multiprocessing.cpu_count(),
+            dispatcher_executor_class=concurrent.futures.ProcessPoolExecutor)
