@@ -23,6 +23,7 @@ module "matrix_service_infra" {
   aws_region = "${var.aws_region}"
   converter_cluster_ami_id = "${var.converter_cluster_ami_id}"
   vpc_cidr_block = "${var.vpc_cidr_block}"
+  gcp_service_acct_creds = "${var.gcp_service_acct_creds}"
 }
 
 module "matrix_service_lambdas" {

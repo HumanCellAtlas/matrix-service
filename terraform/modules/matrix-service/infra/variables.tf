@@ -22,3 +22,7 @@ variable "query_runner_concurrency" {
   type = "string"
   default = "1"
 }
+
+variable "gcp_service_acct_creds" {
+  type = "string"
+}
