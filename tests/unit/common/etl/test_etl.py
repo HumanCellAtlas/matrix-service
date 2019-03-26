@@ -1,3 +1,4 @@
+import concurrent.futures
 import unittest
 import uuid
 from unittest import mock
@@ -48,7 +49,9 @@ class TestEtl(unittest.TestCase):
         mock_extract.assert_called_once_with(query={},
                                              transformer=self.stub_transformer,
                                              finalizer=self.stub_finalizer,
-                                             max_workers=8)
+                                             max_workers=8,
+                                             max_dispatchers=1,
+                                             dispatch_executor_class=concurrent.futures.ProcessPoolExecutor)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.etl.logger.error")
