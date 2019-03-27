@@ -17,3 +17,7 @@ variable "converter_cluster_ami_id" {
 variable "vpc_cidr_block" {
   type = "string"
 }
+
+variable "query_runner_concurrency" {
+  type = "string"
+}

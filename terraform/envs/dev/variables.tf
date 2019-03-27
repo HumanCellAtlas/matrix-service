@@ -25,3 +25,7 @@ variable "redshift_username" {
 variable "redshift_password" {
   type = "string"
 }
+
+variable "query_runner_concurrency" {
+  type = "string"
+}
