@@ -43,8 +43,8 @@ resource "aws_ecs_task_definition" "query_runner" {
         "name": "nofile"
       }
     ],
-    "memory": 1024,
-    "cpu": 512,
+    "memory": 512,
+    "cpu": 256,
     "image": "humancellatlas/matrix-query-runner:2",
     "name": "query-runner-${var.deployment_stage}",
     "logConfiguration": {
@@ -59,8 +59,8 @@ resource "aws_ecs_task_definition" "query_runner" {
 ]
 DEFINITION
   network_mode          = "awsvpc"
-  cpu                   = "512"
-  memory                = "1024"
+  cpu                   = "256"
+  memory                = "512"
 }
 
 resource "aws_cloudwatch_log_group" "query_runner" {
