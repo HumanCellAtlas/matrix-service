@@ -23,8 +23,7 @@
         "lambda:InvokeFunction"
       ],
       "Resource": [
-        "arn:aws:lambda:us-east-1:${account_id}:function:dcp-matrix-service-driver-${DEPLOYMENT_STAGE}",
-        "arn:aws:lambda:us-east-1:${account_id}:function:dcp-matrix-service-notification-${DEPLOYMENT_STAGE}"
+        "arn:aws:lambda:us-east-1:${account_id}:function:dcp-matrix-service-driver-${DEPLOYMENT_STAGE}"
       ]
     },
     {
@@ -44,6 +43,25 @@
       ],
       "Resource": [
         "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-state-table-${DEPLOYMENT_STAGE}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:SendMessage"
+      ],
+      "Resource": [
+        "arn:aws:sqs:us-east-1:${account_id}:dcp-matrix-notification-queue-${DEPLOYMENT_STAGE}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:us-east-1:${account_id}:secret:dcp/matrix/${DEPLOYMENT_STAGE}/*"
       ]
     }
   ]

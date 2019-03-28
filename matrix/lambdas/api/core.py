@@ -7,10 +7,14 @@ from connexion.lifecycle import ConnexionResponse
 
 from matrix.common.exceptions import MatrixException
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
+from matrix.common.config import MatrixInfraConfig
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.request.request_tracker import RequestTracker
+from matrix.common.aws.sqs_handler import SQSHandler
 
 lambda_handler = LambdaHandler()
+sqs_handler = SQSHandler()
+matrix_infra_config = MatrixInfraConfig()
 
 
 def post_matrix(body: dict):
@@ -167,7 +171,8 @@ def dss_notification(body):
         'bundle_version': bundle_version,
         'event_type': event_type,
     }
-    lambda_handler.invoke(LambdaName.NOTIFICATION, payload)
+    queue_url = matrix_infra_config.notification_q_url
+    sqs_handler.add_message_to_queue(queue_url, payload)
 
     return ConnexionResponse(status_code=requests.codes.ok,
                              body=f"Received notification from subscription {subscription_id}: "
