@@ -169,8 +169,8 @@ class TestMatrixService(unittest.TestCase):
 
     def _post_notification(self, bundle_fqid, event_type):
         data = {}
-        bundle_uuid = bundle_fqid.split('.')[0]
-        bundle_version = bundle_fqid.split('.')[1]
+        bundle_uuid = bundle_fqid.split('.', 1)[0]
+        bundle_version = bundle_fqid.split('.', 1)[1]
 
         data["transaction_id"] = "test_transaction_id"
         data["subscription_id"] = "test_subscription_id"
