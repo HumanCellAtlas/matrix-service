@@ -5,6 +5,7 @@ EXCLUDE=target,vendor,chalicelib,target.in
 deploy:
 	$(MAKE) -C chalice $@
 	$(MAKE) -C daemons $@
+	python scripts/dss_subscriptions.py
 
 test: lint unit-tests
 
