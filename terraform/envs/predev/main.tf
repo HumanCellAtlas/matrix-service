@@ -24,6 +24,7 @@ module "matrix_service_infra" {
   converter_cluster_ami_id = "${var.converter_cluster_ami_id}"
   vpc_cidr_block = "${var.vpc_cidr_block}"
   gcp_service_acct_creds = "${var.gcp_service_acct_creds}"
+  query_runner_concurrency = "${var.query_runner_concurrency}"
 }
 
 module "matrix_service_lambdas" {

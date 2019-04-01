@@ -8,7 +8,8 @@ resource "aws_secretsmanager_secret_version" "infra_secrets" {
 {
   "query_job_q_url": "${aws_sqs_queue.query_queue.id}",
   "query_job_deadletter_q_url": "${aws_sqs_queue.query_deadletter_queue.id}",
-  "gcp_service_acct_creds": "${var.gcp_service_acct_creds}"
+  "gcp_service_acct_creds": "${var.gcp_service_acct_creds}",
+  "notification_q_url": "${aws_sqs_queue.notification_queue.id}"
 }
 SECRETS_JSON
 }

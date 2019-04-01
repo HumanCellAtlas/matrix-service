@@ -9,6 +9,7 @@ import s3fs
 from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MatrixRequestStatus
+from matrix.common.aws.redshift_handler import RedshiftHandler
 
 
 MATRIX_ENV_TO_DSS_ENV = {
@@ -56,6 +57,7 @@ class TestMatrixService(unittest.TestCase):
         self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
+        self.redshift_handler = RedshiftHandler()
 
     def test_loom_output_matrix_service(self):
         self.request_id = self._post_matrix_service_request(
@@ -87,6 +89,27 @@ class TestMatrixService(unittest.TestCase):
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+
+    @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
+                         "Do not want to process fake notifications in production.")
+    def test_dss_notification(self):
+        bundle_fqid = INPUT_BUNDLE_IDS[self.dss_env][0]
+
+        self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
+        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+            .to_return_value(0, timeout_seconds=60)
+
+        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
+        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+            .to_return_value(1, timeout_seconds=300)
+
+        self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
+        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+            .to_return_value(0, timeout_seconds=60)
+
+        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
+        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+            .to_return_value(1, timeout_seconds=300)
 
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
                          "SS2 Pancreas bundles are only available in staging.")
@@ -121,6 +144,12 @@ class TestMatrixService(unittest.TestCase):
 
         self._analyze_loom_matrix_results(self.request_id, bundle_fqids)
 
+    def _poll_db_get_analysis_row_count_from_fqid(self, bundle_fqid):
+        query = f"SELECT count(*) from analysis where analysis.bundle_fqid = '{bundle_fqid}'"
+        results = self.redshift_handler.transaction([query], return_results=True)
+        count = results[0][0]
+        return count
+
     def _post_matrix_service_request(self, bundle_fqids=None, bundle_fqids_url=None, format=None):
         data = {}
         if bundle_fqids:
@@ -137,6 +166,27 @@ class TestMatrixService(unittest.TestCase):
                                       headers=self.headers)
         data = json.loads(response)
         return data["request_id"]
+
+    def _post_notification(self, bundle_fqid, event_type):
+        data = {}
+        bundle_uuid = bundle_fqid.split('.', 1)[0]
+        bundle_version = bundle_fqid.split('.', 1)[1]
+
+        data["transaction_id"] = "test_transaction_id"
+        data["subscription_id"] = "test_subscription_id"
+        data["event_type"] = event_type
+        data["match"] = {}
+        data["match"]["bundle_uuid"] = bundle_uuid
+        data["match"]["bundle_version"] = bundle_version
+
+        response = self._make_request(description="POST NOTIFICATION TO MATRIX SERVICE",
+                                      verb='POST',
+                                      url=f"{self.api_url}/dss/notification",
+                                      expected_status=200,
+                                      data=json.dumps(data),
+                                      headers=self.headers)
+        data = json.loads(response)
+        return data
 
     def _poll_get_matrix_service_request(self, request_id):
         url = f"{self.api_url}/matrix/{request_id}"

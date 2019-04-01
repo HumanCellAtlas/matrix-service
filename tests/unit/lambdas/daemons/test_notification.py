@@ -1,3 +1,4 @@
+import concurrent.futures
 import os
 import unittest
 from unittest import mock
@@ -64,7 +65,8 @@ class TestNotificationHandler(unittest.TestCase):
                                              finalizer_cb=mock.ANY,
                                              staging_directory="/tmp",
                                              deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                                             max_workers=mock.ANY)
+                                             max_workers=mock.ANY,
+                                             dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     def test_remove_bundle(self, mock_transaction):

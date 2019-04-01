@@ -72,6 +72,19 @@ resource "aws_iam_role_policy" "matrix_service_notification_lambda" {
       "Resource": [
         "arn:aws:secretsmanager:${var.aws_region}:${var.account_id}:secret:dcp/matrix/${var.deployment_stage}/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:ChangeMessageVisibility",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:ReceiveMessage",
+        "sqs:SendMessage"
+      ],
+      "Resource": [
+        "arn:aws:sqs:*:*:dcp-matrix-notification-queue-${var.deployment_stage}"
+      ]
     }
   ]
 }

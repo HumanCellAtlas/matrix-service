@@ -1,3 +1,4 @@
+import concurrent.futures
 import os
 import shutil
 
@@ -52,7 +53,8 @@ class NotificationHandler:
                     finalizer_cb=etl.finalizer_update,
                     staging_directory=os.path.abspath("/tmp"),
                     deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                    max_workers=16)
+                    max_workers=16,
+                    dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
 
     def remove_bundle(self):
         delete_query = f"DELETE FROM analysis WHERE bundle_fqid='{self.bundle_uuid}.{self.bundle_version}'"

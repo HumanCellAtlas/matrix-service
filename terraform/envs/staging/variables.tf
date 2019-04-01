@@ -26,6 +26,10 @@ variable "redshift_password" {
   type = "string"
 }
 
+variable "query_runner_concurrency" {
+  type = "string"
+}
+
 variable "gcp_service_acct_creds" {
   type = "string"
 }
