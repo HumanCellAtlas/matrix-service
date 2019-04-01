@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import pathlib
+import re
 import typing
 from threading import Lock
 
@@ -91,8 +92,16 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             return None
 
         ontology = special_case.get(ontology, ontology)
-        is_organoid = term_id.endswith(" (organoid)")
-        term_id = term_id.rstrip(" (organoid)")
+
+        # Match a trailing comment like "... (organoid)" or "... (cell line)". If there
+        # is a match, strip it off and hold on to it.
+        special_match = re.match("(.*)(\ \(.*\))", term_id)
+        if special_match:
+            is_special = True
+            term_id = special_match.groups()[0]
+            special_type = special_match.groups()[1]
+        else:
+            is_special = False
 
         label = None
         for uri_template in uri_templates:
@@ -102,8 +111,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             resp = requests.get(uri)
             if "label" in resp.json():
                 label = resp.json()["label"]
-                if is_organoid:
-                    label += " (organoid)"
+                if is_special:
+                    label += special_type
                 break
         return label
 
