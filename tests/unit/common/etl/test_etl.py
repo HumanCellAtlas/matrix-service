@@ -6,12 +6,15 @@ from unittest import mock
 import psycopg2
 from dcplib.etl import DSSExtractor
 
+from matrix.common.aws.redshift_handler import TableName
+from matrix.common.constants import CREATE_QUERY_TEMPLATE
 from matrix.common.etl import (run_etl,
                                transform_bundle,
                                finalizer_reload,
                                finalizer_update,
                                _upload_to_s3,
                                _populate_all_tables,
+                               _create_tables,
                                get_dss_client)
 
 
@@ -168,8 +171,9 @@ class TestEtl(unittest.TestCase):
         mock_upload_file_to_s3.assert_has_calls(expected_calls)
 
     @mock.patch("matrix.common.etl.logger.error")
+    @mock.patch("matrix.common.etl._create_tables")
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
-    def test_populate_all_tables_real(self, mock_transaction, mock_error):
+    def test_populate_all_tables_real(self, mock_transaction, mock_create_tables, mock_error):
         job_id = str(uuid.uuid4())
         _populate_all_tables(job_id, temp=False)
         mock_transaction.assert_called_once_with(mock.ANY)
@@ -179,8 +183,9 @@ class TestEtl(unittest.TestCase):
         self.assertTrue(mock_error.called)
 
     @mock.patch("matrix.common.etl.logger.error")
+    @mock.patch("matrix.common.etl._create_tables")
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
-    def test_populate_all_tables_temp(self, mock_transaction, mock_error):
+    def test_populate_all_tables_temp(self, mock_transaction, mock_create_tables, mock_error):
         job_id = str(uuid.uuid4())
         _populate_all_tables(job_id, temp=True)
         mock_transaction.assert_called_once_with(mock.ANY)
@@ -188,6 +193,15 @@ class TestEtl(unittest.TestCase):
         mock_transaction.side_effect = psycopg2.Error()
         _populate_all_tables(job_id, temp=True)
         self.assertTrue(mock_error.called)
+
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
+    def test_create_tables(self, mock_transaction):
+        transaction = []
+        for table in TableName:
+            transaction.append(CREATE_QUERY_TEMPLATE[table.value].format("", "", table.value))
+
+        _create_tables()
+        mock_transaction.assert_called_once_with(transaction)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     def test_get_dss_client(self, mock_swagger_spec):
