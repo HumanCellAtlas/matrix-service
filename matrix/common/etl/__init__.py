@@ -168,11 +168,13 @@ def _populate_all_tables(job_id: str, temp=False):
     """
     Creates tables and loads PSVs in S3 into Redshift via SQL COPY.
     """
+    _create_tables()
+    lock_query = """LOCK TABLE write_lock"""
     delete_query_template = """DELETE FROM {0} USING {0}_temp WHERE {0}.{1} = {0}_temp.{1};"""
     insert_query_template = """INSERT INTO {0} SELECT * FROM {0}_temp;"""
 
     redshift = RedshiftHandler()
-    transaction = []
+    transaction = [lock_query]
     for table in TableName:
         if temp and table == TableName.FEATURE:
             continue
@@ -200,14 +202,22 @@ def _populate_all_tables(job_id: str, temp=False):
             ])
         else:
             logger.info(f"ETL: Building queries to load {table_name} table")
-            transaction.extend([CREATE_QUERY_TEMPLATE[table.value].format("", "", table_name),
-                                copy_stmt])
+            transaction.append(copy_stmt)
 
     logger.info(f"ETL: Populating Redshift tables. Committing transaction.")
     try:
         redshift.transaction(transaction)
     except psycopg2.Error as e:
         logger.error("Failed to populate Redshift tables. Rolling back.", e)
+
+
+def _create_tables():
+    redshift = RedshiftHandler()
+    transaction = []
+    for table in TableName:
+        transaction.append(CREATE_QUERY_TEMPLATE[table.value].format("", "", table.value))
+
+    redshift.transaction(transaction)
 
 
 def get_dss_client(deployment_stage: str):

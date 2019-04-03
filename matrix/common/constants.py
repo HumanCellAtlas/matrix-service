@@ -129,5 +129,11 @@ CREATE_QUERY_TEMPLATE = {
             cont_institution      VARCHAR(150),
             PRIMARY KEY(projectkey)
         ) DISTSTYLE ALL;
+    """,
+    'write_lock': """
+        CREATE TABLE IF NOT EXISTS {2} (
+            primarykey            VARCHAR(60) NOT NULL,
+            PRIMARY KEY(primarykey)
+        );
     """
 }
