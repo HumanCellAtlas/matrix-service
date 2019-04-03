@@ -18,6 +18,7 @@ class TableName(Enum):
     CONTRIBUTOR = "contributor"
     CELL = "cell"
     EXPRESSION = "expression"
+    WRITE_LOCK = "write_lock"
 
 
 class RedshiftHandler:

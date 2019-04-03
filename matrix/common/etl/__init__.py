@@ -176,7 +176,7 @@ def _populate_all_tables(job_id: str, temp=False):
     redshift = RedshiftHandler()
     transaction = [lock_query]
     for table in TableName:
-        if temp and table == TableName.FEATURE:
+        if (temp and table == TableName.FEATURE) or table == TableName.WRITE_LOCK:
             continue
         s3_prefix = f"s3://{os.environ['MATRIX_PRELOAD_BUCKET']}/{job_id}/{table.value}"
         iam = os.environ['MATRIX_REDSHIFT_IAM_ROLE_ARN']
