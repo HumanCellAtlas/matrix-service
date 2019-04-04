@@ -13,7 +13,7 @@ from matrix.common.aws.redshift_handler import RedshiftHandler
 
 
 MATRIX_ENV_TO_DSS_ENV = {
-    'predev': "integration",
+    'predev': "prod",
     'dev': "prod",
     'integration': "integration",
     'staging': "staging",

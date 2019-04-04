@@ -208,14 +208,14 @@ class TestEtl(unittest.TestCase):
         mock_swagger_spec.return_value = self.stub_swagger_spec
 
         self.stub_swagger_spec['host'] = "dss.integration.data.humancellatlas.org"
-        self.assertEqual(get_dss_client("predev").host, "https://dss.integration.data.humancellatlas.org/v1")
-        self.assertEqual(get_dss_client("dev").host, "https://dss.integration.data.humancellatlas.org/v1")
         self.assertEqual(get_dss_client("integration").host, "https://dss.integration.data.humancellatlas.org/v1")
 
         self.stub_swagger_spec['host'] = "dss.staging.data.humancellatlas.org"
         self.assertEqual(get_dss_client("staging").host, "https://dss.staging.data.humancellatlas.org/v1")
 
         self.stub_swagger_spec['host'] = "dss.data.humancellatlas.org"
+        self.assertEqual(get_dss_client("predev").host, "https://dss.data.humancellatlas.org/v1")
+        self.assertEqual(get_dss_client("dev").host, "https://dss.data.humancellatlas.org/v1")
         self.assertEqual(get_dss_client("prod").host, "https://dss.data.humancellatlas.org/v1")
 
     def stub_transformer(self):

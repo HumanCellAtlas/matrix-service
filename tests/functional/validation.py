@@ -6,8 +6,6 @@ import shutil
 import tempfile
 import zipfile
 
-import hca
-from hca import HCAConfig
 import loompy
 import numpy
 import pandas
@@ -16,18 +14,9 @@ import s3fs
 import scipy
 import zarr
 
-S3 = s3fs.S3FileSystem(anon=True)
+from matrix.common.etl import get_dss_client
 
-deployment_stage = os.getenv('DEPLOYMENT_STAGE')
-dss_config = HCAConfig()
-dss_config['DSSClient'] = {}
-if deployment_stage == "prod" or deployment_stage == "dev":
-    dss_config['DSSClient']['swagger_url'] = "https://dss.data.humancellatlas.org/v1/swagger.json"
-elif deployment_stage == "staging":
-    dss_config['DSSClient']['swagger_url'] = f"https://dss.staging.data.humancellatlas.org/v1/swagger.json"
-else:
-    dss_config['DSSClient']['swagger_url'] = f"https://dss.integration.data.humancellatlas.org/v1/swagger.json"
-DSS_CLIENT = hca.dss.DSSClient(config=dss_config)
+S3 = s3fs.S3FileSystem(anon=True)
 
 
 def calculate_ss2_metrics_direct(bundle_fqids):
@@ -38,13 +27,15 @@ def calculate_ss2_metrics_direct(bundle_fqids):
     """
 
     def read_bundle(fqid):
+        dss_client = get_dss_client(os.environ['DEPLOYMENT_STAGE'])
+
         bundle_uuid, bundle_version = fqid.split(".", 1)
-        bundle = DSS_CLIENT.get_bundle(uuid=bundle_uuid, version=bundle_version, replica="aws")
+        bundle = dss_client.get_bundle(uuid=bundle_uuid, version=bundle_version, replica="aws")
 
         rsem_file = [f for f in bundle['bundle']['files']
                      if f["name"].endswith(".genes.results")][0]
 
-        rsem_contents = DSS_CLIENT.get_file(uuid=rsem_file["uuid"],
+        rsem_contents = dss_client.get_file(uuid=rsem_file["uuid"],
                                             version=rsem_file["version"],
                                             replica="aws")
 

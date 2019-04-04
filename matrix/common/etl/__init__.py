@@ -225,7 +225,7 @@ def get_dss_client(deployment_stage: str):
     Returns appropriate DSSClient for deployment_stage.
     """
 
-    if deployment_stage == "prod" or deployment_stage == "dev":
+    if deployment_stage == "prod" or deployment_stage == "dev" or deployment_stage == "predev":
         swagger_url = "https://dss.data.humancellatlas.org/v1/swagger.json"
     elif deployment_stage == "staging":
         swagger_url = "https://dss.staging.data.humancellatlas.org/v1/swagger.json"
