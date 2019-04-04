@@ -20,13 +20,14 @@ class MatrixRequestStatus(Enum):
 CREATE_QUERY_TEMPLATE = {
     'cell': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
-            cellkey          VARCHAR(60) NOT NULL,
-            projectkey       VARCHAR(60) NOT NULL,
-            specimenkey      VARCHAR(60) NOT NULL,
-            librarykey       VARCHAR(60) NOT NULL,
-            analysiskey      VARCHAR(60) NOT NULL,
-            barcode          VARCHAR(32),
-            genes_detected   INTEGER,
+            cellkey            VARCHAR(60) NOT NULL,
+            cell_suspension_id VARCHAR(60) NOT NULL,
+            projectkey         VARCHAR(60) NOT NULL,
+            specimenkey        VARCHAR(60) NOT NULL,
+            librarykey         VARCHAR(60) NOT NULL,
+            analysiskey        VARCHAR(60) NOT NULL,
+            barcode            VARCHAR(32),
+            genes_detected     INTEGER,
             PRIMARY KEY(cellkey),
             FOREIGN KEY(projectkey) REFERENCES project{1}(projectkey),
             FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),

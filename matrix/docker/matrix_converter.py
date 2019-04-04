@@ -19,6 +19,32 @@ from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 LOGGER = Logging.get_logger(__file__)
 SUPPORTED_FORMATS = [item.value for item in MatrixFormat]
+TABLE_COLUMN_TO_METADATA_FIELD = {
+    'cellkey': 'cellkey',
+    'cell_suspension_id': 'cell_suspension.provenance.document_id',
+    'genes_detected': 'genes_detected',
+    'specimenkey': 'specimen_from_organism.provenance.document_id',
+    'genus_species_ontology': 'specimen_from_organism.genus_species.ontology',
+    'genus_species_label': 'specimen_from_organism.genus_species.ontology_label',
+    'ethnicity_ontology': 'donor_organism.human_specific.ethnicity.ontology',
+    'ethnicity_label': 'donor_organism.human_specific.ethnicity.ontology_label',
+    'disease_ontology': 'donor_organism.diseases.ontology',
+    'disease_label': 'donor_organism.diseases.ontology_label',
+    'development_stage_ontology': 'donor_organism.development_stage.ontology',
+    'development_stage_label': 'donor_organism.development_stage.ontology_label',
+    'organ_ontology': 'specimen_from_organism.organ.ontology',
+    'organ_label': 'specimen_from_organism.organ.ontology_label',
+    'organ_part_ontology': 'specimen_from_organism.organ_part.ontology',
+    'organ_part_label': 'specimen_from_organism.organ_part.ontology_label',
+    'librarykey': 'library_preparation_protocol.provenance.document_id',
+    'input_nucleic_acid_ontology': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology',
+    'input_nucleic_acid_label': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology_label',
+    'construction_approach_ontology': 'library_preparation_protocol.library_construction_approach.ontology',
+    'construction_approach_label': 'library_preparation_protocol.library_construction_approach.ontology_label',
+    'end_bias': 'library_preparation_protocol.end_bias',
+    'strand': 'library_preparation_protocol.strand',
+    'short_name': 'project.project_core.project_short_name'
+}
 
 
 class MatrixConverter:
@@ -109,12 +135,17 @@ class MatrixConverter:
             Dataframe read from one slice's Redshift output.
         """
 
-        columns = manifest["columns"]
+        columns = self._map_columns(manifest['columns'])
         for part_url in manifest["part_urls"]:
             df = pandas.read_csv(part_url, sep='|', header=None, names=columns,
                                  true_values=["t"], false_values=["f"],
                                  index_col=index_col)
             yield df
+
+    def _map_columns(self, cols):
+        return [TABLE_COLUMN_TO_METADATA_FIELD[col]
+                if col in TABLE_COLUMN_TO_METADATA_FIELD else col
+                for col in cols]
 
     def _to_mtx(self):
         """Write a zip file with an mtx and two metadata tsvs from Redshift query
