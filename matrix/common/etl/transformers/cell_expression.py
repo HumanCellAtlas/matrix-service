@@ -76,6 +76,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         cell_lines = ['|'.join([
             cell_key,
+            cell_key,
             keys["project_key"],
             keys["specimen_key"],
             keys["library_key"],
@@ -109,6 +110,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
     def _parse_10x_bundle(self, bundle_dir):
         keys = self._parse_keys(bundle_dir)
+        cell_suspension_id = json.load(open(
+            os.path.join(bundle_dir, "cell_suspension_0.json")))['provenance']['document_id']
 
         matrix = scipy.io.mmread(os.path.join(bundle_dir, "matrix.mtx"))
         genes = [g.split("\t")[0].split(".", 1)[0] for g in
@@ -151,6 +154,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             gene_count = len(gene_count_dict)
             cell_line = '|'.join(
                 [cell_key,
+                 cell_suspension_id,
                  keys["project_key"],
                  keys["specimen_key"],
                  keys["library_key"],
