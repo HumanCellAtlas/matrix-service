@@ -13,11 +13,11 @@ resource "aws_redshift_cluster" "default" {
 
 resource "aws_redshift_subnet_group" "matrix_service_redshift" {
   name = "matrix-service-redshift-subnet-${var.deployment_stage}"
-  subnet_ids = ["${var.vpc_subnet_ids}"]
+  subnet_ids = ["${data.aws_subnet_ids.matrix_vpc.ids}"]
 }
 
 resource "aws_security_group" "matrix_service_redshift_sg" {
-  vpc_id = "${var.vpc_id}"
+  vpc_id = "${aws_vpc.vpc.id}"
   name = "matrix-service-rs-sg-${var.deployment_stage}"
 
   ingress {

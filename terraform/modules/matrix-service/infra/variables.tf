@@ -18,11 +18,19 @@ variable "vpc_cidr_block" {
   type = "string"
 }
 
-variable "query_runner_concurrency" {
+variable "redshift_username" {
   type = "string"
-  default = "1"
+}
+
+variable "redshift_password" {
+  type = "string"
 }
 
 variable "gcp_service_acct_creds" {
   type = "string"
+}
+
+variable "query_runner_concurrency" {
+  type = "string"
+  default = "1"
 }

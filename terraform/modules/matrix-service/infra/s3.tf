@@ -29,6 +29,20 @@ resource "aws_s3_bucket" "matrix_service_lambda_deployment_bucket" {
     acceleration_status = "Enabled"
 }
 
+resource "aws_s3_bucket" "matrix_service_preload" {
+  bucket = "dcp-matrix-service-preload-${var.deployment_stage}"
+
+  lifecycle_rule {
+    id      = "matrix_service_preload_expiration"
+
+    expiration {
+      days = 30
+    }
+
+    enabled = true
+  }
+}
+
 output "deployment_bucket_id" {
   value = "${aws_s3_bucket.matrix_service_lambda_deployment_bucket.id}"
 }
