@@ -23,8 +23,7 @@
         "lambda:InvokeFunction"
       ],
       "Resource": [
-        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-driver-integration",
-        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-notification-integration"
+        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-driver-predev"
       ]
     },
     {
@@ -33,8 +32,8 @@
         "dynamodb:GetItem"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-integration",
-        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-output-table-integration"
+        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-predev",
+        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-output-table-predev"
       ]
     },
     {
@@ -43,7 +42,26 @@
         "dynamodb:PutItem"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-integration"
+        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-predev"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:SendMessage"
+      ],
+      "Resource": [
+        "arn:aws:sqs:us-east-1:861229788715:dcp-matrix-notification-queue-predev"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:us-east-1:861229788715:secret:dcp/matrix/predev/*"
       ]
     }
   ]
