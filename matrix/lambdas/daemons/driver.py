@@ -29,7 +29,8 @@ expression_query_template = """
 """
 
 cell_query_template = """
-    UNLOAD($$SELECT cell.cellkey, cell.genes_detected, specimen.*, library_preparation.*, project.short_name
+    UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, specimen.*, library_preparation.*,
+    project.short_name
     FROM cell
     LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
