@@ -66,12 +66,12 @@ class TestEtl(unittest.TestCase):
                                  filename_patterns=[],
                                  dss_client=get_dss_client("dev"))
 
-        transform_bundle("test_uuid", "test_version", "test_path", extractor)
+        transform_bundle("test_uuid", "test_version", "test_path", "test_manifest_path", extractor)
         mock_cell_expression_transform.assert_called_once_with("test_path")
 
         e = Exception()
         mock_cell_expression_transform.side_effect = e
-        transform_bundle("test_uuid", "test_version", "test_path", extractor)
+        transform_bundle("test_uuid", "test_version", "test_path", "test_manifest_path", extractor)
         mock_error.assert_called_once_with("Failed to transform bundle test_uuid.test_version.", e)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)

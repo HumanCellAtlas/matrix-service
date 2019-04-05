@@ -67,7 +67,11 @@ def run_etl(query: dict,
     )
 
 
-def transform_bundle(bundle_uuid: str, bundle_version: str, bundle_path: str, extractor: DSSExtractor):
+def transform_bundle(bundle_uuid: str,
+                     bundle_version: str,
+                     bundle_path: str,
+                     bundle_manifest_path: str,
+                     extractor: DSSExtractor):
     """
     Transforms a downloaded bundle into PSV rows - per bundle transformer passed to ETL.
     :param bundle_uuid: Downloaded bundle UUID
@@ -187,7 +191,7 @@ def _populate_all_tables(job_id: str, temp=False):
             copy_stmt = f"COPY {table_name} FROM '{s3_prefix}' iam_role '{iam}' COMPUPDATE ON;"
         elif table == TableName.CELL:
             copy_stmt = f"COPY {table_name} FROM '{s3_prefix}' iam_role '{iam}' GZIP COMPUPDATE ON;"
-        elif table == TableName.EXPRESSION or table == TableName.CELL:
+        elif table == TableName.EXPRESSION:
             copy_stmt = f"COPY {table_name} FROM '{s3_prefix}' iam_role '{iam}' GZIP COMPUPDATE ON COMPROWS 10000000;"
         else:
             copy_stmt = f"COPY {table_name} FROM '{s3_prefix}' iam_role '{iam}';"

@@ -1,6 +1,6 @@
 boto3==1.7.69
 botocore<1.11.0
-dcplib==1.6.1
+dcplib==1.6.5
 tenacity==5.0.2
 psycopg2==2.7.5
 requests==2.20.0
