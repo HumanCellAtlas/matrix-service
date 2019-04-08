@@ -20,9 +20,7 @@ from matrix.common.request.request_tracker import RequestTracker, Subtask
 LOGGER = Logging.get_logger(__file__)
 SUPPORTED_FORMATS = [item.value for item in MatrixFormat]
 TABLE_COLUMN_TO_METADATA_FIELD = {
-    'cellkey': 'cellkey',
     'cell_suspension_id': 'cell_suspension.provenance.document_id',
-    'genes_detected': 'genes_detected',
     'specimenkey': 'specimen_from_organism.provenance.document_id',
     'genus_species_ontology': 'specimen_from_organism.genus_species.ontology',
     'genus_species_label': 'specimen_from_organism.genus_species.ontology_label',
@@ -32,10 +30,10 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'disease_label': 'donor_organism.diseases.ontology_label',
     'development_stage_ontology': 'donor_organism.development_stage.ontology',
     'development_stage_label': 'donor_organism.development_stage.ontology_label',
-    'organ_ontology': 'specimen_from_organism.organ.ontology',
-    'organ_label': 'specimen_from_organism.organ.ontology_label',
-    'organ_part_ontology': 'specimen_from_organism.organ_part.ontology',
-    'organ_part_label': 'specimen_from_organism.organ_part.ontology_label',
+    'organ_ontology': 'derived_organ_ontology',
+    'organ_label': 'derived_organ_label',
+    'organ_part_ontology': 'derived_organ_part_ontology',
+    'organ_part_label': 'derived_organ_part_label',
     'librarykey': 'library_preparation_protocol.provenance.document_id',
     'input_nucleic_acid_ontology': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology',
     'input_nucleic_acid_label': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology_label',
