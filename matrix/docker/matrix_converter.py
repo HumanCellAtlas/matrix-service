@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 import zipfile
 
 import loompy
@@ -105,6 +106,100 @@ class MatrixConverter:
             "part_urls": [e["url"] for e in manifest["entries"] if e["meta"]["record_count"]],
             "record_count": manifest["meta"]["record_count"]
         }
+
+    def _n_slices(self):
+        """Return the number of slices associated with this Redshift result.
+
+        Redshift UNLOAD creates on object per "slice" of the cluster. We might want to
+        iterate over that, so this get the count of them.
+        """
+        return len(self.cell_manifest["part_urls"])
+
+    def _load_cell_table_slice(self, slice_idx):
+        """Load the cell metadata table from a particular result slice.
+
+        Args:
+            slice_idx: Index of the slice to get cell metadata for
+
+        Returns:
+            dataframe of cell metadata. Index is "cellkey" and other columns are metadata
+            fields.
+        """
+
+        cell_table_columns = self._map_columns(self.cell_manifest["columns"])
+        cell_table_dtype = {c: "category" for c in cell_table_columns}
+        cell_table_dtype["genes_detected"] = "uint32"
+
+        part_url = self.cell_manifest["part_urls"][slice_idx]
+        df = pandas.read_csv(
+            part_url, sep='|', header=None, names=cell_table_columns,
+            dtype=cell_table_dtype, true_values=["t"], false_values=["f"],
+            index_col="cellkey")
+        df["cellkey"] = df.index
+        return df
+
+    def _load_gene_table(self):
+        """Load the gene metadata table.
+
+        Returns:
+            dataframe of gene metadata. Index is "featurekey"
+        """
+
+        gene_table_columns = self._map_columns(self.gene_manifest["columns"])
+
+        dfs = []
+        for part_url in self.gene_manifest["part_urls"]:
+            df = pandas.read_csv(part_url, sep='|', header=None, names=gene_table_columns,
+                                 true_values=["t"], false_values=["f"],
+                                 index_col="featurekey")
+            df["featurekey"] = df.index
+            dfs.append(df)
+        return pandas.concat(dfs)
+
+    def _load_expression_table_slice(self, slice_idx, chunksize=1000000):
+        """Load expression data from a slice, yielding the data by a fixed number
+        of rows.
+
+        Args:
+            slice_idx: Index of the slice to get data for
+            chunksize: Number of rows to yield at once
+
+        Yields:
+            dataframe of expression data
+        """
+
+        part_url = self.expression_manifest["part_urls"][slice_idx]
+        expression_table_columns = self._map_columns(self.expression_manifest["columns"])
+        expression_dtype = {"cellkey": "category", "featurekey": "category", "exprvalue": "float32"}
+
+        # Iterate over chunks of the remote file. We have to set a fixed set
+        # number of rows to read, but we also want to make sure that all the
+        # rows from a given cell are yielded with each chunk. So we are going
+        # to keep track of the "remainder", rows from the end of a chunk for a
+        # cell the spans a chunk boundary.
+        remainder = None
+        for chunk in pandas.read_csv(
+                part_url, sep="|", names=expression_table_columns,
+                dtype=expression_dtype, header=None, chunksize=chunksize):
+
+            # If we have some rows from the previous chunk, prepend them to
+            # this one
+            if remainder is not None:
+                adjusted_chunk = pandas.concat([remainder, chunk], axis=0, copy=False)
+            else:
+                adjusted_chunk = chunk
+
+            # Now get the rows for the cell at the end of this chunk that spans
+            # the boundary. Remove them from the chunk we yield, but keep them
+            # in the remainder.
+            last_cellkey = adjusted_chunk.tail(1).cellkey.values[0]
+            remainder = adjusted_chunk.loc[adjusted_chunk['cellkey'] == last_cellkey]
+            adjusted_chunk = adjusted_chunk[adjusted_chunk.cellkey != last_cellkey]
+
+            yield adjusted_chunk
+
+        if remainder is not None:
+            yield remainder
 
     def _load_table(self, manifest, index_col=None):
         """Function to read all the manifest parts and return
@@ -215,47 +310,72 @@ class MatrixConverter:
             self.local_output_filename += ".loom"
 
         # Read the row (gene) attributes and then set some conventional names
-        row_attrs = self._load_table(self.gene_manifest).to_dict("series")
+        row_attrs = self._load_gene_table().to_dict("series")
         # Not expected to be unique
         row_attrs["Gene"] = row_attrs.pop("featurename")
         row_attrs["Accession"] = row_attrs.pop("featurekey")
-        cellkeys = pandas.Index([])
-        sparse_expression_cscs = []
-
-        for expression_part in self._load_table_by_part(self.expression_manifest,
-                                                        index_col=["featurekey", "cellkey"]):
-            # Pivot the cellkey index to columns and tidy up the resulting
-            # multi-level columns
-            unstacked = expression_part.unstack("cellkey")
-            unstacked.columns = unstacked.columns.get_level_values(1)
-
-            # Reindex with the list of gene ids, filling in zeros for unobserved
-            # genes. The makes the martrix dense but assigns correct indices when
-            # we sparsify it.
-            sparse_filled = scipy.sparse.csc_matrix(unstacked.reindex(index=row_attrs["Accession"])
-                                                    .fillna(0))
-            sparse_expression_cscs.append(sparse_filled)
-
-            # Keep track of the cellkeys as we observe them so we can later
-            # correctly order the column attributes.
-            cellkeys = cellkeys.union(unstacked.columns)
-
-        big_sparse_matrix = scipy.sparse.hstack(sparse_expression_cscs)
-
-        # Read in the cell metadata and reindex by the cellkeys from the expression
-        # matrix. Set the "CellID" label convention from the loom docs.
-        cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
-        cell_df.index = cellkeys
-        cell_df["cellkey"] = cell_df.index
-        col_attrs = cell_df.to_dict("series")
-        col_attrs["CellID"] = col_attrs.pop("cellkey")
-
-        # I don't know, you have to do this or it doesn't work.
-        for key, val in col_attrs.items():
-            col_attrs[key] = val.values
         for key, val in row_attrs.items():
             row_attrs[key] = val.values
-        loompy.create(self.local_output_filename, big_sparse_matrix, row_attrs, col_attrs)
+
+        loom_parts = []
+        loom_part_dir = tempfile.mkdtemp()
+
+        # Iterate over the "slices" produced by the redshift query
+        for slice_idx in range(self._n_slices()):
+
+            # Get the cell metadata for all the cells in this slice
+            cell_df = self._load_cell_table_slice(slice_idx)
+
+            # Iterate over fixed-size chunks of expression data from this
+            # slice.
+            chunk_idx = 0
+            for chunk in self._load_expression_table_slice(slice_idx):
+                print(f"Loading chunk {chunk_idx} from slice {slice_idx}")
+                sparse_cell_dfs = []
+
+                # Group the data by cellkey and iterate over each cell
+                grouped = chunk.groupby("cellkey")
+                for cell_group in grouped:
+                    single_cell_df = cell_group[1]
+
+                    # Reshape the dataframe so cellkey is a column and features
+                    # are rows. Reindex so all dataframes have the same row
+                    # order, and then sparsify because this is a very empty
+                    # dataset usually.
+                    sparse_cell_dfs.append(
+                        single_cell_df.pivot(
+                            index="featurekey", columns="cellkey", values="exprvalue")
+                        .reindex(index=row_attrs["Accession"]).to_sparse())
+
+                # Concatenate the cell dataframes together. This is what we'll
+                # write to disk.
+                sparse_expression_matrix = pandas.concat(sparse_cell_dfs, axis=1, copy=True)
+
+                # Get the cell metadata dataframe for just the cell in this
+                # chunk
+                chunk_cell_df = cell_df.reindex(index=sparse_expression_matrix.columns)
+                for col in chunk_cell_df.columns:
+                    if chunk_cell_df[col].dtype.name == "category":
+                        chunk_cell_df[col] = chunk_cell_df[col].astype("object")
+                col_attrs = chunk_cell_df.to_dict("series")
+                col_attrs["CellID"] = col_attrs.pop("cellkey")
+
+                # Just a thing you have to do...
+                for key, val in col_attrs.items():
+                    col_attrs[key] = val.values
+
+                # Write the data from this chunk to its own file.
+                loom_part_path = os.path.join(loom_part_dir,
+                                              f"matrix.{slice_idx}.{chunk_idx}.loom")
+                print(f"Writing to {loom_part_path}")
+                loompy.create(
+                    loom_part_path, sparse_expression_matrix.to_coo(), row_attrs, col_attrs)
+                loom_parts.append(loom_part_path)
+                chunk_idx += 1
+
+        # Using the loompy method, combine all the chunks together into a
+        # single file.
+        loompy.combine(loom_parts, key="Accession", output_file=self.local_output_filename)
 
         return self.local_output_filename
 
