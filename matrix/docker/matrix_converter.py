@@ -129,13 +129,14 @@ class MatrixConverter:
         cell_table_columns = self._map_columns(self.cell_manifest["columns"])
         cell_table_dtype = {c: "category" for c in cell_table_columns}
         cell_table_dtype["genes_detected"] = "uint32"
+        cell_table_dtype["cellkey"] = "object"
 
         part_url = self.cell_manifest["part_urls"][slice_idx]
         df = pandas.read_csv(
             part_url, sep='|', header=None, names=cell_table_columns,
             dtype=cell_table_dtype, true_values=["t"], false_values=["f"],
             index_col="cellkey")
-        df["cellkey"] = df.index
+
         return df
 
     def _load_gene_table(self):
@@ -152,7 +153,7 @@ class MatrixConverter:
             df = pandas.read_csv(part_url, sep='|', header=None, names=gene_table_columns,
                                  true_values=["t"], false_values=["f"],
                                  index_col="featurekey")
-            df["featurekey"] = df.index
+
             dfs.append(df)
         return pandas.concat(dfs)
 
@@ -169,8 +170,8 @@ class MatrixConverter:
         """
 
         part_url = self.expression_manifest["part_urls"][slice_idx]
-        expression_table_columns = self._map_columns(self.expression_manifest["columns"])
-        expression_dtype = {"cellkey": "category", "featurekey": "category", "exprvalue": "float32"}
+        expression_table_columns = ["cellkey", "featurekey", "exprvalue"]
+        expression_dtype = {"cellkey": "object", "featurekey": "object", "exprvalue": "float32"}
 
         # Iterate over chunks of the remote file. We have to set a fixed set
         # number of rows to read, but we also want to make sure that all the
@@ -310,6 +311,8 @@ class MatrixConverter:
             self.local_output_filename += ".loom"
 
         # Read the row (gene) attributes and then set some conventional names
+        gene_df = self._load_gene_table()
+        gene_df["featurekey"] = gene_df.index
         row_attrs = self._load_gene_table().to_dict("series")
         # Not expected to be unique
         row_attrs["Gene"] = row_attrs.pop("featurename")
@@ -354,6 +357,7 @@ class MatrixConverter:
                 # Get the cell metadata dataframe for just the cell in this
                 # chunk
                 chunk_cell_df = cell_df.reindex(index=sparse_expression_matrix.columns)
+                chunk_cell_df["cellkey"] = chunk_cell_df.index
                 for col in chunk_cell_df.columns:
                     if chunk_cell_df[col].dtype.name == "category":
                         chunk_cell_df[col] = chunk_cell_df[col].astype("object")
@@ -392,37 +396,37 @@ class MatrixConverter:
         results_dir = os.path.splitext(self.local_output_filename)[0]
         os.mkdir(results_dir)
 
-        gene_df = self._load_table(self.gene_manifest, index_col="featurekey")
-        gene_df.to_csv(os.path.join(results_dir, "genes.csv"))
+        gene_df = self._load_gene_table()
+        gene_df.to_csv(os.path.join(results_dir, "genes.csv"), index_label="featurekey")
 
-        # Read the row (gene) attributes and then set some conventional names
-        row_attrs = self._load_table(self.gene_manifest).to_dict("series")
-        # Not expected to be unique
-        row_attrs["Gene"] = row_attrs.pop("featurename")
-        row_attrs["Accession"] = row_attrs.pop("featurekey")
-
-        cellkeys = pandas.Index([])
+        cellkeys = []
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
+            # Write the CSV's header
             gene_index_string_list = [str(x) for x in gene_df.index.tolist()]
             exp_f.write(','.join(["cellkey"] + gene_index_string_list))
             exp_f.write('\n')
 
-            for expression_part in self._load_table_by_part(self.expression_manifest,
-                                                            index_col=["cellkey", "featurekey"]):
-                unstacked = expression_part.unstack()
-                unstacked.columns = unstacked.columns.get_level_values(1)
-                filled = unstacked.reindex(columns=row_attrs["Accession"]).fillna(0)
-                filled.to_csv(exp_f, header=False, float_format='%g')
-                cellkeys = cellkeys.union(filled.index)
-        cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
-        cell_df.index = cellkeys
-        cell_df.to_csv(os.path.join(results_dir, "cells.csv"))
+            for slice_idx in range(self._n_slices()):
+                for chunk in self._load_expression_table_slice(slice_idx):
+                    # Group the data by cellkey and iterate over each cell
+                    grouped = chunk.groupby("cellkey")
+                    for cell_group in grouped:
+                        single_cell_df = cell_group[1]
+                        single_cell_df.pivot(
+                            index="cellkey", columns="featurekey", values="exprvalue").reindex(
+                                columns=gene_df.index).to_csv(exp_f, header=False, float_format="%g", na_rep='0')
+                        cellkeys.append(cell_group[0])
+
+        cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
+        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df.to_csv(os.path.join(results_dir, "cells.csv"), index_label="cellkey")
 
         zipf = zipfile.ZipFile(self.local_output_filename, 'w', zipfile.ZIP_DEFLATED)
         zipf.write(os.path.join(results_dir, "genes.csv"))
         zipf.write(os.path.join(results_dir, "expression.csv"))
         zipf.write(os.path.join(results_dir, "cells.csv"))
         zipf.write("csv_readme.txt")
+        zipf.close()
 
         return self.local_output_filename
 
