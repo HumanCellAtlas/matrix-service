@@ -1,6 +1,7 @@
 """Script to convert the outputs of Redshift queries into different formats."""
 
 import argparse
+import gzip
 import json
 import os
 import sys
@@ -10,8 +11,6 @@ import zipfile
 import loompy
 import pandas
 import s3fs
-import scipy.io
-import scipy.sparse
 
 from matrix.common import date
 from matrix.common.logging import Logging
@@ -248,7 +247,6 @@ class MatrixConverter:
         Returns:
            output_path: Path to the zip file.
         """
-
         # Add zip to the output filename and create the directory where we will
         # write output files.
         if not self.local_output_filename.endswith(".zip"):
@@ -257,45 +255,49 @@ class MatrixConverter:
         os.mkdir(results_dir)
 
         # Load the gene metadata and write it out to a tsv
-        gene_df = self._load_table(self.gene_manifest, index_col="featurekey")
-        gene_df.to_csv(os.path.join(results_dir, "genes.tsv"), sep='\t')
+        gene_df = self._load_gene_table()
+        gene_df.to_csv(os.path.join(results_dir, "genes.tsv.gz"), index_label="featurekey", sep="\t")
+        cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
 
-        # Read the row (gene) attributes and then set some conventional names
-        row_attrs = self._load_table(self.gene_manifest).to_dict("series")
-        # Not expected to be unique
-        row_attrs["Gene"] = row_attrs.pop("featurename")
-        row_attrs["Accession"] = row_attrs.pop("featurekey")
+        # To follow 10x conventions, features are rows and cells are columns
+        n_rows = gene_df.shape[0]
+        n_cols = cell_df.shape[0]
+        n_nonzero = self.expression_manifest["record_count"]
 
-        cellkeys = pandas.Index([])
-        sparse_expression_cscs = []
+        cellkeys = []
 
-        for expression_part in self._load_table_by_part(self.expression_manifest,
-                                                        index_col=["featurekey", "cellkey"]):
-            # Pivot the cells to columns and fill in the missing gene values with
-            # zeros
-            unstacked = expression_part.unstack("cellkey")
-            unstacked.columns = unstacked.columns.get_level_values(1)
-            sparse_filled = scipy.sparse.csc_matrix(unstacked.reindex(index=row_attrs["Accession"]).fillna(0))
-            sparse_expression_cscs.append(sparse_filled)
-            cellkeys = cellkeys.union(unstacked.columns)
+        with gzip.open(os.path.join(results_dir, "matrix.mtx.gz"), "w", compresslevel=4) as exp_f:
+            # Write the mtx header
+            exp_f.write("%%MatrixMarket matrix coordinate real general\n".encode())
+            exp_f.write(f"{n_rows} {n_cols} {n_nonzero}\n".encode())
 
-        # Write out concatenated expression matrix
-        big_sparse_matrix = scipy.sparse.hstack(sparse_expression_cscs)
-        scipy.io.mmwrite(os.path.join(results_dir, "matrix.mtx"),
-                         big_sparse_matrix.astype('f'))
+            cell_count = 0
+            for slice_idx in range(self._n_slices()):
+                for chunk in self._load_expression_table_slice(slice_idx):
 
-        # Read the cell metadata, reindex by the cellkeys in the expression matrix,
-        # and write to another tsv
-        cell_df = self._load_table(self.cell_manifest, index_col="cellkey")
-        cell_df.index = cellkeys
-        cell_df.to_csv(os.path.join(results_dir, "cells.tsv"), sep='\t')
+                    grouped = chunk.groupby("cellkey")
+                    for cell_group in grouped:
+                        single_cell_df = cell_group[1]
+                        single_cell_coo = single_cell_df.pivot(
+                            index="featurekey", columns="cellkey", values="exprvalue").reindex(
+                                index=gene_df.index).to_sparse().to_coo()
+
+                        for row, col, value in zip(single_cell_coo.row, single_cell_coo.col, single_cell_coo.data):
+                            exp_f.write(f"{row+1} {col+cell_count+1} {value}\n".encode())
+                        cell_count += 1
+
+                        cellkeys.append(cell_group[0])
+
+        cell_df = cell_df.reindex(index=cellkeys)
+        cell_df.to_csv(os.path.join(results_dir, "cells.tsv.gz"), sep='\t', index_label="cellkey")
 
         # Create a zip file out of the three written files.
-        zipf = zipfile.ZipFile(self.local_output_filename, 'w', zipfile.ZIP_DEFLATED)
-        zipf.write(os.path.join(results_dir, "genes.tsv"))
-        zipf.write(os.path.join(results_dir, "matrix.mtx"))
-        zipf.write(os.path.join(results_dir, "cells.tsv"))
+        zipf = zipfile.ZipFile(self.local_output_filename, 'w')
+        zipf.write(os.path.join(results_dir, "genes.tsv.gz"))
+        zipf.write(os.path.join(results_dir, "matrix.mtx.gz"))
+        zipf.write(os.path.join(results_dir, "cells.tsv.gz"))
         zipf.write("mtx_readme.txt")
+        zipf.close()
 
         return self.local_output_filename
 
