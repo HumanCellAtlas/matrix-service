@@ -315,7 +315,7 @@ class MatrixConverter:
         # Read the row (gene) attributes and then set some conventional names
         gene_df = self._load_gene_table()
         gene_df["featurekey"] = gene_df.index
-        row_attrs = self._load_gene_table().to_dict("series")
+        row_attrs = gene_df.to_dict("series")
         # Not expected to be unique
         row_attrs["Gene"] = row_attrs.pop("featurename")
         row_attrs["Accession"] = row_attrs.pop("featurekey")
@@ -354,6 +354,8 @@ class MatrixConverter:
 
                 # Concatenate the cell dataframes together. This is what we'll
                 # write to disk.
+                if not sparse_cell_dfs:
+                    continue
                 sparse_expression_matrix = pandas.concat(sparse_cell_dfs, axis=1, copy=True)
 
                 # Get the cell metadata dataframe for just the cell in this
