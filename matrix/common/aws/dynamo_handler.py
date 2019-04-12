@@ -26,6 +26,7 @@ class StateTableField(TableField):
     COMPLETED_QUERY_EXECUTIONS = "CompletedQueryExecutions"
     EXPECTED_CONVERTER_EXECUTIONS = "ExpectedConverterExecutions"
     COMPLETED_CONVERTER_EXECUTIONS = "CompletedConverterExecutions"
+    BATCH_JOB_ID = "BatchJobId"
 
 
 class OutputTableField(TableField):
@@ -88,7 +89,8 @@ class DynamoHandler:
                 StateTableField.COMPLETED_QUERY_EXECUTIONS.value: 0,
                 StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 1,
                 StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
-                StateTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True)
+                StateTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
+                StateTableField.BATCH_JOB_ID.value: "N/A"
             }
         )
 
@@ -108,18 +110,6 @@ class DynamoHandler:
                 OutputTableField.FORMAT.value: format,
                 OutputTableField.ERROR_MESSAGE.value: 0,
             }
-        )
-
-    def write_request_error(self, request_id: str, message: str):
-        """
-        Write an error message a request's DyanmoDB Output table.
-        :param request_hash: str The request ID of the request that reported the error
-        :param message: str The error message
-        """
-        self._output_table.update_item(
-            Key={OutputTableField.REQUEST_ID.value: request_id},
-            UpdateExpression=f"SET {OutputTableField.ERROR_MESSAGE.value} = :m",
-            ExpressionAttributeValues={':m': message}
         )
 
     def get_table_item(self, table: DynamoTable, request_id: str=""):
@@ -160,6 +150,44 @@ class DynamoHandler:
         key_dict = {"RequestId": request_id}
         start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
         return start_value, end_value
+
+    def set_table_field_with_value(self, table: DynamoTable, request_id: str, field_enum: TableField, field_value: str):
+        """
+        Set value in dynamo table
+        Args:
+            table: DynamoTable enum
+            request_id: request id key in table
+            field_enum: field enum to increment
+            field_value: Value to set for field
+        """
+        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
+        key_dict = {"RequestId": request_id}
+        self._set_field(dynamo_table, key_dict, field_enum, field_value)
+
+    def _set_field(self, table, key_dict: dict, field_enum: TableField, field_value: str):
+        """
+        Set a value in a dynamo table.
+        Args:
+          table: boto3 resource for a dynamodb table
+          key_dict: Dict for the key in the table
+          field_enum: Name of the field to increment
+          field_value: Value to set for field
+        """
+        field_enum_value = field_enum.value
+        while True:
+            try:
+                table.update_item(
+                    Key=key_dict,
+                    UpdateExpression=f"SET {field_enum_value} = :n",
+                    ExpressionAttributeValues={":n": field_value}
+                )
+                break
+            except botocore.exceptions.ClientError as exc:
+                if exc.response['Error']['Code'] == "ConditionalCheckFailedException":
+                    pass
+                else:
+                    raise
+            time.sleep(.5)
 
     def _increment_field(self, table, key_dict: dict, field_enum: TableField, increment_size: int):
         """Increment a value in a dynamo table safely.

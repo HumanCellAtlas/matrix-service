@@ -1,6 +1,8 @@
 import uuid
 from unittest import mock
+from datetime import timedelta
 
+from matrix.common import date
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -28,6 +30,21 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
 
+    def test_batch_job_id(self):
+        self.assertEqual(self.request_tracker.batch_job_id, None)
+
+        field_enum = StateTableField.BATCH_JOB_ID
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.STATE_TABLE, self.request_id, field_enum, "123-123")
+        self.assertEqual(self.request_tracker.batch_job_id, "123-123")
+
+    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
+    def test_batch_job_status(self, mock_get_job_status):
+        mock_get_job_status.return_value = "FAILED"
+        field_enum = StateTableField.BATCH_JOB_ID
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.STATE_TABLE, self.request_id, field_enum, "123-123")
+
+        self.assertEqual(self.request_tracker.batch_job_status, "FAILED")
+
     def test_creation_date(self):
         self.assertEqual(self.request_tracker.creation_date, self.stub_date)
 
@@ -46,11 +63,13 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_num_bundles.return_value = 1234
         self.assertEqual(self.request_tracker.num_bundles_interval, "1000-1499")
 
-    def test_error(self):
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_error(self, mock_cw_put):
         self.assertEqual(self.request_tracker.error, "")
 
-        self.dynamo_handler.write_request_error(self.request_id, "test error")
+        self.request_tracker.log_error("test error")
         self.assertEqual(self.request_tracker.error, "test error")
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST_ERROR, metric_value=1)
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_state_table_entry")
@@ -100,13 +119,6 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertTrue(self.request_tracker.is_request_ready_for_conversion())
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.write_request_error")
-    def test_log_error(self, mock_write_request_error, mock_cw_put):
-        self.request_tracker.log_error("test error")
-        mock_write_request_error.assert_called_once_with(self.request_id, "test error")
-        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST_ERROR, metric_value=1)
-
-    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     def test_complete_request(self, mock_cw_put):
         duration = 1
 
@@ -133,3 +145,26 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
             ]),
         ]
         mock_cw_put.assert_has_calls(expected_calls)
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date",
+                new_callable=mock.PropertyMock)
+    def test_timeout(self, mock_creation_date, mock_log_error):
+        # no timeout
+        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=11, minutes=59))
+        self.assertFalse(self.request_tracker.timeout)
+
+        # timeout
+        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=12, minutes=1))
+        self.assertTrue(self.request_tracker.timeout)
+        mock_log_error.assert_called_once()
+
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
+    def test_write_batch_job_id_to_db(self, mock_set_table_field_with_value, mock_cw_put):
+        self.request_tracker.write_batch_job_id_to_db("123-123")
+        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.STATE_TABLE,
+                                                                self.request_id,
+                                                                StateTableField.BATCH_JOB_ID,
+                                                                "123-123")
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_REQUEST, metric_value=1)

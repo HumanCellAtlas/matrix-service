@@ -106,14 +106,35 @@ def get_matrix(request_id: str):
 
     # if the request tracker is not able to retrieve the format,
     # it means that the driver has not created the relevant entry in the output table yet.
-
     try:
         format = request_tracker.format
     except MatrixException:
         return in_progress_response
 
+    # Failed case
+    if request_tracker.error:
+        return ConnexionResponse(status_code=requests.codes.ok,
+                                 body={
+                                     'request_id': request_id,
+                                     'status': MatrixRequestStatus.FAILED.value,
+                                     'matrix_location': "",
+                                     'eta': "",
+                                     'message': request_tracker.error
+                                 })
+    # Check for failed batch conversion job
+    elif request_tracker.batch_job_status and request_tracker.batch_job_status == "FAILED":
+        request_tracker.log_error("The matrix conversion as a part of the request has failed. \
+            Please retry or contact an hca admin for help.")
+        return ConnexionResponse(status_code=requests.codes.ok,
+                                 body={
+                                     'request_id': request_id,
+                                     'status': MatrixRequestStatus.FAILED.value,
+                                     'matrix_location': "",
+                                     'eta': "",
+                                     'message': request_tracker.error,
+                                 })
     # Complete case
-    if request_tracker.is_request_complete():
+    elif request_tracker.is_request_complete():
         matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
 
         matrix_location = ""
@@ -132,8 +153,8 @@ def get_matrix(request_id: str):
                                                 f"The resultant expression matrix is available for download at "
                                                 f"{matrix_location}",
                                  })
-    # Failed case
-    elif request_tracker.error:
+    # Timeout case
+    elif request_tracker.timeout:
         return ConnexionResponse(status_code=requests.codes.ok,
                                  body={
                                      'request_id': request_id,
@@ -142,17 +163,8 @@ def get_matrix(request_id: str):
                                      'eta': "",
                                      'message': request_tracker.error,
                                  })
-
-    # In progress case
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={
-                                 'request_id': request_id,
-                                 'status': MatrixRequestStatus.IN_PROGRESS.value,
-                                 'matrix_location': "",
-                                 'eta': "",
-                                 'message': f"Request {request_id} has been accepted and is currently being processed. "
-                                            f"Please try again later.",
-                             })
+    else:
+        return in_progress_response
 
 
 def get_formats():

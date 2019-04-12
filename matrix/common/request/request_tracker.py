@@ -1,6 +1,9 @@
+from datetime import timedelta
 from enum import Enum
 
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
+from matrix.common.aws.batch_handler import BatchHandler
+from matrix.common import date
 from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
@@ -33,6 +36,7 @@ class RequestTracker:
 
         self.dynamo_handler = DynamoHandler()
         self.cloudwatch_handler = CloudwatchHandler()
+        self.batch_handler = BatchHandler()
 
     @property
     def is_initialized(self) -> bool:
@@ -80,6 +84,30 @@ class RequestTracker:
         return self._format
 
     @property
+    def batch_job_id(self) -> str:
+        """
+        The batch job id for matrix conversion corresponding with a request.
+        :return: str The batch job id
+        """
+        table_item = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id=self.request_id)
+        batch_job_id = table_item.get(StateTableField.BATCH_JOB_ID.value)
+        if not batch_job_id or batch_job_id == "N/A":
+            return None
+        else:
+            return batch_job_id
+
+    @property
+    def batch_job_status(self) -> str:
+        """
+        The batch job status for matrix conversion corresponding with a request.
+        :return: str The batch job status
+        """
+        status = None
+        if self.batch_job_id:
+            status = self.batch_handler.get_batch_job_status(self.batch_job_id)
+        return status
+
+    @property
     def creation_date(self) -> str:
         """
         The creation date of matrix service request.
@@ -87,6 +115,14 @@ class RequestTracker:
         """
         return self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE,
                                                   request_id=self.request_id)[StateTableField.CREATION_DATE.value]
+
+    @property
+    def timeout(self) -> bool:
+        timeout = date.to_datetime(self.creation_date) < date.get_datetime_now() - timedelta(hours=12)
+        if timeout:
+            self.log_error("This request has timed out after 12 hours."
+                           "Please try again by resubmitting the POST request.")
+        return timeout
 
     @property
     def error(self) -> str:
@@ -209,8 +245,24 @@ class RequestTracker:
         :param message: str The error message to log
         """
         logger.debug(message)
-        self.dynamo_handler.write_request_error(self.request_id, message)
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.OUTPUT_TABLE,
+                                                       self.request_id,
+                                                       OutputTableField.ERROR_MESSAGE,
+                                                       message)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST_ERROR,
+            metric_value=1
+        )
+
+    def write_batch_job_id_to_db(self, batch_job_id: str):
+        """
+        Logs the batch job id for matrix conversion to state table
+        """
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.STATE_TABLE,
+                                                       self.request_id,
+                                                       StateTableField.BATCH_JOB_ID,
+                                                       batch_job_id)
+        self.cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.CONVERSION_REQUEST,
             metric_value=1
         )

@@ -55,6 +55,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         mock_complete_subtask.assert_called_once_with(Subtask.QUERY)
         mock_schedule_conversion.assert_not_called()
 
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.write_batch_job_id_to_db")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format")
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.schedule_matrix_conversion")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_ready_for_conversion")
@@ -67,7 +68,8 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
                                                                      mock_complete_subtask,
                                                                      mock_is_ready_for_conversion,
                                                                      mock_schedule_conversion,
-                                                                     mock_request_format):
+                                                                     mock_request_format,
+                                                                     mock_write_batch_job_id_to_db):
         request_id = str(uuid.uuid4())
         payload = {
             'request_id': request_id,
@@ -75,10 +77,12 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
         mock_is_ready_for_conversion.return_value = True
+        mock_schedule_conversion.return_value = "123-123"
 
         self.query_runner.run(max_loops=1)
 
         mock_schedule_conversion.assert_called_once_with(request_id, mock.ANY)
+        mock_write_batch_job_id_to_db.assert_called_once_with("123-123")
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format")
