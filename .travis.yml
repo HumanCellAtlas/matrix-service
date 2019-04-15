@@ -4,6 +4,7 @@ python:
 before_install:
 - export BOTO_CONFIG=/dev/null
 install:
+- pip install -U setuptools
 - pip install -r requirements-dev.txt
 script:
 - make test
