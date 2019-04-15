@@ -23,6 +23,16 @@ if __name__ == '__main__':
                                     "match": {
                                         "files.library_preparation_protocol_json.library_construction_approach.ontology_label": "10X v2 sequencing"
                                     }
+                                },
+                                {
+                                    "match": {
+                                        "files.library_preparation_protocol_json.library_construction_method.ontology": "EFO:0008931"
+                                    }
+                                },
+                                {
+                                    "match": {
+                                        "files.library_preparation_protocol_json.library_construction_method.ontology_label": "10X v2 sequencing"
+                                    }
                                 }
                             ],
                             "minimum_number_should_match": 1

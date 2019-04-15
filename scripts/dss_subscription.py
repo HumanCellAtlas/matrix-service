@@ -15,8 +15,8 @@ if __name__ == '__main__':
         deployment_stage = os.environ['DEPLOYMENT_STAGE']
         replica = "aws"
         jmespath_query = "(event_type==`CREATE` || event_type==`TOMBSTONE` || event_type==`DELETE`) \
-            && (files.library_preparation_protocol[].library_construction_approach.ontology==`EFO:0008931` \
-            || files.library_preparation_protocol[].library_construction_approach.ontology_label==`10X v2 sequencing`) \
+            && (files.library_preparation_protocol[].library_construction_method.ontology==`EFO:0008931` \
+            || files.library_preparation_protocol[].library_construction_method.ontology_label==`10X v2 sequencing`) \
             && files.analysis_process[].process_type.text==`analysis`"
 
         if deployment_stage == "prod":
