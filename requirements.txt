@@ -17,3 +17,4 @@ zarr==2.2.0
 dcplib==1.6.5
 tenacity==5.0.2
 psycopg2==2.7.5
+git+git://github.com/HumanCellAtlas/metadata-api@release/1.0b13#egg=hca-metadata-api

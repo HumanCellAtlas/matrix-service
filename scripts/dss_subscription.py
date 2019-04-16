@@ -17,7 +17,7 @@ if __name__ == '__main__':
         jmespath_query = "(event_type==`CREATE` || event_type==`TOMBSTONE` || event_type==`DELETE`) \
             && (files.library_preparation_protocol[].library_construction_method.ontology==`EFO:0008931` \
             || files.library_preparation_protocol[].library_construction_method.ontology_label==`10X v2 sequencing`) \
-            && files.analysis_process[].process_type.text==`analysis`"
+            && files.analysis_process[].type.text==`analysis`"
 
         if deployment_stage == "prod":
             swagger_url = "https://dss.data.humancellatlas.org/v1/swagger.json"

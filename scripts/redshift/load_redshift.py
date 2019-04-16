@@ -44,8 +44,20 @@ if __name__ == '__main__':
                         }
                     },
                     {
-                        "match": {
-                            "files.analysis_process_json.process_type.text": "analysis"
+                        "bool": {
+                            "should": [
+                                {
+                               "match": {
+                                        "files.analysis_process_json.type.text": "analysis"
+                                    }
+                                },
+                                {
+                                    "match": {
+                                        "files.analysis_process_json.process_type.text": "analysis"
+                                    }
+                                }
+                            ],
+                            "minimum_number_should_match": 1
                         }
                     }
                 ]
