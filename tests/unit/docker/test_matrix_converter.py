@@ -55,15 +55,41 @@ class TestMatrixConverter(unittest.TestCase):
 
     @mock.patch("s3fs.S3FileSystem.open")
     def test__parse_manifest(self, mock_open):
-        manifest_file_path = "tests/functional/res/manifest.json"
+        manifest_file_path = "tests/functional/res/cell_metadata_manifest"
 
         with open(manifest_file_path) as f:
             mock_open.return_value = f
             manifest = self.matrix_converter._parse_manifest("test_manifest_key")
 
-        self.assertEqual(manifest['columns'], ['cellkey', 'featurekey', 'exrpvalue'])
-        self.assertEqual(manifest['record_count'], 0)
-        self.assertEqual(manifest['part_urls'], [])
+        self.assertEqual(len(manifest['columns']), 23)
+        self.assertEqual(manifest['record_count'], 2544)
+        self.assertEqual(len(manifest['part_urls']), 8)
+        self.assertTrue(all(u.startswith("s3://") for u in manifest['part_urls']))
+
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test__n_slices(self, mock_open):
+        manifest_file_path = "tests/functional/res/cell_metadata_manifest"
+        with open(manifest_file_path) as f:
+            mock_open.return_value = f
+            self.matrix_converter.cell_manifest = self.matrix_converter._parse_manifest("test_manifest_key")
+
+        self.assertEqual(self.matrix_converter._n_slices(), 8)
+
+    @mock.patch("pandas.read_csv")
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test__load_cell_table_slice(self, mock_open, mock_pd_read_csv):
+        manifest_file_path = "tests/functional/res/cell_metadata_manifest"
+        with open(manifest_file_path) as f:
+            mock_open.return_value = f
+            self.matrix_converter.cell_manifest = self.matrix_converter._parse_manifest("test_manifest_key")
+
+        self.matrix_converter._load_cell_table_slice(3)
+
+        pandas_args = mock_pd_read_csv.call_args[-2]
+        pandas_kwargs = mock_pd_read_csv.call_args[-1]
+
+        self.assertIn("project.project_core.project_short_name", pandas_kwargs["names"])
+        self.assertTrue(pandas_args[0].startswith("s3://"))
 
     def test_converter_with_file_formats(self):
         for file_format in SUPPORTED_FORMATS:
