@@ -37,8 +37,8 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'librarykey': 'library_preparation_protocol.provenance.document_id',
     'input_nucleic_acid_ontology': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology',
     'input_nucleic_acid_label': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology_label',
-    'construction_approach_ontology': 'library_preparation_protocol.library_construction_approach.ontology',
-    'construction_approach_label': 'library_preparation_protocol.library_construction_approach.ontology_label',
+    'construction_approach_ontology': 'library_preparation_protocol.library_construction_method.ontology',
+    'construction_approach_label': 'library_preparation_protocol.library_construction_method.ontology_label',
     'end_bias': 'library_preparation_protocol.end_bias',
     'strand': 'library_preparation_protocol.strand',
     'short_name': 'project.project_core.project_short_name'

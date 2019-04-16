@@ -7,6 +7,7 @@ import typing
 from threading import Lock
 
 import requests
+from humancellatlas.data.metadata.api import lookup
 
 from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
@@ -66,8 +67,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
                 self._generate_psv_row(library_info['key'],
                                        library_info['input_nucleic_acid'],
                                        odict.get(library_info["input_nucleic_acid"], ""),
-                                       library_info['construction_approach'],
-                                       odict.get(library_info['construction_approach'], ""),
+                                       library_info['construction_method'],
+                                       odict.get(library_info['construction_method'], ""),
                                        library_info['end_bias'],
                                        library_info['strand']))
 
@@ -209,7 +210,7 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             model_organs = set()
             for organoid_json_path in organoid_json_paths:
                 organoid_json = json.load(open(organoid_json_path))
-                model_organ = organoid_json["model_for_organ"]["ontology"]
+                model_organ = lookup(organoid_json, "model_organ", "model_for_organ")["ontology"]
                 model_organs.add(model_organ)
 
             if len(model_organs) == 1:
@@ -222,7 +223,9 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         if cell_line_json_paths:
             cell_suspension_path = os.path.join(bundle_path, "cell_suspension_0.json")
             cell_suspension_json = json.load(open(cell_suspension_path))
-            selected_cell_type = cell_suspension_json['selected_cell_type'][0]['ontology']
+            selected_cell_type = lookup(cell_suspension_json,
+                                        "selected_cell_types",
+                                        "selected_cell_type")[0]["ontology"]
             return {"organ": selected_cell_type + " (cell line)",
                     "organ_part": selected_cell_type + " (cell line)"}
 
@@ -247,15 +250,16 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
 
         input_nucleic_acid = library_dict.get(
             "input_nucleic_acid_molecule", {}).get("ontology", "").upper()
-        construction_approach = library_dict.get(
-            "library_construction_approach", {}).get("ontology", "").upper()
+        construction_method = lookup(library_dict,
+                                     "library_construction_method",
+                                     "library_construction_approach").get("ontology", "").upper()
         end_bias = library_dict.get("end_bias", "")
         strand = library_dict.get("strand", "")
 
         return {
             "key": key,
             "input_nucleic_acid": input_nucleic_acid,
-            "construction_approach": construction_approach,
+            "construction_method": construction_method,
             "end_bias": end_bias,
             "strand": strand
         }
