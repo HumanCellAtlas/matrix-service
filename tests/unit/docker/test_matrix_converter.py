@@ -3,8 +3,6 @@ import datetime
 import unittest
 from unittest import mock
 
-import pandas
-
 from matrix.common import date
 from matrix.common.request.request_tracker import Subtask
 from matrix.docker.matrix_converter import main, MatrixConverter, SUPPORTED_FORMATS
