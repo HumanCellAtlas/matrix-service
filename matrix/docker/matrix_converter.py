@@ -256,7 +256,8 @@ class MatrixConverter:
 
         # Load the gene metadata and write it out to a tsv
         gene_df = self._load_gene_table()
-        gene_df.to_csv(os.path.join(results_dir, "genes.tsv.gz"), index_label="featurekey", sep="\t")
+        gene_df.to_csv(os.path.join(results_dir, "genes.tsv.gz"), index_label="featurekey",
+                       sep="\t", compression="gzip")
         cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
 
         # To follow 10x conventions, features are rows and cells are columns
@@ -289,7 +290,8 @@ class MatrixConverter:
                         cellkeys.append(cell_group[0])
 
         cell_df = cell_df.reindex(index=cellkeys)
-        cell_df.to_csv(os.path.join(results_dir, "cells.tsv.gz"), sep='\t', index_label="cellkey")
+        cell_df.to_csv(os.path.join(results_dir, "cells.tsv.gz"), sep='\t',
+                       index_label="cellkey", compression="gzip")
 
         # Create a zip file out of the three written files.
         zipf = zipfile.ZipFile(self.local_output_filename, 'w')
@@ -418,7 +420,7 @@ class MatrixConverter:
                         single_cell_df = cell_group[1]
                         single_cell_df.pivot(
                             index="cellkey", columns="featurekey", values="exprvalue").reindex(
-                                columns=gene_df.index).to_csv(exp_f, header=False, float_format="%g", na_rep='0')
+                                columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
                         cellkeys.append(cell_group[0])
 
         cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
