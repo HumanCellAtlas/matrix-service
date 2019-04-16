@@ -3,7 +3,7 @@ import os
 import shutil
 import unittest
 
-from matrix.common.constants import BundleType
+from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, BundleType
 from matrix.common.etl import run_etl
 from matrix.common.etl.transformers.analysis import AnalysisTransformer
 from matrix.common.etl.transformers.cell_expression import CellExpressionTransformer
@@ -21,9 +21,7 @@ logger = Logging.get_logger(__name__)
 
 class TestTransformers(unittest.TestCase):
     DEPLOYMENT_STAGE = os.environ['DEPLOYMENT_STAGE']
-    DSS_STAGE = ("prod"
-                 if DEPLOYMENT_STAGE == "prod" or DEPLOYMENT_STAGE == "predev" or DEPLOYMENT_STAGE == "dev"
-                 else DEPLOYMENT_STAGE)
+    DSS_STAGE = MATRIX_ENV_TO_DSS_ENV[DEPLOYMENT_STAGE]
     TRANSFORMERS = [
         AnalysisTransformer,
         CellExpressionTransformer,
