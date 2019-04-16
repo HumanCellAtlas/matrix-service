@@ -88,6 +88,16 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[StateTableField.COMPLETED_DRIVER_EXECUTIONS.value], 5)
         self.assertEqual(entry[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
 
+    def test_set_table_field_with_value(self):
+        self.handler.create_state_table_entry(self.request_id)
+        response, entry = self._get_state_table_response_and_entry()
+        self.assertEqual(entry[StateTableField.BATCH_JOB_ID.value], "N/A")
+
+        field_enum = StateTableField.BATCH_JOB_ID
+        self.handler.set_table_field_with_value(DynamoTable.STATE_TABLE, self.request_id, field_enum, "123-123")
+        response, entry = self._get_state_table_response_and_entry()
+        self.assertEqual(entry[StateTableField.BATCH_JOB_ID.value], "123-123")
+
     def test_increment_table_field_output_table_path(self):
         self.handler.create_output_table_entry(self.request_id, 1, self.format)
 
@@ -111,6 +121,17 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         response, entry = self._get_state_table_response_and_entry()
         self.assertEqual(entry[StateTableField.COMPLETED_DRIVER_EXECUTIONS.value], 15)
         self.assertEqual(entry[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
+
+    def test_set_field(self):
+        self.handler.create_state_table_entry(self.request_id)
+        response, entry = self._get_state_table_response_and_entry()
+        self.assertEqual(entry[StateTableField.BATCH_JOB_ID.value], "N/A")
+
+        key_dict = {"RequestId": self.request_id}
+        field_enum = StateTableField.BATCH_JOB_ID
+        self.handler._set_field(self.handler._state_table, key_dict, field_enum, "123-123")
+        response, entry = self._get_state_table_response_and_entry()
+        self.assertEqual(entry[StateTableField.BATCH_JOB_ID.value], "123-123")
 
     def test_get_state_table_entry(self):
         self.handler.create_state_table_entry(self.request_id)
@@ -140,10 +161,3 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.handler.create_output_table_entry(self.request_id, 1, self.format)
         entry = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_id=self.request_id)
         self.assertEqual(entry[OutputTableField.ROW_COUNT.value], 0)
-
-    def test_write_request_error(self):
-        self.handler.create_output_table_entry(self.request_id, 1, self.format)
-
-        self.handler.write_request_error(self.request_id, "test error")
-        output = self.handler.get_table_item(DynamoTable.OUTPUT_TABLE, request_id=self.request_id)
-        self.assertEqual(output[OutputTableField.ERROR_MESSAGE.value], "test error")

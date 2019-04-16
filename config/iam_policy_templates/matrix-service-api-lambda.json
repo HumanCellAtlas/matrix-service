@@ -63,6 +63,15 @@
       "Resource": [
         "arn:aws:secretsmanager:us-east-1:${account_id}:secret:dcp/matrix/${DEPLOYMENT_STAGE}/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "batch:Describe*"
+      ],
+      "Resource": [
+        "*"
+      ]
     }
   ]
 }

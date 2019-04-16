@@ -24,12 +24,12 @@ class TestBatchHandler(unittest.TestCase):
         job_name = f"conversion-{os.environ['DEPLOYMENT_STAGE']}-{self.request_id}-{format}"
 
         self.batch_handler.schedule_matrix_conversion(self.request_id, format)
-        mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_REQUEST, metric_value=1)
         mock_enqueue_batch_job.assert_called_once_with(job_name=job_name,
                                                        job_queue_arn=os.environ['BATCH_CONVERTER_JOB_QUEUE_ARN'],
                                                        job_def_arn=os.environ['BATCH_CONVERTER_JOB_DEFINITION_ARN'],
                                                        command=mock.ANY,
                                                        environment=mock.ANY)
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_REQUEST, metric_value=1)
 
     def test_enqueue_batch_job(self):
         expected_params = {
@@ -49,3 +49,24 @@ class TestBatchHandler(unittest.TestCase):
         self.mock_batch_client.activate()
 
         self.batch_handler._enqueue_batch_job("test_job_name", "test_job_queue", "test_job_definition", [], {})
+
+    def test_get_batch_job_status(self):
+        expected_params = {
+            'jobs': ['123']
+        }
+        expected_response = {
+            'jobs': [{
+                'status': "FAILED",
+                'jobName': "test_job_name",
+                'jobId': "test_job_id",
+                'jobQueue': "test_job_queue",
+                'startedAt': 123,
+                'jobDefinition': "test_job_definition"
+            }]
+        }
+        self.mock_batch_client.add_response('describe_jobs', expected_response, expected_params)
+        self.mock_batch_client.activate()
+
+        status = self.batch_handler.get_batch_job_status('123')
+
+        self.assertEqual(status, 'FAILED')

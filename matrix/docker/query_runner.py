@@ -60,7 +60,8 @@ class QueryRunner:
 
                     if request_tracker.is_request_ready_for_conversion():
                         logger.info("Scheduling batch conversion job")
-                        self.batch_handler.schedule_matrix_conversion(request_id, request_tracker.format)
+                        batch_job_id = self.batch_handler.schedule_matrix_conversion(request_id, request_tracker.format)
+                        request_tracker.write_batch_job_id_to_db(batch_job_id)
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
                     request_tracker.log_error(str(e))
