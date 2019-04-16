@@ -13,7 +13,16 @@ class TransformerValidator(unittest.TestCase):
 class AnalysisValidator(TransformerValidator):
     def validate(self, actual_rows: typing.Tuple, expected_rows: dict, bundle_type: BundleType):
         analysis_rows = actual_rows[0][1]
-        self.assertTrue(expected_rows[TableName.ANALYSIS] in analysis_rows)
+
+        # assumes 1 analysis row per bundle
+        actual_vals = next(iter(analysis_rows)).split("|")
+        expected_vals = expected_rows[TableName.ANALYSIS].split("|")
+
+        # ignore bundle_fqid as version may change
+        actual_vals.pop(1)
+        expected_vals.pop(1)
+
+        self.assertEqual(actual_vals, expected_vals)
 
 
 class CellExpressionValidator(TransformerValidator):
