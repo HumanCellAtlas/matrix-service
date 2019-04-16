@@ -174,20 +174,11 @@ class DynamoHandler:
           field_value: Value to set for field
         """
         field_enum_value = field_enum.value
-        while True:
-            try:
-                table.update_item(
-                    Key=key_dict,
-                    UpdateExpression=f"SET {field_enum_value} = :n",
-                    ExpressionAttributeValues={":n": field_value}
-                )
-                break
-            except botocore.exceptions.ClientError as exc:
-                if exc.response['Error']['Code'] == "ConditionalCheckFailedException":
-                    pass
-                else:
-                    raise
-            time.sleep(.5)
+        table.update_item(
+            Key=key_dict,
+            UpdateExpression=f"SET {field_enum_value} = :n",
+            ExpressionAttributeValues={":n": field_value}
+        )
 
     def _increment_field(self, table, key_dict: dict, field_enum: TableField, increment_size: int):
         """Increment a value in a dynamo table safely.

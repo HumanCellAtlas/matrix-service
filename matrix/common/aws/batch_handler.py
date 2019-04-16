@@ -4,6 +4,7 @@ import boto3
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from matrix.common.aws.dynamo_handler import DynamoTable
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
 
@@ -16,7 +17,7 @@ class BatchHandler:
         self.s3_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
         self.job_queue_arn = os.environ['BATCH_CONVERTER_JOB_QUEUE_ARN']
         self.job_def_arn = os.environ['BATCH_CONVERTER_JOB_DEFINITION_ARN']
-
+        self._cloudwatch_handler = CloudwatchHandler()
         self._client = boto3.client("batch", region_name=os.environ['AWS_DEFAULT_REGION'])
 
     @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
@@ -58,6 +59,10 @@ class BatchHandler:
                                                job_def_arn=self.job_def_arn,
                                                command=command,
                                                environment=environment)
+        self._cloudwatch_handler.put_metric_data(
+            metric_name=MetricName.CONVERSION_REQUEST,
+            metric_value=1
+        )
         return batch_job_id
 
     @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))

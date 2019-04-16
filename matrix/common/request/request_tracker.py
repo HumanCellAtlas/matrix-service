@@ -262,7 +262,3 @@ class RequestTracker:
                                                        self.request_id,
                                                        StateTableField.BATCH_JOB_ID,
                                                        batch_job_id)
-        self.cloudwatch_handler.put_metric_data(
-            metric_name=MetricName.CONVERSION_REQUEST,
-            metric_value=1
-        )

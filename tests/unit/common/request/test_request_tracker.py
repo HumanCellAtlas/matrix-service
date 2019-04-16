@@ -159,12 +159,10 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertTrue(self.request_tracker.timeout)
         mock_log_error.assert_called_once()
 
-    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
-    def test_write_batch_job_id_to_db(self, mock_set_table_field_with_value, mock_cw_put):
+    def test_write_batch_job_id_to_db(self, mock_set_table_field_with_value):
         self.request_tracker.write_batch_job_id_to_db("123-123")
         mock_set_table_field_with_value.assert_called_once_with(DynamoTable.STATE_TABLE,
                                                                 self.request_id,
                                                                 StateTableField.BATCH_JOB_ID,
                                                                 "123-123")
-        mock_cw_put.assert_called_once_with(metric_name=MetricName.CONVERSION_REQUEST, metric_value=1)
