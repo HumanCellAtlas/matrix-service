@@ -223,7 +223,7 @@ resource "aws_batch_job_definition" "converter_job_def" {
 {
   "command": [],
   "image": "humancellatlas/matrix-converter:14",
-  "memory": 2048,
+  "memory": 8192,
   "vcpus": 2,
   "jobRoleArn": "${aws_iam_role.converter_job_role.arn}",
   "volumes": [{
