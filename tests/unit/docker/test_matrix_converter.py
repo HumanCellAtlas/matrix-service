@@ -100,8 +100,6 @@ class TestMatrixConverter(unittest.TestCase):
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date", new_callable=mock.PropertyMock)
     @mock.patch("scipy.sparse.hstack")
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._parse_manifest")
-    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._load_table")
-    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._load_table_by_part")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_request")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("s3fs.S3FileSystem.put")
@@ -124,8 +122,6 @@ class TestMatrixConverter(unittest.TestCase):
                                          mock_s3_put,
                                          mock_complete_subtask_execution,
                                          mock_complete_request,
-                                         mock_load_table_by_part,
-                                         mock_load_table,
                                          mock_parse_manifest,
                                          mock_hstack,
                                          mock_creation_date,
@@ -133,7 +129,6 @@ class TestMatrixConverter(unittest.TestCase):
         mock_s3_fs.return_value = None
         mock_s3_map.return_value = None
         mock_creation_date.return_value = date.to_string(datetime.datetime.utcnow())
-        mock_load_table.return_value = pandas.DataFrame()
 
         main(["test_id", "test_exp_manifest", "test_cell_manifest", "test_gene_manifest", "test_target", file_format])
 

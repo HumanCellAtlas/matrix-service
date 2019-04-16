@@ -201,40 +201,6 @@ class MatrixConverter:
         if remainder is not None:
             yield remainder
 
-    def _load_table(self, manifest, index_col=None):
-        """Function to read all the manifest parts and return
-        the concatenated dataframe
-
-        Args:
-            manifest: parsed manifest from _parse_manifest
-            index_col (optional): column to set as the dataframe index
-
-        Returns:
-            concatenated DataFrame
-        """
-
-        dfs = self._load_table_by_part(manifest)
-        return pandas.concat(dfs, copy=False)
-
-    def _load_table_by_part(self, manifest, index_col=None):
-        """Generator to read each table part file specified in a manifest and yield
-        dataframes for each part.
-
-        Args:
-            manifest: parsed manifest from _parse_manifest
-            index_col (optional): column to set as the dataframe index
-
-        Yields:
-            Dataframe read from one slice's Redshift output.
-        """
-
-        columns = self._map_columns(manifest['columns'])
-        for part_url in manifest["part_urls"]:
-            df = pandas.read_csv(part_url, sep='|', header=None, names=columns,
-                                 true_values=["t"], false_values=["f"],
-                                 index_col=index_col)
-            yield df
-
     def _map_columns(self, cols):
         return [TABLE_COLUMN_TO_METADATA_FIELD[col]
                 if col in TABLE_COLUMN_TO_METADATA_FIELD else col
