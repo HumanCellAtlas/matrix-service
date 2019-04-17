@@ -17,6 +17,23 @@ class MatrixRequestStatus(Enum):
     FAILED = "Failed"
 
 
+class BundleType(Enum):
+    """
+    Supported bundle types
+    """
+    SS2 = "ss2"
+    CELLRANGER = "cellranger"
+
+
+MATRIX_ENV_TO_DSS_ENV = {
+    'predev': "prod",
+    'dev': "prod",
+    'integration': "integration",
+    'staging': "staging",
+    'prod': "prod",
+}
+
+
 CREATE_QUERY_TEMPLATE = {
     'cell': """
         CREATE {0}TABLE IF NOT EXISTS {2} (

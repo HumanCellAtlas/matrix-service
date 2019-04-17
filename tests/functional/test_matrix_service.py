@@ -8,17 +8,9 @@ import s3fs
 
 from . import validation
 from .wait_for import WaitFor
-from matrix.common.constants import MatrixRequestStatus
+from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus
 from matrix.common.aws.redshift_handler import RedshiftHandler
 
-
-MATRIX_ENV_TO_DSS_ENV = {
-    'predev': "prod",
-    'dev': "prod",
-    'integration': "integration",
-    'staging': "staging",
-    'prod': "prod",
-}
 
 INPUT_BUNDLE_IDS = {
     "integration": [
