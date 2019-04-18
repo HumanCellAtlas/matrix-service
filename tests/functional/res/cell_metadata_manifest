@@ -1,0 +1,47 @@
+{
+  "entries": [
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0000_part_00.gz", "meta": { "content_length": 10963, "record_count": 310 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0001_part_00.gz", "meta": { "content_length": 10905, "record_count": 306 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0002_part_00.gz", "meta": { "content_length": 11368, "record_count": 315 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0003_part_00.gz", "meta": { "content_length": 12567, "record_count": 352 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0004_part_00.gz", "meta": { "content_length": 10683, "record_count": 299 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0005_part_00.gz", "meta": { "content_length": 10851, "record_count": 297 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0006_part_00.gz", "meta": { "content_length": 11802, "record_count": 325 }},
+    {"url":"s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_0007_part_00.gz", "meta": { "content_length": 11882, "record_count": 340 }}
+  ],
+  "schema": {
+    "elements": [
+      {"name": "cellkey", "type": { "base": "character varying", "max_length": 60 }},
+      {"name": "genes_detected", "type": { "base": "integer" }},
+      {"name": "specimenkey", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "genus_species_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "genus_species_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "ethnicity_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "ethnicity_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "disease_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "disease_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "development_stage_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "development_stage_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "organ_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "organ_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "organ_part_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "organ_part_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "librarykey", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "input_nucleic_acid_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "input_nucleic_acid_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "construction_approach_ontology", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "construction_approach_label", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "end_bias", "type": { "base": "character varying", "max_length": 20 }},
+      {"name": "strand", "type": { "base": "character varying", "max_length": 20 }},
+      {"name": "short_name", "type": { "base": "character varying", "max_length": 100 }}
+    ]
+  },
+  "meta": {
+    "content_length": 91021,
+    "record_count": 2544
+  },
+  "author": {
+    "name": "Amazon Redshift",
+    "version": "1.0.0"
+  }
+}
