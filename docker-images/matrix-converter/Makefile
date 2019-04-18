@@ -12,6 +12,7 @@ IMAGE=matrix-converter
 
 build:
 	mkdir -p code
+	cp -R requirements.txt code/
 	cp -R ../../matrix code/
 	cp -R ../../matrix/docker/matrix_converter.py code
 	docker build -t $(IMAGE) .
