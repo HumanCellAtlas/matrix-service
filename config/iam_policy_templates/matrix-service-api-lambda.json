@@ -39,6 +39,15 @@
     {
       "Effect": "Allow",
       "Action": [
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-output-table-${DEPLOYMENT_STAGE}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
         "dynamodb:PutItem"
       ],
       "Resource": [
