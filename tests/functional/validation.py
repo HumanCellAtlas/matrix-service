@@ -1,5 +1,6 @@
 import concurrent.futures
 import csv
+import gzip
 import io
 import os
 import shutil
@@ -107,9 +108,9 @@ def calculate_ss2_metrics_mtx(mtx_zip_url):
         shutil.copyfileobj(response.raw, local_mtx_zip_file)
 
     mtx_zip = zipfile.ZipFile(local_mtx_zip_path)
-    mtx_name = [n for n in mtx_zip.namelist() if n.endswith("matrix.mtx")][0]
+    mtx_name = [n for n in mtx_zip.namelist() if n.endswith("matrix.mtx.gz")][0]
 
-    matrix = scipy.io.mmread(io.BytesIO(mtx_zip.read(mtx_name)))
+    matrix = scipy.io.mmread(gzip.GzipFile(fileobj=io.BytesIO(mtx_zip.read(mtx_name))))
 
     return {
         "expression_sum": numpy.sum(matrix),
@@ -127,8 +128,9 @@ def calculate_ss2_metrics_csv(csv_zip_url):
         shutil.copyfileobj(response.raw, local_csv_zip_file)
 
     csv_zip = zipfile.ZipFile(local_csv_zip_path)
+    csv_name = [n for n in csv_zip.namelist() if n.endswith("expression.csv")][0]
     exp_pdata = pandas.read_csv(
-        io.StringIO(csv_zip.read(csv_zip.namelist()[1]).decode()),
+        io.StringIO(csv_zip.read(csv_name).decode()),
         header=0,
         index_col=0)
 
