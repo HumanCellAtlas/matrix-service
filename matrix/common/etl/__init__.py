@@ -97,7 +97,6 @@ def finalizer_reload(extractor: DSSExtractor):
     :param extractor: ETL extractor object
     """
     logger.info(f"ETL: All bundles downloaded. Performing final PSV transformations.")
-    job_id = str(uuid.uuid4())
     transformers = [
         FeatureTransformer(extractor.sd),
         AnalysisTransformer(extractor.sd),
@@ -112,8 +111,7 @@ def finalizer_reload(extractor: DSSExtractor):
             logger.error(f"Failed to run transformer {transformer}", e)
 
     logger.info(f"ETL: All transformations complete.")
-    _upload_to_s3(os.path.join(extractor.sd, MetadataToPsvTransformer.OUTPUT_DIRNAME), job_id)
-    _populate_all_tables(job_id, temp=False)
+    load_from_local_files(extractor.sd, is_update=False)
 
 
 def finalizer_update(extractor: DSSExtractor):
@@ -123,7 +121,6 @@ def finalizer_update(extractor: DSSExtractor):
     :return:
     """
     logger.info(f"ETL: All bundles downloaded. Performing final PSV transformations.")
-    job_id = str(uuid.uuid4())
     transformers = [
         AnalysisTransformer(extractor.sd),
         SpecimenLibraryTransformer(extractor.sd),
@@ -137,8 +134,17 @@ def finalizer_update(extractor: DSSExtractor):
             logger.error(f"Failed to run transformer {transformer}", e)
 
     logger.info(f"ETL: All transformations complete.")
-    _upload_to_s3(os.path.join(extractor.sd, MetadataToPsvTransformer.OUTPUT_DIRNAME), job_id)
-    _populate_all_tables(job_id, temp=True)
+    load_from_local_files(extractor.sd, is_update=True)
+
+
+def load_from_local_files(staging_dir, is_update: bool=False):
+    job_id = str(uuid.uuid4())
+    _upload_to_s3(os.path.join(staging_dir, MetadataToPsvTransformer.OUTPUT_DIRNAME), job_id)
+    _populate_all_tables(job_id, is_update=is_update)
+
+
+def load_from_s3(job_id: str):
+    _populate_all_tables(job_id, is_update=False)
 
 
 def _upload_to_s3(output_dir, job_id: str):
@@ -168,7 +174,7 @@ def _upload_file_to_s3(path_to_file, s3_prefix):
         print(e)
 
 
-def _populate_all_tables(job_id: str, temp=False):
+def _populate_all_tables(job_id: str, is_update: bool=False):
     """
     Creates tables and loads PSVs in S3 into Redshift via SQL COPY.
     """
@@ -180,12 +186,12 @@ def _populate_all_tables(job_id: str, temp=False):
     redshift = RedshiftHandler()
     transaction = [lock_query]
     for table in TableName:
-        if (temp and table == TableName.FEATURE) or table == TableName.WRITE_LOCK:
+        if (is_update and table == TableName.FEATURE) or table == TableName.WRITE_LOCK:
             continue
         s3_prefix = f"s3://{os.environ['MATRIX_PRELOAD_BUCKET']}/{job_id}/{table.value}"
         iam = os.environ['MATRIX_REDSHIFT_IAM_ROLE_ARN']
 
-        table_name = table.value if not temp else f"{table.value}_temp"
+        table_name = table.value if not is_update else f"{table.value}_temp"
 
         if table == TableName.FEATURE:
             copy_stmt = f"COPY {table_name} FROM '{s3_prefix}' iam_role '{iam}' COMPUPDATE ON;"
@@ -196,7 +202,7 @@ def _populate_all_tables(job_id: str, temp=False):
         else:
             copy_stmt = f"COPY {table_name} FROM '{s3_prefix}' iam_role '{iam}';"
 
-        if temp:
+        if is_update:
             logger.info(f"ETL: Building queries to update {table.value} table")
             transaction.extend([
                 CREATE_QUERY_TEMPLATE[table.value].format("TEMP ", "_temp", table_name),

@@ -12,6 +12,8 @@ from matrix.common.etl import (run_etl,
                                transform_bundle,
                                finalizer_reload,
                                finalizer_update,
+                               load_from_local_files,
+                               load_from_s3,
                                _upload_to_s3,
                                _populate_all_tables,
                                _create_tables,
@@ -75,8 +77,7 @@ class TestEtl(unittest.TestCase):
         mock_error.assert_called_once_with("Failed to transform bundle test_uuid.test_version.", e)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
-    @mock.patch("matrix.common.etl._populate_all_tables")
-    @mock.patch("matrix.common.etl._upload_to_s3")
+    @mock.patch("matrix.common.etl.load_from_local_files")
     @mock.patch("matrix.common.etl.logger.error")
     @mock.patch("matrix.common.etl.transformers."
                 "project_publication_contributor.ProjectPublicationContributorTransformer.transform")
@@ -91,8 +92,7 @@ class TestEtl(unittest.TestCase):
                               mock_specimen_library_transformer,
                               mock_project_publication_contributor_transformer,
                               mock_error,
-                              mock_upload_to_s3,
-                              mock_populate_all_tables,
+                              mock_load_from_local_files,
                               mock_swagger_spec):
         mock_swagger_spec.return_value = self.stub_swagger_spec
         extractor = DSSExtractor(staging_directory="test_dir",
@@ -105,20 +105,16 @@ class TestEtl(unittest.TestCase):
         mock_analysis_transformer.assert_called_once_with("test_dir/bundles")
         mock_specimen_library_transformer.assert_called_once_with("test_dir/bundles")
         mock_project_publication_contributor_transformer.assert_called_once_with("test_dir/bundles")
-        mock_upload_to_s3.assert_called_once_with("test_dir/output", mock.ANY)
-        mock_populate_all_tables.assert_called_once_with(mock.ANY, temp=False)
+        mock_load_from_local_files.assert_called_once_with("test_dir", is_update=False)
 
-        mock_upload_to_s3.reset_mock()
-        mock_populate_all_tables.reset_mock()
+        mock_load_from_local_files.reset_mock()
         mock_feature_transformer.side_effect = Exception()
         finalizer_reload(extractor)
         self.assertTrue(mock_error.called)
-        mock_upload_to_s3.assert_called_once_with("test_dir/output", mock.ANY)
-        mock_populate_all_tables.assert_called_once_with(mock.ANY, temp=False)
+        mock_load_from_local_files.assert_called_once_with("test_dir", is_update=False)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
-    @mock.patch("matrix.common.etl._populate_all_tables")
-    @mock.patch("matrix.common.etl._upload_to_s3")
+    @mock.patch("matrix.common.etl.load_from_local_files")
     @mock.patch("matrix.common.etl.logger.error")
     @mock.patch("matrix.common.etl.transformers."
                 "project_publication_contributor.ProjectPublicationContributorTransformer.transform")
@@ -133,8 +129,7 @@ class TestEtl(unittest.TestCase):
                               mock_specimen_library_transformer,
                               mock_project_publication_contributor_transformer,
                               mock_error,
-                              mock_upload_to_s3,
-                              mock_populate_all_tables,
+                              mock_load_from_local_files,
                               mock_swagger_spec):
         mock_swagger_spec.return_value = self.stub_swagger_spec
         extractor = DSSExtractor(staging_directory="test_dir",
@@ -147,16 +142,25 @@ class TestEtl(unittest.TestCase):
         mock_analysis_transformer.assert_called_once_with("test_dir/bundles")
         mock_specimen_library_transformer.assert_called_once_with("test_dir/bundles")
         mock_project_publication_contributor_transformer.assert_called_once_with("test_dir/bundles")
-        mock_upload_to_s3.assert_called_once_with("test_dir/output", mock.ANY)
-        mock_populate_all_tables.assert_called_once_with(mock.ANY, temp=True)
+        mock_load_from_local_files.assert_called_once_with("test_dir", is_update=True)
 
-        mock_upload_to_s3.reset_mock()
-        mock_populate_all_tables.reset_mock()
+        mock_load_from_local_files.reset_mock()
         mock_analysis_transformer.side_effect = Exception()
         finalizer_update(extractor)
         self.assertTrue(mock_error.called)
+        mock_load_from_local_files.assert_called_once_with("test_dir", is_update=True)
+
+    @mock.patch("matrix.common.etl._populate_all_tables")
+    @mock.patch("matrix.common.etl._upload_to_s3")
+    def test_load_from_local_files(self, mock_upload_to_s3, mock_populate_all_tables):
+        load_from_local_files("test_dir")
         mock_upload_to_s3.assert_called_once_with("test_dir/output", mock.ANY)
-        mock_populate_all_tables.assert_called_once_with(mock.ANY, temp=True)
+        mock_populate_all_tables.assert_called_once_with(mock.ANY, is_update=False)
+
+    @mock.patch("matrix.common.etl._populate_all_tables")
+    def test_load_from_s3(self, mock_populate_all_tables):
+        load_from_s3("test_id")
+        mock_populate_all_tables.assert_called_once_with("test_id", is_update=False)
 
     @mock.patch("matrix.common.etl._upload_file_to_s3")
     def test_upload_to_s3(self, mock_upload_file_to_s3):
@@ -173,25 +177,25 @@ class TestEtl(unittest.TestCase):
     @mock.patch("matrix.common.etl.logger.error")
     @mock.patch("matrix.common.etl._create_tables")
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
-    def test_populate_all_tables_real(self, mock_transaction, mock_create_tables, mock_error):
+    def test_populate_all_tables_reload(self, mock_transaction, mock_create_tables, mock_error):
         job_id = str(uuid.uuid4())
-        _populate_all_tables(job_id, temp=False)
+        _populate_all_tables(job_id, is_update=False)
         mock_transaction.assert_called_once_with(mock.ANY)
 
         mock_transaction.side_effect = psycopg2.Error()
-        _populate_all_tables(job_id, temp=False)
+        _populate_all_tables(job_id, is_update=False)
         self.assertTrue(mock_error.called)
 
     @mock.patch("matrix.common.etl.logger.error")
     @mock.patch("matrix.common.etl._create_tables")
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
-    def test_populate_all_tables_temp(self, mock_transaction, mock_create_tables, mock_error):
+    def test_populate_all_tables_update(self, mock_transaction, mock_create_tables, mock_error):
         job_id = str(uuid.uuid4())
-        _populate_all_tables(job_id, temp=True)
+        _populate_all_tables(job_id, is_update=True)
         mock_transaction.assert_called_once_with(mock.ANY)
 
         mock_transaction.side_effect = psycopg2.Error()
-        _populate_all_tables(job_id, temp=True)
+        _populate_all_tables(job_id, is_update=True)
         self.assertTrue(mock_error.called)
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
