@@ -5,7 +5,6 @@ import gzip
 import json
 import os
 import sys
-import tempfile
 import zipfile
 
 import loompy
@@ -57,6 +56,7 @@ class MatrixConverter:
 
         self.local_output_filename = os.path.basename(os.path.normpath(args.target_path))
         self.target_path = args.target_path
+        self.working_dir = args.working_dir
         self.FS = s3fs.S3FileSystem()
 
         Logging.set_correlation_id(LOGGER, value=args.request_id)
@@ -217,8 +217,9 @@ class MatrixConverter:
         # write output files.
         if not self.local_output_filename.endswith(".zip"):
             self.local_output_filename += ".zip"
-        results_dir = os.path.splitext(self.local_output_filename)[0]
-        os.mkdir(results_dir)
+        results_dir = os.path.join(self.working_dir,
+                                   os.path.splitext(self.local_output_filename)[0])
+        os.makedirs(results_dir)
 
         # Load the gene metadata and write it out to a tsv
         gene_df = self._load_gene_table()
@@ -260,14 +261,17 @@ class MatrixConverter:
                        index_label="cellkey", compression="gzip")
 
         # Create a zip file out of the three written files.
-        zipf = zipfile.ZipFile(self.local_output_filename, 'w')
-        zipf.write(os.path.join(results_dir, "genes.tsv.gz"))
-        zipf.write(os.path.join(results_dir, "matrix.mtx.gz"))
-        zipf.write(os.path.join(results_dir, "cells.tsv.gz"))
+        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w')
+        zipf.write(os.path.join(results_dir, "genes.tsv.gz"),
+                   arcname=os.path.join(os.path.basename(results_dir), "genes.tsv.gz"))
+        zipf.write(os.path.join(results_dir, "matrix.mtx.gz"),
+                   arcname=os.path.join(os.path.basename(results_dir), "matrix.mtx.gz"))
+        zipf.write(os.path.join(results_dir, "cells.tsv.gz"),
+                   arcname=os.path.join(os.path.basename(results_dir), "cells.tsv.gz"))
         zipf.write("mtx_readme.txt")
         zipf.close()
 
-        return self.local_output_filename
+        return os.path.join(self.working_dir, self.local_output_filename)
 
     def _to_loom(self):
         """Write a loom file from Redshift query manifests.
@@ -291,7 +295,8 @@ class MatrixConverter:
             row_attrs[key] = val.values
 
         loom_parts = []
-        loom_part_dir = tempfile.mkdtemp()
+        loom_part_dir = os.path.join(self.working_dir, ".loom_parts")
+        os.makedirs(loom_part_dir)
 
         # Iterate over the "slices" produced by the redshift query
         for slice_idx in range(self._n_slices()):
@@ -351,9 +356,11 @@ class MatrixConverter:
 
         # Using the loompy method, combine all the chunks together into a
         # single file.
-        loompy.combine(loom_parts, key="Accession", output_file=self.local_output_filename)
+        loompy.combine(loom_parts,
+                       key="Accession",
+                       output_file=os.path.join(self.working_dir, self.local_output_filename))
 
-        return self.local_output_filename
+        return os.path.join(self.working_dir, self.local_output_filename)
 
     def _to_csv(self):
         """Write a zip file with csvs from Redshift query manifests and readme.
@@ -365,8 +372,9 @@ class MatrixConverter:
         if not self.local_output_filename.endswith(".zip"):
             self.local_output_filename += ".zip"
 
-        results_dir = os.path.splitext(self.local_output_filename)[0]
-        os.mkdir(results_dir)
+        results_dir = os.path.join(self.working_dir,
+                                   os.path.splitext(self.local_output_filename)[0])
+        os.makedirs(results_dir)
 
         gene_df = self._load_gene_table()
         gene_df.to_csv(os.path.join(results_dir, "genes.csv"), index_label="featurekey")
@@ -393,10 +401,13 @@ class MatrixConverter:
         cell_df = cell_df.reindex(index=cellkeys)
         cell_df.to_csv(os.path.join(results_dir, "cells.csv"), index_label="cellkey")
 
-        zipf = zipfile.ZipFile(self.local_output_filename, 'w', zipfile.ZIP_DEFLATED)
-        zipf.write(os.path.join(results_dir, "genes.csv"))
-        zipf.write(os.path.join(results_dir, "expression.csv"))
-        zipf.write(os.path.join(results_dir, "cells.csv"))
+        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w', zipfile.ZIP_DEFLATED)
+        zipf.write(os.path.join(results_dir, "genes.csv"),
+                   arcname=os.path.join(os.path.basename(results_dir), "genes.csv"))
+        zipf.write(os.path.join(results_dir, "expression.csv"),
+                   arcname=os.path.join(os.path.basename(results_dir), "expression.csv"))
+        zipf.write(os.path.join(results_dir, "cells.csv"),
+                   arcname=os.path.join(os.path.basename(results_dir), "cells.csv"))
         zipf.write("csv_readme.txt")
         zipf.close()
 
@@ -432,6 +443,8 @@ def main(args):
     parser.add_argument("format",
                         help="Target format for conversion",
                         choices=SUPPORTED_FORMATS)
+    parser.add_argument("working_dir",
+                        help="Directory to write local files.")
     args = parser.parse_args(args)
     LOGGER.debug(
         f"Starting matrix conversion job with parameters: "

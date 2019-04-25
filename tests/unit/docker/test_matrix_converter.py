@@ -11,7 +11,8 @@ from matrix.docker.matrix_converter import main, MatrixConverter, SUPPORTED_FORM
 class TestMatrixConverter(unittest.TestCase):
 
     def setUp(self):
-        args = ["test_id", "test_exp_manifest", "test_cell_manifest", "test_gene_manifest", "test_target", "loom"]
+        args = ["test_id", "test_exp_manifest", "test_cell_manifest",
+                "test_gene_manifest", "test_target", "loom", "."]
         parser = argparse.ArgumentParser()
         parser.add_argument("request_id")
         parser.add_argument("expression_manifest_key")
@@ -19,6 +20,7 @@ class TestMatrixConverter(unittest.TestCase):
         parser.add_argument("gene_metadata_manifest_key")
         parser.add_argument("target_path")
         parser.add_argument("format", choices=SUPPORTED_FORMATS)
+        parser.add_argument("working_dir")
         args = parser.parse_args(args)
         self.matrix_converter = MatrixConverter(args)
 
@@ -128,7 +130,8 @@ class TestMatrixConverter(unittest.TestCase):
         mock_s3_map.return_value = None
         mock_creation_date.return_value = date.to_string(datetime.datetime.utcnow())
 
-        main(["test_id", "test_exp_manifest", "test_cell_manifest", "test_gene_manifest", "test_target", file_format])
+        main(["test_id", "test_exp_manifest", "test_cell_manifest",
+              "test_gene_manifest", "test_target", file_format, "."])
 
         if file_format == "loom":
             mock_to_loom.assert_called_once()

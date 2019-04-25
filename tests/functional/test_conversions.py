@@ -54,7 +54,8 @@ class TestConversions(unittest.TestCase):
     def tearDownClass(cls):
         """Clean up the files created by the tests."""
 
-        to_delete = ["test.mtx.zip", "test.csv.zip", "test.loom", "test.mtx", "test.csv"]
+        to_delete = ["test.mtx.zip", "test.csv.zip", "test.loom",
+                     "test.mtx", "test.csv", ".loom_parts"]
 
         for path in to_delete:
             if os.path.isdir(path):
@@ -124,7 +125,8 @@ class TestConversions(unittest.TestCase):
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
             target_path="test.csv.zip",
-            format="csv")
+            format="csv",
+            working_dir=".")
 
         with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker:
             matrix_converter = MatrixConverter(args)
@@ -190,7 +192,8 @@ class TestConversions(unittest.TestCase):
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
             target_path="test.mtx.zip",
-            format="mtx")
+            format="mtx",
+            working_dir=".")
 
         with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker:
             matrix_converter = MatrixConverter(args)
@@ -260,7 +263,8 @@ class TestConversions(unittest.TestCase):
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
             target_path="test.loom",
-            format="loom")
+            format="loom",
+            working_dir=".")
 
         with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker:
             matrix_converter = MatrixConverter(args)
