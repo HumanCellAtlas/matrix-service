@@ -9,7 +9,7 @@ import psycopg2
 from dcplib.etl import DSSExtractor
 
 from matrix.common.aws.redshift_handler import RedshiftHandler, TableName
-from matrix.common.constants import CREATE_QUERY_TEMPLATE
+from matrix.common.constants import CREATE_QUERY_TEMPLATE, MATRIX_ENV_TO_DSS_ENV
 from matrix.common.logging import Logging
 from .transformers import MetadataToPsvTransformer
 from .transformers.cell_expression import CellExpressionTransformer
@@ -234,13 +234,11 @@ def get_dss_client(deployment_stage: str):
     """
     Returns appropriate DSSClient for deployment_stage.
     """
-
-    if deployment_stage == "prod" or deployment_stage == "dev" or deployment_stage == "predev":
+    dss_env = MATRIX_ENV_TO_DSS_ENV[deployment_stage]
+    if dss_env == "prod":
         swagger_url = "https://dss.data.humancellatlas.org/v1/swagger.json"
-    elif deployment_stage == "staging":
-        swagger_url = "https://dss.staging.data.humancellatlas.org/v1/swagger.json"
     else:
-        swagger_url = "https://dss.integration.data.humancellatlas.org/v1/swagger.json"
+        swagger_url = f"https://dss.{dss_env}.data.humancellatlas.org/v1/swagger.json"
 
     logger.info(f"ETL: Hitting DSS with Swagger URL: {swagger_url}")
 

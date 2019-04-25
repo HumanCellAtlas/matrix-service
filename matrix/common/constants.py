@@ -29,7 +29,7 @@ MATRIX_ENV_TO_DSS_ENV = {
     'predev': "prod",
     'dev': "prod",
     'integration': "integration",
-    'staging': "staging",
+    'staging': "prod",
     'prod': "prod",
 }
 
