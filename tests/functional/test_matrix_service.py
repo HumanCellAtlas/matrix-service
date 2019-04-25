@@ -103,8 +103,7 @@ class TestMatrixService(unittest.TestCase):
         WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
             .to_return_value(1, timeout_seconds=600)
 
-    @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') == "staging",
-                         "SS2 Pancreas bundles are only available in staging.")
+    @unittest.skip
     def test_matrix_service_ss2(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
         num_bundles = int(os.getenv("MATRIX_TEST_NUM_BUNDLES", 200))
