@@ -128,7 +128,8 @@ class TestConversions(unittest.TestCase):
             format="csv",
             working_dir=".")
 
-        with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker:
+        with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker, \
+                mock.patch("os.remove"):
             matrix_converter = MatrixConverter(args)
             matrix_converter.FS = s3fs.S3FileSystem(anon=True)
 
@@ -195,7 +196,8 @@ class TestConversions(unittest.TestCase):
             format="mtx",
             working_dir=".")
 
-        with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker:
+        with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker, \
+                mock.patch("os.remove"):
             matrix_converter = MatrixConverter(args)
             matrix_converter.FS = s3fs.S3FileSystem(anon=True)
 
@@ -266,7 +268,8 @@ class TestConversions(unittest.TestCase):
             format="loom",
             working_dir=".")
 
-        with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker:
+        with mock.patch("matrix.docker.matrix_converter.RequestTracker") as mock_request_tracker, \
+                mock.patch("os.remove"):
             matrix_converter = MatrixConverter(args)
             matrix_converter.FS = s3fs.S3FileSystem(anon=True)
 

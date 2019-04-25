@@ -24,6 +24,7 @@ class TestMatrixConverter(unittest.TestCase):
         args = parser.parse_args(args)
         self.matrix_converter = MatrixConverter(args)
 
+    @mock.patch("os.remove")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_request")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
@@ -36,7 +37,8 @@ class TestMatrixConverter(unittest.TestCase):
                  mock_upload_converted_matrix,
                  mock_subtask_exec,
                  mock_complete_request,
-                 mock_creation_date):
+                 mock_creation_date,
+                 mock_os_remove):
         mock_creation_date.return_value = date.to_string(datetime.datetime.utcnow())
         mock_to_loom.return_value = "local_matrix_path"
 
@@ -96,6 +98,7 @@ class TestMatrixConverter(unittest.TestCase):
             with self.subTest(f"Converting to {file_format}"):
                 self._test_converter_with_file_format(file_format)
 
+    @mock.patch("os.remove")
     @mock.patch("os.mkdir")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date", new_callable=mock.PropertyMock)
     @mock.patch("scipy.sparse.hstack")
@@ -125,7 +128,8 @@ class TestMatrixConverter(unittest.TestCase):
                                          mock_parse_manifest,
                                          mock_hstack,
                                          mock_creation_date,
-                                         mock_os_mkdir):
+                                         mock_os_mkdir,
+                                         mock_os_remove):
         mock_s3_fs.return_value = None
         mock_s3_map.return_value = None
         mock_creation_date.return_value = date.to_string(datetime.datetime.utcnow())

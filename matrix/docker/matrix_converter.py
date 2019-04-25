@@ -4,6 +4,7 @@ import argparse
 import gzip
 import json
 import os
+import shutil
 import sys
 import zipfile
 
@@ -75,6 +76,8 @@ class MatrixConverter:
             LOGGER.debug(f"Beginning upload to S3")
             self._upload_converted_matrix(local_converted_path, self.target_path)
             LOGGER.debug("Upload to S3 complete, job finished")
+
+            os.remove(local_converted_path)
 
             self.request_tracker.complete_subtask_execution(Subtask.CONVERTER)
             self.request_tracker.complete_request(duration=(date.get_datetime_now() -
@@ -271,6 +274,8 @@ class MatrixConverter:
         zipf.write("mtx_readme.txt")
         zipf.close()
 
+        shutil.rmtree(results_dir)
+
         return os.path.join(self.working_dir, self.local_output_filename)
 
     def _to_loom(self):
@@ -359,6 +364,7 @@ class MatrixConverter:
         loompy.combine(loom_parts,
                        key="Accession",
                        output_file=os.path.join(self.working_dir, self.local_output_filename))
+        shutil.rmtree(loom_part_dir)
 
         return os.path.join(self.working_dir, self.local_output_filename)
 
@@ -410,6 +416,8 @@ class MatrixConverter:
                    arcname=os.path.join(os.path.basename(results_dir), "cells.csv"))
         zipf.write("csv_readme.txt")
         zipf.close()
+
+        shutil.rmtree(results_dir)
 
         return self.local_output_filename
 
