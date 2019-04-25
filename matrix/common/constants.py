@@ -127,7 +127,7 @@ CREATE_QUERY_TEMPLATE = {
     'project': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
             projectkey            VARCHAR(60) NOT NULL,
-            short_name            VARCHAR(100) NOT NULL,
+            short_name            VARCHAR(150) NOT NULL,
             title                 VARCHAR(300) NOT NULL,
             PRIMARY KEY(projectkey)
         ) DISTSTYLE ALL;
