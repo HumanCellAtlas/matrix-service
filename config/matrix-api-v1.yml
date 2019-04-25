@@ -19,25 +19,44 @@ paths:
                                # genes in mtx format and select metadata
                                # fields
                 value:
-                  filters:
-                    - op: '='
-                      field: 'organ'
-                      value: 'kidney'
-                    - op: '>'
-                      field: 'genes_detected'
-                      value: 5000
+                  filter:
+                    op: 'and'
+                    value:
+                      - op: '='
+                        field: 'organ'
+                        value: 'kidney'
+                      - op: '>'
+                        field: 'genes_detected'
+                        value: 5000
                   fields:
                     - 'short_name'
                     - 'organ'
                     - 'genus_species'
                     - 'genes_detected'
                   format: 'mtx'
+              PancreasOrBrain10x: # Cell from the pancreas or brain sequenced
+                                  # via 10x
+                value:
+                  filter:
+                    op: 'and'
+                    value:
+                      - op: 'or'
+                        value:
+                          - op: '='
+                            field: 'organ'
+                            value: 'pancreas'
+                          - op: '='
+                            field: 'organ'
+                            value: 'brain'
+                      - op: '='
+                        field: 'construction_approach_label'
+                        value: '10x v2 sequencing'
               AllSS2Transcripts: # Transcript data for all SS2 cells, in loom                  # format and all metadata fields.
                 value:
-                  filters:
-                    - op: '='
-                      field: 'construction_approach_label'
-                      value: 'Smart-Seq2'
+                  filter:
+                    op: '='
+                    field: 'construction_approach_label'
+                    value: 'Smart-Seq2'
                   feature: 'transcript'
       responses:
         '202':
@@ -119,7 +138,7 @@ paths:
     get:
       summary: Get a list of available metadata fields
       description: >
-        Get a list of metadata field names that a POST to 
+        Get a list of metadata field names that a POST to
         /matrix will accept.
       responses:
         '200':
@@ -157,15 +176,60 @@ paths:
                 $ref: '#/components/schemas/MatrixErrorResponse'
 components:
   schemas:
-    FilterOperation:
-      description: 'Comparison operations allowed in matrix filters.'
+    ComparisonFilterOperator:
+      description: 'Comparison operators allowed in matrix filters.'
       type: string
       enum:
-        - '='
+        - '=='
         - '!='
         - '>'
         - '<'
+        - '>='
+        - '<='
         - 'in'
+    LogicalFilterOperator:
+      description: 'Logical operators for combining filters.'
+      type: string
+      enum:
+        - 'and'
+        - 'or'
+        - 'not'
+    ComparisonFilter:
+      type: object
+      properties:
+        op:
+          $ref: '#/components/schemas/ComparisonFilterOperator'
+        field:
+          type: string
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: number
+    LogicalFilter:
+      type: object
+      properties:
+        op:
+          $ref: '#/components/schemas/LogicalFilterOperator'
+        value:
+          oneOf:
+            - $ref: '#/components/schemas/ComparisonFilter'
+            - $ref: '#/components/schemas/LogicalFilter'
+            - type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/ComparisonFilter'
+                  - $ref: '#/components/schemas/LogicalFilter'
+    MatrixFilter:
+      description: 'Filter to apply in a matrix request.'
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/ComparisonFilter'
+        - $ref: '#/components/schemas/LogicalFilter'
     MatrixFormat:
       description: 'Format for the output matrix.'
       type: string
@@ -182,31 +246,16 @@ components:
         type: string
     MatrixFeature:
       description: >
-        Feature type to include in the output matrix. For example, 
+        Feature type to include in the output matrix. For example,
         genes vs. transcripts.
       type: string
       default: 'gene'
-    MatrixFilter:
-      description: 'Filter to apply in a matrix request.'
-      type: object
-      properties:
-        field:
-          type: string
-        op:
-          $ref: '#/components/schemas/FilterOperation'
-        value:
-          oneOf:
-            - type: string
-            - type: number
     MatrixRequest:
       description: 'Request for an expression matrix.'
       type: object
       properties:
-        filters:
-          type: array
-          items:
-            $ref: '#/components/schemas/MatrixFilter'
-          minItems: 1
+        filter:
+          $ref: '#/components/schemas/MatrixFilter'
         fields:
           $ref: '#/components/schemas/MatrixFields'
         format:
