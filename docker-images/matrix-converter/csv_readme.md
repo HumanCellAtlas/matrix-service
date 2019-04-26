@@ -16,10 +16,11 @@ identifier for the cell and is present in both the expression csv and cell metad
 remaining header are Ensembl IDs for the genes (or depending on the request, transcripts).
 
 The remaining rows each contain all the expression values for a cell, so cells are rows and
-genes are columns. The expression values are meant to a "raw" count, so for SmartSeq2
+genes are columns. The expression values are meant to be a "raw" count, so for SmartSeq2
 experiments, this is the `expected_count` field from
 [RSEM output](http://deweylab.biostat.wisc.edu/rsem/rsem-calculate-expression.html#output).
-For 10x experiments analyzed with Cell Ranger, this is read from the `matrix.mtx` file.
+For 10x experiments analyzed with Cell Ranger, this is read from the `matrix.mtx` file that
+Cell Ranger produces as its filtered feature-barcode matrix.
 
 ### `cells.csv`
 
