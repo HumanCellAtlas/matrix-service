@@ -5,8 +5,8 @@ RUN apt-get update -y \
  && rm -rf /var/lib/apt/lists/*
 
 ADD code /
-ADD csv_readme.txt /
-ADD mtx_readme.txt /
+ADD csv_readme.md /
+ADD mtx_readme.md /
 
 RUN pip3 install -U pip \
  && pip install -r /requirements.txt
