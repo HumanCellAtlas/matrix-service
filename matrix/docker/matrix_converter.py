@@ -419,7 +419,7 @@ class MatrixConverter:
 
         shutil.rmtree(results_dir)
 
-        return self.local_output_filename
+        return os.path.join(self.working_dir, self.local_output_filename)
 
     def _upload_converted_matrix(self, local_path, remote_path):
         """
