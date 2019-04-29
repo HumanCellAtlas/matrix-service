@@ -1,4 +1,4 @@
-resource "aws_dynamodb_table" "request-table" {
+resource "aws_dynamodb_table" "request_table" {
   name           = "dcp-matrix-service-request-table-${var.deployment_stage}"
   read_capacity  = 25
   write_capacity = 25

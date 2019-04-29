@@ -47,8 +47,7 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
         "dynamodb:PutItem"
       ],
       "Resource": [
-        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
-        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
+        "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-request-table-${var.deployment_stage}"
       ]
     },
     {

@@ -41,7 +41,7 @@ resource "aws_ecs_task_definition" "query_runner" {
     ],
     "memory": 512,
     "cpu": 256,
-    "image": "humancellatlas/matrix-query-runner:4",
+    "image": "humancellatlas/matrix-query-runner:5",
     "name": "query-runner-${var.deployment_stage}",
     "logConfiguration": {
         "logDriver": "awslogs",
@@ -179,8 +179,7 @@ resource "aws_iam_role_policy" "query_runner" {
             "dynamodb:PutItem"
           ],
           "Resource": [
-            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-state-table-${var.deployment_stage}",
-            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-output-table-${var.deployment_stage}"
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-request-table-${var.deployment_stage}"
           ]
         },
         {
