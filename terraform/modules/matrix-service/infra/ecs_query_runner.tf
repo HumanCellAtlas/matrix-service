@@ -20,12 +20,8 @@ resource "aws_ecs_task_definition" "query_runner" {
         "value": "dcp-matrix-service-results-${var.deployment_stage}"
       },
       {
-        "name": "DYNAMO_STATE_TABLE_NAME",
-        "value": "dcp-matrix-service-state-table-${var.deployment_stage}"
-      },
-      {
-        "name": "DYNAMO_OUTPUT_TABLE_NAME",
-        "value": "dcp-matrix-service-output-table-${var.deployment_stage}"
+        "name": "DYNAMO_REQUEST_TABLE_NAME",
+        "value": "dcp-matrix-service-request-table-${var.deployment_stage}"
       },
       {
         "name": "BATCH_CONVERTER_JOB_QUEUE_ARN",

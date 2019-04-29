@@ -1,5 +1,6 @@
 import os
 import time
+import typing
 from enum import Enum
 
 import boto3
@@ -14,12 +15,15 @@ class TableField(Enum):
     pass
 
 
-class StateTableField(TableField):
+class RequestTableField(TableField):
     """
-    Field names for State table in DynamoDB.
+    Field names for Request table in DynamoDB.
     """
     REQUEST_ID = "RequestId"
     CREATION_DATE = "CreationDate"
+    FORMAT = "Format"
+    NUM_BUNDLES = "NumBundles"
+    ROW_COUNT = "RowCount"
     EXPECTED_DRIVER_EXECUTIONS = "ExpectedDriverExecutions"
     COMPLETED_DRIVER_EXECUTIONS = "CompletedDriverExecutions"
     EXPECTED_QUERY_EXECUTIONS = "ExpectedQueryExecutions"
@@ -27,16 +31,6 @@ class StateTableField(TableField):
     EXPECTED_CONVERTER_EXECUTIONS = "ExpectedConverterExecutions"
     COMPLETED_CONVERTER_EXECUTIONS = "CompletedConverterExecutions"
     BATCH_JOB_ID = "BatchJobId"
-
-
-class OutputTableField(TableField):
-    """
-    Field names for Output table in DynamoDB.
-    """
-    REQUEST_ID = "RequestId"
-    NUM_BUNDLES = "NumBundles"
-    ROW_COUNT = "RowCount"
-    FORMAT = "Format"
     ERROR_MESSAGE = "ErrorMessage"
 
 
@@ -44,8 +38,7 @@ class DynamoTable(Enum):
     """
     Names of dynamo tables in matrix service
     """
-    STATE_TABLE = os.getenv("DYNAMO_STATE_TABLE_NAME")
-    OUTPUT_TABLE = os.getenv("DYNAMO_OUTPUT_TABLE_NAME")
+    REQUEST_TABLE = os.getenv("DYNAMO_REQUEST_TABLE_NAME")
 
 
 class DynamoHandler:
@@ -54,8 +47,7 @@ class DynamoHandler:
     """
     def __init__(self):
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
-        self._state_table = self._dynamo.Table(DynamoTable.STATE_TABLE.value)
-        self._output_table = self._dynamo.Table(DynamoTable.OUTPUT_TABLE.value)
+        self._request_table = self._dynamo.Table(DynamoTable.REQUEST_TABLE.value)
 
     def _get_dynamo_table_resource_from_enum(self, dynamo_table: DynamoTable):
         """Retrieve dynamo table resource for a given dynamo table name.
@@ -65,50 +57,35 @@ class DynamoHandler:
         Output:
             boto3 dynamodb resource
         """
-        if dynamo_table == DynamoTable.STATE_TABLE:
-            return self._state_table
-        elif dynamo_table == DynamoTable.OUTPUT_TABLE:
-            return self._output_table
+        if dynamo_table == DynamoTable.REQUEST_TABLE:
+            return self._request_table
 
-    def create_state_table_entry(self,
-                                 request_id: str):
+    def create_request_table_entry(self,
+                                   request_id: str,
+                                   fmt: str):
         """
-        Put a new item in the DynamoDB table responsible for tracking task execution states and
-        counts for a specified request.
+        Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
+        of a Matrix Request.
 
         :param request_id: UUID identifying a matrix service request.
-        :param format: User requested output file format of final expression matrix.
+        :param fmt: User requested output file format of final expression matrix.
         """
 
-        self._state_table.put_item(
+        self._request_table.put_item(
             Item={
-                StateTableField.REQUEST_ID.value: request_id,
-                StateTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,
-                StateTableField.COMPLETED_DRIVER_EXECUTIONS.value: 0,
-                StateTableField.EXPECTED_QUERY_EXECUTIONS.value: 3,
-                StateTableField.COMPLETED_QUERY_EXECUTIONS.value: 0,
-                StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 1,
-                StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
-                StateTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
-                StateTableField.BATCH_JOB_ID.value: "N/A"
-            }
-        )
-
-    def create_output_table_entry(self, request_id: str, num_bundles: int, format: str):
-        """
-        Put a new item in the DynamoDB Table responsible for counting output rows
-
-        :param request_id: UUID identifying a matrix service request.
-        :param num_bundles: the number of bundles in the request.
-        :param format: expected file format for matrix service request.
-        """
-        self._output_table.put_item(
-            Item={
-                OutputTableField.REQUEST_ID.value: request_id,
-                OutputTableField.NUM_BUNDLES.value: num_bundles,
-                OutputTableField.ROW_COUNT.value: 0,
-                OutputTableField.FORMAT.value: format,
-                OutputTableField.ERROR_MESSAGE.value: 0,
+                RequestTableField.REQUEST_ID.value: request_id,
+                RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
+                RequestTableField.FORMAT.value: fmt,
+                RequestTableField.NUM_BUNDLES.value: -1,
+                RequestTableField.ROW_COUNT.value: 0,
+                RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,
+                RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value: 0,
+                RequestTableField.EXPECTED_QUERY_EXECUTIONS.value: 3,
+                RequestTableField.COMPLETED_QUERY_EXECUTIONS.value: 0,
+                RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 1,
+                RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
+                RequestTableField.BATCH_JOB_ID.value: "N/A",
+                RequestTableField.ERROR_MESSAGE.value: 0
             }
         )
 
@@ -151,7 +128,11 @@ class DynamoHandler:
         start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
         return start_value, end_value
 
-    def set_table_field_with_value(self, table: DynamoTable, request_id: str, field_enum: TableField, field_value: str):
+    def set_table_field_with_value(self,
+                                   table: DynamoTable,
+                                   request_id: str,
+                                   field_enum: TableField,
+                                   field_value: typing.Union[str, int]):
         """
         Set value in dynamo table
         Args:
@@ -164,7 +145,7 @@ class DynamoHandler:
         key_dict = {"RequestId": request_id}
         self._set_field(dynamo_table, key_dict, field_enum, field_value)
 
-    def _set_field(self, table, key_dict: dict, field_enum: TableField, field_value: str):
+    def _set_field(self, table, key_dict: dict, field_enum: TableField, field_value: typing.Union[str, int]):
         """
         Set a value in a dynamo table.
         Args:

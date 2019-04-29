@@ -5,8 +5,7 @@ export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                  API_HOST \
                                  LAMBDA_DRIVER_FUNCTION_NAME \
                                  LAMBDA_NOTIFICATION_FUNCTION_NAME \
-                                 DYNAMO_STATE_TABLE_NAME \
-                                 DYNAMO_OUTPUT_TABLE_NAME \
+                                 DYNAMO_REQUEST_TABLE_NAME \
                                  MATRIX_RESULTS_BUCKET \
                                  BATCH_CONVERTER_JOB_QUEUE_ARN \
                                  BATCH_CONVERTER_JOB_DEFINITION_ARN

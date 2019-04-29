@@ -52,8 +52,7 @@ class BatchHandler:
 
         environment = {
             'DEPLOYMENT_STAGE': self.deployment_stage,
-            'DYNAMO_STATE_TABLE_NAME': DynamoTable.STATE_TABLE.value,
-            'DYNAMO_OUTPUT_TABLE_NAME': DynamoTable.OUTPUT_TABLE.value,
+            'DYNAMO_REQUEST_TABLE_NAME': DynamoTable.REQUEST_TABLE.value,
         }
 
         batch_job_id = self._enqueue_batch_job(job_name=job_name,
