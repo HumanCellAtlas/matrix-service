@@ -361,6 +361,7 @@ class MatrixConverter:
 
         # Using the loompy method, combine all the chunks together into a
         # single file.
+        print(f"Parts complete. Writing to {self.local_output_filename}")
         loompy.combine(loom_parts,
                        key="Accession",
                        output_file=os.path.join(self.working_dir, self.local_output_filename))
