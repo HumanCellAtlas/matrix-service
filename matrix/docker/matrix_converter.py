@@ -301,6 +301,10 @@ class MatrixConverter:
 
         loom_parts = []
         loom_part_dir = os.path.join(self.working_dir, ".loom_parts")
+
+        if os.path.exists(loom_part_dir):
+            shutil.rmtree(loom_part_dir)
+
         os.makedirs(loom_part_dir)
 
         # Iterate over the "slices" produced by the redshift query
