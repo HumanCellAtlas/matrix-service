@@ -117,7 +117,7 @@ resource "aws_batch_compute_environment" "converter_compute_env" {
     security_group_ids = [
       "${aws_vpc.vpc.default_security_group_id}"
     ]
-    ec2_key_pair = "matrix-service-${var.deployment_stage}"
+    ec2_key_pair = "matrix-${var.deployment_stage}"
     instance_role = "${aws_iam_instance_profile.ecsInstanceRole.arn}"
   }
   depends_on = [
