@@ -42,8 +42,10 @@ fi;
 # read account id
 if [ $DEPLOYMENT_STAGE = "prod" ]; then
     export AWS_PROFILE="hca-prod"
+    ami="akislyuk-hca-prod-aegea-ami3"
 else
     export AWS_PROFILE="hca"
+    ami="aegea-base5"
 fi;
 echo "Setting AWS_PROFILE to ${AWS_PROFILE}"
 
@@ -55,7 +57,7 @@ echo "Loading DSS data into Matrix Service ${DEPLOYMENT_STAGE} cluster"
 # spin up ec2 instance, provision, execute load_redshift.py
 if [ -z "$ec2_name" ]; then
     ec2_name="$(whoami)-$(date +'%Y-%m-%d-%H-%M')"
-    aegea launch $ec2_name --instance-type "${ec2_type}" --ami aegea-base5 --wait-for-ssh
+    aegea launch $ec2_name --instance-type "${ec2_type}" --ami "${ami}" --wait-for-ssh --iam-role "matrix-service-redshift-loader-${DEPLOYMENT_STAGE}"
     aegea ssh ubuntu@$ec2_name "sudo mkfs -t ext4 /dev/nvme0n1 && sudo mount -t ext4 /dev/nvme0n1 /mnt && df -Th /mnt && sudo chmod 777 /mnt"
 fi;
 if [ $state -eq 0 ]; then
