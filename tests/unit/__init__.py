@@ -12,8 +12,7 @@ os.environ['AWS_ACCESS_KEY_ID'] = "test_ak"
 os.environ['AWS_SECRET_ACCESS_KEY'] = "test_sk"
 os.environ['LAMBDA_DRIVER_FUNCTION_NAME'] = "test_driver_name"
 os.environ['LAMBDA_NOTIFICATION_FUNCTION_NAME'] = "test_notification_name"
-os.environ['DYNAMO_STATE_TABLE_NAME'] = "test_state_table_name"
-os.environ['DYNAMO_OUTPUT_TABLE_NAME'] = "test_output_table_name"
+os.environ['DYNAMO_REQUEST_TABLE_NAME'] = "test_request_table_name"
 os.environ['MATRIX_RESULTS_BUCKET'] = "test_results_bucket"
 os.environ['MATRIX_QUERY_BUCKET'] = "test_query_bucket"
 os.environ['MATRIX_PRELOAD_BUCKET'] = "test_preload_bucket"
@@ -57,9 +56,9 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         self.s3_mock.stop()
 
     @staticmethod
-    def create_test_state_table():
+    def create_test_request_table():
         boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
-            TableName=os.environ['DYNAMO_STATE_TABLE_NAME'],
+            TableName=os.environ['DYNAMO_REQUEST_TABLE_NAME'],
             KeySchema=[
                 {
                     'AttributeName': "RequestId",
@@ -75,28 +74,6 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
             ProvisionedThroughput={
                 'ReadCapacityUnits': 25,
                 'WriteCapacityUnits': 25,
-            },
-        )
-
-    @staticmethod
-    def create_test_output_table():
-        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
-            TableName=os.environ['DYNAMO_OUTPUT_TABLE_NAME'],
-            KeySchema=[
-                {
-                    'AttributeName': "RequestId",
-                    'KeyType': "HASH",
-                }
-            ],
-            AttributeDefinitions=[
-                {
-                    'AttributeName': "RequestId",
-                    'AttributeType': "S",
-                }
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 15,
-                'WriteCapacityUnits': 15,
             },
         )
 

@@ -6,7 +6,7 @@ import requests
 from matrix.common.config import MatrixInfraConfig, MatrixRedshiftConfig
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
-from matrix.common.aws.dynamo_handler import DynamoHandler
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.aws.s3_handler import S3Handler
 
@@ -99,7 +99,10 @@ class Driver:
             resolved_bundle_fqids = bundle_fqids
         logger.debug(f"resolved bundles: {resolved_bundle_fqids}")
 
-        self.dynamo_handler.create_output_table_entry(self.request_id, len(resolved_bundle_fqids), format)
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
+                                                       self.request_id,
+                                                       RequestTableField.NUM_BUNDLES,
+                                                       len(resolved_bundle_fqids))
         s3_obj_keys = self._format_and_store_queries_in_s3(resolved_bundle_fqids)
         for s3_obj_key in s3_obj_keys:
             self._add_request_query_to_sqs(s3_obj_key)

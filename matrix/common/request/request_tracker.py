@@ -1,7 +1,7 @@
 from datetime import timedelta
 from enum import Enum
 
-from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField, OutputTableField
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common import date
 from matrix.common.exceptions import MatrixException
@@ -41,7 +41,7 @@ class RequestTracker:
     @property
     def is_initialized(self) -> bool:
         try:
-            self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE,
+            self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
                                                request_id=self.request_id)
         except MatrixException:
             return False
@@ -56,8 +56,8 @@ class RequestTracker:
         """
         if not self._num_bundles:
             self._num_bundles =\
-                self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                   request_id=self.request_id)[OutputTableField.NUM_BUNDLES.value]
+                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   request_id=self.request_id)[RequestTableField.NUM_BUNDLES.value]
         return self._num_bundles
 
     @property
@@ -79,8 +79,8 @@ class RequestTracker:
         """
         if not self._format:
             self._format =\
-                self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                   request_id=self.request_id)[OutputTableField.FORMAT.value]
+                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   request_id=self.request_id)[RequestTableField.FORMAT.value]
         return self._format
 
     @property
@@ -89,8 +89,8 @@ class RequestTracker:
         The batch job id for matrix conversion corresponding with a request.
         :return: str The batch job id
         """
-        table_item = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id=self.request_id)
-        batch_job_id = table_item.get(StateTableField.BATCH_JOB_ID.value)
+        table_item = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        batch_job_id = table_item.get(RequestTableField.BATCH_JOB_ID.value)
         if not batch_job_id or batch_job_id == "N/A":
             return None
         else:
@@ -113,8 +113,8 @@ class RequestTracker:
         The creation date of matrix service request.
         :return: str creation date
         """
-        return self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE,
-                                                  request_id=self.request_id)[StateTableField.CREATION_DATE.value]
+        return self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                  request_id=self.request_id)[RequestTableField.CREATION_DATE.value]
 
     @property
     def timeout(self) -> bool:
@@ -130,14 +130,14 @@ class RequestTracker:
         The user-friendly message describing the latest error the request raised.
         :return: str The error message if one exists, else empty string
         """
-        error = self.dynamo_handler.get_table_item(DynamoTable.OUTPUT_TABLE,
-                                                   request_id=self.request_id)[OutputTableField.ERROR_MESSAGE.value]
+        error = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   request_id=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
         return error if error else ""
 
-    def initialize_request(self, format: str) -> None:
+    def initialize_request(self, fmt: str) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         """
-        self.dynamo_handler.create_state_table_entry(self.request_id)
+        self.dynamo_handler.create_request_table_entry(self.request_id, fmt)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST,
             metric_value=1
@@ -150,11 +150,11 @@ class RequestTracker:
         :param subtask: The expected Subtask to be executed.
         """
         subtask_to_dynamo_field_name = {
-            Subtask.DRIVER: StateTableField.EXPECTED_DRIVER_EXECUTIONS,
-            Subtask.CONVERTER: StateTableField.EXPECTED_CONVERTER_EXECUTIONS,
+            Subtask.DRIVER: RequestTableField.EXPECTED_DRIVER_EXECUTIONS,
+            Subtask.CONVERTER: RequestTableField.EXPECTED_CONVERTER_EXECUTIONS,
         }
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1)
@@ -166,12 +166,12 @@ class RequestTracker:
         :param subtask: The executed Subtask.
         """
         subtask_to_dynamo_field_name = {
-            Subtask.DRIVER: StateTableField.COMPLETED_DRIVER_EXECUTIONS,
-            Subtask.QUERY: StateTableField.COMPLETED_QUERY_EXECUTIONS,
-            Subtask.CONVERTER: StateTableField.COMPLETED_CONVERTER_EXECUTIONS,
+            Subtask.DRIVER: RequestTableField.COMPLETED_DRIVER_EXECUTIONS,
+            Subtask.QUERY: RequestTableField.COMPLETED_QUERY_EXECUTIONS,
+            Subtask.CONVERTER: RequestTableField.COMPLETED_CONVERTER_EXECUTIONS,
         }
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1)
@@ -182,11 +182,11 @@ class RequestTracker:
         i.e. if all expected reducers and converters have completed.
         :return: bool True if complete, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id=self.request_id)
-        queries_complete = (request_state[StateTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
-                            request_state[StateTableField.COMPLETED_QUERY_EXECUTIONS.value])
-        converter_complete = (request_state[StateTableField.EXPECTED_CONVERTER_EXECUTIONS.value] ==
-                              request_state[StateTableField.COMPLETED_CONVERTER_EXECUTIONS.value])
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
+                            request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
+        converter_complete = (request_state[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value] ==
+                              request_state[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value])
 
         return queries_complete and converter_complete
 
@@ -196,9 +196,9 @@ class RequestTracker:
         and is ready for conversion
         :return: bool True if complete, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.STATE_TABLE, request_id=self.request_id)
-        queries_complete = (request_state[StateTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
-                            request_state[StateTableField.COMPLETED_QUERY_EXECUTIONS.value])
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
+                            request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
         return queries_complete
 
     def complete_request(self, duration: float):
@@ -245,9 +245,9 @@ class RequestTracker:
         :param message: str The error message to log
         """
         logger.debug(message)
-        self.dynamo_handler.set_table_field_with_value(DynamoTable.OUTPUT_TABLE,
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
                                                        self.request_id,
-                                                       OutputTableField.ERROR_MESSAGE,
+                                                       RequestTableField.ERROR_MESSAGE,
                                                        message)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST_ERROR,
@@ -258,7 +258,7 @@ class RequestTracker:
         """
         Logs the batch job id for matrix conversion to state table
         """
-        self.dynamo_handler.set_table_field_with_value(DynamoTable.STATE_TABLE,
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
                                                        self.request_id,
-                                                       StateTableField.BATCH_JOB_ID,
+                                                       RequestTableField.BATCH_JOB_ID,
                                                        batch_job_id)

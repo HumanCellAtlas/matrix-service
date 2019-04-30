@@ -7,7 +7,7 @@ from unittest import mock
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.date import get_datetime_now
 from matrix.common.exceptions import MatrixException
-from matrix.common.aws.dynamo_handler import OutputTableField, StateTableField
+from matrix.common.aws.dynamo_handler import RequestTableField
 from matrix.common.aws.lambda_handler import LambdaName
 from matrix.common.aws.cloudwatch_handler import MetricName
 from matrix.lambdas.api.core import matrix_infra_config, post_matrix, get_matrix, get_formats, dss_notification
@@ -15,10 +15,10 @@ from matrix.lambdas.api.core import matrix_infra_config, post_matrix, get_matrix
 
 class TestCore(unittest.TestCase):
 
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_state_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
-    def test_post_matrix_with_ids_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_state):
+    def test_post_matrix_with_ids_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
         bundle_fqids = ["id1", "id2"]
         format = MatrixFormat.LOOM.value
 
@@ -32,16 +32,16 @@ class TestCore(unittest.TestCase):
         body.update({'bundle_fqids_url': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
-        mock_dynamo_create_state.assert_called_once_with(mock.ANY)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response.body['request_id']), str)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response.status_code, requests.codes.accepted)
 
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_state_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
-    def test_post_matrix_with_url_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_state):
+    def test_post_matrix_with_url_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
         format = MatrixFormat.LOOM.value
         bundle_fqids_url = "test_url"
 
@@ -55,7 +55,7 @@ class TestCore(unittest.TestCase):
         body.update({'bundle_fqids': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
-        mock_dynamo_create_state.assert_called_once_with(mock.ANY)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response.body['request_id']), str)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
@@ -125,9 +125,9 @@ class TestCore(unittest.TestCase):
         request_id = str(uuid.uuid4())
         mock_initialized.return_value = True
         mock_is_request_complete.return_value = False
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
-                                            OutputTableField.FORMAT.value: "test_format",
-                                            StateTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "test_format",
+                                            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
 
         response = get_matrix(request_id)
 
@@ -141,8 +141,8 @@ class TestCore(unittest.TestCase):
         request_id = str(uuid.uuid4())
         mock_initialized.return_value = True
         mock_is_request_complete.return_value = False
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "test error",
-                                            OutputTableField.FORMAT.value: "test_format"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "test error",
+                                            RequestTableField.FORMAT.value: "test_format"}
 
         response = get_matrix(request_id)
 
@@ -155,8 +155,8 @@ class TestCore(unittest.TestCase):
     def test_get_loom_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = True
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
-                                            OutputTableField.FORMAT.value: "loom"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "loom"}
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
@@ -170,8 +170,8 @@ class TestCore(unittest.TestCase):
     def test_get_csv_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = True
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
-                                            OutputTableField.FORMAT.value: "csv"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "csv"}
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
@@ -185,8 +185,8 @@ class TestCore(unittest.TestCase):
     def test_get_mtx_matrix_complete(self, mock_is_request_complete, mock_get_table_item):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = True
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
-                                            OutputTableField.FORMAT.value: "mtx"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "mtx"}
 
         response = get_matrix(request_id)
         self.assertEqual(response.status_code, requests.codes.ok)
@@ -229,8 +229,8 @@ class TestCore(unittest.TestCase):
                                 mock_timeout):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = False
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
-                                            OutputTableField.FORMAT.value: "test_format"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "test_format"}
         mock_timeout.return_value = True
 
         response = get_matrix(request_id)
@@ -243,8 +243,8 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     def test_get_matrix_batch_failure(self, mock_get_table_item, mock_batch_job_status, mock_log_error):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {OutputTableField.ERROR_MESSAGE.value: "",
-                                            OutputTableField.FORMAT.value: "test_format"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "test_format"}
         mock_batch_job_status.return_value = "FAILED"
 
         response = get_matrix(request_id)

@@ -2,6 +2,7 @@ import unittest
 import uuid
 from unittest import mock
 
+from matrix.common.aws.dynamo_handler import DynamoTable, RequestTableField
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
 from matrix.lambdas.daemons.driver import Driver
@@ -15,9 +16,9 @@ class TestDriver(unittest.TestCase):
 
     @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_output_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     def test_run_with_ids(self,
-                          mock_create_output_table,
+                          mock_set_table_field_with_value,
                           mock_complete_subtask_execution,
                           mock_store_queries_in_s3):
         bundle_fqids = ["id1.version", "id2.version"]
@@ -26,18 +27,21 @@ class TestDriver(unittest.TestCase):
 
         self._driver.run(bundle_fqids, None, format)
 
-        mock_create_output_table.assert_called_once_with(mock.ANY, len(bundle_fqids), format)
+        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
+                                                                mock.ANY,
+                                                                RequestTableField.NUM_BUNDLES,
+                                                                len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
     @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_output_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     @mock.patch("requests.get")
     @mock.patch("matrix.lambdas.daemons.driver.Driver._parse_download_manifest")
     def test_run_with_url(self,
                           mock_parse_download_manifest,
                           mock_get,
-                          mock_create_output_table,
+                          mock_set_table_field_with_value,
                           mock_complete_subtask_execution,
                           mock_store_queries_in_s3):
         bundle_fqids_url = "test_url"
@@ -49,7 +53,10 @@ class TestDriver(unittest.TestCase):
         self._driver.run(None, bundle_fqids_url, format)
 
         mock_parse_download_manifest.assert_called_once()
-        mock_create_output_table.assert_called_once_with(mock.ANY, len(bundle_fqids), format)
+        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
+                                                                mock.ANY,
+                                                                RequestTableField.NUM_BUNDLES,
+                                                                len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
     def test_parse_download_manifest(self):
@@ -60,9 +67,9 @@ class TestDriver(unittest.TestCase):
 
     @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.add_message_to_queue")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_output_table_entry")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     def test___add_request_queries_to_sqs(self,
-                                          mock_create_output_table,
+                                          mock_set_table_field_with_value,
                                           mock_complete_subtask_execution,
                                           mock_add_to_queue):
         config = MatrixInfraConfig()

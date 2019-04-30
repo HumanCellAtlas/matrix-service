@@ -3,7 +3,7 @@ from unittest import mock
 from datetime import timedelta
 
 from matrix.common import date
-from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, StateTableField
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.aws.cloudwatch_handler import MetricName
@@ -21,11 +21,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.request_tracker = RequestTracker(self.request_id)
         self.dynamo_handler = DynamoHandler()
 
-        self.create_test_output_table()
-        self.create_test_state_table()
+        self.create_test_request_table()
 
-        self.dynamo_handler.create_state_table_entry(self.request_id)
-        self.dynamo_handler.create_output_table_entry(self.request_id, 1, "test_format")
+        self.dynamo_handler.create_request_table_entry(self.request_id, "test_format")
 
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
@@ -33,15 +31,21 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_batch_job_id(self):
         self.assertEqual(self.request_tracker.batch_job_id, None)
 
-        field_enum = StateTableField.BATCH_JOB_ID
-        self.dynamo_handler.set_table_field_with_value(DynamoTable.STATE_TABLE, self.request_id, field_enum, "123-123")
+        field_enum = RequestTableField.BATCH_JOB_ID
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
+                                                       self.request_id,
+                                                       field_enum,
+                                                       "123-123")
         self.assertEqual(self.request_tracker.batch_job_id, "123-123")
 
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
     def test_batch_job_status(self, mock_get_job_status):
         mock_get_job_status.return_value = "FAILED"
-        field_enum = StateTableField.BATCH_JOB_ID
-        self.dynamo_handler.set_table_field_with_value(DynamoTable.STATE_TABLE, self.request_id, field_enum, "123-123")
+        field_enum = RequestTableField.BATCH_JOB_ID
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
+                                                       self.request_id,
+                                                       field_enum,
+                                                       "123-123")
 
         self.assertEqual(self.request_tracker.batch_job_status, "FAILED")
 
@@ -72,49 +76,49 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST_ERROR, metric_value=1)
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_state_table_entry")
-    def test_initialize_request(self, mock_create_state_table_entry, mock_create_cw_metric):
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
+    def test_initialize_request(self, mock_create_request_table_entry, mock_create_cw_metric):
         self.request_tracker.initialize_request("test_format")
 
-        mock_create_state_table_entry.assert_called_once_with(self.request_id)
+        mock_create_request_table_entry.assert_called_once_with(self.request_id, "test_format")
         mock_create_cw_metric.assert_called_once()
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_expect_subtask_execution(self, mock_increment_table_field):
         self.request_tracker.expect_subtask_execution(Subtask.DRIVER)
 
-        mock_increment_table_field.assert_called_once_with(DynamoTable.STATE_TABLE,
+        mock_increment_table_field.assert_called_once_with(DynamoTable.REQUEST_TABLE,
                                                            self.request_id,
-                                                           StateTableField.EXPECTED_DRIVER_EXECUTIONS,
+                                                           RequestTableField.EXPECTED_DRIVER_EXECUTIONS,
                                                            1)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_complete_subtask_execution(self, mock_increment_table_field):
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
-        mock_increment_table_field.assert_called_once_with(DynamoTable.STATE_TABLE,
+        mock_increment_table_field.assert_called_once_with(DynamoTable.REQUEST_TABLE,
                                                            self.request_id,
-                                                           StateTableField.COMPLETED_DRIVER_EXECUTIONS,
+                                                           RequestTableField.COMPLETED_DRIVER_EXECUTIONS,
                                                            1)
 
     def test_is_request_complete(self):
         self.assertFalse(self.request_tracker.is_request_complete())
 
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
-                                                  StateTableField.COMPLETED_CONVERTER_EXECUTIONS,
+                                                  RequestTableField.COMPLETED_CONVERTER_EXECUTIONS,
                                                   1)
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
-                                                  StateTableField.COMPLETED_QUERY_EXECUTIONS,
+                                                  RequestTableField.COMPLETED_QUERY_EXECUTIONS,
                                                   3)
         self.assertTrue(self.request_tracker.is_request_complete())
 
     def test_is_request_ready_for_conversion(self):
         self.assertFalse(self.request_tracker.is_request_ready_for_conversion())
-        self.dynamo_handler.increment_table_field(DynamoTable.STATE_TABLE,
+        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
-                                                  StateTableField.COMPLETED_QUERY_EXECUTIONS,
+                                                  RequestTableField.COMPLETED_QUERY_EXECUTIONS,
                                                   3)
         self.assertTrue(self.request_tracker.is_request_ready_for_conversion())
 
@@ -162,7 +166,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     def test_write_batch_job_id_to_db(self, mock_set_table_field_with_value):
         self.request_tracker.write_batch_job_id_to_db("123-123")
-        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.STATE_TABLE,
+        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
                                                                 self.request_id,
-                                                                StateTableField.BATCH_JOB_ID,
+                                                                RequestTableField.BATCH_JOB_ID,
                                                                 "123-123")
