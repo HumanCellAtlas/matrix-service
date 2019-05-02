@@ -8,6 +8,7 @@ import hca
 import psycopg2
 from dcplib.etl import DSSExtractor
 
+from matrix.common import date
 from matrix.common.aws.redshift_handler import RedshiftHandler, TableName
 from matrix.common.constants import CREATE_QUERY_TEMPLATE, MATRIX_ENV_TO_DSS_ENV
 from matrix.common.logging import Logging
@@ -52,6 +53,9 @@ def run_etl(query: dict,
                              MetadataToPsvTransformer.OUTPUT_DIRNAME,
                              TableName.EXPRESSION.value),
                 exist_ok=True)
+    os.makedirs(os.path.join(staging_directory,
+                             MetadataToPsvTransformer.LOG_DIRNAME),
+                exist_ok=True)
 
     extractor = DSSExtractor(staging_directory=staging_directory,
                              content_type_patterns=content_type_patterns,
@@ -87,8 +91,8 @@ def transform_bundle(bundle_uuid: str,
     for transformer in transformers:
         try:
             transformer.transform(bundle_path)
-        except Exception as e:
-            logger.error(f"Failed to transform bundle {bundle_uuid}.{bundle_version}.", e)
+        except Exception as ex:
+            _log_error(f"{bundle_uuid}.{bundle_version}", ex, extractor)
 
 
 def finalizer_reload(extractor: DSSExtractor):
@@ -107,8 +111,8 @@ def finalizer_reload(extractor: DSSExtractor):
     for transformer in transformers:
         try:
             transformer.transform(os.path.join(extractor.sd, 'bundles'))
-        except Exception as e:
-            logger.error(f"Failed to run transformer {transformer}", e)
+        except Exception as ex:
+            _log_error(transformer.__class__.__name__, ex, extractor)
 
     logger.info(f"ETL: All transformations complete.")
     load_from_local_files(extractor.sd, is_update=False)
@@ -130,11 +134,20 @@ def finalizer_update(extractor: DSSExtractor):
     for transformer in transformers:
         try:
             transformer.transform(os.path.join(extractor.sd, 'bundles'))
-        except Exception as e:
-            logger.error(f"Failed to run transformer {transformer}", e)
+        except Exception as ex:
+            _log_error(transformer.__class__.__name__, ex, extractor)
 
     logger.info(f"ETL: All transformations complete.")
     load_from_local_files(extractor.sd, is_update=True)
+
+
+def _log_error(entity: str, exception: Exception, extractor: DSSExtractor):
+    logger.error(f"Failed to transform {entity}.", exception)
+
+    timestamp = date.get_datetime_now(as_string=True)
+    log_file_path = os.path.join(extractor.sd, MetadataToPsvTransformer.LOG_DIRNAME, 'errors.txt')
+    with open(log_file_path, 'a+') as fh:
+        fh.write(f"[{timestamp}] {entity} failed with exception: {exception}\n")
 
 
 def load_from_local_files(staging_dir, is_update: bool=False):
