@@ -116,3 +116,78 @@ contains both expression values and metadata. Users can also request results as 
 Expression matrices can contain counts of different biological entities. By default, the matrix
 service will return counts of `genes`, but for some assay types, users can specify `transcripts`
 instead.
+
+## Describing Permitted Properties
+
+Matrix requests are described by four parameters: `filter`, `fields`,
+`format`, and `feature`. The matrix service API has endpoints that describe each
+of these fields, showing what values are permitted for each parameter and some
+description of those values.
+
+### Listing permitted values
+
+For each of the different matrix request parameters, a list of available values
+can be retrieved from `/filters`, `/fields`, `/formats`, or `features`:
+
+```
+http GET $MATRIX_SERVICE_API/formats
+
+[
+    "loom",
+    "mtx",
+    "csv"
+]
+```
+
+### Describing permitted values
+
+For each of the different matrix request parameters, it is also possible to
+retrieve detailed information about each permitted value. The information varies
+by parameter.
+
+`/filters/{filter_name}` returns cell counts associated with categorical filters
+and ranges for numeric filters:
+
+```
+http GET $MATRIX_SERVICE_API/filters/derived_organ_label
+
+{
+  "cell_counts": {
+    "pancreas": 8456,
+    "bone marrow": 325983,
+    "brain": 18320
+  }
+}
+
+http GET $MATRIX_SERVICE_API/filters/genes_detected
+
+{
+  "minimum": 0,
+  "maximum": 9481
+}
+```
+
+`/fields/{field_name}` returns the same information as `/filters/{filter_name}`
+
+`/formats/{format_name}` returns a description of the format:
+
+
+```
+http GET $MATRIX_SERVICE_API/formats/csv
+
+"Zip archive of expression values in CSV format, where each cell is a
+row and each feature is a column."
+```
+
+`/features/{feature_name}` returns a description of the feature type and the
+values that it takes:
+
+```
+http GET $MATRIX_SERVICE_API/features/gene
+
+{
+  "feature": "gene",
+  "feature_description": "Comprehensive gene annotation from GENCODE v27",
+  "feature_values": ["ENSG00000227232", ...]
+}
+```
