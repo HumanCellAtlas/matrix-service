@@ -96,7 +96,7 @@ paths:
                 $ref: '#/components/schemas/MatrixErrorResponse'
   /filters:
     get:
-      summary: Get a list of permitted filters
+      summary: 'Get a list of permitted filters'
       description: >
         Get a list of filters that a POST to /matrix will accept.
       responses:
@@ -134,9 +134,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MatrixErrorResponse'
+  /formats:
+    get:
+      summary: 'Get a list of available matrix formats'
+      description: >
+        Get a list of matrix formats that a POST to /matrix
+        will accept.
+      responses:
+        '200':
+          description: 'Successfully return format list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFormats'
+  /formats/{format_name}:
+    get:
+      summary: 'Get a description of a matrix format'
+      parameters:
+        - name: format_name
+          schema:
+            $ref: '#/components/schemas/MatrixFormat'
+          required: True
+          in: path
+          description: 'Format to describe'
+      responses:
+        '200':
+          description: 'Format found.'
+          content:
+            application/json:
+              schema:
+                type: string
+        '404':
+          description: 'Format not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /features:
+    get:
+      summary: 'Get a list of available feature types'
+      description: >
+        Get a list of matrix feature types that a POST to /matrix
+        will accept.
+      responses:
+        '200':
+          description: 'Successfully return feature list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFeatures'
+  /features/{feature_name}:
+    get:
+      summary: 'Get a information about a matrix feature type'
+      parameters:
+        - name: feature_name
+          schema:
+            $ref: '#/components/schemas/MatrixFeature'
+          required: True
+          in: path
+          description: 'Feature type to describe'
+      responses:
+        '200':
+          description: 'Feature found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFeatureDetail'
+        '404':
+          description: 'Feature not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
   /fields:
     get:
-      summary: Get a list of available metadata fields
+      summary: 'Get a list of available metadata fields'
       description: >
         Get a list of metadata field names that a POST to
         /matrix will accept.
@@ -234,6 +306,11 @@ components:
       description: 'Format for the output matrix.'
       type: string
       default: 'loom'
+    MatrixFormats:
+      description: 'Accepted matrix formats.'
+      type: array
+      items:
+        $ref: '#/components/schemas/MatrixFormat'
     MatrixFields:
       description: 'Metadata fields to include in output matrix.'
       type: array
@@ -250,6 +327,11 @@ components:
         genes vs. transcripts.
       type: string
       default: 'gene'
+    MatrixFeatures:
+      description: 'Accepted matrix feature types.'
+      type: array
+      items:
+        $ref: '#/components/schemas/MatrixFeature'
     MatrixRequest:
       description: 'Request for an expression matrix.'
       type: object
@@ -302,6 +384,21 @@ components:
         message:
           type: string
           description: 'Error message.'
+    MatrixFeatureDetail:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/MatrixFeature'
+        feature_description:
+          description: 'Description of the feature type.'
+          type: string
+        feature_values:
+          description: >
+            List of possible values for the feature, for example gene
+            or transcript ids.
+          type: array
+          items:
+            type: string
     FieldDetail:
       type: object
       required:
