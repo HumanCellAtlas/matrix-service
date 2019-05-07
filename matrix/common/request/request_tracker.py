@@ -136,6 +136,7 @@ class RequestTracker:
 
     def initialize_request(self, fmt: str) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
+        :param format: Request output format for matrix conversion
         """
         self.dynamo_handler.create_request_table_entry(self.request_id, fmt)
         self.cloudwatch_handler.put_metric_data(
