@@ -44,9 +44,16 @@ class RedshiftHandler:
     def database_uri(self):
         return self.redshift_config.database_uri
 
-    def transaction(self, queries: typing.List[str], return_results=False):
+    @property
+    def readonly_database_uri(self):
+        return self.redshift_config.readonly_database_uri
+
+    def transaction(self, queries: typing.List[str], return_results=False, read_only=False):
+        if read_only:
+            conn = pg.connect(self.readonly_database_uri)
+        else:
+            conn = pg.connect(self.database_uri)
         results = []
-        conn = pg.connect(self.database_uri)
         cursor = conn.cursor()
         for query in queries:
             cursor.execute(query)

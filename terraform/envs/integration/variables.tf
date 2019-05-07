@@ -34,3 +34,11 @@ variable "gcp_service_acct_creds" {
   type = "string"
 }
 
+variable "readonly_redshift_username" {
+  type = "string"
+}
+
+variable "readonly_redshift_password" {
+  type = "string"
+}
+

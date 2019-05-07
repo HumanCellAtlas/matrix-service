@@ -8,6 +8,9 @@ deploy:
 	cp scripts/dss_subscription.py .
 	python dss_subscription.py
 	rm dss_subscription.py
+	cp scripts/redshift/setup_readonly_user.py .
+	python setup_readonly_user.py
+	rm setup_readonly_user.py
 
 test: lint unit-tests
 

@@ -34,3 +34,11 @@ variable "query_runner_concurrency" {
   type = "string"
   default = "1"
 }
+
+variable "readonly_redshift_username" {
+  type = "string"
+}
+
+variable "readonly_redshift_password" {
+  type = "string"
+}

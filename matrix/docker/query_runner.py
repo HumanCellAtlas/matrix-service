@@ -49,7 +49,7 @@ class QueryRunner:
                     query = self.s3_handler.load_content_from_obj_key(obj_key)
 
                     logger.info(f"Running query from {obj_key}")
-                    self.redshift_handler.transaction([query])
+                    self.redshift_handler.transaction([query], read_only=True)
                     logger.info(f"Finished running query from {obj_key}")
 
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")
