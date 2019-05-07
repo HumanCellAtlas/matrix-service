@@ -49,7 +49,6 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         self.assertTrue(all(field.value in entry for field in RequestTableField))
         self.assertEqual(entry[RequestTableField.FORMAT.value], self.format)
-        self.assertEqual(entry[RequestTableField.NUM_BUNDLES.value], -1)
         self.assertEqual(entry[RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)
         self.assertEqual(entry[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value], 1)
         self.assertEqual(entry[RequestTableField.CREATION_DATE.value], stub_date)

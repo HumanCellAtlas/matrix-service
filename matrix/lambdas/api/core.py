@@ -5,6 +5,7 @@ import uuid
 
 from connexion.lifecycle import ConnexionResponse
 
+from matrix.common import query_constructor
 from matrix.common.exceptions import MatrixException
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.config import MatrixInfraConfig
@@ -18,58 +19,41 @@ matrix_infra_config = MatrixInfraConfig()
 
 
 def post_matrix(body: dict):
-    has_ids = 'bundle_fqids' in body
-    has_url = 'bundle_fqids_url' in body
 
-    format = body['format'] if 'format' in body else MatrixFormat.LOOM.value
+    format_ = body['format'] if 'format' in body else MatrixFormat.LOOM.value
     expected_formats = [mf.value for mf in MatrixFormat]
 
     # Validate input parameters
-    if format not in expected_formats:
+    if format_ not in expected_formats:
         return ConnexionResponse(status_code=requests.codes.bad_request,
                                  body={
                                      'message': "Invalid parameters supplied. "
                                                 "Please supply a valid `format`. "
                                                 "Visit https://matrix.dev.data.humancellatlas.org for more information."
                                  })
-    if has_ids and has_url:
+    if "filter" not in body:
         return ConnexionResponse(status_code=requests.codes.bad_request,
                                  body={
                                      'message': "Invalid parameters supplied. "
-                                                "Please supply either one of `bundle_fqids` or `bundle_fqids_url`. "
+                                                "Please supply a filter. "
                                                 "Visit https://matrix.dev.data.humancellatlas.org for more information."
                                  })
 
-    if not has_ids and not has_url:
-        return ConnexionResponse(status_code=requests.codes.bad_request,
-                                 body={
-                                     'message': "Missing required parameter. "
-                                                "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
-                                 })
-
-    if not has_url and len(json.dumps(body['bundle_fqids'])) > 128000:
+    if len(json.dumps(body["filter"])) > 128000:
         return ConnexionResponse(status_code=requests.codes.request_entity_too_large,
                                  body={
-                                     'message': "List of bundle fqids is too large. "
-                                                "Consider using bundle_fqids_url instead. "
+                                     'message': "The filter specification is too large. "
                                                 "Visit https://matrix.dev.data.humancellatlas.org for more information."
                                  })
 
-    if has_url:
-        bundle_fqids_url = body['bundle_fqids_url']
-        bundle_fqids = None
-    else:
-        bundle_fqids = body['bundle_fqids']
-        bundle_fqids_url = None
-
     request_id = str(uuid.uuid4())
-    RequestTracker(request_id).initialize_request(format)
+    RequestTracker(request_id).initialize_request(format_)
+
     driver_payload = {
         'request_id': request_id,
-        'bundle_fqids': bundle_fqids,
-        'bundle_fqids_url': bundle_fqids_url,
-        'format': format,
+        'filter': body["filter"],
+        'fields': body.get("fields", query_constructor.DEFAULT_FIELDS),
+        'feature': body.get("feature", query_constructor.DEFAULT_FEATURE)
     }
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
 

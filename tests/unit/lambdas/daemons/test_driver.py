@@ -2,7 +2,6 @@ import unittest
 import uuid
 from unittest import mock
 
-from matrix.common.aws.dynamo_handler import DynamoTable, RequestTableField
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
 from matrix.lambdas.daemons.driver import Driver
@@ -11,59 +10,22 @@ from matrix.lambdas.daemons.driver import Driver
 class TestDriver(unittest.TestCase):
     def setUp(self):
         self.request_id = str(uuid.uuid4())
-        self._bundles_per_worker = 100
-        self._driver = Driver(self.request_id, self._bundles_per_worker)
+        self._driver = Driver(self.request_id)
 
     @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
-    def test_run_with_ids(self,
-                          mock_set_table_field_with_value,
-                          mock_complete_subtask_execution,
-                          mock_store_queries_in_s3):
-        bundle_fqids = ["id1.version", "id2.version"]
-        format = "test_format"
+    def test_run_with_all_params(self,
+                                 mock_complete_subtask_execution,
+                                 mock_store_queries_in_s3):
+        filter_ = {"op": "in", "field": "foo", "value": [1, 2, 3]}
+        fields = ["test.field1", "test.field2"]
+        feature = "gene"
+
         mock_store_queries_in_s3.return_value = []
 
-        self._driver.run(bundle_fqids, None, format)
+        self._driver.run(filter_, fields, feature)
 
-        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
-                                                                mock.ANY,
-                                                                RequestTableField.NUM_BUNDLES,
-                                                                len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
-
-    @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
-    @mock.patch("requests.get")
-    @mock.patch("matrix.lambdas.daemons.driver.Driver._parse_download_manifest")
-    def test_run_with_url(self,
-                          mock_parse_download_manifest,
-                          mock_get,
-                          mock_set_table_field_with_value,
-                          mock_complete_subtask_execution,
-                          mock_store_queries_in_s3):
-        bundle_fqids_url = "test_url"
-        bundle_fqids = ["id1.version", "id2.version"]
-        format = "test_format"
-        mock_store_queries_in_s3.return_value = []
-
-        mock_parse_download_manifest.return_value = bundle_fqids
-        self._driver.run(None, bundle_fqids_url, format)
-
-        mock_parse_download_manifest.assert_called_once()
-        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
-                                                                mock.ANY,
-                                                                RequestTableField.NUM_BUNDLES,
-                                                                len(bundle_fqids))
-        mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
-
-    def test_parse_download_manifest(self):
-        test_download_manifest = "UUID\tVERSION\nbundle_id_1\tbundle_version_1\nbundle_id_2\tbundle_version_2"
-
-        parsed = self._driver._parse_download_manifest(test_download_manifest)
-        self.assertTrue(parsed, ["bundle_id_1.bundle_version_1", "bundle_id_2.bundle_version_2"])
 
     @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.add_message_to_queue")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")

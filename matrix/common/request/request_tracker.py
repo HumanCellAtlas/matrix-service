@@ -31,7 +31,6 @@ class RequestTracker:
         Logging.set_correlation_id(logger, request_id)
 
         self.request_id = request_id
-        self._num_bundles = None
         self._format = None
 
         self.dynamo_handler = DynamoHandler()
@@ -47,29 +46,6 @@ class RequestTracker:
             return False
 
         return True
-
-    @property
-    def num_bundles(self) -> int:
-        """
-        The number of bundles in the request.
-        :return: int Number of bundles
-        """
-        if not self._num_bundles:
-            self._num_bundles =\
-                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.NUM_BUNDLES.value]
-        return self._num_bundles
-
-    @property
-    def num_bundles_interval(self) -> str:
-        """
-        Returns the interval string that num_bundles corresponds to.
-        :return: the interval string e.g. "0-499"
-        """
-        interval_size = 500
-
-        index = int(self.num_bundles / interval_size)
-        return f"{index * interval_size}-{(index * interval_size) + interval_size - 1}"
 
     @property
     def format(self) -> str:
@@ -220,22 +196,8 @@ class RequestTracker:
             metric_value=duration,
             metric_dimensions=[
                 {
-                    'Name': "Number of Bundles",
-                    'Value': self.num_bundles_interval
-                },
-                {
                     'Name': "Output Format",
                     'Value': self.format
-                },
-            ]
-        )
-        self.cloudwatch_handler.put_metric_data(
-            metric_name=MetricName.DURATION,
-            metric_value=duration,
-            metric_dimensions=[
-                {
-                    'Name': "Number of Bundles",
-                    'Value': self.num_bundles_interval
                 },
             ]
         )

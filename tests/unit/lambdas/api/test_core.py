@@ -4,6 +4,7 @@ import unittest
 import uuid
 from unittest import mock
 
+from matrix.common import query_constructor
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.date import get_datetime_now
 from matrix.common.exceptions import MatrixException
@@ -18,21 +19,23 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
-    def test_post_matrix_with_ids_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
-        bundle_fqids = ["id1", "id2"]
-        format = MatrixFormat.LOOM.value
+    def test_post_matrix_with_just_filter_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
+        filter_ = {"op": ">", "field": "foo", "value": 42}
+        format_ = MatrixFormat.LOOM.value
 
         body = {
-            'bundle_fqids': bundle_fqids,
-            'format': format
+            'filter': filter_,
+            'format': format_
         }
 
         response = post_matrix(body)
         body.update({'request_id': mock.ANY})
-        body.update({'bundle_fqids_url': None})
+        body.update({'fields': query_constructor.DEFAULT_FIELDS})
+        body.update({'feature': query_constructor.DEFAULT_FEATURE})
+        body.pop('format')
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response.body['request_id']), str)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
@@ -41,21 +44,23 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
-    def test_post_matrix_with_url_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
-        format = MatrixFormat.LOOM.value
-        bundle_fqids_url = "test_url"
+    def test_post_matrix_with_fields_and_feature_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
+        filter_ = {"op": ">", "field": "foo", "value": 42}
+        format_ = MatrixFormat.LOOM.value
 
         body = {
-            'bundle_fqids_url': bundle_fqids_url,
-            'format': format
+            'filter': filter_,
+            'format': format_,
+            'fields': ["test.field1", "test.field2"],
+            'feature': "transcript"
         }
 
         response = post_matrix(body)
         body.update({'request_id': mock.ANY})
-        body.update({'bundle_fqids': None})
+        body.pop('format')
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response.body['request_id']), str)
         self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)

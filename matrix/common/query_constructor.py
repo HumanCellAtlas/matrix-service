@@ -5,9 +5,119 @@ COMPARISON_OPERATORS = [
 
 LOGICAL_OPERATORS = ["and", "or", "not"]
 
+DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "specimen.*",
+                  "library_preparation.*", "project.*", "analysis.*"]
+
+DEFAULT_FEATURE = "gene"
+
+EXPRESSION_QUERY_TEMPLATE = """
+UNLOAD ($$SELECT cell.cellkey, expression.featurekey, expression.exrpvalue
+FROM expression
+  LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
+  INNER JOIN cell on (expression.cellkey = cell.cellkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+WHERE {feature_where_clause}
+  AND expression.exprtype = 'Count'
+  AND {cell_where_clause}$$)
+TO 's3://{{results_bucket}}/{{request_id}}/expression_'
+IAM_ROLE '{{iam_role}}'
+GZIP
+MANIFEST VERBOSE
+;
+"""
+
+CELL_QUERY_TEMPLATE = """
+UNLOAD($$SELECT cell.cellkey, {fields}
+FROM cell
+  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+WHERE {cell_where_clause}$$)
+TO 's3://{{results_bucket}}/{{request_id}}/cell_metadata_'
+IAM_ROLE '{{iam_role}}'
+GZIP
+MANIFEST VERBOSE
+;
+"""
+
+FEATURE_QUERY_TEMPLATE = """
+UNLOAD ($$SELECT *
+FROM feature
+WHERE {feature_where_clause}$$)
+to 's3://{{results_bucket}}/{{request_id}}/gene_metadata_'
+IAM_ROLE '{{iam_role}}'
+GZIP
+MANIFEST VERBOSE;
+"""
+
+# Query templates for requests to /filter/... and /fields/...
+FIELD_TYPE_QUERY_TEMPLATE = """
+SELECT type
+FROM pg_table_def
+WHERE tablename = '{table_name}' AND "column" = '{field}'
+;
+"""
+
+FIELD_LIST_QUERY_TEMPLATE = """
+SELECT '{table_name}.' || column_name
+FROM information_schema.columns
+WHERE table_name = '{table_name}'
+  AND NOT column_name LIKE '%key'
+;
+"""
+
+FIELD_DETAIL_QUERY_TEMPLATE = """
+SELECT {fq_field_name}, COUNT(cell.cellkey)
+FROM cell
+  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+GROUP BY {fq_field_name}
+;
+"""
+
 
 class MalformedMatrixFilter(Exception):
     pass
+
+
+class MalformedMatrixFeature(Exception):
+    pass
+
+
+def create_matrix_request_queries(filter_, fields, feature):
+
+    cell_where_clause = filter_to_where(filter_)
+    feature_where_clause = feature_to_where(feature)
+
+    expression_query = EXPRESSION_QUERY_TEMPLATE.format(
+        feature_where_clause=feature_where_clause,
+        cell_where_clause=cell_where_clause)
+
+    cell_query = CELL_QUERY_TEMPLATE.format(
+        fields=' '.join(fields),
+        cell_where_clause=cell_where_clause)
+
+    feature_query = FEATURE_QUERY_TEMPLATE.format(feature_where_clause=feature_where_clause)
+
+    return {
+        "expression_query": expression_query,
+        "cell_query": cell_query,
+        "feature_query": feature_query
+    }
+
+
+def feature_to_where(matrix_feature):
+    """Build the WHERE clause for the features."""
+
+    if matrix_feature == "gene":
+        return "feature.isgene"
+    elif matrix_feature == "transcript":
+        return "(NOT feature.isgene)"
+    else:
+        raise MalformedMatrixFeature(f"Unknown feature type {matrix_feature}")
 
 
 def filter_to_where(matrix_filter):

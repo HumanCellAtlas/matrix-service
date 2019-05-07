@@ -22,7 +22,6 @@ class RequestTableField(TableField):
     REQUEST_ID = "RequestId"
     CREATION_DATE = "CreationDate"
     FORMAT = "Format"
-    NUM_BUNDLES = "NumBundles"
     ROW_COUNT = "RowCount"
     EXPECTED_DRIVER_EXECUTIONS = "ExpectedDriverExecutions"
     COMPLETED_DRIVER_EXECUTIONS = "CompletedDriverExecutions"
@@ -76,7 +75,6 @@ class DynamoHandler:
                 RequestTableField.REQUEST_ID.value: request_id,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
-                RequestTableField.NUM_BUNDLES.value: -1,
                 RequestTableField.ROW_COUNT.value: 0,
                 RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,
                 RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value: 0,
