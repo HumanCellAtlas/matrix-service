@@ -151,9 +151,44 @@ def get_matrix(request_id: str):
         return in_progress_response
 
 
+def get_filters():
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
+
+
+def get_filter_detail(filter_name: str):
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
+
+
 def get_formats():
     return ConnexionResponse(status_code=requests.codes.ok,
                              body=[item.value for item in MatrixFormat])
+
+
+def get_format_detail(format_name: str):
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
+
+
+def get_fields():
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
+
+
+def get_field_detail(filter_name: str):
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
+
+
+def get_features():
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
+
+
+def get_feature_detail(filter_name: str):
+    return ConnexionResponse(status_code=requests.codes.ok,
+                             body={})
 
 
 def dss_notification(body):

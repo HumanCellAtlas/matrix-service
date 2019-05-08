@@ -1,160 +1,483 @@
-swagger: '2.0'
-basePath: '/v0'
+openapi: '3.0.2'
 info:
   title: HCA Matrix Service
   description: Human Cell Atlas Matrix Service API
-  version: 0.0.1
-host: ${API_HOST}
-schemes:
-  - https
-consumes:
-  - application/json
-produces:
-  - application/json
-definitions:
-  MatrixRequest:
-    type: object
-    properties:
-      bundle_fqids:
-        type: array
-        items:
-          type: string
-          format: dcp-fqid
-      bundle_fqids_url:
-        type: string
-        format: url
-      format:
-        $ref: '#/definitions/MatrixFormat'
-  MatrixFormat:
-    type: string
-    enum:
-      - loom
-      - csv
-      - mtx
-  MatrixResponse:
-    type: object
-    properties:
-      request_id:
-        type: string
-        format: uuid
-      status:
-        $ref: '#/definitions/MatrixRequestStatus'
-      matrix_location:
-        type: string
-      eta:
-        type: string
-      message:
-        type: string
-  MatrixRequestStatus:
-    type: string
-    enum:
-      - In Progress
-      - Complete
-      - Failed
-  MatrixResponseError:
-    type: object
-    properties:
-      message:
-        type: string
-  DssNotification:
-    type: object
-    properties:
-      transaction_id:
-        type: string
-      subscription_id:
-        type: string
-      event_type:
-        type: string
-      match:
-        type: object
-        properties:
-          bundle_uuid:
-            type: string
-          bundle_version:
-            type: string
+  version: 1.0.0
+servers:
+  - url: https://{apiHost}/{basePath}
+    variables:
+      apiHost:
+        default: ${API_HOST}
+      basePath:
+        default: v1
 paths:
   /matrix:
     post:
-      summary: "Submit a matrix query request."
-      description: "Prepares a single expression matrix combining all expression matrices belonging to the specified
-        analysis bundles. On success, this request will asynchronously start a job to prepare the expression matrix and
-        return with the request ID of the job. The request ID can be used to retrieve the status and results of the job
-        from the GET endpoint."
+      summary: Request an expression matrix
       operationId: matrix.lambdas.api.core.post_matrix
       tags:
         - API
-      parameters:
-        - in: body
-          name: body
-          description: "Use either bundle_fqids or bundle_fqids_url to specify input analysis bundles; bundle_fqids
-            expects a list of fully-qualified IDs (bundle_uuid.bundle_version); bundle_fqids_url expects a
-            URL that serves a Data Browser download manifest TSV file. Use the format field to specify the desired file
-            format of the output expression matrix. Supported format values are 'loom', 'csv' and 'mtx'."
-          required: true
-          schema:
-            $ref: '#/definitions/MatrixRequest'
+      description: >
+        Request an expression matrix using a set of filters to be
+        ANDed and applied to the HCA expression data.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatrixRequest'
+            examples:
+              KidneyHighGenes: # Cells from the kidney with >5000 detected
+                               # genes in mtx format and select metadata
+                               # fields
+                value:
+                  filter:
+                    op: 'and'
+                    value:
+                      - op: '='
+                        field: 'organ'
+                        value: 'kidney'
+                      - op: '>'
+                        field: 'genes_detected'
+                        value: 5000
+                  fields:
+                    - 'short_name'
+                    - 'organ'
+                    - 'genus_species'
+                    - 'genes_detected'
+                  format: 'mtx'
+              PancreasOrBrain10x: # Cell from the pancreas or brain sequenced
+                                  # via 10x
+                value:
+                  filter:
+                    op: 'and'
+                    value:
+                      - op: 'or'
+                        value:
+                          - op: '='
+                            field: 'organ'
+                            value: 'pancreas'
+                          - op: '='
+                            field: 'organ'
+                            value: 'brain'
+                      - op: '='
+                        field: 'construction_approach_label'
+                        value: '10x v2 sequencing'
+              AllSS2Transcripts: # Transcript data for all SS2 cells, in loom                  # format and all metadata fields.
+                value:
+                  filter:
+                    op: '='
+                    field: 'construction_approach_label'
+                    value: 'Smart-Seq2'
+                  feature: 'transcript'
       responses:
-        "202":
-          description: "Matrix request accepted"
-          schema:
-            $ref: '#/definitions/MatrixResponse'
-        "400":
-          description: "Bad request"
-          schema:
-            $ref: '#/definitions/MatrixResponseError'
+        '202':
+          description: 'Matrix request accepted.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixResponse'
+        '400':
+          description: 'Bad request.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
   /matrix/{request_id}:
     get:
-      summary: "Retrieve the status, and result if available, of a matrix query request."
-      description: "Returns the status, and URI of the result if available, of a matrix query request. The status of a
-        request can be 'Complete', 'In Progress' or 'Failed'. If the request is 'Complete', the matrix_location field
-        will be populated with a URL to download the matrix. If the request 'Failed',
-        the error message will be available in the message field."
+      summary: 'Get status and result of a matrix request'
       operationId: matrix.lambdas.api.core.get_matrix
       tags:
         - API
       parameters:
-        - in: path
-          name: request_id
-          type: string
-          description: "The request ID generated by a POST request."
-          required: true
+        - name: request_id
+          schema:
+            $ref: '#/components/schemas/RequestId'
+          required: True
+          in: path
+          description: 'ID returned by a previous matrix request.'
       responses:
-        "200":
-          description: "Request found"
-          schema:
-            $ref: '#/definitions/MatrixResponse'
-        "404":
-          description: "Request not found"
-          schema:
-            $ref: '#/definitions/MatrixResponseError'
-  /matrix/formats:
+        '200':
+          description: "Matrix request found."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixResponse'
+        '404':
+          description: "Matrix request id not found."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /filters:
     get:
-      summary: "Returns supported output formats."
-      description: "Returns the list of expression matrix formats that can be requested from this service."
+      summary: 'Get a list of permitted filters'
+      operationId: matrix.lambdas.api.core.get_filters
+      tags:
+        - API
+      description: >
+        Get a list of filters that a POST to /matrix will accept.
+      responses:
+        '200':
+          description: 'Successfully return filter list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFilters'
+  /filters/{filter_name}:
+    get:
+      summary: 'Get a description of a filter'
+      operationId: matrix.lambdas.api.core.get_filter_detail
+      tags:
+        - API
+      description: >
+        Get detailed information about a filter that can be applied
+        to the HCA expression data.
+      parameters:
+        - name: filter_name
+          schema:
+            type: string
+          required: True
+          in: path
+          description: 'Filter to describe.'
+      responses:
+        '200':
+          description: "Filter found."
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NumericFieldDetail'
+                  - $ref: '#/components/schemas/CategoricalFieldDetail'
+        '404':
+          description: 'Filter not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /formats:
+    get:
+      summary: 'Get a list of available matrix formats'
       operationId: matrix.lambdas.api.core.get_formats
       tags:
         - API
+      description: >
+        Get a list of matrix formats that a POST to /matrix
+        will accept.
       responses:
-        "200":
-          description: "Success"
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/MatrixFormat'
-  /dss/notification:
-    post:
-      summary: "Handles a DSS notification event."
-      description: "Handles a DSS notification event such as bundle CREATE, DELETE and TOMBSTONE."
-      operationId: matrix.lambdas.api.core.dss_notification
+        '200':
+          description: 'Successfully return format list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFormats'
+  /formats/{format_name}:
+    get:
+      summary: 'Get a description of a matrix format'
+      operationId: matrix.lambdas.api.core.get_format_detail
+      tags:
+        - API
       parameters:
-        - in: body
-          name: body
-          description: "DSS subscription event JSON payload"
-          required: true
+        - name: format_name
           schema:
-            $ref: '#/definitions/DssNotification'
+            $ref: '#/components/schemas/MatrixFormat'
+          required: True
+          in: path
+          description: 'Format to describe'
       responses:
-        "200":
-          description: "Success"
+        '200':
+          description: 'Format found.'
+          content:
+            application/json:
+              schema:
+                type: string
+        '404':
+          description: 'Format not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /features:
+    get:
+      summary: 'Get a list of available feature types'
+      operationId: matrix.lambdas.api.core.get_features
+      tags:
+        - API
+      description: >
+        Get a list of matrix feature types that a POST to /matrix
+        will accept.
+      responses:
+        '200':
+          description: 'Successfully return feature list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFeatures'
+  /features/{feature_name}:
+    get:
+      summary: 'Get a information about a matrix feature type'
+      operationId: matrix.lambdas.api.core.get_feature_detail
+      tags:
+        - API
+      parameters:
+        - name: feature_name
+          schema:
+            $ref: '#/components/schemas/MatrixFeature'
+          required: True
+          in: path
+          description: 'Feature type to describe'
+      responses:
+        '200':
+          description: 'Feature found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFeatureDetail'
+        '404':
+          description: 'Feature not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+  /fields:
+    get:
+      summary: 'Get a list of available metadata fields'
+      operationId: matrix.lambdas.api.core.get_fields
+      tags:
+        - API
+      description: >
+        Get a list of metadata field names that a POST to
+        /matrix will accept.
+      responses:
+        '200':
+          description: 'Successfully return field list.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixFields'
+  /fields/{field_name}:
+    get:
+      summary: 'Get a description of a metadata field'
+      operationId: matrix.lambdas.api.core.get_field_detail
+      tags:
+        - API
+      description: >
+        Get detailed information about an available metadata field.
+      parameters:
+        - name: field_name
           schema:
             type: string
+          required: True
+          in: path
+          description: 'Field to describe.'
+      responses:
+        '200':
+          description: "Field found."
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NumericFieldDetail'
+                  - $ref: '#/components/schemas/CategoricalFieldDetail'
+        '404':
+          description: 'Field not found.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
+components:
+  schemas:
+    ComparisonFilterOperator:
+      description: 'Comparison operators allowed in matrix filters.'
+      type: string
+      enum:
+        - '=='
+        - '!='
+        - '>'
+        - '<'
+        - '>='
+        - '<='
+        - 'in'
+    LogicalFilterOperator:
+      description: 'Logical operators for combining filters.'
+      type: string
+      enum:
+        - 'and'
+        - 'or'
+        - 'not'
+    ComparisonFilter:
+      type: object
+      properties:
+        op:
+          $ref: '#/components/schemas/ComparisonFilterOperator'
+        field:
+          type: string
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: number
+    LogicalFilter:
+      type: object
+      properties:
+        op:
+          $ref: '#/components/schemas/LogicalFilterOperator'
+        value:
+          oneOf:
+            - $ref: '#/components/schemas/ComparisonFilter'
+            - $ref: '#/components/schemas/LogicalFilter'
+            - type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/ComparisonFilter'
+                  - $ref: '#/components/schemas/LogicalFilter'
+    MatrixFilter:
+      description: 'Filter to apply in a matrix request.'
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/ComparisonFilter'
+        - $ref: '#/components/schemas/LogicalFilter'
+    MatrixFormat:
+      description: 'Format for the output matrix.'
+      type: string
+      default: 'loom'
+    MatrixFormats:
+      description: 'Accepted matrix formats.'
+      type: array
+      items:
+        $ref: '#/components/schemas/MatrixFormat'
+    MatrixFields:
+      description: 'Metadata fields to include in output matrix.'
+      type: array
+      items:
+        type: string
+    MatrixFilters:
+      description: 'Accepted filter names for a matrix request.'
+      type: array
+      items:
+        type: string
+    MatrixFeature:
+      description: >
+        Feature type to include in the output matrix. For example,
+        genes vs. transcripts.
+      type: string
+      default: 'gene'
+    MatrixFeatures:
+      description: 'Accepted matrix feature types.'
+      type: array
+      items:
+        $ref: '#/components/schemas/MatrixFeature'
+    MatrixRequest:
+      description: 'Request for an expression matrix.'
+      type: object
+      properties:
+        filter:
+          $ref: '#/components/schemas/MatrixFilter'
+        fields:
+          $ref: '#/components/schemas/MatrixFields'
+        format:
+          $ref: '#/components/schemas/MatrixFormat'
+        feature:
+          $ref: '#/components/schemas/MatrixFeature'
+      required:
+        - filters
+    MatrixStatus:
+      description: >
+        Status of a matrix request, for example whether it is still running
+        or has finished.
+      type: string
+    RequestId:
+      description: 'UUID identifying a matrix request.'
+      type: string
+      format: uuid
+    MatrixResponse:
+      type: object
+      properties:
+        request_id:
+          $ref: '#/components/schemas/RequestId'
+        status:
+          $ref: '#/components/schemas/MatrixStatus'
+        matrix_url:
+          type: string
+          description: 'URL where matrix can be retrieved.'
+        message:
+          type: string
+          description: 'Additional information about the matrix request.'
+        eta:
+          type: string
+          description: >
+            Estimated time remaining for the request to complete.
+      required:
+        - request_id
+        - status
+    MatrixErrorResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          description: 'HTTP status code of error.'
+        message:
+          type: string
+          description: 'Error message.'
+    MatrixFeatureDetail:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/MatrixFeature'
+        feature_description:
+          description: 'Description of the feature type.'
+          type: string
+        feature_values:
+          description: >
+            List of possible values for the feature, for example gene
+            or transcript ids.
+          type: array
+          items:
+            type: string
+    FieldDetail:
+      type: object
+      required:
+        - filter_name
+        - filter_description
+        - filter_type
+      discriminator:
+        propertyName: filter_type
+      properties:
+        field_name:
+          type: string
+          description: 'Name of the field.'
+        field_description:
+          type: string
+          description: 'Description of the meaning of the field.'
+        field_type:
+          type: string
+          description: >
+            Type of the field, for example numeric or categorical.
+    NumericFieldDetail:
+      allOf:
+        - $ref: '#/components/schemas/FieldDetail'
+        - type: object
+          properties:
+            minimum:
+              type: number
+              description: >
+                Minimum value for this field in the HCA expression data.
+            maximum:
+              type: number
+              description: >
+                Maximum value for this field in the HCA expression data.
+    CategoricalFieldDetail:
+      allOf:
+        - $ref: '#/components/schemas/FieldDetail'
+        - type: object
+          properties:
+            cell_counts:
+              type: object
+              description: >
+                Count of cells associated with each possible value of
+                the field.
+              additionalProperties:
+                type: integer
