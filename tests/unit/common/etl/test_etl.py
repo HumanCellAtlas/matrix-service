@@ -75,7 +75,7 @@ class TestEtl(unittest.TestCase):
         e = Exception()
         mock_cell_expression_transform.side_effect = e
         transform_bundle("test_uuid", "test_version", "test_path", "test_manifest_path", extractor)
-        mock_log_error.assert_called_once_with("test_uuid.test_version", e, extractor)
+        mock_log_error.assert_called_once_with("test_uuid.test_version", e, mock.ANY, extractor)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.etl.load_from_local_files")
@@ -112,7 +112,7 @@ class TestEtl(unittest.TestCase):
         mock_load_from_local_files.reset_mock()
         mock_feature_transformer.side_effect = e
         finalizer_reload(extractor)
-        mock_log_error.assert_called_once_with("FeatureTransformer", e, extractor)
+        mock_log_error.assert_called_once_with("FeatureTransformer", e, mock.ANY, extractor)
         mock_load_from_local_files.assert_called_once_with("test_dir", is_update=False)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
@@ -150,7 +150,7 @@ class TestEtl(unittest.TestCase):
         mock_load_from_local_files.reset_mock()
         mock_analysis_transformer.side_effect = e
         finalizer_update(extractor)
-        mock_log_error.assert_called_once_with("AnalysisTransformer", e, extractor)
+        mock_log_error.assert_called_once_with("AnalysisTransformer", e, mock.ANY, extractor)
         mock_load_from_local_files.assert_called_once_with("test_dir", is_update=True)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
@@ -167,10 +167,12 @@ class TestEtl(unittest.TestCase):
                                  dss_client=get_dss_client("dev"))
 
         with mock.patch("builtins.open", mock.mock_open()) as mock_open:
-            _log_error("test_bundle", ex, extractor)
+            _log_error("test_bundle", ex, "test_trace", extractor)
 
             handle = mock_open()
-            handle.write.assert_called_once_with(f"[timestamp] test_bundle failed with exception: msg\n")
+            expected_calls = [mock.call("[timestamp] test_bundle failed with exception: msg\n"),
+                              mock.call("[timestamp] test_trace\n")]
+            handle.write.assert_has_calls(expected_calls)
             self.assertTrue(mock_error.called)
 
     @mock.patch("matrix.common.etl._populate_all_tables")

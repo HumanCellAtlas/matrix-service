@@ -1,6 +1,7 @@
 import boto3
 import concurrent.futures
 import os
+import traceback
 import typing
 import uuid
 
@@ -92,7 +93,7 @@ def transform_bundle(bundle_uuid: str,
         try:
             transformer.transform(bundle_path)
         except Exception as ex:
-            _log_error(f"{bundle_uuid}.{bundle_version}", ex, extractor)
+            _log_error(f"{bundle_uuid}.{bundle_version}", ex, traceback.format_exc(), extractor)
 
 
 def finalizer_reload(extractor: DSSExtractor):
@@ -112,7 +113,7 @@ def finalizer_reload(extractor: DSSExtractor):
         try:
             transformer.transform(os.path.join(extractor.sd, 'bundles'))
         except Exception as ex:
-            _log_error(transformer.__class__.__name__, ex, extractor)
+            _log_error(transformer.__class__.__name__, ex, traceback.format_exc(), extractor)
 
     logger.info(f"ETL: All transformations complete.")
     load_from_local_files(extractor.sd, is_update=False)
@@ -135,19 +136,23 @@ def finalizer_update(extractor: DSSExtractor):
         try:
             transformer.transform(os.path.join(extractor.sd, 'bundles'))
         except Exception as ex:
-            _log_error(transformer.__class__.__name__, ex, extractor)
+            _log_error(transformer.__class__.__name__, ex, traceback.format_exc(), extractor)
 
     logger.info(f"ETL: All transformations complete.")
     load_from_local_files(extractor.sd, is_update=True)
 
 
-def _log_error(entity: str, exception: Exception, extractor: DSSExtractor):
+def _log_error(entity: str, exception: Exception, trace: str, extractor: DSSExtractor):
     logger.error(f"Failed to transform {entity}.", exception)
 
     timestamp = date.get_datetime_now(as_string=True)
     log_file_path = os.path.join(extractor.sd, MetadataToPsvTransformer.LOG_DIRNAME, 'errors.txt')
     with open(log_file_path, 'a+') as fh:
         fh.write(f"[{timestamp}] {entity} failed with exception: {exception}\n")
+
+    exceptions_file_path = os.path.join(extractor.sd, MetadataToPsvTransformer.LOG_DIRNAME, 'exceptions.txt')
+    with open(exceptions_file_path, 'a+') as fh:
+        fh.write(f"[{timestamp}] {trace}\n")
 
 
 def load_from_local_files(staging_dir, is_update: bool=False):
