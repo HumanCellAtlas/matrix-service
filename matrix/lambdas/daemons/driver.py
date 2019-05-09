@@ -67,7 +67,7 @@ class Driver:
                                                        iam_role=self.redshift_role_arn)
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
-        cell_query = queries["cell_query"].format(requests_bucket=self.results_bucket,
+        cell_query = queries["cell_query"].format(results_bucket=self.results_bucket,
                                                   request_id=self.request_id,
                                                   iam_role=self.redshift_role_arn)
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
