@@ -240,6 +240,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)
   AND expression.exprtype = 'Count'
   AND foo IN ('bar', 'baz')$$)
@@ -309,12 +312,12 @@ MANIFEST VERBOSE;
                     }
                 ]
             }
-        fields = ["test.field"]
+        fields = ["test.field1", "test.field2"]
         feature = "gene"
 
         queries = query_constructor.create_matrix_request_queries(filter_, fields, feature)
         expected_cell_query = ("""
-UNLOAD($$SELECT cell.cellkey, test.field
+UNLOAD($$SELECT cell.cellkey, test.field1, test.field2
 FROM cell
   LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
@@ -336,6 +339,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE feature.isgene
   AND expression.exprtype = 'Count'
   AND ((((num_field_1 IN (1, 2, 3, 4)) AND (num_field_2 > 50) AND (quuz = 'thud'))) OR (NOT (foo IN ('bar', 'baz'))) OR (qux > 5) OR (quuz = 'thud'))$$)"""  # noqa: E501

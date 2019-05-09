@@ -16,6 +16,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE {feature_where_clause}
   AND expression.exprtype = 'Count'
   AND {cell_where_clause}$$)
@@ -97,7 +100,7 @@ def create_matrix_request_queries(filter_, fields, feature):
         cell_where_clause=cell_where_clause)
 
     cell_query = CELL_QUERY_TEMPLATE.format(
-        fields=' '.join(fields),
+        fields=', '.join(fields),
         cell_where_clause=cell_where_clause)
 
     feature_query = FEATURE_QUERY_TEMPLATE.format(feature_where_clause=feature_where_clause)
