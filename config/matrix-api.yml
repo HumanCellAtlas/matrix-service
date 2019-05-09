@@ -290,7 +290,7 @@ components:
       description: 'Comparison operators allowed in matrix filters.'
       type: string
       enum:
-        - '=='
+        - '='
         - '!='
         - '>'
         - '<'
@@ -383,7 +383,7 @@ components:
         feature:
           $ref: '#/components/schemas/MatrixFeature'
       required:
-        - filters
+        - filter
     MatrixStatus:
       description: >
         Status of a matrix request, for example whether it is still running
@@ -440,9 +440,9 @@ components:
     FieldDetail:
       type: object
       required:
-        - filter_name
-        - filter_description
-        - filter_type
+        - field_name
+        - field_description
+        - field_type
       discriminator:
         propertyName: filter_type
       properties:
