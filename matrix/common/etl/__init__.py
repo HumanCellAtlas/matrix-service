@@ -148,11 +148,11 @@ def _log_error(entity: str, exception: Exception, trace: str, extractor: DSSExtr
     timestamp = date.get_datetime_now(as_string=True)
     log_file_path = os.path.join(extractor.sd, MetadataToPsvTransformer.LOG_DIRNAME, 'errors.txt')
     with open(log_file_path, 'a+') as fh:
-        fh.write(f"[{timestamp}] {entity} failed with exception: {exception}\n")
+        fh.write(f"[{timestamp}] {entity} failed with exception: {exception}\n{trace}\n")
 
-    exceptions_file_path = os.path.join(extractor.sd, MetadataToPsvTransformer.LOG_DIRNAME, 'exceptions.txt')
-    with open(exceptions_file_path, 'a+') as fh:
-        fh.write(f"[{timestamp}] {trace}\n")
+    ft_file_path = os.path.join(extractor.sd, MetadataToPsvTransformer.LOG_DIRNAME, 'failed_transforms.txt')
+    with open(ft_file_path, 'a+') as fh:
+        fh.write(f"{entity}\n")
 
 
 def load_from_local_files(staging_dir, is_update: bool=False):

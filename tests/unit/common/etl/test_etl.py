@@ -170,8 +170,8 @@ class TestEtl(unittest.TestCase):
             _log_error("test_bundle", ex, "test_trace", extractor)
 
             handle = mock_open()
-            expected_calls = [mock.call("[timestamp] test_bundle failed with exception: msg\n"),
-                              mock.call("[timestamp] test_trace\n")]
+            expected_calls = [mock.call("[timestamp] test_bundle failed with exception: msg\ntest_trace\n"),
+                              mock.call("test_bundle\n")]
             handle.write.assert_has_calls(expected_calls)
             self.assertTrue(mock_error.called)
 
