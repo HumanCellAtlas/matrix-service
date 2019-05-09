@@ -3,7 +3,7 @@ chalice >= 1.1.1, < 1.2.0
 domovoi == 1.5.7
 coverage==4.5.1
 awscli==1.15.70
-moto==1.3.3
+moto==1.3.8
 python-dateutil==2.6.1
 pytest==3.8.2
 numpy==1.15.2
