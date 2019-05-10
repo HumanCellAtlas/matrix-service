@@ -82,6 +82,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MatrixErrorResponse'
+        '413':
+          description: 'Filter entity too large.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrixErrorResponse'
   /matrix/{request_id}:
     get:
       summary: 'Get status and result of a matrix request'
