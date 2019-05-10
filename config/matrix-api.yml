@@ -74,8 +74,8 @@ paths:
           description: 'Matrix request accepted.'
           content:
             application/json:
-              schema: {}
-              #$ref: '#/components/schemas/MatrixResponse'
+              schema:
+                $ref: '#/components/schemas/MatrixResponse'
         '400':
           description: 'Bad request.'
           content:

@@ -37,9 +37,9 @@ class TestCore(unittest.TestCase):
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
-        self.assertEqual(type(response.body['request_id']), str)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
-        self.assertEqual(response.status_code, requests.codes.accepted)
+        self.assertEqual(type(response[0]['request_id']), str)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response[1], requests.codes.accepted)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
@@ -62,9 +62,9 @@ class TestCore(unittest.TestCase):
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER, body)
         mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
-        self.assertEqual(type(response.body['request_id']), str)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
-        self.assertEqual(response.status_code, requests.codes.accepted)
+        self.assertEqual(type(response[0]['request_id']), str)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response[1], requests.codes.accepted)
 
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_ok_and_unexpected_format(self, mock_lambda_invoke):
@@ -76,7 +76,7 @@ class TestCore(unittest.TestCase):
             'format': format
         }
         response = post_matrix(body)
-        self.assertEqual(response.status_code, requests.codes.bad_request)
+        self.assertEqual(response[1], requests.codes.bad_request)
 
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_and_url(self, mock_lambda_invoke):
@@ -90,14 +90,14 @@ class TestCore(unittest.TestCase):
         response = post_matrix(body)
 
         self.assertEqual(mock_lambda_invoke.call_count, 0)
-        self.assertEqual(response.status_code, requests.codes.bad_request)
+        self.assertEqual(response[1], requests.codes.bad_request)
 
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_without_ids_or_url(self, mock_lambda_invoke):
         response = post_matrix({})
 
         self.assertEqual(mock_lambda_invoke.call_count, 0)
-        self.assertEqual(response.status_code, requests.codes.bad_request)
+        self.assertEqual(response[1], requests.codes.bad_request)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     def test_get_matrix_not_found(self, mock_get_table_item):
@@ -106,8 +106,8 @@ class TestCore(unittest.TestCase):
 
         response = get_matrix(request_id)
 
-        self.assertEqual(response.status_code, 404)
-        self.assertTrue(request_id in response.body['message'])
+        self.assertEqual(response[1], 404)
+        self.assertTrue(request_id in response[0]['message'])
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
@@ -120,8 +120,8 @@ class TestCore(unittest.TestCase):
 
         response = get_matrix(request_id)
 
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
@@ -136,8 +136,8 @@ class TestCore(unittest.TestCase):
 
         response = get_matrix(request_id)
 
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
@@ -151,9 +151,9 @@ class TestCore(unittest.TestCase):
 
         response = get_matrix(request_id)
 
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.FAILED.value)
-        self.assertEqual(response.body['message'], "test error")
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.FAILED.value)
+        self.assertEqual(response[0]['message'], "test error")
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
@@ -164,11 +164,11 @@ class TestCore(unittest.TestCase):
                                             RequestTableField.FORMAT.value: "loom"}
 
         response = get_matrix(request_id)
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['matrix_location'],
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['matrix_url'],
                          f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/{request_id}.loom")
 
-        self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
@@ -179,11 +179,11 @@ class TestCore(unittest.TestCase):
                                             RequestTableField.FORMAT.value: "csv"}
 
         response = get_matrix(request_id)
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['matrix_location'],
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['matrix_url'],
                          f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/{request_id}.csv.zip")
 
-        self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
@@ -194,11 +194,11 @@ class TestCore(unittest.TestCase):
                                             RequestTableField.FORMAT.value: "mtx"}
 
         response = get_matrix(request_id)
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['matrix_location'],
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['matrix_url'],
                          f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/{request_id}.mtx.zip")
 
-        self.assertEqual(response.body['status'], MatrixRequestStatus.COMPLETE.value)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
     def test_get_formats(self):
         response = get_formats()
@@ -239,8 +239,8 @@ class TestCore(unittest.TestCase):
         mock_timeout.return_value = True
 
         response = get_matrix(request_id)
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.FAILED.value)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.FAILED.value)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.batch_job_status",
@@ -253,5 +253,5 @@ class TestCore(unittest.TestCase):
         mock_batch_job_status.return_value = "FAILED"
 
         response = get_matrix(request_id)
-        self.assertEqual(response.status_code, requests.codes.ok)
-        self.assertEqual(response.body['status'], MatrixRequestStatus.FAILED.value)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.FAILED.value)

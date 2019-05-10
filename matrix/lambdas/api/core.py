@@ -25,26 +25,20 @@ def post_matrix(body: dict):
 
     # Validate input parameters
     if format_ not in expected_formats:
-        return ConnexionResponse(status_code=requests.codes.bad_request,
-                                 body={
-                                     'message': "Invalid parameters supplied. "
-                                                "Please supply a valid `format`. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
-                                 })
+        return ({'message': "Invalid parameters supplied. "
+                            "Please supply a valid `format`. "
+                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                requests.codes.bad_request)
     if "filter" not in body:
-        return ConnexionResponse(status_code=requests.codes.bad_request,
-                                 body={
-                                     'message': "Invalid parameters supplied. "
-                                                "Please supply a filter. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
-                                 })
+        return ({'message': "Invalid parameters supplied. "
+                            "Please supply a filter. "
+                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                requests.codes.bad_request)
 
     if len(json.dumps(body["filter"])) > 128000:
-        return ConnexionResponse(status_code=requests.codes.request_entity_too_large,
-                                 body={
-                                     'message': "The filter specification is too large. "
-                                                "Visit https://matrix.dev.data.humancellatlas.org for more information."
-                                 })
+        return ({'message': "The filter specification is too large. "
+                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                requests.codes.request_entity_too_large)
 
     request_id = str(uuid.uuid4())
     RequestTracker(request_id).initialize_request(format_)
@@ -57,14 +51,12 @@ def post_matrix(body: dict):
     }
     lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
 
-    return ConnexionResponse(status_code=requests.codes.accepted,
-                             body={
-                                 'request_id': request_id,
-                                 'status': MatrixRequestStatus.IN_PROGRESS.value,
-                                 'matrix_location': "",
-                                 'eta': "",
-                                 'message': "Job started.",
-                             })
+    return ({'request_id': request_id,
+             'status': MatrixRequestStatus.IN_PROGRESS.value,
+             'matrix_url': "",
+             'eta': "",
+             'message': "Job started."},
+            requests.codes.accepted)
 
 
 def get_matrix(request_id: str):
@@ -74,19 +66,17 @@ def get_matrix(request_id: str):
     # 404.
     request_tracker = RequestTracker(request_id)
     if not request_tracker.is_initialized:
-        return ConnexionResponse(status_code=requests.codes.not_found,
-                                 body={'message': f"Unable to find job with request ID {request_id}."})
+        return ({'message': f"Unabge to find job with request ID {request_id}."},
+                requests.codes.not_found)
 
-    in_progress_response = ConnexionResponse(
-        status_code=requests.codes.ok,
-        body={
-            'request_id': request_id,
-            'status': MatrixRequestStatus.IN_PROGRESS.value,
-            'matrix_location': "",
-            'eta': "",
-            'message': f"Request {request_id} has been accepted and is currently being "
-                       f"processed. Please try again later.",
-        })
+    in_progress_response = (
+        {'request_id': request_id,
+         'status': MatrixRequestStatus.IN_PROGRESS.value,
+         'matrix_url': "",
+         'eta': "",
+         'message': f"Request {request_id} has been accepted and is currently being "
+                    f"processed. Please try again later."},
+        requests.codes.ok)
 
     # if the request tracker is not able to retrieve the format,
     # it means that the driver has not created the relevant entry in the output table yet.
@@ -97,26 +87,23 @@ def get_matrix(request_id: str):
 
     # Failed case
     if request_tracker.error:
-        return ConnexionResponse(status_code=requests.codes.ok,
-                                 body={
-                                     'request_id': request_id,
-                                     'status': MatrixRequestStatus.FAILED.value,
-                                     'matrix_location': "",
-                                     'eta': "",
-                                     'message': request_tracker.error
-                                 })
+        return ({'request_id': request_id,
+                 'status': MatrixRequestStatus.FAILED.value,
+                 'matrix_location': "",
+                 'eta': "",
+                 'message': request_tracker.error},
+                requests.codes.ok)
     # Check for failed batch conversion job
     elif request_tracker.batch_job_status and request_tracker.batch_job_status == "FAILED":
         request_tracker.log_error("The matrix conversion as a part of the request has failed. \
             Please retry or contact an hca admin for help.")
-        return ConnexionResponse(status_code=requests.codes.ok,
-                                 body={
-                                     'request_id': request_id,
-                                     'status': MatrixRequestStatus.FAILED.value,
-                                     'matrix_location': "",
-                                     'eta': "",
-                                     'message': request_tracker.error,
-                                 })
+        return ({'request_id': request_id,
+                 'status': MatrixRequestStatus.FAILED.value,
+                 'matrix_location': "",
+                 'eta': "",
+                 'message': request_tracker.error},
+                requests.codes.ok)
+
     # Complete case
     elif request_tracker.is_request_complete():
         matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
@@ -127,26 +114,24 @@ def get_matrix(request_id: str):
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
             matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
 
-        return ConnexionResponse(status_code=requests.codes.ok,
-                                 body={
-                                     'request_id': request_id,
-                                     'status': MatrixRequestStatus.COMPLETE.value,
-                                     'matrix_location': matrix_location,
-                                     'eta': "",
-                                     'message': f"Request {request_id} has successfully completed. "
-                                                f"The resultant expression matrix is available for download at "
-                                                f"{matrix_location}",
-                                 })
+        return ({'request_id': request_id,
+                 'status': MatrixRequestStatus.COMPLETE.value,
+                 'matrix_url': matrix_location,
+                 'eta': "",
+                 'message': f"Request {request_id} has successfully completed. "
+                            f"The resultant expression matrix is available for download at "
+                            f"{matrix_location}"},
+                requests.codes.ok)
+
     # Timeout case
     elif request_tracker.timeout:
-        return ConnexionResponse(status_code=requests.codes.ok,
-                                 body={
-                                     'request_id': request_id,
-                                     'status': MatrixRequestStatus.FAILED.value,
-                                     'matrix_location': "",
-                                     'eta': "",
-                                     'message': request_tracker.error,
-                                 })
+
+        return ({'request_id': request_id,
+                 'status': MatrixRequestStatus.FAILED.value,
+                 'matrix_location': "",
+                 'eta': "",
+                 'message': request_tracker.error},
+                requests.codes.ok)
     else:
         return in_progress_response
 
