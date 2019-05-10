@@ -5,11 +5,13 @@ import uuid
 
 from connexion.lifecycle import ConnexionResponse
 
+from matrix.common import constants
 from matrix.common import query_constructor
 from matrix.common.exceptions import MatrixException
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.config import MatrixInfraConfig
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.request.request_tracker import RequestTracker
 from matrix.common.aws.sqs_handler import SQSHandler
 
@@ -66,7 +68,7 @@ def get_matrix(request_id: str):
     # 404.
     request_tracker = RequestTracker(request_id)
     if not request_tracker.is_initialized:
-        return ({'message': f"Unabge to find job with request ID {request_id}."},
+        return ({'message': f"Unable to find job with request ID {request_id}."},
                 requests.codes.not_found)
 
     in_progress_response = (
@@ -137,43 +139,112 @@ def get_matrix(request_id: str):
 
 
 def get_filters():
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
-
-
-def get_filter_detail(filter_name: str):
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
-
-
-def get_formats():
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body=[item.value for item in MatrixFormat])
-
-
-def get_format_detail(format_name: str):
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
+    """Return the list of accepted filter fields, like
+        ["project.short_name", "library_preparation.strand", ...
+    """
+    return (list(constants.FILTER_DETAIL.keys()),
+            requests.codes.ok)
 
 
 def get_fields():
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
+    """Return the list of accepted fields, like
+        ["project.short_name", "library_preparation.strand", ...
+    """
+    return (list(constants.FIELD_DETAIL.keys()),
+            requests.codes.ok)
 
 
-def get_field_detail(filter_name: str):
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
+def _redshift_detail_lookup(name, description):
+    type_ = constants.METADATA_FIELD_TO_TYPE[name]
+    column_name = constants.METADATA_FIELD_TO_TABLE_COLUMN[name]
+    table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
+    fq_name = table_name + "." + column_name
+
+    rs_handler = RedshiftHandler()
+    if type_ == "categorical":
+        query = query_constructor.FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE.format(
+            fq_field_name=fq_name)
+        results = dict(rs_handler.transaction([query], return_results=True))
+        if None in results:
+            results[""] = results[None]
+            results.pop(None)
+        return ({
+            "field_name": name,
+            "field_description": description,
+            "field_type": type_,
+            "cell_counts": results},
+            requests.codes.ok)
+
+    elif type_ == "numeric":
+        query = query_constructor.FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE.format(
+            fq_field_name=fq_name)
+        results = rs_handler.transaction([query], return_results=True)
+        min_ = results[0][0]
+        max_ = results[0][0]
+        return ({
+            "field_name": name,
+            "field_description": description,
+            "field_type": type_,
+            "minimum": min_,
+            "maximum": max_},
+            requests.codes.ok)
+
+
+def get_filter_detail(filter_name: str):
+    """Return details about a filter."""
+
+    if filter_name not in constants.FILTER_DETAIL:
+        return ({"message": f"Filter {filter_name} not found."},
+                requests.codes.not_found)
+
+    description = constants.FILTER_DETAIL[filter_name]
+
+    return _redshift_detail_lookup(filter_name, description)
+
+
+def get_field_detail(field_name: str):
+    """Return details about a field.
+
+    This is currently the same things a filter detail, but that might not be
+    the case in the future, so preserve the two endpoints.
+    """
+
+    if field_name not in constants.FIELD_DETAIL:
+        return ({"message": f"Field {field_name} not found."},
+                requests.codes.not_found)
+
+    description = constants.FIELD_DETAIL[field_name]
+
+    return _redshift_detail_lookup(field_name, description)
+
+
+def get_formats():
+    return (list(constants.FORMAT_DETAIL.keys()),
+            requests.codes.ok)
+
+
+def get_format_detail(format_name: str):
+    if format_name in constants.FORMAT_DETAIL:
+        return (constants.FORMAT_DETAIL[format_name],
+                requests.codes.ok)
+    else:
+        return ({"message": f"Format {format_name} not found."},
+                requests.codes.not_found)
 
 
 def get_features():
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
+    return (list(constants.FEATURE_DETAIL.keys()),
+            requests.codes.ok)
 
 
-def get_feature_detail(filter_name: str):
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body={})
+def get_feature_detail(feature_name: str):
+    if feature_name in constants.FEATURE_DETAIL:
+        return ({"feature": feature_name,
+                 "feature_description": constants.FEATURE_DETAIL[feature_name]},
+                requests.codes.ok)
+    else:
+        return ({"message": f"Feature {feature_name} not found."},
+                requests.codes.not_found)
 
 
 def dss_notification(body):

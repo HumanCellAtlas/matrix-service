@@ -202,7 +202,7 @@ class TestCore(unittest.TestCase):
 
     def test_get_formats(self):
         response = get_formats()
-        self.assertEqual(response.body, [item.value for item in MatrixFormat])
+        self.assertEqual(response[0], [item.value for item in MatrixFormat])
 
     @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.add_message_to_queue")
     def test_dss_notification(self, mock_sqs_add):

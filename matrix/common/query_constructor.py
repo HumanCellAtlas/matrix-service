@@ -55,22 +55,7 @@ MANIFEST VERBOSE;
 """
 
 # Query templates for requests to /filter/... and /fields/...
-FIELD_TYPE_QUERY_TEMPLATE = """
-SELECT type
-FROM pg_table_def
-WHERE tablename = '{table_name}' AND "column" = '{field}'
-;
-"""
-
-FIELD_LIST_QUERY_TEMPLATE = """
-SELECT '{table_name}.' || column_name
-FROM information_schema.columns
-WHERE table_name = '{table_name}'
-  AND NOT column_name LIKE '%key'
-;
-"""
-
-FIELD_DETAIL_QUERY_TEMPLATE = """
+FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE = """
 SELECT {fq_field_name}, COUNT(cell.cellkey)
 FROM cell
   LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
@@ -78,6 +63,16 @@ FROM cell
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 GROUP BY {fq_field_name}
+;
+"""
+
+FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE = """
+SELECT MIN({fq_field_name}), MAX({fq_field_name})
+FROM cell
+  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 ;
 """
 

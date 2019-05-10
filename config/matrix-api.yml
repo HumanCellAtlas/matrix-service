@@ -436,21 +436,12 @@ components:
         feature_description:
           description: 'Description of the feature type.'
           type: string
-        feature_values:
-          description: >
-            List of possible values for the feature, for example gene
-            or transcript ids.
-          type: array
-          items:
-            type: string
     FieldDetail:
       type: object
       required:
         - field_name
         - field_description
         - field_type
-      discriminator:
-        propertyName: filter_type
       properties:
         field_name:
           type: string
@@ -475,6 +466,9 @@ components:
               type: number
               description: >
                 Maximum value for this field in the HCA expression data.
+          required:
+            - minimum
+            - maximum
     CategoricalFieldDetail:
       allOf:
         - $ref: '#/components/schemas/FieldDetail'
@@ -487,3 +481,5 @@ components:
                 the field.
               additionalProperties:
                 type: integer
+          required:
+            - cell_counts
