@@ -353,3 +353,96 @@ MANIFEST VERBOSE
 ;
 """)
         self.assertEqual(queries["expression_query"], expected_exp_query)
+
+
+class TestNameConversion(unittest.TestCase):
+
+    def test_field_conversion(self):
+        filter_ = \
+            {
+                "op": "not",
+                "value": [{
+                    "op": "in",
+                    "field": "foo",
+                    "value": ["bar", "baz"]
+                }]
+            }
+        fields = ["dss_bundle_fqid", "genes_detected",
+                  "library_preparation_protocol.strand"]
+        feature = "gene"
+        queries = query_constructor.create_matrix_request_queries(filter_, fields, feature)
+
+        expected_cell_query = ("""
+UNLOAD($$SELECT cell.cellkey, analysis.bundle_fqid, cell.genes_detected, library_preparation.strand
+FROM cell
+  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+WHERE NOT (foo IN ('bar', 'baz'))$$)
+TO 's3://{results_bucket}/{request_id}/cell_metadata_'
+IAM_ROLE '{iam_role}'
+GZIP
+MANIFEST VERBOSE
+;
+""")
+        self.assertEqual(queries["cell_query"], expected_cell_query)
+
+    def test_filter_conversion(self):
+        filter_ = \
+            {
+                "op": "and",
+                "value": [
+                    {
+                        "op": "=",
+                        "field": "project.project_core.project_short_name",
+                        "value": "project1"
+                    },
+                    {
+                        "op": ">",
+                        "field": "genes_detected",
+                        "value": 1000
+                    }
+                ]
+            }
+
+        feature = "transcript"
+        queries = query_constructor.create_matrix_request_queries(
+            filter_, query_constructor.DEFAULT_FIELDS, feature)
+
+        expected_cell_query = ("""
+UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, specimen.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501
+"""
+FROM cell
+  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+WHERE ((project.short_name = 'project1') AND (cell.genes_detected > 1000))$$)
+TO 's3://{results_bucket}/{request_id}/cell_metadata_'
+IAM_ROLE '{iam_role}'
+GZIP
+MANIFEST VERBOSE
+;
+""")
+        self.assertEqual(queries["cell_query"], expected_cell_query)
+
+        expected_exp_query = ("""
+UNLOAD ($$SELECT cell.cellkey, expression.featurekey, expression.exrpvalue
+FROM expression
+  LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
+  INNER JOIN cell on (expression.cellkey = cell.cellkey)
+  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
+  INNER JOIN project on (cell.projectkey = project.projectkey)
+WHERE (NOT feature.isgene)
+  AND expression.exprtype = 'Count'
+  AND ((project.short_name = 'project1') AND (cell.genes_detected > 1000))$$)
+TO 's3://{results_bucket}/{request_id}/expression_'
+IAM_ROLE '{iam_role}'
+GZIP
+MANIFEST VERBOSE
+;
+""")
+        self.assertEqual(queries["expression_query"], expected_exp_query)

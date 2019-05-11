@@ -11,6 +11,13 @@ class MatrixFormat(Enum):
     MTX = "mtx"
 
 
+class MatrixFeature(Enum):
+    """Supported expression matrix features."""
+
+    GENE = "gene"
+    TRANSCRIPT = "transcript"
+
+
 class MatrixRequestStatus(Enum):
     COMPLETE = "Complete"
     IN_PROGRESS = "In Progress"
@@ -246,7 +253,8 @@ FILTER_DETAIL = {
     k: "Just what it sounds like." for k in METADATA_FIELD_TO_TABLE_COLUMN}
 
 FEATURE_DETAIL = {
-    "gene": "Genes from the GENCODE v27 comprehensive annotation.",
-    "transcript": ("Transcripts. from the GENCODE v27 comprehensive annotation. "
-                   "NOTE: Not all assay types have transcript information available")
+    MatrixFeature.GENE.value: "Genes from the GENCODE v27 comprehensive annotation.",
+    MatrixFeature.TRANSCRIPT.value: (
+        "Transcripts. from the GENCODE v27 comprehensive annotation. "
+        "NOTE: Not all assay types have transcript information available")
 }

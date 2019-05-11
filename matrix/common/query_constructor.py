@@ -1,3 +1,7 @@
+"""Methods and templates for redshift queries."""
+
+from matrix.common import constants
+
 COMPARISON_OPERATORS = [
     "=", ">=", "<=", "<", ">", "!=", "in"
 ]
@@ -78,16 +82,69 @@ FROM cell
 
 
 class MalformedMatrixFilter(Exception):
+    """Error indicating something wrong with a matrix filter."""
     pass
 
 
 class MalformedMatrixFeature(Exception):
+    """Error indicating something wrong with a matrix feature."""
     pass
 
 
-def create_matrix_request_queries(filter_, fields, feature):
+def translate_filters(filter_):
+    """Translate the filter fields specified by the user into their internal
+    names.
 
-    cell_where_clause = filter_to_where(filter_)
+    The metadata names that the matrix service presents to users are taken from
+    the project metadata tsvs. These names are different from the table and column
+    names inside the matrix service. This function takes a filter with a field
+    like "project.project_core.project_short_name" and translates it to
+    "project.short_name" so the query will execute correctly.
+    """
+
+    new_filter = dict(filter_)
+    if "field" in filter_:
+        try:
+            column_name = constants.METADATA_FIELD_TO_TABLE_COLUMN[filter_["field"]]
+            table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
+            fq_name = table_name + '.' + column_name
+        except KeyError:
+            fq_name = filter_["field"]
+
+        new_filter["field"] = fq_name
+    else:
+        try:
+            new_values = [translate_filters(f) for f in filter_["value"]]
+            new_filter["value"] = new_values
+        except KeyError:
+            pass
+
+    return new_filter
+
+
+def translate_fields(fields):
+    """Translate field list from external metadata field names to internal
+    redshift names.
+    """
+
+    new_fields = []
+    for field in fields:
+        try:
+            column_name = constants.METADATA_FIELD_TO_TABLE_COLUMN[field]
+            table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
+            fq_name = table_name + '.' + column_name
+        except KeyError:
+            fq_name = field
+        new_fields.append(fq_name)
+    return new_fields
+
+
+def create_matrix_request_queries(filter_, fields, feature):
+    """Based on values from the matrix request, create an appropriate
+    set of redshift queries to serve the request.
+    """
+
+    cell_where_clause = filter_to_where(translate_filters(filter_))
     feature_where_clause = feature_to_where(feature)
 
     expression_query = EXPRESSION_QUERY_TEMPLATE.format(
@@ -95,7 +152,7 @@ def create_matrix_request_queries(filter_, fields, feature):
         cell_where_clause=cell_where_clause)
 
     cell_query = CELL_QUERY_TEMPLATE.format(
-        fields=', '.join(fields),
+        fields=', '.join(translate_fields(fields)),
         cell_where_clause=cell_where_clause)
 
     feature_query = FEATURE_QUERY_TEMPLATE.format(feature_where_clause=feature_where_clause)
