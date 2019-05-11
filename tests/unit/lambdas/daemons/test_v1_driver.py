@@ -4,7 +4,7 @@ from unittest import mock
 
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
-from matrix.lambdas.daemons.driver import Driver
+from matrix.lambdas.daemons.v1.driver import Driver
 
 
 class TestDriver(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestDriver(unittest.TestCase):
         self.request_id = str(uuid.uuid4())
         self._driver = Driver(self.request_id)
 
-    @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
+    @mock.patch("matrix.lambdas.daemons.v1.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     def test_run_with_all_params(self,
                                  mock_complete_subtask_execution,

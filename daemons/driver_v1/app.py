@@ -1,4 +1,4 @@
-from matrix.lambdas.daemons.driver import Driver
+from matrix.lambdas.daemons.v1.driver import Driver
 
 
 def driver_handler(event, context):

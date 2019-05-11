@@ -51,7 +51,7 @@ def post_matrix(body: dict):
         'fields': body.get("fields", query_constructor.DEFAULT_FIELDS),
         'feature': body.get("feature", query_constructor.DEFAULT_FEATURE)
     }
-    lambda_handler.invoke(LambdaName.DRIVER, driver_payload)
+    lambda_handler.invoke(LambdaName.DRIVER_V1, driver_payload)
 
     return ({'request_id': request_id,
              'status': MatrixRequestStatus.IN_PROGRESS.value,
