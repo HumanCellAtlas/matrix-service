@@ -180,7 +180,7 @@ def _redshift_detail_lookup(name, description):
             fq_field_name=fq_name)
         results = rs_handler.transaction([query], return_results=True)
         min_ = results[0][0]
-        max_ = results[0][0]
+        max_ = results[0][1]
         return ({
             "field_name": name,
             "field_description": description,
