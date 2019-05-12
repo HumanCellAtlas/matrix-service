@@ -28,7 +28,7 @@ INPUT_BUNDLE_IDS = {
         "7ba67071-6fb3-43f8-ada8-ed5993195e2b.2018-10-24T225455.712647Z",
     ],
     "prod": [
-        # "4d825362-dc29-4135-9f53-92c27955ddda.2019-02-02T072347.000888Z",
+        "4d825362-dc29-4135-9f53-92c27955ddda.2019-02-02T072347.000888Z",
         "ae066cbd-f9f8-438a-8c3c-43f5cd44a9eb.2019-02-02T042049.843007Z",
         "684a7318-a405-450b-a616-f97ddbc34f8f.2019-02-01T183026.372619Z",
         "e83d8b22-2090-4f34-868d-92a8749a401d.2019-02-02T021732.127000Z",
@@ -39,8 +39,82 @@ INPUT_BUNDLE_IDS = {
 INPUT_BUNDLE_URL = \
     "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_env}_test_bundles.tsv"
 
+class MatrixServiceTest(unittest.TestCase):
 
-class TestMatrixService(unittest.TestCase):
+    def _make_request(self, description, verb, url, expected_status=None, **options):
+        print(description + ": ")
+        print(f"{verb.upper()} {url}")
+
+        method = getattr(requests, verb.lower())
+        response = method(url, **options)
+
+        print(f"-> {response.status_code}")
+        if expected_status:
+            self.assertEqual(expected_status, response.status_code)
+
+        if response.content:
+            print(response.content.decode('utf8'))
+
+        return response.content
+
+    def _poll_get_matrix_service_request(self, request_id):
+        url = f"{self.api_url}/matrix/{request_id}"
+        response = self._make_request(description="GET REQUEST TO MATRIX SERVICE WITH REQUEST ID",
+                                      verb='GET',
+                                      url=url,
+                                      expected_status=200,
+                                      headers=self.headers)
+        data = json.loads(response)
+        status = data["status"]
+        return status
+
+    def _analyze_loom_matrix_results(self, request_id, input_bundles):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("loom"), True)
+        loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
+        self._compare_metrics(direct_metrics, loom_metrics)
+
+    def _analyze_mtx_matrix_results(self, request_id, input_bundles):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("mtx.zip"), True)
+        mtx_metrics = validation.calculate_ss2_metrics_mtx(matrix_location)
+        self._compare_metrics(direct_metrics, mtx_metrics)
+
+    def _analyze_csv_matrix_results(self, request_id, input_bundles):
+        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+        self.assertEqual(matrix_location.endswith("csv.zip"), True)
+        csv_metrics = validation.calculate_ss2_metrics_csv(matrix_location)
+        self._compare_metrics(direct_metrics, csv_metrics)
+
+    def _compare_metrics(self, metrics_1, metrics_2):
+        for metric in metrics_1:
+            delta = metrics_1[metric] / 100000
+            self.assertAlmostEqual(
+                metrics_1[metric], metrics_2[metric], delta=delta,
+                msg=(f"Metric {metric} doesn't match: {metrics_1[metric]} "
+                     f"{metrics_2[metric]}"))
+
+    def _retrieve_matrix_location(self, request_id):
+        url = f"{self.api_url}/matrix/{request_id}"
+        response = self._make_request(description="GET REQUEST TO MATRIX SERVICE WITH REQUEST ID",
+                                      verb='GET',
+                                      url=url,
+                                      expected_status=200,
+                                      headers=self.headers)
+        data = json.loads(response)
+        try:
+            location = data["matrix_location"]
+        except KeyError:
+            location = data["matrix_url"]
+        return location
+
+class TestMatrixServiceV0(MatrixServiceTest):
 
     def setUp(self):
         self.dss_env = MATRIX_ENV_TO_DSS_ENV[os.environ['DEPLOYMENT_STAGE']]
@@ -179,72 +253,46 @@ class TestMatrixService(unittest.TestCase):
         data = json.loads(response)
         return data
 
-    def _poll_get_matrix_service_request(self, request_id):
-        url = f"{self.api_url}/matrix/{request_id}"
-        response = self._make_request(description="GET REQUEST TO MATRIX SERVICE WITH REQUEST ID",
-                                      verb='GET',
-                                      url=url,
-                                      expected_status=200,
+
+
+
+class TestMatrixServiceV1(MatrixServiceTest):
+    def setUp(self):
+        self.dss_env = MATRIX_ENV_TO_DSS_ENV[os.environ['DEPLOYMENT_STAGE']]
+        self.api_url = f"https://{os.environ['API_HOST']}/v1"
+        self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        self.verbose = True
+        self.s3_file_system = s3fs.S3FileSystem(anon=False)
+
+    def _post_matrix_service_request(self, filter_, fields=None, feature=None, format_=None):
+        data = {"filter": filter_}
+        if fields:
+            data["fields"] = fields
+        if feature:
+            data["feature"] = feature
+        if format_:
+            data["format"] = format_
+
+        response = self._make_request(description="POST REQUEST TO MATRIX SERVICE",
+                                      verb='POST',
+                                      url=f"{self.api_url}/matrix",
+                                      expected_status=202,
+                                      data=json.dumps(data),
                                       headers=self.headers)
+
         data = json.loads(response)
-        status = data["status"]
-        return status
+        return data["request_id"]
 
-    def _analyze_loom_matrix_results(self, request_id, input_bundles):
-        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
+    def test_mtx_output_matrix_service(self):
 
-        matrix_location = self._retrieve_matrix_location(request_id)
-        self.assertEqual(matrix_location.endswith("loom"), True)
-        loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
-        self._compare_metrics(direct_metrics, loom_metrics)
+        self.request_id = self._post_matrix_service_request(
+                filter_={"op": "in",
+                         "field": "dss_bundle_fqid",
+                         "value": INPUT_BUNDLE_IDS[self.dss_env]},
+                format_="mtx")
 
-    def _analyze_mtx_matrix_results(self, request_id, input_bundles):
-        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
-
-        matrix_location = self._retrieve_matrix_location(request_id)
-        self.assertEqual(matrix_location.endswith("mtx.zip"), True)
-        mtx_metrics = validation.calculate_ss2_metrics_mtx(matrix_location)
-        self._compare_metrics(direct_metrics, mtx_metrics)
-
-    def _analyze_csv_matrix_results(self, request_id, input_bundles):
-        direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
-
-        matrix_location = self._retrieve_matrix_location(request_id)
-        self.assertEqual(matrix_location.endswith("csv.zip"), True)
-        csv_metrics = validation.calculate_ss2_metrics_csv(matrix_location)
-        self._compare_metrics(direct_metrics, csv_metrics)
-
-    def _compare_metrics(self, metrics_1, metrics_2):
-        for metric in metrics_1:
-            delta = metrics_1[metric] / 100000
-            self.assertAlmostEqual(
-                metrics_1[metric], metrics_2[metric], delta=delta,
-                msg=(f"Metric {metric} doesn't match: {metrics_1[metric]} "
-                     f"{metrics_2[metric]}"))
-
-    def _retrieve_matrix_location(self, request_id):
-        url = f"{self.api_url}/matrix/{request_id}"
-        response = self._make_request(description="GET REQUEST TO MATRIX SERVICE WITH REQUEST ID",
-                                      verb='GET',
-                                      url=url,
-                                      expected_status=200,
-                                      headers=self.headers)
-        data = json.loads(response)
-        location = data["matrix_location"]
-        return location
-
-    def _make_request(self, description, verb, url, expected_status=None, **options):
-        print(description + ": ")
-        print(f"{verb.upper()} {url}")
-
-        method = getattr(requests, verb.lower())
-        response = method(url, **options)
-
-        print(f"-> {response.status_code}")
-        if expected_status:
-            self.assertEqual(expected_status, response.status_code)
-
-        if response.content:
-            print(response.content.decode('utf8'))
-
-        return response.content
+        print(self.request_id)
+        # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
+        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+        self._analyze_mtx_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
