@@ -44,6 +44,11 @@ class TestFilterWhereConstruction(unittest.TestCase):
             query_constructor.filter_to_where(
                 {"op": "not", "value": ["bar", "baz"]})
 
+        # and and or take two values
+        with self.assertRaises(query_constructor.MalformedMatrixFilter):
+            query_constructor.filter_to_where(
+                {"op": "and", "value": [{"op": "=", "field": "foo", "value": "bar"}]})
+
     def test_simple_comparison(self):
 
         filter_ = \

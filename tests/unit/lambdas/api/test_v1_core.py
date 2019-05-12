@@ -286,7 +286,7 @@ class TestCore(unittest.TestCase):
         filter_ = 'donor_organism.human_specific.ethnicity.ontology'
         description = constants.FILTER_DETAIL[filter_]
 
-        mock_transaction.return_value = [("abc", 123), ("def", 456)]
+        mock_transaction.return_value = [("abc", 123), ("def", 456), (None, 789)]
 
         response = core.get_filter_detail(filter_)
 
@@ -297,7 +297,7 @@ class TestCore(unittest.TestCase):
                 "field_name": filter_,
                 "field_description": description,
                 "field_type": "categorical",
-                "cell_counts": {"abc": 123, "def": 456}})
+                "cell_counts": {"abc": 123, "def": 456, "": 789}})
 
         filter_ = 'genes_detected'
         description = constants.FILTER_DETAIL[filter_]
@@ -361,9 +361,15 @@ class TestCore(unittest.TestCase):
                 "feature": "gene",
                 "feature_description": constants.FEATURE_DETAIL["gene"]})
 
+        response = core.get_feature_detail("not.a.feature")
+        self.assertEqual(response[1], requests.codes.not_found)
+
     def test_get_format_detail(self):
 
         response = core.get_format_detail("loom")
 
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0], constants.FORMAT_DETAIL["loom"])
+
+        response = core.get_format_detail("not.a.format")
+        self.assertEqual(response[1], requests.codes.not_found)
