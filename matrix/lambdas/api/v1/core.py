@@ -91,7 +91,7 @@ def get_matrix(request_id: str):
     if request_tracker.error:
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
-                 'matrix_location': "",
+                 'matrix_url': "",
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
@@ -101,7 +101,7 @@ def get_matrix(request_id: str):
             Please retry or contact an hca admin for help.")
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
-                 'matrix_location': "",
+                 'matrix_url': "",
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
@@ -130,7 +130,7 @@ def get_matrix(request_id: str):
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
-                 'matrix_location': "",
+                 'matrix_url': "",
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
