@@ -39,6 +39,7 @@ INPUT_BUNDLE_IDS = {
 INPUT_BUNDLE_URL = \
     "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_env}_test_bundles.tsv"
 
+
 class MatrixServiceTest(unittest.TestCase):
 
     def _make_request(self, description, verb, url, expected_status=None, **options):
@@ -113,6 +114,7 @@ class MatrixServiceTest(unittest.TestCase):
         except KeyError:
             location = data["matrix_url"]
         return location
+
 
 class TestMatrixServiceV0(MatrixServiceTest):
 
@@ -254,8 +256,6 @@ class TestMatrixServiceV0(MatrixServiceTest):
         return data
 
 
-
-
 class TestMatrixServiceV1(MatrixServiceTest):
     def setUp(self):
         self.dss_env = MATRIX_ENV_TO_DSS_ENV[os.environ['DEPLOYMENT_STAGE']]
@@ -286,12 +286,11 @@ class TestMatrixServiceV1(MatrixServiceTest):
     def test_mtx_output_matrix_service(self):
 
         self.request_id = self._post_matrix_service_request(
-                filter_={"op": "in",
-                         "field": "dss_bundle_fqid",
-                         "value": INPUT_BUNDLE_IDS[self.dss_env]},
-                format_="mtx")
+            filter_={"op": "in",
+                     "field": "dss_bundle_fqid",
+                     "value": INPUT_BUNDLE_IDS[self.dss_env]},
+            format_="mtx")
 
-        print(self.request_id)
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_get_matrix_service_request, self.request_id) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
