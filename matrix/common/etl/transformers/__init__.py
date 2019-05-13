@@ -8,6 +8,7 @@ class MetadataToPsvTransformer:
     """
     PSV_EXT = ".psv"
     OUTPUT_DIRNAME = "output"
+    LOG_DIRNAME = "logs"
 
     def __init__(self, staging_dir):
         self.staging_dir = staging_dir

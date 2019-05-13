@@ -12,6 +12,7 @@ from matrix.common.etl import (run_etl,
                                transform_bundle,
                                finalizer_reload,
                                finalizer_update,
+                               _log_error,
                                load_from_local_files,
                                load_from_s3,
                                _upload_to_s3,
@@ -59,9 +60,9 @@ class TestEtl(unittest.TestCase):
                                              dispatch_executor_class=concurrent.futures.ProcessPoolExecutor)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
-    @mock.patch("matrix.common.etl.logger.error")
+    @mock.patch("matrix.common.etl._log_error")
     @mock.patch("matrix.common.etl.transformers.cell_expression.CellExpressionTransformer.transform")
-    def test_transform_bundle(self, mock_cell_expression_transform, mock_error, mock_swagger_spec):
+    def test_transform_bundle(self, mock_cell_expression_transform, mock_log_error, mock_swagger_spec):
         mock_swagger_spec.return_value = self.stub_swagger_spec
         extractor = DSSExtractor(staging_directory="test_dir",
                                  content_type_patterns=[],
@@ -74,11 +75,11 @@ class TestEtl(unittest.TestCase):
         e = Exception()
         mock_cell_expression_transform.side_effect = e
         transform_bundle("test_uuid", "test_version", "test_path", "test_manifest_path", extractor)
-        mock_error.assert_called_once_with("Failed to transform bundle test_uuid.test_version.", e)
+        mock_log_error.assert_called_once_with("test_uuid.test_version", e, mock.ANY, extractor)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.etl.load_from_local_files")
-    @mock.patch("matrix.common.etl.logger.error")
+    @mock.patch("matrix.common.etl._log_error")
     @mock.patch("matrix.common.etl.transformers."
                 "project_publication_contributor.ProjectPublicationContributorTransformer.transform")
     @mock.patch("matrix.common.etl.transformers.specimen_library.SpecimenLibraryTransformer.transform")
@@ -91,7 +92,7 @@ class TestEtl(unittest.TestCase):
                               mock_analysis_transformer,
                               mock_specimen_library_transformer,
                               mock_project_publication_contributor_transformer,
-                              mock_error,
+                              mock_log_error,
                               mock_load_from_local_files,
                               mock_swagger_spec):
         mock_swagger_spec.return_value = self.stub_swagger_spec
@@ -107,15 +108,16 @@ class TestEtl(unittest.TestCase):
         mock_project_publication_contributor_transformer.assert_called_once_with("test_dir/bundles")
         mock_load_from_local_files.assert_called_once_with("test_dir", is_update=False)
 
+        e = Exception()
         mock_load_from_local_files.reset_mock()
-        mock_feature_transformer.side_effect = Exception()
+        mock_feature_transformer.side_effect = e
         finalizer_reload(extractor)
-        self.assertTrue(mock_error.called)
+        mock_log_error.assert_called_once_with("FeatureTransformer", e, mock.ANY, extractor)
         mock_load_from_local_files.assert_called_once_with("test_dir", is_update=False)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.etl.load_from_local_files")
-    @mock.patch("matrix.common.etl.logger.error")
+    @mock.patch("matrix.common.etl._log_error")
     @mock.patch("matrix.common.etl.transformers."
                 "project_publication_contributor.ProjectPublicationContributorTransformer.transform")
     @mock.patch("matrix.common.etl.transformers.specimen_library.SpecimenLibraryTransformer.transform")
@@ -128,7 +130,7 @@ class TestEtl(unittest.TestCase):
                               mock_analysis_transformer,
                               mock_specimen_library_transformer,
                               mock_project_publication_contributor_transformer,
-                              mock_error,
+                              mock_log_error,
                               mock_load_from_local_files,
                               mock_swagger_spec):
         mock_swagger_spec.return_value = self.stub_swagger_spec
@@ -144,11 +146,34 @@ class TestEtl(unittest.TestCase):
         mock_project_publication_contributor_transformer.assert_called_once_with("test_dir/bundles")
         mock_load_from_local_files.assert_called_once_with("test_dir", is_update=True)
 
+        e = Exception()
         mock_load_from_local_files.reset_mock()
-        mock_analysis_transformer.side_effect = Exception()
+        mock_analysis_transformer.side_effect = e
         finalizer_update(extractor)
-        self.assertTrue(mock_error.called)
+        mock_log_error.assert_called_once_with("AnalysisTransformer", e, mock.ANY, extractor)
         mock_load_from_local_files.assert_called_once_with("test_dir", is_update=True)
+
+    @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.date.get_datetime_now")
+    @mock.patch("matrix.common.etl.logger.error")
+    def test_log_error(self, mock_error, mock_datetime_now, mock_swagger_spec):
+        mock_swagger_spec.return_value = self.stub_swagger_spec
+        mock_datetime_now.return_value = "timestamp"
+
+        ex = Exception("msg")
+        extractor = DSSExtractor(staging_directory="test_dir",
+                                 content_type_patterns=[],
+                                 filename_patterns=[],
+                                 dss_client=get_dss_client("dev"))
+
+        with mock.patch("builtins.open", mock.mock_open()) as mock_open:
+            _log_error("test_bundle", ex, "test_trace", extractor)
+
+            handle = mock_open()
+            expected_calls = [mock.call("[timestamp] test_bundle failed with exception: msg\ntest_trace\n"),
+                              mock.call("test_bundle\n")]
+            handle.write.assert_has_calls(expected_calls)
+            self.assertTrue(mock_error.called)
 
     @mock.patch("matrix.common.etl._populate_all_tables")
     @mock.patch("matrix.common.etl._upload_to_s3")
