@@ -23,7 +23,10 @@ resource "aws_secretsmanager_secret_version" "database_secrets" {
   secret_string = <<SECRETS_JSON
 {
   "database_uri": "postgresql://${var.redshift_username}:${var.redshift_password}@${aws_redshift_cluster.default.endpoint}/matrix_service_${var.deployment_stage}",
-  "redshift_role_arn": "${aws_iam_role.matrix_service_redshift.arn}"
+  "readonly_database_uri": "postgresql://${var.readonly_redshift_username}:${var.readonly_redshift_password}@${aws_redshift_cluster.default.endpoint}/matrix_service_${var.deployment_stage}",
+  "redshift_role_arn": "${aws_iam_role.matrix_service_redshift.arn}",
+  "readonly_username": "${var.readonly_redshift_username}",
+  "readonly_password": "${var.readonly_redshift_password}"
 }
 SECRETS_JSON
 }

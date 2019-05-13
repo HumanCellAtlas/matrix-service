@@ -27,6 +27,8 @@ module "matrix_service_infra" {
   redshift_password = "${var.redshift_password}"
   gcp_service_acct_creds = "${var.gcp_service_acct_creds}"
   query_runner_concurrency = "${var.query_runner_concurrency}"
+  readonly_redshift_username = "${var.readonly_redshift_username}"
+  readonly_redshift_password = "${var.readonly_redshift_password}"
 }
 
 module "matrix_service_lambdas" {
