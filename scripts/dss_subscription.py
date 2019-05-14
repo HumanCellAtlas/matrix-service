@@ -33,10 +33,11 @@ if __name__ == '__main__':
                 res = dss_client.delete_subscription(replica=replica, subscription_type="jmespath", uuid=subscription["uuid"])
                 print("Deleted subscription {}: {}".format(subscription["uuid"], res))
 
-        resp = dss_client.put_subscription(callback_url=matrix_callback,
-                                           jmespath_query=jmespath_query,
-                                           replica="aws")
-        print("Created subscription {}: {}".format(resp["uuid"], resp))
+        print("Not resubscribing to dss for the time being.")
+        # resp = dss_client.put_subscription(callback_url=matrix_callback,
+        #                                    jmespath_query=jmespath_query,
+        #                                    replica="aws")
+        # print("Created subscription {}: {}".format(resp["uuid"], resp))
 
     except Exception as e:
         print(e)

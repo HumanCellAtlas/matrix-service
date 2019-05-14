@@ -15,6 +15,7 @@ from matrix.common.aws.redshift_handler import RedshiftHandler
 ecs_client = boto3.client("ecs", region_name=os.environ['AWS_DEFAULT_REGION'])
 redshift_handler = RedshiftHandler()
 
+
 def create_app():
     app = connexion.App("matrix-service-api")
     swagger_spec_path = os.path.join(pkg_root, "config", "matrix-api.yml")
