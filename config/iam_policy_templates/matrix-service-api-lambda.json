@@ -64,6 +64,15 @@
       "Resource": [
         "*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:Describe*"
+      ],
+      "Resource": [
+        "*"
+      ]
     }
   ]
 }

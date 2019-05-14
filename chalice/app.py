@@ -8,13 +8,12 @@ import boto3
 import chalice
 import connexion
 
-from matrix.common.aws.redshift_handler import RedshiftHandlers
-
-ecs_client = boto3.client("ecs", region_name=os.environ['AWS_DEFAULT_REGION'])
-redshift_handler = RedshiftHandlers()
 pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "chalicelib")) # noqa
 sys.path.insert(0, pkg_root) # noqa
+from matrix.common.aws.redshift_handler import RedshiftHandler
 
+ecs_client = boto3.client("ecs", region_name=os.environ['AWS_DEFAULT_REGION'])
+redshift_handler = RedshiftHandler()
 
 def create_app():
     app = connexion.App("matrix-service-api")
@@ -83,10 +82,9 @@ def get_chalice_app(flask_app):
         service_name = f"matrix-service-query-runner-{os.environ['DEPLOYMENT_STAGE']}"
         service = ecs_client.describe_services(cluster=service_name, services=[service_name])["services"][0]
         status = service["status"]
-        desired_task_count = service["desiredCount"]
         running_task_count = service["runningCount"]
         assert status == 'ACTIVE'
-        assert desired_task_count == running_task_count
+        assert running_task_count > 0
         return chalice.Response(status_code=200,
                                 headers={'Content-Type': "text/html"},
                                 body="OK")
