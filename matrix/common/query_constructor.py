@@ -1,5 +1,7 @@
 """Methods and templates for redshift queries."""
 
+import typing
+
 from matrix.common import constants
 
 COMPARISON_OPERATORS = [
@@ -91,7 +93,7 @@ class MalformedMatrixFeature(Exception):
     pass
 
 
-def translate_filters(filter_):
+def translate_filters(filter_: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     """Translate the filter fields specified by the user into their internal
     names.
 
@@ -122,7 +124,7 @@ def translate_filters(filter_):
     return new_filter
 
 
-def translate_fields(fields):
+def translate_fields(fields: typing.List[str]) -> typing.List[str]:
     """Translate field list from external metadata field names to internal
     redshift names.
     """
@@ -139,7 +141,9 @@ def translate_fields(fields):
     return new_fields
 
 
-def create_matrix_request_queries(filter_, fields, feature):
+def create_matrix_request_queries(filter_: typing.Dict[str, typing.Any],
+                                  fields: typing.List[str],
+                                  feature: str) -> typing.Dict[str, str]:
     """Based on values from the matrix request, create an appropriate
     set of redshift queries to serve the request.
     """
@@ -164,7 +168,7 @@ def create_matrix_request_queries(filter_, fields, feature):
     }
 
 
-def feature_to_where(matrix_feature):
+def feature_to_where(matrix_feature: str) -> str:
     """Build the WHERE clause for the features."""
 
     if matrix_feature == "gene":
@@ -175,7 +179,7 @@ def feature_to_where(matrix_feature):
         raise MalformedMatrixFeature(f"Unknown feature type {matrix_feature}")
 
 
-def filter_to_where(matrix_filter):
+def filter_to_where(matrix_filter: typing.Dict[str, typing.Any]) -> str:
     """Build a WHERE clause for the matrix request SQL query out of the matrix
     filter object.
     """
