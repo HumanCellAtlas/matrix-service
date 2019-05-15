@@ -14,7 +14,7 @@ LOGICAL_OPERATORS = ["and", "or", "not"]
 DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "specimen.*",
                   "library_preparation.*", "project.*", "analysis.*"]
 
-DEFAULT_FEATURE = "gene"
+DEFAULT_FEATURE = constants.MatrixFeature.GENE.value
 
 EXPRESSION_QUERY_TEMPLATE = """
 UNLOAD ($$SELECT cell.cellkey, expression.featurekey, expression.exrpvalue
@@ -171,9 +171,9 @@ def create_matrix_request_queries(filter_: typing.Dict[str, typing.Any],
 def feature_to_where(matrix_feature: str) -> str:
     """Build the WHERE clause for the features."""
 
-    if matrix_feature == "gene":
+    if matrix_feature == constants.MatrixFeature.GENE.value:
         return "feature.isgene"
-    elif matrix_feature == "transcript":
+    elif matrix_feature == constants.MatrixFeature.TRANSCRIPT.value:
         return "(NOT feature.isgene)"
     else:
         raise MalformedMatrixFeature(f"Unknown feature type {matrix_feature}")
