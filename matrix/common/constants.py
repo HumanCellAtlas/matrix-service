@@ -225,7 +225,7 @@ TABLE_COLUMN_TO_TABLE = {
     'construction_approach_label': 'library_preparation',
     'end_bias': 'library_preparation',
     'strand': 'library_preparation',
-    'projectkey': 'project.',
+    'projectkey': 'project',
     'short_name': 'project',
     'title': 'project',
     'analysiskey': 'analysis',
