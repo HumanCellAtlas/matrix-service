@@ -11,7 +11,7 @@ from matrix.common.exceptions import MatrixException
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.config import MatrixInfraConfig
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
-from matrix.common.aws.redshift_handler import RedshiftHandler
+from matrix.common.aws.redshift_handler import RedshiftHandler, TableName
 from matrix.common.request.request_tracker import RequestTracker
 from matrix.common.aws.sqs_handler import SQSHandler
 
@@ -160,10 +160,15 @@ def _redshift_detail_lookup(name, description):
     table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
     fq_name = table_name + "." + column_name
 
+    table_primary_key = RedshiftHandler.PRIMARY_KEY[TableName(table_name)]
+
     rs_handler = RedshiftHandler()
+
     if type_ == "categorical":
         query = query_constructor.FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE.format(
-            fq_field_name=fq_name)
+            fq_field_name=fq_name,
+            table_name=table_name,
+            primary_key=table_primary_key)
         results = dict(rs_handler.transaction([query], return_results=True))
         if None in results:
             results[""] = results[None]
@@ -177,7 +182,9 @@ def _redshift_detail_lookup(name, description):
 
     elif type_ == "numeric":
         query = query_constructor.FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE.format(
-            fq_field_name=fq_name)
+            fq_field_name=fq_name,
+            table_name=table_name,
+            primary_key=table_primary_key)
         results = rs_handler.transaction([query], return_results=True)
         min_ = results[0][0]
         max_ = results[0][1]

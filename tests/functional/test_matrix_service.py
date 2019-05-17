@@ -158,26 +158,26 @@ class TestMatrixServiceV0(MatrixServiceTest):
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
-    @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
-                         "Do not want to process fake notifications in production.")
-    def test_dss_notification(self):
-        bundle_fqid = INPUT_BUNDLE_IDS[self.dss_env][0]
-
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(0, timeout_seconds=60)
-
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(1, timeout_seconds=600)
-
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(0, timeout_seconds=60)
-
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(1, timeout_seconds=600)
+#    @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
+#                         "Do not want to process fake notifications in production.")
+#    def test_dss_notification(self):
+#        bundle_fqid = INPUT_BUNDLE_IDS[self.dss_env][0]
+#
+#        self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
+#        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+#            .to_return_value(0, timeout_seconds=60)
+#
+#        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
+#        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+#            .to_return_value(1, timeout_seconds=600)
+#
+#        self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
+#        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+#            .to_return_value(0, timeout_seconds=60)
+#
+#        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
+#        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
+#            .to_return_value(1, timeout_seconds=600)
 
     @unittest.skip
     def test_matrix_service_ss2(self):

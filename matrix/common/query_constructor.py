@@ -64,10 +64,7 @@ MANIFEST VERBOSE;
 FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE = """
 SELECT {fq_field_name}, COUNT(cell.cellkey)
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
-  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
-  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
-  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+  LEFT OUTER JOIN {table_name} on (cell.{primary_key} = {table_name}.{primary_key})
 GROUP BY {fq_field_name}
 ;
 """
@@ -75,10 +72,7 @@ GROUP BY {fq_field_name}
 FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE = """
 SELECT MIN({fq_field_name}), MAX({fq_field_name})
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
-  LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
-  LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
-  INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+  LEFT OUTER JOIN {table_name} on (cell.{primary_key} = {table_name}.{primary_key})
 ;
 """
 
