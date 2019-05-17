@@ -93,6 +93,22 @@ class MalformedMatrixFeature(Exception):
     pass
 
 
+def _get_internal_name(metadata_name):
+    """Translate the external field name used in the matrix service API to
+    the internal table and field name used by redshift.
+
+    If the translation doesn't work, just return the original name.
+    """
+
+    try:
+        column_name = constants.METADATA_FIELD_TO_TABLE_COLUMN[metadata_name]
+        table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
+        fq_name = table_name + '.' + column_name
+        return fq_name
+    except KeyError:
+        return metadata_name
+
+
 def translate_filters(filter_: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     """Translate the filter fields specified by the user into their internal
     names.
@@ -106,13 +122,7 @@ def translate_filters(filter_: typing.Dict[str, typing.Any]) -> typing.Dict[str,
 
     new_filter = dict(filter_)
     if "field" in filter_:
-        try:
-            column_name = constants.METADATA_FIELD_TO_TABLE_COLUMN[filter_["field"]]
-            table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
-            fq_name = table_name + '.' + column_name
-        except KeyError:
-            fq_name = filter_["field"]
-
+        fq_name = _get_internal_name(filter_["field"])
         new_filter["field"] = fq_name
     else:
         try:
@@ -131,12 +141,7 @@ def translate_fields(fields: typing.List[str]) -> typing.List[str]:
 
     new_fields = []
     for field in fields:
-        try:
-            column_name = constants.METADATA_FIELD_TO_TABLE_COLUMN[field]
-            table_name = constants.TABLE_COLUMN_TO_TABLE[column_name]
-            fq_name = table_name + '.' + column_name
-        except KeyError:
-            fq_name = field
+        fq_name = _get_internal_name(field)
         new_fields.append(fq_name)
     return new_fields
 
