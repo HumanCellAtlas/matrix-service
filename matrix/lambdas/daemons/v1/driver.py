@@ -48,8 +48,12 @@ class Driver:
         logger.debug(f"Driver running with parameters: filter={filter_}, "
                      f"fields={fields}, feature={feature}")
 
-        matrix_request_queries = query_constructor.create_matrix_request_queries(
-            filter_, fields, feature)
+        try:
+            matrix_request_queries = query_constructor.create_matrix_request_queries(
+                filter_, fields, feature)
+        except (query_constructor.MalformedMatrixFilter, query_constructor.MalformedMatrixFeature) as exc:
+            self.request_tracker.log_error(f"Query construction failed with error: {str(exc)}")
+            raise
 
         s3_obj_keys = self._format_and_store_queries_in_s3(matrix_request_queries)
         for s3_obj_key in s3_obj_keys:
