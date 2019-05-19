@@ -1,8 +1,14 @@
+import io
 import json
 import os
+import pandas
+import shutil
+import tempfile
 import time
 import unittest
+import zipfile
 
+import loompy
 import requests
 import s3fs
 
@@ -295,3 +301,67 @@ class TestMatrixServiceV1(MatrixServiceTest):
         WaitFor(self._poll_get_matrix_service_request, self.request_id) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
         self._analyze_mtx_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+
+    def test_request_fields(self):
+
+        fields = ["derived_organ_label", "dss_bundle_fqid", "genes_detected",
+                  "library_preparation_protocol.library_construction_method.ontology"]
+        self.request_id = self._post_matrix_service_request(
+            filter_={"op": "in",
+                     "field": "dss_bundle_fqid",
+                     "value": INPUT_BUNDLE_IDS[self.dss_env]},
+            format_="csv",
+            fields=fields)
+
+        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+
+        matrix_location = self._retrieve_matrix_location(self.request_id)
+
+        temp_dir = tempfile.mkdtemp(suffix="csv_fields_test")
+        local_csv_zip_path = os.path.join(temp_dir, os.path.basename(matrix_location))
+        response = requests.get(matrix_location, stream=True)
+        with open(local_csv_zip_path, "wb") as local_csv_zip_file:
+            shutil.copyfileobj(response.raw, local_csv_zip_file)
+        csv_zip = zipfile.ZipFile(local_csv_zip_path)
+        cells_name = [n for n in csv_zip.namelist() if n.endswith("cells.csv")][0]
+
+        cells_pdata = pandas.read_csv(
+            io.StringIO(csv_zip.read(cells_name).decode()),
+            header=0,
+            index_col=0)
+
+        self.assertListEqual(list(cells_pdata.columns), fields)
+
+    @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') in ("dev", "prod"),
+                         "Only test filters against known bundles in prod")
+    def test_ops(self):
+
+        # Filter should return two of the five test bundles
+        self.request_id = self._post_matrix_service_request(
+            filter_={"op": "and",
+                     "value": [
+                         {"op": "=",
+                          "field": "library_preparation_protocol.library_construction_method.ontology",
+                          "value": "EFO:0008931"},
+                         {"op": "!=",
+                          "field": "derived_organ_label",
+                          "value": "decidua"},
+                         {"op": "in",
+                          "field": "dss_bundle_fqid",
+                          "value": INPUT_BUNDLE_IDS[self.dss_env]}]},
+            format_="loom")
+
+        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+        matrix_location = self._retrieve_matrix_location(self.request_id)
+
+        temp_dir = tempfile.mkdtemp(suffix="loom_ops_test")
+        local_loom_path = os.path.join(temp_dir, os.path.basename(matrix_location))
+        response = requests.get(matrix_location, stream=True)
+        with open(local_loom_path, "wb") as local_loom_file:
+            shutil.copyfileobj(response.raw, local_loom_file)
+
+        ds = loompy.connect(local_loom_path)
+
+        self.assertEqual(ds.shape[1], 2)
