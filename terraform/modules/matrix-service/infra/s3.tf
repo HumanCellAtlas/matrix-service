@@ -65,3 +65,17 @@ resource "aws_s3_bucket" "matrix_queries" {
   }
   # Add tags later
 }
+
+resource "aws_s3_bucket" "matrix_query_results" {
+  bucket = "dcp-matrix-service-query-results-${var.deployment_stage}"
+
+  lifecycle_rule {
+    id      = "matrix_service_query_results_expiration"
+
+    expiration {
+      days = 30
+    }
+
+    enabled = true
+  }
+}

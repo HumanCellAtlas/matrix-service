@@ -73,8 +73,8 @@ resource "aws_iam_role_policy" "matrix_service_redshift" {
       "Resource": [
         "arn:aws:s3:::dcp-matrix-service-preload-${var.deployment_stage}",
         "arn:aws:s3:::dcp-matrix-service-preload-${var.deployment_stage}/*",
-        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
-        "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
+        "arn:aws:s3:::dcp-matrix-service-query-results-${var.deployment_stage}",
+        "arn:aws:s3:::dcp-matrix-service-query-results-${var.deployment_stage}/*"
       ]
     }
   ]

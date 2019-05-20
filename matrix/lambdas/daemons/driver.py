@@ -69,7 +69,7 @@ class Driver:
         self.sqs_handler = SQSHandler()
         self.infra_config = MatrixInfraConfig()
         self.redshift_config = MatrixRedshiftConfig()
-        self.results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
+        self.query_results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
         self.s3_handler = S3Handler(os.environ['MATRIX_QUERY_BUCKET'])
 
     @property
@@ -118,18 +118,18 @@ class Driver:
         return list(map(_parse_line, lines))
 
     def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list):
-        feature_query = feature_query_template.format(self.results_bucket,
+        feature_query = feature_query_template.format(self.query_results_bucket,
                                                       self.request_id,
                                                       self.redshift_role_arn)
         feature_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/feature", feature_query)
 
-        exp_query = expression_query_template.format(self.results_bucket,
+        exp_query = expression_query_template.format(self.query_results_bucket,
                                                      self.request_id,
                                                      self.redshift_role_arn,
                                                      tuple(resolved_bundle_fqids))
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
-        cell_query = cell_query_template.format(self.results_bucket,
+        cell_query = cell_query_template.format(self.query_results_bucket,
                                                 self.request_id,
                                                 self.redshift_role_arn,
                                                 tuple(resolved_bundle_fqids))

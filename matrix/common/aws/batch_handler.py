@@ -14,7 +14,7 @@ logger = Logging.get_logger(__name__)
 class BatchHandler:
     def __init__(self):
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
-        self.s3_results_bucket = os.environ.get('MATRIX_RESULTS_BUCKET')
+        self.s3_results_bucket = os.environ.get('MATRIX_QUERY_RESULTS_BUCKET')
         self.job_queue_arn = os.environ.get('BATCH_CONVERTER_JOB_QUEUE_ARN')
         self.job_def_arn = os.environ.get('BATCH_CONVERTER_JOB_DEFINITION_ARN')
         self._cloudwatch_handler = CloudwatchHandler()
