@@ -365,3 +365,18 @@ class TestMatrixServiceV1(MatrixServiceTest):
         ds = loompy.connect(local_loom_path)
 
         self.assertEqual(ds.shape[1], 2)
+
+    def test_filter_detail(self):
+
+        response = self._make_request(description="GET REQUEST TO FILTER DETAIL",
+                                      verb='GET',
+                                      url=f"{self.api_url}/filters/dss_bundle_fqid",
+                                      expected_status=200,
+                                      headers=self.headers)
+        cell_counts = json.loads(response.decode())["cell_counts"]
+
+        # The test bundles should show up in the response, and since they're
+        # smart-seq2, they should have a cell count of 1
+        for bundle_fqid in INPUT_BUNDLE_IDS[self.dss_env]:
+            self.assertIn(bundle_fqid, cell_counts)
+            self.assertEqual(cell_counts[bundle_fqid], 1)
