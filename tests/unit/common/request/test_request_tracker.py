@@ -49,9 +49,6 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
         self.assertEqual(self.request_tracker.batch_job_status, "FAILED")
 
-    def test_creation_date(self):
-        self.assertEqual(self.request_tracker.creation_date, self.stub_date)
-
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.num_bundles",
                 new_callable=mock.PropertyMock)
     def test_num_bundles_interval(self, mock_num_bundles):
@@ -66,6 +63,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
         mock_num_bundles.return_value = 1234
         self.assertEqual(self.request_tracker.num_bundles_interval, "1000-1499")
+
+    def test_creation_date(self):
+        self.assertEqual(self.request_tracker.creation_date, self.stub_date)
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     def test_error(self, mock_cw_put):
@@ -146,7 +146,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                     'Name': "Number of Bundles",
                     'Value': mock.ANY
                 },
-            ]),
+            ])
         ]
         mock_cw_put.assert_has_calls(expected_calls)
 

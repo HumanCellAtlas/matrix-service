@@ -29,8 +29,10 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       "Sid": "LogsPolicy",
       "Effect": "Allow",
       "Resource": [
-        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-${var.deployment_stage}",
-        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-${var.deployment_stage}:*:*"
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-v0-${var.deployment_stage}",
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-v0-${var.deployment_stage}:*:*",
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-v1-${var.deployment_stage}",
+        "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/dcp-matrix-service-driver-v1-${var.deployment_stage}:*:*"
       ],
       "Action": [
         "logs:CreateLogGroup",
@@ -49,14 +51,6 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
       "Resource": [
         "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-request-table-${var.deployment_stage}"
       ]
-    },
-    {
-      "Sid": "LambdaPolicy",
-      "Effect": "Allow",
-      "Action": [
-        "lambda:InvokeFunction"
-      ],
-      "Resource": "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-mapper-${var.deployment_stage}"
     },
     {
       "Effect": "Allow",
@@ -107,10 +101,31 @@ resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
 EOF
 }
 
-resource "aws_lambda_function" "matrix_service_driver_lambda" {
-  function_name    = "dcp-matrix-service-driver-${var.deployment_stage}"
+resource "aws_lambda_function" "matrix_service_driver_v0_lambda" {
+  function_name    = "dcp-matrix-service-driver-v0-${var.deployment_stage}"
   s3_bucket        = "${var.deployment_bucket_id}"
-  s3_key           = "driver_daemon.zip"
+  s3_key           = "driver_v0_daemon.zip"
+  role             = "${aws_iam_role.matrix_service_driver_lambda.arn}"
+  handler          = "app.driver_handler"
+  runtime          = "python3.6"
+  timeout          = 300
+
+  environment {
+    variables = {
+        DEPLOYMENT_STAGE = "${var.deployment_stage}"
+        DYNAMO_REQUEST_TABLE_NAME="dcp-matrix-service-request-table-${var.deployment_stage}"
+        MATRIX_QUERY_BUCKET = "dcp-matrix-service-queries-${var.deployment_stage}"
+        MATRIX_RESULTS_BUCKET = "dcp-matrix-service-results-${var.deployment_stage}"
+        BATCH_CONVERTER_JOB_QUEUE_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-queue/dcp-matrix-converter-queue-${var.deployment_stage}"
+        BATCH_CONVERTER_JOB_DEFINITION_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-definition/dcp-matrix-converter-job-definition-${var.deployment_stage}"
+    }
+  }
+}
+
+resource "aws_lambda_function" "matrix_service_driver_v1_lambda" {
+  function_name    = "dcp-matrix-service-driver-v1-${var.deployment_stage}"
+  s3_bucket        = "${var.deployment_bucket_id}"
+  s3_key           = "driver_v1_daemon.zip"
   role             = "${aws_iam_role.matrix_service_driver_lambda.arn}"
   handler          = "app.driver_handler"
   runtime          = "python3.6"

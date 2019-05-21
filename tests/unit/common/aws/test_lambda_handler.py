@@ -17,9 +17,9 @@ class TestLambdaHandler(unittest.TestCase):
         self.mock_lambda_client = Stubber(self.handler._client)
 
     def test_invoke(self):
-        expected_params = {'FunctionName': LambdaName.DRIVER.value,
+        expected_params = {'FunctionName': LambdaName.DRIVER_V0.value,
                            'InvocationType': "Event",
                            'Payload': b"{}"}
         self.mock_lambda_client.add_response('invoke', {}, expected_params)
         self.mock_lambda_client.activate()
-        self.handler.invoke(LambdaName.DRIVER, {})
+        self.handler.invoke(LambdaName.DRIVER_V0, {})

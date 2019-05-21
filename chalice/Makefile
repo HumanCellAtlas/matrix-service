@@ -3,7 +3,8 @@ include ../common.mk
 export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                  MATRIX_VERSION \
                                  API_HOST \
-                                 LAMBDA_DRIVER_FUNCTION_NAME \
+                                 LAMBDA_DRIVER_V0_FUNCTION_NAME \
+                                 LAMBDA_DRIVER_V1_FUNCTION_NAME \
                                  LAMBDA_NOTIFICATION_FUNCTION_NAME \
                                  DYNAMO_REQUEST_TABLE_NAME \
                                  MATRIX_RESULTS_BUCKET \
