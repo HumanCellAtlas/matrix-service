@@ -7,10 +7,13 @@ import os
 import pathlib
 import typing
 
+import numpy
 import scipy.io
+import zarr
 
 from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
+from matrix.common.etl.dcp_zarr_store import DCPZarrStore
 
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
@@ -37,13 +40,18 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
     def _parse_from_metadatas(self, bundle_dir):
         if os.path.isfile(os.path.join(bundle_dir, "matrix.mtx")):
-            cell_lines, expression_lines = self._parse_10x_bundle(bundle_dir)
+            cell_lines, expression_lines = self._parse_cellranger_bundle(bundle_dir)
+        elif os.path.isfile(os.path.join(bundle_dir, "empty_drops_result.csv")):
+            cell_lines, expression_lines = self._parse_optimus_bundle(bundle_dir)
         else:
             cell_lines, expression_lines = self._parse_ss2_bundle(bundle_dir)
 
         return (TableName.CELL, cell_lines, bundle_dir), (TableName.EXPRESSION, expression_lines, bundle_dir)
 
     def _parse_ss2_bundle(self, bundle_dir):
+        """
+        Parses SS2 analysis files into PSV rows for cell and expression Redshift tables.
+        """
         # Get the keys associated with this cell, except for cellkey
         keys = self._parse_keys(bundle_dir)
         cell_key = json.load(open(
@@ -108,7 +116,10 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         return cell_lines, expression_lines
 
-    def _parse_10x_bundle(self, bundle_dir):
+    def _parse_cellranger_bundle(self, bundle_dir):
+        """
+        Parses cellranger analysis files into PSV rows for cell and expression Redshift tables.
+        """
         keys = self._parse_keys(bundle_dir)
         cell_suspension_id = json.load(open(
             os.path.join(bundle_dir, "cell_suspension_0.json")))['provenance']['document_id']
@@ -129,11 +140,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             gene = genes[i]
 
             # Just make up a cell id
-            h = hashlib.md5()
-            bundle_uuid = pathlib.Path(bundle_dir).parts[-1]
-            h.update(bundle_uuid.encode())
-            h.update(barcode.encode())
-            cell_key = h.hexdigest()
+            cell_key = self._generate_10x_cell_key(bundle_dir, barcode)
 
             cell_to_barcode[cell_key] = barcode
 
@@ -164,6 +171,75 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             cell_lines.add(cell_line)
 
         return cell_lines, expression_lines
+
+    def _parse_optimus_bundle(self, bundle_dir):
+        """
+        Parses optimus analysis files into PSV rows for cell and expression Redshift tables.
+        """
+        keys = self._parse_keys(bundle_dir)
+        cell_suspension_id = json.load(open(
+            os.path.join(bundle_dir, "cell_suspension_0.json")))['provenance']['document_id']
+
+        # read zarr expression matrix
+        store = DCPZarrStore(bundle_dir=bundle_dir)
+        root = zarr.group(store=store)
+        expr_values = root.expression_matrix.expression[:]
+
+        n_cells = root.expression_matrix.cell_id.shape[0]
+        n_genes = root.expression_matrix.gene_id.shape[0]
+
+        cell_lines = set()
+        expression_lines = []
+        for i in range(n_cells):
+            # cell specific fields
+            barcode = root.expression_matrix.cell_id[i]
+            cell_key = self._generate_10x_cell_key(bundle_dir, barcode)
+            gene_count = numpy.count_nonzero(expr_values[i])
+
+            # write cell line
+            cell_line = '|'.join(
+                [cell_key,
+                 cell_suspension_id,
+                 keys["project_key"],
+                 keys["specimen_key"],
+                 keys["library_key"],
+                 keys["analysis_key"],
+                 barcode,
+                 str(gene_count)]
+            ) + '\n'
+            cell_lines.add(cell_line)
+
+            # skip 0 counts
+            if gene_count == 0:
+                continue
+            for j in range(n_genes):
+                # skip 0 counts
+                if expr_values[i][j] == 0:
+                    continue
+
+                # write expression line
+                gene = root.expression_matrix.gene_id[j]
+                expression_line = '|'.join(
+                    [cell_key,
+                     gene,
+                     "Count",
+                     str(expr_values[i][j])]
+                )
+                expression_lines.append(expression_line)
+
+        return cell_lines, expression_lines
+
+    def _generate_10x_cell_key(self, bundle_uuid, barcode):
+        """
+        Generate a unique hash for a cell.
+        :param bundle_uuid: Bundle UUID the cell belongs to
+        :param barcode: 10X cell barcode
+        :return: MD5 hash
+        """
+        h = hashlib.md5()
+        h.update(bundle_uuid.encode())
+        h.update(barcode.encode())
+        return h.hexdigest()
 
     def _parse_keys(self, bundle_dir):
         p = pathlib.Path(bundle_dir)

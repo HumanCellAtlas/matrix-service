@@ -1,7 +1,9 @@
 boto3==1.7.69
 dcplib==1.6.5
 hca==4.3.3
+numpy==1.15.2
 requests==2.20.0
 scipy==1.1.0
 psycopg2==2.7.7
+zarr==2.20.0
 git+git://github.com/HumanCellAtlas/metadata-api@release/1.0b13#egg=hca-metadata-api
