@@ -185,6 +185,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
         WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
             .to_return_value(1, timeout_seconds=600)
 
+        self._post_notification(bundle_fqid=bundle_fqid, event_type="UPDATE")
+        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid) \
+            .to_return_value(1, timeout_seconds=600)
+
     @unittest.skip
     def test_matrix_service_ss2(self):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))

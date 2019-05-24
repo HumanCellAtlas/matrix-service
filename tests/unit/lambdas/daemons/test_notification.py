@@ -19,6 +19,13 @@ class TestNotificationHandler(unittest.TestCase):
 
         mock_update_bundle.assert_called_once_with()
 
+    @mock.patch("matrix.lambdas.daemons.notification.NotificationHandler.update_bundle")
+    def test_update_event(self, mock_update_bundle):
+        handler = NotificationHandler(self.bundle_uuid, self.bundle_version, "UPDATE")
+        handler.run()
+
+        mock_update_bundle.assert_called_once_with()
+
     @mock.patch("matrix.lambdas.daemons.notification.NotificationHandler.remove_bundle")
     def test_delete_event(self, mock_remove_bundle):
         handler = NotificationHandler(self.bundle_uuid, self.bundle_version, "DELETE")
