@@ -1,0 +1,13 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/file/5.3.6/analysis_file",
+    "file_core": {
+        "file_format": "unknown",
+        "file_name": "merged-cell-metrics.csv.gz"
+    },
+    "schema_type": "file",
+    "provenance": {
+        "document_id": "cfc950d3-dc3f-423e-aedd-b7d5fb24a353",
+        "submission_date": "2019-05-03T18:28:24.951Z",
+        "update_date": "2019-05-03T18:35:18.681Z"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/file/5.3.6/analysis_file",
+    "file_core": {
+        "file_format": "unknown",
+        "file_name": "sparse_counts.npz"
+    },
+    "schema_type": "file",
+    "provenance": {
+        "document_id": "3fbd59f4-4382-4ba5-927a-76a4ac7dee02",
+        "submission_date": "2019-05-03T18:28:25.136Z",
+        "update_date": "2019-05-03T18:35:12.668Z"
+    }
+}

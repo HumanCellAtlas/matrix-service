@@ -1,0 +1,34 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/protocol/sequencing/9.0.11/sequencing_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "sequencing_protocol_1",
+        "protocol_name": "A dummy sequencing protocol",
+        "protocol_description": "A dummy sequencing protocol description",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "instrument_manufacturer_model": {
+        "text": "Illumina Hiseq 4000",
+        "ontology": "EFO:0008565"
+    },
+    "local_machine_name": "Machine1",
+    "paired_end": false,
+    "sequencing_approach": {
+        "text": "full length single cell RNA sequencing",
+        "ontology": "EFO:0008441",
+        "ontology_label": "full length single cell RNA sequencing"
+    },
+    "10x": {
+        "fastq_method": "Cellranger mkfastq",
+        "fastq_method_version": "Cellranger 2.1.0",
+        "pooled_channels": 4.0,
+        "drop_uniformity": false
+    },
+    "provenance": {
+        "document_id": "9bea3470-880f-44ea-9304-bfad528ae008",
+        "submission_date": "2019-03-14T17:43:53.592Z",
+        "update_date": "2019-03-14T17:43:59.508Z"
+    }
+}

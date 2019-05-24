@@ -1,0 +1,13 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/file/5.3.6/analysis_file",
+    "file_core": {
+        "file_format": "unknown",
+        "file_name": "493a6adc-54b5-4388-ba11-c37686562127.zarr!expression_matrix!expression!1.3"
+    },
+    "schema_type": "file",
+    "provenance": {
+        "document_id": "041a5ba7-6a67-46e4-9b3b-84848af63d9e",
+        "submission_date": "2019-05-03T18:28:29.661Z",
+        "update_date": "2019-05-03T18:36:00.683Z"
+    }
+}

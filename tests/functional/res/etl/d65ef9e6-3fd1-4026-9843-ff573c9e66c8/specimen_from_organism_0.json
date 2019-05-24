@@ -1,0 +1,48 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/biomaterial/7.0.3/specimen_from_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "specimen_ID_1",
+        "biomaterial_name": "This is a dummy specimen",
+        "biomaterial_description": "This is a dummy donor specimen",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DRB1 0401 protective allele",
+        "biosd_biomaterial": "SAMN00000000",
+        "insdc_biomaterial": "SRS0000000"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "organ": {
+        "text": "brain",
+        "ontology": "UBERON:0000955",
+        "ontology_label": "brain"
+    },
+    "organ_part": {
+        "text": "amygdala",
+        "ontology": "UBERON:0001876",
+        "ontology_label": "amygdala"
+    },
+    "diseases": [
+        {
+            "text": "H syndrome",
+            "ontology": "MONDO:0011273",
+            "ontology_label": "H syndrome"
+        }
+    ],
+    "state_of_specimen": {
+        "autolysis_score": "none",
+        "gross_description": "normal color and size"
+    },
+    "provenance": {
+        "document_id": "88bc1e69-624e-4e12-b0a2-e1b64832ec3f",
+        "submission_date": "2019-03-14T17:43:53.544Z",
+        "update_date": "2019-03-14T17:43:59.547Z"
+    }
+}

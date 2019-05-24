@@ -174,7 +174,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         return cell_lines, expression_lines
 
-    def _parse_optimus_bundle(self, bundle_dir):
+    def _parse_optimus_bundle(self, bundle_dir, test_n_cells: int=0):
         """
         Parses optimus analysis files into PSV rows for cell and expression Redshift tables.
         """
@@ -184,9 +184,9 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         store = DCPZarrStore(bundle_dir=bundle_dir)
         root = zarr.group(store=store)
 
-        n_cells = root.expression_matrix.cell_id.shape[0]
-        chunk_size = root.expression_matrix.expression.chunks[0]
-        n_chunks = int(math.ceil(n_cells/chunk_size))
+        n_cells = root.expression_matrix.cell_id.shape[0] if not test_n_cells else test_n_cells
+        chunk_size = root.expression_matrix.expression.chunks[0] if not test_n_cells else test_n_cells - 1
+        n_chunks = int(math.ceil(n_cells / chunk_size))
 
         cell_lines = set()
         expression_lines = []
@@ -253,7 +253,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                      gene_id,
                      "Count",
                      str(expr_values[i][j])]
-                )
+                ) + '\n'
                 expression_lines.append(expression_line)
 
     def _generate_10x_cell_key(self, bundle_uuid, barcode):

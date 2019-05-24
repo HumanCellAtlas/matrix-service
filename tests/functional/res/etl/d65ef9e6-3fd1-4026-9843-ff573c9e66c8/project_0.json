@@ -1,0 +1,58 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/project/11.0.0/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "Synthetic Optimus Pipeline Testing Dataset 4kpbmc 200K",
+        "project_title": "Synthetic Optimus Pipeline Testing Dataset 4kpbmc 200K",
+        "project_description": "Contains a small file set from the dataset: 4k PBMCs from a Healthy Donor, a Single Cell Gene Expression Dataset by Cell Ranger 2.1.0. Peripheral blood mononuclear cells (PBMCs) were taken from a healthy donor (same donor as pbmc8k). PBMCs are primary cells with relatively small amounts of RNA (~1pg RNA/cell). Data/Analysis can be found here https://support.10xgenomics.com/single-cell-gene-expression/datasets/2.1.0/pbmc4k and all data is licensed under the creative commons attribution license (https://creativecommons.org/licenses/by/4.0/). This test also contains extensive metadata for browser testing. Metadata is fabricated."
+    },
+    "publications": [
+        {
+            "authors": [
+                "Doe JD, Doe JJ"
+            ],
+            "publication_title": "A title of a publication goes here.",
+            "doi": "10.1016/j.cell.2016.07.054",
+            "pmid": 27565351,
+            "publication_url": "https://europepmc.org"
+        }
+    ],
+    "insdc_project_accessions": [
+        "SRP000000"
+    ],
+    "geo_series_accessions": [
+        "GSE00000"
+    ],
+    "array_express_accessions": [
+        "E-AAAA-00"
+    ],
+    "insdc_study_accessions": [
+        "PRJNA000000"
+    ],
+    "funders": [
+        {
+            "grant_title": "A title of a grant proposal.",
+            "grant_id": "BB/P0000001/1",
+            "organization": "Biotechnology and Biological Sciences Research Council (BBSRC)"
+        }
+    ],
+    "contributors": [
+        {
+            "contact_name": "John,D,Doe.",
+            "email": "dummy@email.com",
+            "phone": "(+1) 234-555-6789",
+            "institution": "EMBL-EBI",
+            "laboratory": "Department of Biology",
+            "address": "0000 Main Street, Nowheretown, MA, 12091",
+            "country": "USA",
+            "corresponding_contributor": false,
+            "project_role": "principal investigator",
+            "orcid_id": "0000-1111-2222-3333"
+        }
+    ],
+    "provenance": {
+        "document_id": "dbb40797-8eba-44f8-81d8-6f0c2e2ed0b5",
+        "submission_date": "2019-03-14T17:43:53.534Z",
+        "update_date": "2019-03-14T17:43:59.436Z"
+    }
+}

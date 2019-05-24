@@ -1,0 +1,48 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/biomaterial/9.0.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "cell_ID_1",
+        "biomaterial_name": "This is a dummy cell",
+        "biomaterial_description": "This is a dummy donor cell",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DRB1 0401 protective allele",
+        "biosd_biomaterial": "SAMN00000000",
+        "insdc_biomaterial": "SRS0000000"
+    },
+    "cell_morphology": {
+        "cell_morphology": "adherent cells, form single layer colonies",
+        "cell_size": "20-30",
+        "cell_size_unit": {
+            "text": "nm",
+            "ontology": "UO:0000018",
+            "ontology_label": "nanometer"
+        },
+        "percent_cell_viability": 85.3,
+        "cell_viability_method": "Fluorescein diacetate hydrolysis assay",
+        "cell_viability_result": "pass",
+        "percent_necrosis": 10.0
+    },
+    "growth_conditions": {
+        "passage_number": 22,
+        "growth_medium": "lysogeny broth (LB) medium",
+        "mycoplasma_testing_results": "pass",
+        "drug_treatment": "100 ug/mL ampicillin",
+        "feeder_layer_type": "feeder-dependent, mouse embryonic fibroblast cells"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "estimated_cell_count": 5000,
+    "provenance": {
+        "document_id": "493a6adc-54b5-4388-ba11-c37686562127",
+        "submission_date": "2019-03-14T17:43:53.549Z",
+        "update_date": "2019-03-14T17:43:59.609Z"
+    }
+}
