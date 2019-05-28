@@ -14,6 +14,7 @@ import zarr
 from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
 from matrix.common.etl.dcp_zarr_store import DCPZarrStore
+from matrix.common.exceptions import MatrixException
 
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
@@ -39,12 +40,17 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 out_file.writelines((row.encode() for row in rows))
 
     def _parse_from_metadatas(self, bundle_dir):
-        if os.path.isfile(os.path.join(bundle_dir, "matrix.mtx")):
-            cell_lines, expression_lines = self._parse_cellranger_bundle(bundle_dir)
-        elif os.path.isfile(os.path.join(bundle_dir, "empty_drops_result.csv")):
-            cell_lines, expression_lines = self._parse_optimus_bundle(bundle_dir)
-        else:
+        protocol_id = json.load(
+            open(os.path.join(bundle_dir, "analysis_protocol_0.json")))['protocol_core']['protocol_id']
+        if protocol_id.startswith("smartseq2"):
             cell_lines, expression_lines = self._parse_ss2_bundle(bundle_dir)
+        elif protocol_id.startswith("optimus"):
+            cell_lines, expression_lines = self._parse_optimus_bundle(bundle_dir)
+        elif protocol_id.startswith("cellranger"):
+            cell_lines, expression_lines = self._parse_cellranger_bundle(bundle_dir)
+        else:
+            raise MatrixException(400, f"Failed to parse cell and expression metadata. "
+                                       f"Unsupported analysis protocol {protocol_id}.")
 
         return (TableName.CELL, cell_lines, bundle_dir), (TableName.EXPRESSION, expression_lines, bundle_dir)
 
