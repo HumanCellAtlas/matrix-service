@@ -27,14 +27,13 @@ class TestCellExpressionTransformer(unittest.TestCase):
 
     def test_parse_optimus(self):
         cell_lines, expression_lines = self.transformer._parse_optimus_bundle(
-            bundle_dir=os.path.abspath("tests/functional/res/etl/d65ef9e6-3fd1-4026-9843-ff573c9e66c8"),
-            test_n_cells=6
+            bundle_dir=os.path.abspath("tests/functional/res/etl/d65ef9e6-3fd1-4026-9843-ff573c9e66c8")
         )
-        self.assertEqual(len(cell_lines), 6)
-        self.assertTrue("5a80aa499aff48449136b33221fc7adc|493a6adc-54b5-4388-ba11-c37686562127|"
+        self.assertEqual(len(cell_lines), 5)
+        self.assertTrue("aaa573518b66eb105c09fd34d0418a13|493a6adc-54b5-4388-ba11-c37686562127|"
                         "dbb40797-8eba-44f8-81d8-6f0c2e2ed0b5|88bc1e69-624e-4e12-b0a2-e1b64832ec3f|"
                         "ffb71426-42a4-42c0-89cc-f12b4a806554|17987139-5441-4335-8a36-2ec986eee282|"
-                        "CGCTATCCACGTGAGA|20\n" in cell_lines)
+                        "GTCGGGTTCACGGTTA|71\n" in cell_lines)
 
-        self.assertEqual(len(expression_lines), 199)
+        self.assertEqual(len(expression_lines), 174)
         self.assertEqual(expression_lines[0], "0ef1dea5d73efc2f4cfaaeeaea2dd10c|GUK1|Count|1.0\n")
