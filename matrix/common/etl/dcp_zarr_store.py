@@ -2,9 +2,8 @@
 """Class for working with expression matrices serialized in the DCP."""
 
 import glob
-import json
 import os
-from collections import MutableMapping
+from collections.abc import MutableMapping
 
 
 class DCPZarrStore(MutableMapping):
@@ -30,23 +29,23 @@ class DCPZarrStore(MutableMapping):
     # identify those via a pattern in the filename
     _zarr_pattern = f"*.zarr{_separator_char}*"
 
-    def _transform_key(self, key):
-        return key.replace("/", self._separator_char)
-
     def __init__(self, bundle_dir: str):
         """
         :param bundle_dir: path to local dir containing analysis bundle
         """
         self.bundle_dir = bundle_dir
-        self.cell_suspension_id = json.load(open(
-            os.path.join(self.bundle_dir, "cell_suspension_0.json")))['provenance']['document_id']
         self.cache = {}
+        self.zarr_files = glob.glob(os.path.join(self.bundle_dir, DCPZarrStore._zarr_pattern))
+        self.zarr_prefix = self.zarr_files[0].split(DCPZarrStore._separator_char, 1)[0]
+
+    def _transform_key(self, key):
+        return key.replace("/", self._separator_char)
 
     def __setitem__(self, key, value):
-        raise NotImplementedError("The HCA Data Storage System is read-only.")
+        raise NotImplementedError("DCPZarrStore is read-only.")
 
     def __delitem__(self, key):
-        raise NotImplementedError("The HCA Data Storage System is read-only.")
+        raise NotImplementedError("DCPZarrStore is read-only.")
 
     def __getitem__(self, key):
         if key in self.cache:
@@ -54,8 +53,7 @@ class DCPZarrStore(MutableMapping):
 
         transformed_key = self._transform_key(key)
         path_to_file = os.path.join(self.bundle_dir,
-                                    DCPZarrStore._separator_char.join([f"{self.cell_suspension_id}.zarr",
-                                                                       transformed_key]))
+                                    DCPZarrStore._separator_char.join([self.zarr_prefix, transformed_key]))
         with open(path_to_file, 'rb') as fh:
             contents = fh.read()
             self.cache[key] = contents
@@ -69,12 +67,11 @@ class DCPZarrStore(MutableMapping):
     def __eq__(self, other):
         return (
             isinstance(other, DCPZarrStore) and
-            self.cell_suspension_id == other.cell_suspension_id
+            self.zarr_files == other.zarr_files
         )
 
     def keys(self):
-        return (k.split(DCPZarrStore._separator_char, 1)[1]
-                for k in glob.glob(os.path.join(self.bundle_dir, DCPZarrStore._zarr_pattern)))
+        return (k.split(DCPZarrStore._separator_char, 1)[1] for k in self.zarr_files)
 
     def __iter__(self):
         return self.keys()
