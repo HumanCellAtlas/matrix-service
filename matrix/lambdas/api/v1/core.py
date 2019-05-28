@@ -169,7 +169,7 @@ def _redshift_detail_lookup(name, description):
             fq_field_name=fq_name,
             table_name=table_name,
             primary_key=table_primary_key)
-        results = dict(rs_handler.transaction([query], return_results=True))
+        results = dict(rs_handler.transaction([query], return_results=True, read_only=True))
         if None in results:
             results[""] = results[None]
             results.pop(None)
@@ -185,7 +185,7 @@ def _redshift_detail_lookup(name, description):
             fq_field_name=fq_name,
             table_name=table_name,
             primary_key=table_primary_key)
-        results = rs_handler.transaction([query], return_results=True)
+        results = rs_handler.transaction([query], return_results=True, read_only=True)
         min_ = results[0][0]
         max_ = results[0][1]
         return ({
