@@ -26,7 +26,7 @@ Cell Ranger produces as its filtered feature-barcode matrix.
 
 The cell metadata table is oriented like the expression table, where each row represents a cell.
 Each column is a different metadata field. Descriptions of some of the metadata fields can be
-found at the [HCA Data Browser](https://prod.data.humancellatlas.org/explore/projects).
+found at the [HCA Data Browser](https://prod.data.humancellatlas.org/metadata).
 Additional fields, `genes_detected` for example, are calculated during secondary analysis. Full
 descriptions of those fields are forthcoming.
 
