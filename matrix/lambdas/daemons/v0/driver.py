@@ -117,6 +117,10 @@ class Driver:
         lines = data.splitlines()[1:]
         return list(map(_parse_line, lines))
 
+    @staticmethod
+    def _format_bundle_fqids(bundle_fqids: typing.List[str]) -> str:
+        return '(' + ', '.join("'" + str(b) + "'" for b in bundle_fqids) + ')'
+
     def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list):
         feature_query = feature_query_template.format(self.query_results_bucket,
                                                       self.request_id,
@@ -126,13 +130,13 @@ class Driver:
         exp_query = expression_query_template.format(self.query_results_bucket,
                                                      self.request_id,
                                                      self.redshift_role_arn,
-                                                     tuple(resolved_bundle_fqids))
+                                                     self._format_bundle_fqids(resolved_bundle_fqids))
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
         cell_query = cell_query_template.format(self.query_results_bucket,
                                                 self.request_id,
                                                 self.redshift_role_arn,
-                                                tuple(resolved_bundle_fqids))
+                                                self._format_bundle_fqids(resolved_bundle_fqids))
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
 
         return [feature_query_obj_key, exp_query_obj_key, cell_query_obj_key]
