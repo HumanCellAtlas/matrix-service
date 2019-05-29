@@ -25,7 +25,7 @@ class Driver:
         self.sqs_handler = SQSHandler()
         self.infra_config = MatrixInfraConfig()
         self.redshift_config = MatrixRedshiftConfig()
-        self.results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
+        self.results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
         self.s3_handler = S3Handler(os.environ['MATRIX_QUERY_BUCKET'])
 
     @property

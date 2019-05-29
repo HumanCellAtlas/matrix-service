@@ -115,7 +115,7 @@ resource "aws_lambda_function" "matrix_service_driver_v0_lambda" {
         DEPLOYMENT_STAGE = "${var.deployment_stage}"
         DYNAMO_REQUEST_TABLE_NAME="dcp-matrix-service-request-table-${var.deployment_stage}"
         MATRIX_QUERY_BUCKET = "dcp-matrix-service-queries-${var.deployment_stage}"
-        MATRIX_RESULTS_BUCKET = "dcp-matrix-service-results-${var.deployment_stage}"
+        MATRIX_QUERY_RESULTS_BUCKET = "dcp-matrix-service-query-results-${var.deployment_stage}"
         BATCH_CONVERTER_JOB_QUEUE_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-queue/dcp-matrix-converter-queue-${var.deployment_stage}"
         BATCH_CONVERTER_JOB_DEFINITION_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-definition/dcp-matrix-converter-job-definition-${var.deployment_stage}"
     }
@@ -136,7 +136,7 @@ resource "aws_lambda_function" "matrix_service_driver_v1_lambda" {
         DEPLOYMENT_STAGE = "${var.deployment_stage}"
         DYNAMO_REQUEST_TABLE_NAME="dcp-matrix-service-request-table-${var.deployment_stage}"
         MATRIX_QUERY_BUCKET = "dcp-matrix-service-queries-${var.deployment_stage}"
-        MATRIX_RESULTS_BUCKET = "dcp-matrix-service-results-${var.deployment_stage}"
+        MATRIX_QUERY_RESULTS_BUCKET = "dcp-matrix-service-query-results-${var.deployment_stage}"
         BATCH_CONVERTER_JOB_QUEUE_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-queue/dcp-matrix-converter-queue-${var.deployment_stage}"
         BATCH_CONVERTER_JOB_DEFINITION_ARN = "arn:aws:batch:${var.aws_region}:${var.account_id}:job-definition/dcp-matrix-converter-job-definition-${var.deployment_stage}"
     }
