@@ -165,10 +165,8 @@ def _redshift_detail_lookup(name, description):
     rs_handler = RedshiftHandler()
 
     if type_ == "categorical":
-        query = query_constructor.FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE.format(
-            fq_field_name=fq_name,
-            table_name=table_name,
-            primary_key=table_primary_key)
+        query = query_constructor.create_field_detail_query(
+            fq_name, table_name, table_primary_key, type_)
         results = dict(rs_handler.transaction([query], return_results=True, read_only=True))
         if None in results:
             results[""] = results[None]
@@ -181,10 +179,8 @@ def _redshift_detail_lookup(name, description):
             requests.codes.ok)
 
     elif type_ == "numeric":
-        query = query_constructor.FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE.format(
-            fq_field_name=fq_name,
-            table_name=table_name,
-            primary_key=table_primary_key)
+        query = query_constructor.create_field_detail_query(
+            fq_name, table_name, table_primary_key, type_)
         results = rs_handler.transaction([query], return_results=True, read_only=True)
         min_ = results[0][0]
         max_ = results[0][1]

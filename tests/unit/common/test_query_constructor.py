@@ -451,3 +451,52 @@ MANIFEST VERBOSE
 ;
 """)
         self.assertEqual(queries["expression_query"], expected_exp_query)
+
+
+class TestDetailQuery(unittest.TestCase):
+
+    def test_cell_numeric(self):
+        query = query_constructor.create_field_detail_query(
+            "cell.genes_detected",
+            "cell",
+            "cellkey",
+            "numeric")
+
+        expected_sql = """
+SELECT MIN(cell.genes_detected), MAX(cell.genes_detected)
+FROM cell 
+;
+"""  # noqa: W291
+        self.assertEqual(query, expected_sql)
+
+    def test_cell_categorical(self):
+
+        query = query_constructor.create_field_detail_query(
+            "cell.cell_suspension_id",
+            "cell",
+            "cellkey",
+            "categorical")
+
+        expected_sql = """
+SELECT cell.cell_suspension_id, COUNT(cell.cellkey)
+FROM cell 
+GROUP BY cell.cell_suspension_id
+;
+"""  # noqa: W291
+        self.assertEqual(query, expected_sql)
+
+    def test_noncell_categorical(self):
+
+        query = query_constructor.create_field_detail_query(
+            "analysis.protocol",
+            "analysis",
+            "analysiskey",
+            "categorical")
+
+        expected_sql = """
+SELECT analysis.protocol, COUNT(cell.cellkey)
+FROM cell LEFT OUTER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+GROUP BY analysis.protocol
+;
+"""
+        self.assertEqual(query, expected_sql)

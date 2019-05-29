@@ -380,3 +380,14 @@ class TestMatrixServiceV1(MatrixServiceTest):
         for bundle_fqid in INPUT_BUNDLE_IDS[self.dss_env]:
             self.assertIn(bundle_fqid, cell_counts)
             self.assertEqual(cell_counts[bundle_fqid], 1)
+
+    def test_filter_detail_in_cell_table(self):
+
+        response = self._make_request(description="GET REQUEST TO FILTER DETAIL",
+                                      verb='GET',
+                                      url=f"{self.api_url}/filters/genes_detected",
+                                      expected_status=200,
+                                      headers=self.headers)
+        response = json.loads(response.decode())
+        self.assertIn("minimum", response)
+        self.assertIn("maximum", response)

@@ -63,18 +63,18 @@ MANIFEST VERBOSE;
 # Query templates for requests to /filter/... and /fields/...
 FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE = """
 SELECT {fq_field_name}, COUNT(cell.cellkey)
-FROM cell
-  LEFT OUTER JOIN {table_name} on (cell.{primary_key} = {table_name}.{primary_key})
+FROM cell {join}
 GROUP BY {fq_field_name}
 ;
 """
 
 FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE = """
 SELECT MIN({fq_field_name}), MAX({fq_field_name})
-FROM cell
-  LEFT OUTER JOIN {table_name} on (cell.{primary_key} = {table_name}.{primary_key})
+FROM cell {join}
 ;
 """
+
+FIELD_DETAIL_JOIN = "LEFT OUTER JOIN {table_name} on (cell.{primary_key} = {table_name}.{primary_key})"
 
 
 class MalformedMatrixFilter(Exception):
@@ -101,6 +101,27 @@ def _get_internal_name(metadata_name):
         return fq_name
     except KeyError:
         return metadata_name
+
+
+def create_field_detail_query(fq_field_name, table_name, primary_key, field_type):
+
+    if table_name == "cell":
+        join = ""
+    else:
+        join = FIELD_DETAIL_JOIN.format(table_name=table_name, primary_key=primary_key)
+
+    if field_type == "categorical":
+        query = FIELD_DETAIL_CATEGORICAL_QUERY_TEMPLATE.format(
+            fq_field_name=fq_field_name,
+            join=join)
+    elif field_type == "numeric":
+        query = FIELD_DETAIL_NUMERIC_QUERY_TEMPLATE.format(
+            fq_field_name=fq_field_name,
+            join=join)
+    else:
+        raise ValueError(f"Invalid field type {field_type}, expecting categorical or numeric")
+
+    return query
 
 
 def translate_filters(filter_: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
