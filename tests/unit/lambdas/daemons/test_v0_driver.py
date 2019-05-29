@@ -5,7 +5,7 @@ from unittest import mock
 from matrix.common.aws.dynamo_handler import DynamoTable, RequestTableField
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
-from matrix.lambdas.daemons.driver import Driver
+from matrix.lambdas.daemons.v0.driver import Driver
 
 
 class TestDriver(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestDriver(unittest.TestCase):
         self._bundles_per_worker = 100
         self._driver = Driver(self.request_id, self._bundles_per_worker)
 
-    @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     def test_run_with_ids(self,
@@ -33,11 +33,11 @@ class TestDriver(unittest.TestCase):
                                                                 len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
-    @mock.patch("matrix.lambdas.daemons.driver.Driver._format_and_store_queries_in_s3")
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     @mock.patch("requests.get")
-    @mock.patch("matrix.lambdas.daemons.driver.Driver._parse_download_manifest")
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._parse_download_manifest")
     def test_run_with_url(self,
                           mock_parse_download_manifest,
                           mock_get,

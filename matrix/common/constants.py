@@ -11,6 +11,13 @@ class MatrixFormat(Enum):
     MTX = "mtx"
 
 
+class MatrixFeature(Enum):
+    """Supported expression matrix features."""
+
+    GENE = "gene"
+    TRANSCRIPT = "transcript"
+
+
 class MatrixRequestStatus(Enum):
     COMPLETE = "Complete"
     IN_PROGRESS = "In Progress"
@@ -154,4 +161,100 @@ CREATE_QUERY_TEMPLATE = {
             PRIMARY KEY(primarykey)
         );
     """
+}
+
+# Map from internal matrix service column names to the names used in the
+# project tsv and hence the API surface.
+TABLE_COLUMN_TO_METADATA_FIELD = {
+    'cell_suspension_id': 'cell_suspension.provenance.document_id',
+    'genes_detected': 'genes_detected',
+    'specimenkey': 'specimen_from_organism.provenance.document_id',
+    'genus_species_ontology': 'specimen_from_organism.genus_species.ontology',
+    'genus_species_label': 'specimen_from_organism.genus_species.ontology_label',
+    'ethnicity_ontology': 'donor_organism.human_specific.ethnicity.ontology',
+    'ethnicity_label': 'donor_organism.human_specific.ethnicity.ontology_label',
+    'disease_ontology': 'donor_organism.diseases.ontology',
+    'disease_label': 'donor_organism.diseases.ontology_label',
+    'development_stage_ontology': 'donor_organism.development_stage.ontology',
+    'development_stage_label': 'donor_organism.development_stage.ontology_label',
+    'organ_ontology': 'derived_organ_ontology',
+    'organ_label': 'derived_organ_label',
+    'organ_part_ontology': 'derived_organ_part_ontology',
+    'organ_part_label': 'derived_organ_part_label',
+    'librarykey': 'library_preparation_protocol.provenance.document_id',
+    'input_nucleic_acid_ontology': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology',
+    'input_nucleic_acid_label': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology_label',
+    'construction_approach_ontology': 'library_preparation_protocol.library_construction_method.ontology',
+    'construction_approach_label': 'library_preparation_protocol.library_construction_method.ontology_label',
+    'end_bias': 'library_preparation_protocol.end_bias',
+    'strand': 'library_preparation_protocol.strand',
+    'projectkey': 'project.provenance.document_id',
+    'short_name': 'project.project_core.project_short_name',
+    'title': 'project.project_core.project_title',
+    'analysiskey': 'analysis_protocol.provenance.document_id',
+    'bundle_fqid': 'dss_bundle_fqid',
+    'protocol': 'analysis_protocol.protocol_core.protocol_id',
+    'awg_disposition': 'analysis_working_group_approval_status'
+}
+
+METADATA_FIELD_TO_TABLE_COLUMN = {v: k for k, v in TABLE_COLUMN_TO_METADATA_FIELD.items()}
+
+METADATA_FIELD_TO_TYPE = {k: ("categorical" if k != "genes_detected" else "numeric")
+                          for k in METADATA_FIELD_TO_TABLE_COLUMN}
+
+TABLE_COLUMN_TO_TABLE = {
+    'cell_suspension_id': 'cell',
+    'genes_detected': 'cell',
+    'specimenkey': 'specimen',
+    'genus_species_ontology': 'specimen',
+    'genus_species_label': 'specimen',
+    'ethnicity_ontology': 'specimen',
+    'ethnicity_label': 'specimen',
+    'disease_ontology': 'specimen',
+    'disease_label': 'specimen',
+    'development_stage_ontology': 'specimen',
+    'development_stage_label': 'specimen',
+    'organ_ontology': 'specimen',
+    'organ_label': 'specimen',
+    'organ_part_ontology': 'specimen',
+    'organ_part_label': 'specimen',
+    'librarykey': 'library_preparation',
+    'input_nucleic_acid_ontology': 'library_preparation',
+    'input_nucleic_acid_label': 'library_preparation',
+    'construction_approach_ontology': 'library_preparation',
+    'construction_approach_label': 'library_preparation',
+    'end_bias': 'library_preparation',
+    'strand': 'library_preparation',
+    'projectkey': 'project',
+    'short_name': 'project',
+    'title': 'project',
+    'analysiskey': 'analysis',
+    'bundle_fqid': 'analysis',
+    'protocol': 'analysis',
+    'awg_disposition': 'analysis'
+}
+
+FORMAT_DETAIL = {
+    MatrixFormat.LOOM.value: "Loom file format, see loompy.org",
+    MatrixFormat.CSV.value: ("Zip archive of expression values in a cell-by-gene "
+                             "CSV file, and gene and cell metadata in two separate "
+                             "CSV files."),
+    MatrixFormat.MTX.value: ("Zip archive of expression values in a Matrix Market "
+                             "Exchange formatted file, and gene and cell metadata in "
+                             "two separate TSV files. See "
+                             "https://math.nist.gov/MatrixMarket/formats.html for "
+                             "futher details.")
+}
+
+FIELD_DETAIL = {
+    k: "Just what it sounds like." for k in METADATA_FIELD_TO_TABLE_COLUMN}
+
+FILTER_DETAIL = {
+    k: "Just what it sounds like." for k in METADATA_FIELD_TO_TABLE_COLUMN}
+
+FEATURE_DETAIL = {
+    MatrixFeature.GENE.value: "Genes from the GENCODE v27 comprehensive annotation.",
+    MatrixFeature.TRANSCRIPT.value: (
+        "Transcripts. from the GENCODE v27 comprehensive annotation. "
+        "NOTE: Not all assay types have transcript information available")
 }
