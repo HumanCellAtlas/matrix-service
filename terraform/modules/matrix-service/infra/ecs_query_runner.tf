@@ -20,6 +20,10 @@ resource "aws_ecs_task_definition" "query_runner" {
         "value": "dcp-matrix-service-results-${var.deployment_stage}"
       },
       {
+        "name": "MATRIX_QUERY_RESULTS_BUCKET",
+        "value": "dcp-matrix-service-query-results-${var.deployment_stage}"
+      },
+      {
         "name": "DYNAMO_REQUEST_TABLE_NAME",
         "value": "dcp-matrix-service-request-table-${var.deployment_stage}"
       },
@@ -41,7 +45,7 @@ resource "aws_ecs_task_definition" "query_runner" {
     ],
     "memory": 512,
     "cpu": 256,
-    "image": "humancellatlas/matrix-query-runner:6",
+    "image": "humancellatlas/matrix-query-runner:8",
     "name": "query-runner-${var.deployment_stage}",
     "logConfiguration": {
         "logDriver": "awslogs",
