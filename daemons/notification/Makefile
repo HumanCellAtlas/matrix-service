@@ -14,7 +14,8 @@ install:
 build:
 	rm -rf target
 	mkdir target
-	pip install -r requirements.txt -t target/ --upgrade
+	pip install -r requirements.txt -t target/ --upgrade --no-compile
+	find target/ -name "*.so" | xargs strip -s
 	cp -R ../../matrix target/
 	cp -R *.py target/
 
