@@ -166,7 +166,7 @@ class TestCore(unittest.TestCase):
         response = core.get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0]['matrix_url'],
-                         f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/{request_id}.loom")
+                         f"https://s3.amazonaws.com/{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{request_id}.loom")
 
         self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
@@ -181,7 +181,7 @@ class TestCore(unittest.TestCase):
         response = core.get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0]['matrix_url'],
-                         f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/{request_id}.csv.zip")
+                         f"https://s3.amazonaws.com/{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{request_id}.csv.zip")
 
         self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
@@ -196,7 +196,7 @@ class TestCore(unittest.TestCase):
         response = core.get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0]['matrix_url'],
-                         f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/{request_id}.mtx.zip")
+                         f"https://s3.amazonaws.com/{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{request_id}.mtx.zip")
 
         self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
