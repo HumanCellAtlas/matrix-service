@@ -108,7 +108,7 @@ def get_matrix(request_id: str):
 
     # Complete case
     elif request_tracker.is_request_complete():
-        matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
+        matrix_results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
 
         matrix_location = ""
         if format == MatrixFormat.LOOM.value:
