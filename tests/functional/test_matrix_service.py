@@ -45,6 +45,8 @@ INPUT_BUNDLE_IDS = {
 NOTIFICATION_BUNDLE_IDS = {
     "integration": "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
     "staging": "119f6f39-d111-4c33-a3d5-224a67655b07.2018-10-24T224220.927365Z",
+    # notification test does not run on prod, however other matrix environments may point to dss prod
+    "prod": "fffe55c1-18ed-401b-aa9a-6f64d0b93fec.2019-05-17T233932.932000Z",
 }
 
 INPUT_BUNDLE_URL = \
