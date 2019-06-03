@@ -263,8 +263,8 @@ class MatrixConverter:
         """
 
         # Put loom on the output filename if it's not already there.
-        if not self.local_output_filename.endswith(".loom.zip"):
-            self.local_output_filename += ".loom.zip"
+        if not self.local_output_filename.endswith(".zip"):
+            self.local_output_filename += ".zip"
 
         loom_filename = self.local_output_filename.rstrip(".zip")
 
