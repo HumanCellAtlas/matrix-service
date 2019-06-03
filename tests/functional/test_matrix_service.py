@@ -42,6 +42,11 @@ INPUT_BUNDLE_IDS = {
     ]
 }
 
+NOTIFICATION_BUNDLE_IDS = {
+    "integration": "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
+    "staging": "119f6f39-d111-4c33-a3d5-224a67655b07.2018-10-24T224220.927365Z",
+}
+
 INPUT_BUNDLE_URL = \
     "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_env}_test_bundles.tsv"
 
@@ -167,7 +172,7 @@ class TestMatrixServiceV0(MatrixServiceTest):
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
                          "Do not want to process fake notifications in production.")
     def test_dss_notification(self):
-        bundle_fqid = INPUT_BUNDLE_IDS[self.dss_env][0]
+        bundle_fqid = NOTIFICATION_BUNDLE_IDS[self.dss_env]
         try:
             self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
             WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
