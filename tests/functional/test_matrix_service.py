@@ -98,7 +98,7 @@ class MatrixServiceTest(unittest.TestCase):
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
 
         matrix_location = self._retrieve_matrix_location(request_id)
-        self.assertEqual(matrix_location.endswith("loom"), True)
+        self.assertEqual(matrix_location.endswith("loom.zip"), True)
         loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
         self._compare_metrics(direct_metrics, loom_metrics)
 
