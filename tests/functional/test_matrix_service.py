@@ -135,10 +135,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
 
     def test_single_bundle_request(self):
         self.request_id = self._post_matrix_service_request(
-            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env][0], format="loom")
+            bundle_fqids=[INPUT_BUNDLE_IDS[self.dss_env][0]], format="loom")
         WaitFor(self._poll_get_matrix_service_request, self.request_id)\
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env][0])
+        self._analyze_loom_matrix_results(self.request_id, [INPUT_BUNDLE_IDS[self.dss_env][0]])
 
     def test_loom_output_matrix_service(self):
         self.request_id = self._post_matrix_service_request(
