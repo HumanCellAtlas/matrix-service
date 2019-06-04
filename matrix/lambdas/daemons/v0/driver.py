@@ -7,10 +7,17 @@ from matrix.common.config import MatrixInfraConfig, MatrixRedshiftConfig
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
+from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.aws.s3_handler import S3Handler
 
 logger = Logging.get_logger(__name__)
+
+analysis_bundle_count_query_template = """
+    $$SELECT count(*)
+    FROM analysis
+    WHERE bundle_fqid IN {0}$$
+"""
 
 expression_query_template = """
     UNLOAD ($$SELECT cell.cellkey, expression.featurekey, expression.exrpvalue
@@ -71,6 +78,7 @@ class Driver:
         self.redshift_config = MatrixRedshiftConfig()
         self.query_results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
         self.s3_handler = S3Handler(os.environ['MATRIX_QUERY_BUCKET'])
+        self.redshift_handler = RedshiftHandler()
 
     @property
     def query_job_q_url(self):
@@ -104,6 +112,14 @@ class Driver:
                                                        RequestTableField.NUM_BUNDLES,
                                                        len(resolved_bundle_fqids))
         s3_obj_keys = self._format_and_store_queries_in_s3(resolved_bundle_fqids)
+
+        analysis_table_bundle_count = self._fetch_bundle_count_from_analysis_table(resolved_bundle_fqids)
+        if analysis_table_bundle_count != len(resolved_bundle_fqids):
+            error_msg = "resolved bundles in request do not match bundles available in matrix service"
+            logger.info(error_msg)
+            self.request_tracker.log_error(error_msg)
+            return
+
         for s3_obj_key in s3_obj_keys:
             self._add_request_query_to_sqs(s3_obj_key)
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
@@ -149,3 +165,10 @@ class Driver:
         }
         logger.debug(f"Adding {payload} to sqs {queue_url}")
         self.sqs_handler.add_message_to_queue(queue_url, payload)
+
+    def _fetch_bundle_count_from_analysis_table(self, resolved_bundle_fqids: list):
+        analysis_table_bundle_count_query = analysis_bundle_count_query_template.format(
+            self._format_bundle_fqids(resolved_bundle_fqids))
+        results = self.redshift_handler.transaction([analysis_table_bundle_count_query], read_only=True)
+        analysis_table_bundle_count = results[0][0]
+        return analysis_table_bundle_count
