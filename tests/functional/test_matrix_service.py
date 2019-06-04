@@ -42,6 +42,13 @@ INPUT_BUNDLE_IDS = {
     ]
 }
 
+NOTIFICATION_BUNDLE_IDS = {
+    "integration": "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
+    "staging": "119f6f39-d111-4c33-a3d5-224a67655b07.2018-10-24T224220.927365Z",
+    # notification test does not run on prod, however other matrix environments may point to dss prod
+    "prod": "fffe55c1-18ed-401b-aa9a-6f64d0b93fec.2019-05-17T233932.932000Z",
+}
+
 INPUT_BUNDLE_URL = \
     "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_env}_test_bundles.tsv"
 
@@ -174,23 +181,25 @@ class TestMatrixServiceV0(MatrixServiceTest):
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
                          "Do not want to process fake notifications in production.")
     def test_dss_notification(self):
-        bundle_fqid = INPUT_BUNDLE_IDS[self.dss_env][0]
+        bundle_fqid = NOTIFICATION_BUNDLE_IDS[self.dss_env]
+        try:
+            self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
+            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+                .to_return_value((0, 0, 0), timeout_seconds=60)
 
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(0, timeout_seconds=60)
+            self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
+            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+                .to_return_value_in_range((1, 1, 20000), (1, 1, 25000), timeout_seconds=600)
 
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(1, timeout_seconds=600)
+            self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
+            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+                .to_return_value((0, 0, 0), timeout_seconds=60)
 
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(0, timeout_seconds=60)
-
-        self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
-        WaitFor(self._poll_db_get_analysis_row_count_from_fqid, bundle_fqid)\
-            .to_return_value(1, timeout_seconds=600)
+            self._post_notification(bundle_fqid=bundle_fqid, event_type="UPDATE")
+            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+                .to_return_value_in_range((1, 1, 20000), (1, 1, 25000), timeout_seconds=600)
+        finally:
+            self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
 
     @unittest.skip
     def test_matrix_service_ss2(self):
@@ -224,11 +233,25 @@ class TestMatrixServiceV0(MatrixServiceTest):
 
         self._analyze_loom_matrix_results(self.request_id, bundle_fqids)
 
-    def _poll_db_get_analysis_row_count_from_fqid(self, bundle_fqid):
-        query = f"SELECT count(*) from analysis where analysis.bundle_fqid = '{bundle_fqid}'"
-        results = self.redshift_handler.transaction([query], return_results=True)
-        count = results[0][0]
-        return count
+    def _poll_db_get_row_counts_from_fqid(self, bundle_fqid):
+        """
+        :param bundle_fqid: Bundle fqid to query Redshift for
+        :return: Row counts for (analysis_count, cell_count, exp_count)
+        """
+        analysis_query = f"SELECT count(*) from analysis where analysis.bundle_fqid = '{bundle_fqid}'"
+        cell_query = f"SELECT count(cell.cellkey) from cell " \
+                     f"join analysis on cell.analysiskey = analysis.analysiskey " \
+                     f"where analysis.bundle_fqid = '{bundle_fqid}'"
+        exp_query = f"SELECT count(*) from cell " \
+                    f"join analysis on cell.analysiskey = analysis.analysiskey " \
+                    f"join expression on cell.cellkey = expression.cellkey " \
+                    f"where analysis.bundle_fqid = '{bundle_fqid}'"
+
+        analysis_row_count = self.redshift_handler.transaction([analysis_query], return_results=True)[0][0]
+        cell_row_count = self.redshift_handler.transaction([cell_query], return_results=True)[0][0]
+        exp_row_count = self.redshift_handler.transaction([exp_query], return_results=True)[0][0]
+
+        return analysis_row_count, cell_row_count, exp_row_count
 
     def _post_matrix_service_request(self, bundle_fqids=None, bundle_fqids_url=None, format=None):
         data = {}

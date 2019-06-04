@@ -21,7 +21,7 @@ class NotificationHandler:
         self.redshift = RedshiftHandler()
 
     def run(self):
-        if self.event_type == 'CREATE':
+        if self.event_type == 'CREATE' or self.event_type == 'UPDATE':
             self.update_bundle()
         elif self.event_type == 'DELETE' or self.event_type == 'TOMBSTONE':
             self.remove_bundle()
