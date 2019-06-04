@@ -24,6 +24,25 @@ ETL_TEST_BUNDLES = {
                                 "84dd5dd7-cad0-4874-a36e-d2ca7e9d1489|5f7dee36-68e8-41c8-9e5f-50f3c772176a||3859\n",
                 TableName.EXPRESSION: "2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|ENST00000373020|TPM|92.29\n"
             },
+            '343dbc5f-bfe8-4f51-b493-a508d017125c': {
+                TableName.ANALYSIS: "223f7882-3ba8-4da6-af37-494aa593fcd9|"
+                                    "343dbc5f-bfe8-4f51-b493-a508d017125c.2019-05-24T185218.516000Z|"
+                                    "smartseq2_v2.3.0|blessed",
+                TableName.SPECIMEN: "942ed1bf-d638-4d6c-9953-97deb555604b|NCBITAXON:9606|Homo sapiens|HANCESTRO:0016|"
+                                    "African American or Afro-Caribbean|MONDO:0011273|H syndrome|EFO:0001272|adult|"
+                                    "UBERON:0002113|kidney||",
+                TableName.LIBRARY_PREPARATION: "2c25e25e-6dff-4028-a649-7b454aeb175a|OBI:0000869|polyA RNA extract|"
+                                               "EFO:0008931|Smart-seq2|full length|unstranded",
+                TableName.PROJECT: "4556d1c7-b6a0-4829-9dfb-ab2b668eb445|integration/Smart-seq2/2019-05-24T18:04:07Z|"
+                                   "SS2 1 Cell Integration Test",
+                TableName.PUBLICATION: "4556d1c7-b6a0-4829-9dfb-ab2b668eb445|Study of single cells in the human body|"
+                                       "10.1016/j.cell.2016.07.054",
+                TableName.CONTRIBUTOR: "4556d1c7-b6a0-4829-9dfb-ab2b668eb445|Jane,,Smith|University of Washington",
+                TableName.CELL: "e584b404-9937-49fe-a323-5e18511f7035|e584b404-9937-49fe-a323-5e18511f7035|"
+                                "4556d1c7-b6a0-4829-9dfb-ab2b668eb445|942ed1bf-d638-4d6c-9953-97deb555604b|"
+                                "2c25e25e-6dff-4028-a649-7b454aeb175a|223f7882-3ba8-4da6-af37-494aa593fcd9||3859\n",
+                TableName.EXPRESSION: "e584b404-9937-49fe-a323-5e18511f7035|ENST00000373020|TPM|92.29\n"
+            },
         },
         BundleType.CELLRANGER: {
             'baed2abb-bf4a-4239-a605-38c7a1129596': {
@@ -49,7 +68,26 @@ ETL_TEST_BUNDLES = {
         }
     },
     'staging': {
-        BundleType.SS2: {},
+        BundleType.SS2: {
+            'bffa26df-b1d4-439b-bb82-2d0a271ad0ef': {
+                TableName.ANALYSIS: "7484c788-61af-403b-92a8-be3ca94d8789|"
+                                    "bffa26df-b1d4-439b-bb82-2d0a271ad0ef.2019-05-24T192401.324000Z|"
+                                    "smartseq2_v2.3.0|blessed",
+                TableName.SPECIMEN: "04b3083a-5f27-43e5-bb6a-520d083fa8b8|NCBITAXON:9606|Homo sapiens|HANCESTRO:0016|"
+                                    "African American or Afro-Caribbean|MONDO:0011273|H syndrome|EFO:0001272|adult|"
+                                    "UBERON:0002113|kidney||",
+                TableName.LIBRARY_PREPARATION: "2b91bdab-103c-45f8-a55e-761d3131221c|OBI:0000869|polyA RNA extract|"
+                                               "EFO:0008931|Smart-seq2|full length|unstranded",
+                TableName.PROJECT: "f6d7a66a-d8b2-4240-9673-56b19eb9c9c0|staging/Smart-seq2/2019-05-24T18:05:06Z|"
+                                   "SS2 1 Cell Integration Test",
+                TableName.PUBLICATION: None,
+                TableName.CONTRIBUTOR: "f6d7a66a-d8b2-4240-9673-56b19eb9c9c0|John,D,Doe|EMBL-EBI",
+                TableName.CELL: "891c905c-7219-4b55-9c1b-4a5d7044e626|891c905c-7219-4b55-9c1b-4a5d7044e626|"
+                                "f6d7a66a-d8b2-4240-9673-56b19eb9c9c0|04b3083a-5f27-43e5-bb6a-520d083fa8b8|"
+                                "2b91bdab-103c-45f8-a55e-761d3131221c|7484c788-61af-403b-92a8-be3ca94d8789||3859\n",
+                TableName.EXPRESSION: "891c905c-7219-4b55-9c1b-4a5d7044e626|ENST00000373020|TPM|92.29\n",
+            },
+        },
         BundleType.CELLRANGER: {}
     },
     'prod': {
