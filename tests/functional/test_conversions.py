@@ -275,6 +275,10 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
+            # Touch loom_readme.md so the conversion code can include it in the
+            # zip
+            open("loom_readme.md", "a")
+
             matrix_converter.run()
 
         with zipfile.ZipFile("test.loom.zip") as loom_output:
