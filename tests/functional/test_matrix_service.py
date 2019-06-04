@@ -190,6 +190,13 @@ class TestMatrixServiceV0(MatrixServiceTest):
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
         self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
 
+    def test_matrix_service_with_unexpected_bundles(self):
+        input_bundles = ['non-existent-bundle1', 'non-existent-bundle2']
+        self.request_id = self._post_matrix_service_request(
+            bundle_fqids=input_bundles)
+        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
+            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=300)
+
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
                          "Do not want to process fake notifications in production.")
     def test_dss_notification(self):

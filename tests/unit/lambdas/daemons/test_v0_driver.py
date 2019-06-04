@@ -14,16 +14,19 @@ class TestDriver(unittest.TestCase):
         self._bundles_per_worker = 100
         self._driver = Driver(self.request_id, self._bundles_per_worker)
 
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
     def test_run_with_ids(self,
                           mock_set_table_field_with_value,
                           mock_complete_subtask_execution,
-                          mock_store_queries_in_s3):
+                          mock_store_queries_in_s3,
+                          mock_redshift_transaction):
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
         mock_store_queries_in_s3.return_value = []
+        mock_redshift_transaction.return_value = [[2]]
 
         self._driver.run(bundle_fqids, None, format)
 
@@ -45,6 +48,7 @@ class TestDriver(unittest.TestCase):
 
         self.assertEqual(self._driver._format_bundle_fqids(one_bundle_fqid), formatted_one_bundle_fqid)
 
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
@@ -55,11 +59,13 @@ class TestDriver(unittest.TestCase):
                           mock_get,
                           mock_set_table_field_with_value,
                           mock_complete_subtask_execution,
-                          mock_store_queries_in_s3):
+                          mock_store_queries_in_s3,
+                          mock_redshift_transaction):
         bundle_fqids_url = "test_url"
         bundle_fqids = ["id1.version", "id2.version"]
         format = "test_format"
         mock_store_queries_in_s3.return_value = []
+        mock_redshift_transaction.return_value = [[2]]
 
         mock_parse_download_manifest.return_value = bundle_fqids
         self._driver.run(None, bundle_fqids_url, format)
@@ -70,6 +76,38 @@ class TestDriver(unittest.TestCase):
                                                                 RequestTableField.NUM_BUNDLES,
                                                                 len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
+    @mock.patch("requests.get")
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._parse_download_manifest")
+    def test_run_with_unexpected_bundles(self,
+                                         mock_parse_download_manifest,
+                                         mock_get,
+                                         mock_set_table_field_with_value,
+                                         mock_complete_subtask_execution,
+                                         mock_store_queries_in_s3,
+                                         mock_redshift_transaction,
+                                         mock_log_error):
+        bundle_fqids_url = "test_url"
+        bundle_fqids = ["id1.version", "id2.version"]
+        format = "test_format"
+        mock_store_queries_in_s3.return_value = []
+        mock_redshift_transaction.return_value = [[3]]
+
+        mock_parse_download_manifest.return_value = bundle_fqids
+        self._driver.run(None, bundle_fqids_url, format)
+
+        mock_parse_download_manifest.assert_called_once()
+        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
+                                                                mock.ANY,
+                                                                RequestTableField.NUM_BUNDLES,
+                                                                len(bundle_fqids))
+        error_msg = "resolved bundles in request do not match bundles available in matrix service"
+        mock_log_error.assert_called_once_with(error_msg)
 
     def test_parse_download_manifest(self):
         test_download_manifest = "UUID\tVERSION\nbundle_id_1\tbundle_version_1\nbundle_id_2\tbundle_version_2"
