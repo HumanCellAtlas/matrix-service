@@ -10,6 +10,7 @@ from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, Request
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.aws.s3_handler import S3Handler
+from matrix.common.query_constructor import list_to_query_str
 
 logger = Logging.get_logger(__name__)
 
@@ -146,13 +147,13 @@ class Driver:
         exp_query = expression_query_template.format(self.query_results_bucket,
                                                      self.request_id,
                                                      self.redshift_role_arn,
-                                                     self._format_bundle_fqids(resolved_bundle_fqids))
+                                                     list_to_query_str(resolved_bundle_fqids))
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
         cell_query = cell_query_template.format(self.query_results_bucket,
                                                 self.request_id,
                                                 self.redshift_role_arn,
-                                                self._format_bundle_fqids(resolved_bundle_fqids))
+                                                list_to_query_str(resolved_bundle_fqids))
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
 
         return [feature_query_obj_key, exp_query_obj_key, cell_query_obj_key]

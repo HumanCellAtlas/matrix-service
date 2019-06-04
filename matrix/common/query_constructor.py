@@ -250,3 +250,7 @@ def filter_to_where(matrix_filter: typing.Dict[str, typing.Any]) -> str:
                 f"({filter_to_where(v)})" for v in value]) + ')'
     else:
         raise MalformedMatrixFilter(f"Invalid op: {op}")
+
+
+def list_to_query_str(values: typing.Iterable[str]) -> str:
+    return '(' + ', '.join("'" + str(v) + "'" for v in values) + ')'
