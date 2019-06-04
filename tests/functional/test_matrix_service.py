@@ -16,6 +16,7 @@ from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus
 from matrix.common.aws.redshift_handler import RedshiftHandler
+from matrix.common.query_constructor import list_to_query_str
 
 
 INPUT_BUNDLE_IDS = {
@@ -205,21 +206,24 @@ class TestMatrixServiceV0(MatrixServiceTest):
         cell_row_count = bundle_data['cell_count']
         expression_row_count = bundle_data['exp_count']
 
+        cellkeys = list_to_query_str(self._get_cellkeys_from_fqid(bundle_fqid))
+        self.assertTrue(len(cellkeys) > 0)
+
         try:
             self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
-            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+            WaitFor(self._poll_db_get_row_counts_for_fqid, bundle_fqid, cellkeys)\
                 .to_return_value((0, 0, 0), timeout_seconds=60)
 
             self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
-            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+            WaitFor(self._poll_db_get_row_counts_for_fqid, bundle_fqid, cellkeys)\
                 .to_return_value((1, cell_row_count, expression_row_count), timeout_seconds=600)
 
             self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
-            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+            WaitFor(self._poll_db_get_row_counts_for_fqid, bundle_fqid, cellkeys)\
                 .to_return_value((0, 0, 0), timeout_seconds=60)
 
             self._post_notification(bundle_fqid=bundle_fqid, event_type="UPDATE")
-            WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
+            WaitFor(self._poll_db_get_row_counts_for_fqid, bundle_fqid, cellkeys)\
                 .to_return_value((1, cell_row_count, expression_row_count), timeout_seconds=600)
         finally:
             self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
@@ -256,25 +260,32 @@ class TestMatrixServiceV0(MatrixServiceTest):
 
         self._analyze_loom_matrix_results(self.request_id, bundle_fqids)
 
-    def _poll_db_get_row_counts_from_fqid(self, bundle_fqid):
+    def _poll_db_get_row_counts_for_fqid(self, bundle_fqid, cellkeys):
         """
-        :param bundle_fqid: Bundle fqid to query Redshift for
-        :return: Row counts for (analysis_count, cell_count, exp_count)
+        :return: Row counts associated with the given bundle fqid for (analysis_count, cell_count, exp_count)
         """
-        analysis_query = f"SELECT count(*) from analysis where analysis.bundle_fqid = '{bundle_fqid}'"
-        cell_query = f"SELECT count(cell.cellkey) from cell " \
-                     f"join analysis on cell.analysiskey = analysis.analysiskey " \
-                     f"where analysis.bundle_fqid = '{bundle_fqid}'"
-        exp_query = f"SELECT count(*) from cell " \
-                    f"join analysis on cell.analysiskey = analysis.analysiskey " \
-                    f"join expression on cell.cellkey = expression.cellkey " \
-                    f"where analysis.bundle_fqid = '{bundle_fqid}'"
+        analysis_query = f"SELECT COUNT(*) FROM analysis WHERE analysis.bundle_fqid = '{bundle_fqid}'"
+        cell_query = f"SELECT COUNT(*) FROM cell WHERE cellkey IN {cellkeys}"
+        exp_query = f"SELECT COUNT(*) FROM expression WHERE cellkey IN {cellkeys}"
 
         analysis_row_count = self.redshift_handler.transaction([analysis_query], return_results=True)[0][0]
         cell_row_count = self.redshift_handler.transaction([cell_query], return_results=True)[0][0]
         exp_row_count = self.redshift_handler.transaction([exp_query], return_results=True)[0][0]
 
         return analysis_row_count, cell_row_count, exp_row_count
+
+    def _get_cellkeys_from_fqid(self, bundle_fqid):
+        """
+        Returns a generator of cellkeys associated with a given bundle fqid.
+        """
+        cellkeys_query = f"""
+        SELECT DISTINCT cellkey FROM cell
+         JOIN analysis ON cell.analysiskey = analysis.analysiskey
+         WHERE analysis.bundle_fqid = '{bundle_fqid}'
+        """
+
+        results = self.redshift_handler.transaction([cellkeys_query], return_results=True)
+        return (row[0] for row in results)
 
     def _post_matrix_service_request(self, bundle_fqids=None, bundle_fqids_url=None, format=None):
         data = {}

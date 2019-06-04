@@ -80,5 +80,17 @@ class TestNotificationHandler(unittest.TestCase):
         handler = NotificationHandler(self.bundle_uuid, self.bundle_version, "TOMBSTONE")
         handler.remove_bundle()
 
-        mock_transaction.assert_called_once_with([f"DELETE FROM analysis WHERE bundle_fqid="
-                                                  f"'{self.bundle_uuid}.{self.bundle_version}'"])
+        mock_transaction.assert_called_once_with([
+            NotificationHandler.DELETE_EXPRESSION_QUERY_TEMPLATE.format(
+                bundle_uuid=self.bundle_uuid,
+                bundle_version=self.bundle_version
+            ),
+            NotificationHandler.DELETE_CELL_QUERY_TEMPLATE.format(
+                bundle_uuid=self.bundle_uuid,
+                bundle_version=self.bundle_version
+            ),
+            NotificationHandler.DELETE_ANALYSIS_QUERY_TEMPLATE.format(
+                bundle_uuid=self.bundle_uuid,
+                bundle_version=self.bundle_version
+            )
+        ])

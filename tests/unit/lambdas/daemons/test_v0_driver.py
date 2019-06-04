@@ -36,6 +36,7 @@ class TestDriver(unittest.TestCase):
                                                                 len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")

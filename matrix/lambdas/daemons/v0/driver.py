@@ -134,10 +134,6 @@ class Driver:
         lines = data.splitlines()[1:]
         return list(map(_parse_line, lines))
 
-    @staticmethod
-    def _format_bundle_fqids(bundle_fqids: typing.List[str]) -> str:
-        return '(' + ', '.join("'" + str(b) + "'" for b in bundle_fqids) + ')'
-
     def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list):
         feature_query = feature_query_template.format(self.query_results_bucket,
                                                       self.request_id,
@@ -169,7 +165,7 @@ class Driver:
 
     def _fetch_bundle_count_from_analysis_table(self, resolved_bundle_fqids: list):
         analysis_table_bundle_count_query = analysis_bundle_count_query_template.format(
-            self._format_bundle_fqids(resolved_bundle_fqids))
+            list_to_query_str(resolved_bundle_fqids))
         analysis_table_bundle_count_query = analysis_table_bundle_count_query.strip().replace('\n', '')
         results = self.redshift_handler.transaction([analysis_table_bundle_count_query],
                                                     read_only=True,
