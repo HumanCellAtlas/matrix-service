@@ -39,7 +39,7 @@ class ProjectPublicationContributorTransformer(MetadataToPsvTransformer):
 
             projects.add(self._generate_psv_row(key, short_name, title))
 
-            [contributors.add(self._generate_psv_row(key, lookup(c, "contact", "contact_name"), c.get("institution")))
+            [contributors.add(self._generate_psv_row(key, lookup(c, "name", "contact_name"), c.get("institution")))
              for c in project_dict.get("contributors", [])]
 
             [publications.add(self._generate_psv_row(key, lookup(p, "title", "publication_title"), p.get("doi")))
