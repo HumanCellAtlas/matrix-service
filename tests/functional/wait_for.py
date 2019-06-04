@@ -38,19 +38,6 @@ class WaitFor:
             raise RuntimeError(f"Function {self._function_signature()} did not return a non-{other_than_value} value " +
                                f"within {timeout_seconds} seconds")
 
-    def to_return_value_in_range(self, lower, upper, timeout_seconds=60):
-        self.start_time = time.time()
-        timeout_at = self.start_time + timeout_seconds
-
-        while time.time() < timeout_at:
-            retval = self._call_func()
-            if lower <= retval <= upper:
-                return retval
-            self._wait_until_next_check_time()
-        else:
-            raise RuntimeError(f"Function {self._function_signature()} did not return an int within range " +
-                               f"within {timeout_seconds} seconds")
-
     def _call_func(self):
         retval = self.func(*self.func_args)
         print(f"After {self._elapsed_time()}: {self._function_signature()} returned {retval}")

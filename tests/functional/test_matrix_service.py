@@ -42,11 +42,23 @@ INPUT_BUNDLE_IDS = {
     ]
 }
 
-NOTIFICATION_BUNDLE_IDS = {
-    "integration": "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
-    "staging": "119f6f39-d111-4c33-a3d5-224a67655b07.2018-10-24T224220.927365Z",
+NOTIFICATION_TEST_DATA = {
+    "integration": {
+        'bundle_fqid': "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
+        'cell_count': 1,
+        'exp_count': 21876
+    },
+    "staging": {
+        'bundle_fqid': "119f6f39-d111-4c33-a3d5-224a67655b07.2018-10-24T224220.927365Z",
+        'cell_count': 1,
+        'exp_count': 21680
+    },
     # notification test does not run on prod, however other matrix environments may point to dss prod
-    "prod": "fffe55c1-18ed-401b-aa9a-6f64d0b93fec.2019-05-17T233932.932000Z",
+    "prod": {
+        'bundle_fqid': "fffe55c1-18ed-401b-aa9a-6f64d0b93fec.2019-05-17T233932.932000Z",
+        'cell_count': 1,
+        'exp_count': 11544
+    }
 }
 
 INPUT_BUNDLE_URL = \
@@ -181,7 +193,11 @@ class TestMatrixServiceV0(MatrixServiceTest):
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
                          "Do not want to process fake notifications in production.")
     def test_dss_notification(self):
-        bundle_fqid = NOTIFICATION_BUNDLE_IDS[self.dss_env]
+        bundle_data = NOTIFICATION_TEST_DATA[self.dss_env]
+        bundle_fqid = bundle_data['bundle_fqid']
+        cell_row_count = bundle_data['cell_count']
+        expression_row_count = bundle_data['exp_count']
+
         try:
             self._post_notification(bundle_fqid=bundle_fqid, event_type="DELETE")
             WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
@@ -189,7 +205,7 @@ class TestMatrixServiceV0(MatrixServiceTest):
 
             self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
             WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
-                .to_return_value_in_range((1, 1, 20000), (1, 1, 25000), timeout_seconds=600)
+                .to_return_value((1, cell_row_count, expression_row_count), timeout_seconds=600)
 
             self._post_notification(bundle_fqid=bundle_fqid, event_type="TOMBSTONE")
             WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
@@ -197,7 +213,7 @@ class TestMatrixServiceV0(MatrixServiceTest):
 
             self._post_notification(bundle_fqid=bundle_fqid, event_type="UPDATE")
             WaitFor(self._poll_db_get_row_counts_from_fqid, bundle_fqid)\
-                .to_return_value_in_range((1, 1, 20000), (1, 1, 25000), timeout_seconds=600)
+                .to_return_value((1, cell_row_count, expression_row_count), timeout_seconds=600)
         finally:
             self._post_notification(bundle_fqid=bundle_fqid, event_type="CREATE")
 
