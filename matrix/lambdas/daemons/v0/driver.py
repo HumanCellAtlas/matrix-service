@@ -14,9 +14,9 @@ from matrix.common.aws.s3_handler import S3Handler
 logger = Logging.get_logger(__name__)
 
 analysis_bundle_count_query_template = """
-    $$SELECT count(*)
+    SELECT count(*)
     FROM analysis
-    WHERE bundle_fqid IN {0}$$
+    WHERE bundle_fqid IN {0};
 """
 
 expression_query_template = """
@@ -169,6 +169,7 @@ class Driver:
     def _fetch_bundle_count_from_analysis_table(self, resolved_bundle_fqids: list):
         analysis_table_bundle_count_query = analysis_bundle_count_query_template.format(
             self._format_bundle_fqids(resolved_bundle_fqids))
+        analysis_table_bundle_count_query = analysis_table_bundle_count_query.strip().replace('\n', '')
         results = self.redshift_handler.transaction([analysis_table_bundle_count_query], read_only=True)
         analysis_table_bundle_count = results[0][0]
         return analysis_table_bundle_count
