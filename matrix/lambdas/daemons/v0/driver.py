@@ -170,6 +170,8 @@ class Driver:
         analysis_table_bundle_count_query = analysis_bundle_count_query_template.format(
             self._format_bundle_fqids(resolved_bundle_fqids))
         analysis_table_bundle_count_query = analysis_table_bundle_count_query.strip().replace('\n', '')
-        results = self.redshift_handler.transaction([analysis_table_bundle_count_query], read_only=True)
+        results = self.redshift_handler.transaction([analysis_table_bundle_count_query],
+                                                    read_only=True,
+                                                    return_results=True)
         analysis_table_bundle_count = results[0][0]
         return analysis_table_bundle_count
