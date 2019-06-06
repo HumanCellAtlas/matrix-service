@@ -119,11 +119,7 @@ def get_matrix(request_id: str):
     elif request_tracker.is_request_complete():
         matrix_results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
 
-        matrix_location = ""
-        if format == MatrixFormat.LOOM.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}"
-        elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
+        matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.COMPLETE.value,

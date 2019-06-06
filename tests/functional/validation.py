@@ -83,13 +83,17 @@ def calculate_ss2_metrics_zarr(s3_path):
 def calculate_ss2_metrics_loom(loom_url):
     """Calculate metrics for a loom file."""
 
-    temp_dir = tempfile.mkdtemp(suffix="loom_test")
-    local_loom_path = os.path.join(temp_dir, os.path.basename(loom_url))
+    temp_dir = tempfile.mkdtemp(suffix="loom_zip_test")
+    local_loom_zip_path = os.path.join(temp_dir, os.path.basename(loom_url))
     response = requests.get(loom_url, stream=True)
-    with open(local_loom_path, "wb") as local_loom_file:
-        shutil.copyfileobj(response.raw, local_loom_file)
+    with open(local_loom_zip_path, "wb") as local_loom_zip_file:
+        shutil.copyfileobj(response.raw, local_loom_zip_file)
 
-    ds = loompy.connect(local_loom_path)
+    loom_zip = zipfile.ZipFile(local_loom_zip_path)
+    loom_name = [n for n in loom_zip.namelist() if n.endswith(".loom")][0]
+    loom_zip.extractall()
+
+    ds = loompy.connect(loom_name)
     expression_sum = numpy.sum(ds[:, :])
     expression_nonzero = numpy.count_nonzero(ds[:, :])
     cell_count = ds.shape[1]

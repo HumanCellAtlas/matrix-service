@@ -98,7 +98,7 @@ class MatrixServiceTest(unittest.TestCase):
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
 
         matrix_location = self._retrieve_matrix_location(request_id)
-        self.assertEqual(matrix_location.endswith("loom"), True)
+        self.assertEqual(matrix_location.endswith("loom.zip"), True)
         loom_metrics = validation.calculate_ss2_metrics_loom(matrix_location)
         self._compare_metrics(direct_metrics, loom_metrics)
 
@@ -410,10 +410,15 @@ class TestMatrixServiceV1(MatrixServiceTest):
         matrix_location = self._retrieve_matrix_location(self.request_id)
 
         temp_dir = tempfile.mkdtemp(suffix="loom_ops_test")
-        local_loom_path = os.path.join(temp_dir, os.path.basename(matrix_location))
+        local_loom_zip_path = os.path.join(temp_dir, os.path.basename(matrix_location))
         response = requests.get(matrix_location, stream=True)
-        with open(local_loom_path, "wb") as local_loom_file:
-            shutil.copyfileobj(response.raw, local_loom_file)
+        with open(local_loom_zip_path, "wb") as local_loom_zip_file:
+            shutil.copyfileobj(response.raw, local_loom_zip_file)
+
+        with zipfile.ZipFile(local_loom_zip_path) as loom_zip:
+            loom_name = [n for n in loom_zip.namelist() if n.endswith(".loom")][0]
+            loom_zip.extractall(path=temp_dir)
+        local_loom_path = os.path.join(temp_dir, loom_name)
 
         ds = loompy.connect(local_loom_path)
 

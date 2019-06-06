@@ -7,6 +7,7 @@ RUN apt-get update -y \
 ADD code /
 ADD csv_readme.md /
 ADD mtx_readme.md /
+ADD loom_readme.md /
 
 RUN pip3 install -U pip \
  && pip install -r /requirements.txt

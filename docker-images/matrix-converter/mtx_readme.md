@@ -28,7 +28,7 @@ Ranger produces as its filtered feature-barcode matrix.
 
 Each row of the cell metadata table represents a cell, and each column is a different metadata
 field. Descriptions of some of the metadata fields can be found at the
-[HCA Data Browser](https://prod.data.humancellatlas.org/explore/projects).
+[HCA Data Browser](https://prod.data.humancellatlas.org/metadata).
 Additional fields, `genes_detected` for example, are calculated during secondary analysis. Full
 descriptions of those fields are forthcoming.
 
