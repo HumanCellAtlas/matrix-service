@@ -16,7 +16,7 @@ from . import validation
 from .wait_for import WaitFor
 from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus
 from matrix.common.aws.redshift_handler import RedshiftHandler
-from matrix.common.query_constructor import list_to_query_str
+from matrix.common.query_constructor import format_str_list
 
 
 INPUT_BUNDLE_IDS = {
@@ -206,7 +206,7 @@ class TestMatrixServiceV0(MatrixServiceTest):
         cell_row_count = bundle_data['cell_count']
         expression_row_count = bundle_data['exp_count']
 
-        cellkeys = list_to_query_str(self._get_cellkeys_from_fqid(bundle_fqid))
+        cellkeys = format_str_list(self._get_cellkeys_from_fqid(bundle_fqid))
         self.assertTrue(len(cellkeys) > 0)
 
         try:
