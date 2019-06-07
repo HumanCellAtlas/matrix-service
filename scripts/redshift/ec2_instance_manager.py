@@ -28,7 +28,7 @@ class EC2InstanceManager:
                                    stdout=subprocess.PIPE,
                                    shell=True).stdout,
             shell=True
-        )[:-1]
+        ).decode('utf-8')[:-1]
 
     def create(self, instance_type):
         _shell("aegea",
@@ -39,7 +39,8 @@ class EC2InstanceManager:
                "--ami",
                self.ami,
                "--wait-for-ssh",
-               f"--iam-role matrix-service-redshift-loader-{self.deployment_stage}")
+               "--iam-role",
+               f"matrix-service-redshift-loader-{self.deployment_stage}")
         _shell("aegea",
                "ssh",
                f"ubuntu@{self.name}",

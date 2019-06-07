@@ -4,7 +4,7 @@ import getpass
 import os
 import subprocess
 
-from .ec2_instance_manager import EC2InstanceManager
+from ec2_instance_manager import EC2InstanceManager
 
 
 def _init_env_vars():
@@ -35,10 +35,16 @@ if __name__ == '__main__':
                         help="Upload UUID in dcp-matrix-service-preload-* S3 bucket "
                              "to load Redshift from (required for state==3).",
                         type=str)
+    parser.add_argument("--project-uuids",
+                        help="DCP Project UUIDs to perform ETL on.",
+                        type=str,
+                        nargs="*",
+                        default="")
     args = parser.parse_args()
 
     _init_env_vars()
 
+    # spin up a new EC2 instance if necessary
     if not args.instance_name:
         instance_name = f"{getpass.getuser()}-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}"
         print(f"No existing instance provided. Spinning up new EC2 {args.instance_type} instance: {instance_name}.")
@@ -58,4 +64,5 @@ if __name__ == '__main__':
     ec2_instance.provision()
     ec2_instance.run(max_workers=args.max_workers,
                      state=args.state,
-                     s3_upload_id=args.s3_upload_id)
+                     s3_upload_id=args.s3_upload_id,
+                     project_uuids=args.project_uuids)
