@@ -500,3 +500,20 @@ GROUP BY analysis.protocol
 ;
 """
         self.assertEqual(query, expected_sql)
+
+
+class TestFormatStrList(unittest.TestCase):
+
+    def test_multiple_values(self):
+
+        values = ["id1.version", "id2.version"]
+        formatted_values = "('id1.version', 'id2.version')"
+
+        self.assertEqual(query_constructor.format_str_list(values), formatted_values)
+
+    def test_single_value(self):
+
+        values = ["id1.version"]
+        formatted_values = "('id1.version')"
+
+        self.assertEqual(query_constructor.format_str_list(values), formatted_values)

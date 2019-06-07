@@ -12,6 +12,19 @@ logger = Logging.get_logger(__name__)
 
 class NotificationHandler:
 
+    DELETE_ANALYSIS_QUERY_TEMPLATE = """DELETE FROM analysis WHERE bundle_fqid='{bundle_uuid}.{bundle_version}'"""
+    DELETE_CELL_QUERY_TEMPLATE = """
+                                 DELETE FROM cell
+                                  JOIN analysis ON cell.analysiskey = analysis.analysiskey
+                                  WHERE analysis.bundle_fqid='{bundle_uuid}.{bundle_version}'
+                                 """
+    DELETE_EXPRESSION_QUERY_TEMPLATE = """
+                                       DELETE FROM expression
+                                        JOIN cell ON cell.cellkey = expression.cellkey
+                                        JOIN analysis ON cell.analysiskey = analysis.analysiskey
+                                        WHERE analysis.bundle_fqid='{bundle_uuid}.{bundle_version}'
+                                       """
+
     def __init__(self, bundle_uuid, bundle_version, event_type):
         logger.info(f"Running NotificationHandler with parameters: {bundle_uuid}, {bundle_version}, {event_type}")
         self.bundle_uuid = bundle_uuid
@@ -57,6 +70,17 @@ class NotificationHandler:
                     dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
 
     def remove_bundle(self):
-        delete_query = f"DELETE FROM analysis WHERE bundle_fqid='{self.bundle_uuid}.{self.bundle_version}'"
-        logger.info(f"Executing query: {delete_query}")
-        self.redshift.transaction([delete_query])
+        self.redshift.transaction([
+            self.DELETE_EXPRESSION_QUERY_TEMPLATE.format(
+                bundle_uuid=self.bundle_uuid,
+                bundle_version=self.bundle_version
+            ),
+            self.DELETE_CELL_QUERY_TEMPLATE.format(
+                bundle_uuid=self.bundle_uuid,
+                bundle_version=self.bundle_version
+            ),
+            self.DELETE_ANALYSIS_QUERY_TEMPLATE.format(
+                bundle_uuid=self.bundle_uuid,
+                bundle_version=self.bundle_version
+            )
+        ])

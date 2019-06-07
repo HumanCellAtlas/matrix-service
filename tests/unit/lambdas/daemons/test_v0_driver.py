@@ -36,18 +36,6 @@ class TestDriver(unittest.TestCase):
                                                                 len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
 
-    def test_bundle_fqid_format(self):
-
-        two_bundle_fqids = ["id1.version", "id2.version"]
-        formatted_two_bundle_fqids = "('id1.version', 'id2.version')"
-
-        self.assertEqual(self._driver._format_bundle_fqids(two_bundle_fqids), formatted_two_bundle_fqids)
-
-        one_bundle_fqid = ["id1.version"]
-        formatted_one_bundle_fqid = "('id1.version')"
-
-        self.assertEqual(self._driver._format_bundle_fqids(one_bundle_fqid), formatted_one_bundle_fqid)
-
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
