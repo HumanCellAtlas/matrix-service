@@ -78,7 +78,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         """Get the ontology label for a term using the OLS API."""
 
         special_case = {
-            "NCBITAXON": "NCBITaxon"
+            "NCBITAXON": "NCBITaxon",
+            "HSAPDV": "HsapDv"
         }
 
         uri_templates = [
