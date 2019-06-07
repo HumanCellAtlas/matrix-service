@@ -247,10 +247,79 @@ FORMAT_DETAIL = {
 }
 
 FIELD_DETAIL = {
-    k: "Just what it sounds like." for k in METADATA_FIELD_TO_TABLE_COLUMN}
+    "cell_suspension.provenance.document_id":
+        "Unique identifier for the suspension of cells or nuclei derived from the collected or cultured specimen.",
+    "genes_detected":
+        "Count of genes with a non-zero count.",
+    "specimen_from_organism.provenance.document_id":
+        "Unique identified for the specimen that was collected from the donor organism.",
+    "specimen_from_organism.genus_species.ontology":
+        "An ontology term identifier in the form prefix:accession for the species to which the donor organism belongs.",
+    "specimen_from_organism.genus_species.ontology_label":
+        "The preferred label for the specimen_from_organism.genus_species.ontoloty ontology term",
+    "donor_organism.human_specific.ethnicity.ontology":
+        "An ontology term identifier in the form prefix:accession for the ethnicity of a human donor.",
+    "donor_organism.human_specific.ethnicity.ontology_label":
+        "The preferred label for the donor_organism.human_specific.ethnicity.ontology term.",
+    "donor_organism.diseases.ontology":
+        "An ontology term identifier in the form prefix:accession for a known disease of the organism.",
+    "donor_organism.diseases.ontology_label":
+        "The preferred label for the donor_organism.diseases.ontology term",
+    "donor_organism.development_stage.ontology":
+        "An ontology term identifier in the form prefix:accession for the development stage of the donor organism.",
+    "donor_organism.development_stage.ontology_label":
+        "The preferred label for the donor_organism.development_stage.ontology term",
+    "derived_organ_ontology":
+        ("An ontology term identifier in the form prefix:accession for the organ that the biomaterial came from. For "
+         "cell lines and organoids, the term is for the organ model."),
+    "derived_organ_label":
+        "The preferred label for the derived_organ_ontology term.",
+    "derived_organ_part_ontology":
+        ("An ontology term identifier in the form of prefix:accession for the specific part of the organ "
+         "that the biomaterial came from. For cell lines and organoids, the term refers to the organ model."),
+    "derived_organ_part_label":
+        "The preferred label for the derived_organ_part_ontology term.",
+    "library_preparation_protocol.provenance.document_id":
+        "Unique identifier for how a sequencing library was prepared.",
+    "library_preparation_protocol.input_nucleic_acid_molecule.ontology":
+        ("An ontology term identifier in the form prefix:accession for the starting nucleic acid molecule "
+         "isolated for sequencing."),
+    "library_preparation_protocol.input_nucleic_acid_molecule.ontology_label":
+        "The preferred label for the library_preparation_protocol.input_nucleic_acid_molecule.ontology_label",
+    "library_preparation_protocol.library_construction_method.ontology":
+        ("An ontology term identifier in the form prefix:accession for the general method for "
+         "sequencing library construction."),
+    "library_preparation_protocol.library_construction_method.ontology_label":
+        "The preferred label for the library_preparation_protocol.library_construction_method.ontology_label",
+    "library_preparation_protocol.end_bias":
+        "The type of tag or end bias the library has.",
+    "library_preparation_protocol.strand":
+        "Library strandedness.",
+    "project.provenance.document_id":
+        "Unique identifier for overall project.",
+    "project.project_core.project_short_name":
+        "A short name for the project.",
+    "project.project_core.project_title":
+        "An official title for the project.",
+    "analysis_protocol.provenance.document_id":
+        "Unique identifier for the secondary analysis protocol.",
+    "dss_bundle_fqid":
+        "Fully-qualified identifier for the source bundle in the HCA Data Storage System.",
+    "analysis_protocol.protocol_core.protocol_id":
+        "A unique ID for the secondary analysis protocol.",
+    "analysis_working_group_approval_status":
+        "Whether the secondary analysis protocol has been reviewed and approved the HCA Analysis Working Group."
+}
 
-FILTER_DETAIL = {
-    k: "Just what it sounds like." for k in METADATA_FIELD_TO_TABLE_COLUMN}
+# Keep FIELD_DETAIL in sync with METADATA_FIELD_TO_TABLE_COLUMN
+for key in METADATA_FIELD_TO_TABLE_COLUMN:
+    if key not in FIELD_DETAIL:
+        FIELD_DETAIL[key] = "No description available, but consult https://prod.data.humancellatlas.org/metadata"
+for key in FIELD_DETAIL:
+    if key not in METADATA_FIELD_TO_TABLE_COLUMN:
+        FIELD_DETAIL.pop(key)
+
+FILTER_DETAIL = FIELD_DETAIL
 
 FEATURE_DETAIL = {
     MatrixFeature.GENE.value: "Genes from the GENCODE v27 comprehensive annotation.",
