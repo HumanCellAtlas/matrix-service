@@ -15,14 +15,16 @@ class NotificationHandler:
     DELETE_ANALYSIS_QUERY_TEMPLATE = """DELETE FROM analysis WHERE bundle_fqid='{bundle_uuid}.{bundle_version}'"""
     DELETE_CELL_QUERY_TEMPLATE = """
                                  DELETE FROM cell
-                                  JOIN analysis ON cell.analysiskey = analysis.analysiskey
-                                  WHERE analysis.bundle_fqid='{bundle_uuid}.{bundle_version}'
+                                  WHERE cell.analysiskey IN
+                                  (SELECT analysis.analysiskey FROM analysis
+                                  WHERE analysis.bundle_fqid='{bundle_uuid}.{bundle_version}')
                                  """
     DELETE_EXPRESSION_QUERY_TEMPLATE = """
                                        DELETE FROM expression
-                                        JOIN cell ON cell.cellkey = expression.cellkey
+                                        WHERE expression.cellkey IN
+                                        (SELECT cell.cellkey FROM cell
                                         JOIN analysis ON cell.analysiskey = analysis.analysiskey
-                                        WHERE analysis.bundle_fqid='{bundle_uuid}.{bundle_version}'
+                                        WHERE analysis.bundle_fqid='{bundle_uuid}.{bundle_version}')
                                        """
 
     def __init__(self, bundle_uuid, bundle_version, event_type):
