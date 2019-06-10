@@ -92,47 +92,28 @@ ETL_TEST_BUNDLES = {
     },
     'prod': {
         BundleType.SS2: {
-            'fff2cdde-4bd0-456f-93fc-5da18754272f': {
-                TableName.ANALYSIS: "29c35608-fbb4-43da-acf8-f87357f0dba3|"
-                                    "fff2cdde-4bd0-456f-93fc-5da18754272f.2019-02-01T193806.576719Z|"
-                                    "smartseq2_v2.2.0|blessed",
-                TableName.SPECIMEN: "31631609-4a44-4a39-a2ec-06632b3fa26d|NCBITAXON:9606|Homo sapiens|||"
-                                    "PATO:0000461|normal|EFO:0001272|adult|UBERON:0002450|decidua||",
-                TableName.LIBRARY_PREPARATION: "edda2708-1172-47f0-9c8b-b6771f463db1|OBI:0000869|polyA RNA extract|"
+            'ffd3bc7b-8f3b-4f97-aa2a-78f9bac93775': {
+                TableName.ANALYSIS: "3ec8dd71-5631-4d03-a6fc-470217e26c85|"
+                                    "ffd3bc7b-8f3b-4f97-aa2a-78f9bac93775.2019-05-14T122736.345000Z|"
+                                    "smartseq2_v2.3.0|blessed",
+                TableName.SPECIMEN: "79926ae9-f27d-4ebe-9646-a0188fc145af|NCBITAXON:9606|Homo sapiens|HANCESTRO:0005|"
+                                    "European|PATO:0000461|normal|HSAPDV:0000091|human late adulthood stage|"
+                                    "UBERON:0001264|pancreas||",
+                TableName.LIBRARY_PREPARATION: "3ab6b486-f900-4f70-ab34-98859ac5f77a|OBI:0000869|polyA RNA extract|"
                                                "EFO:0008931|Smart-seq2|full length|unstranded",
-                TableName.PROJECT: "aabbec1a-1215-43e1-8e42-6489af25c12c|Fetal/Maternal Interface|"
-                                   "Reconstructing the human first trimester fetal-maternal interface "
-                                   "using single cell transcriptomics",
-                TableName.PUBLICATION: "aabbec1a-1215-43e1-8e42-6489af25c12c|"
-                                       "Reconstructing the human first trimester fetal-maternal interface "
-                                       "using single cell transcriptomics|10.1101/429589",
-                TableName.CONTRIBUTOR: "aabbec1a-1215-43e1-8e42-6489af25c12c|Roser,,Vento-Tormo|"
-                                       "Wellcome Trust Sanger Institute",
-                TableName.CELL: "40ace1d6-bec8-4186-898b-d6aebbb1af82|40ace1d6-bec8-4186-898b-d6aebbb1af82|"
-                                "aabbec1a-1215-43e1-8e42-6489af25c12c|31631609-4a44-4a39-a2ec-06632b3fa26d|"
-                                "edda2708-1172-47f0-9c8b-b6771f463db1|29c35608-fbb4-43da-acf8-f87357f0dba3||6132\n",
-                TableName.EXPRESSION: "40ace1d6-bec8-4186-898b-d6aebbb1af82|ENST00000371588|TPM|69.86\n"
+                TableName.PROJECT: "cddab57b-6868-4be4-806f-395ed9dd635a|"
+                                   "Single cell transcriptome analysis of human pancreas|"
+                                   "Single cell transcriptome analysis of human pancreas reveals transcriptional "
+                                   "signatures of aging and somatic mutation patterns.",
+                TableName.PUBLICATION: None,
+                TableName.CONTRIBUTOR: "cddab57b-6868-4be4-806f-395ed9dd635a|Matthew,,Green|"
+                                       "EMBL-EBI European Bioinformatics Institute",
+                TableName.CELL: "3c2180aa-0aa4-411f-98dc-73ef87b447ed|3c2180aa-0aa4-411f-98dc-73ef87b447ed|"
+                                "cddab57b-6868-4be4-806f-395ed9dd635a|79926ae9-f27d-4ebe-9646-a0188fc145af|"
+                                "3ab6b486-f900-4f70-ab34-98859ac5f77a|3ec8dd71-5631-4d03-a6fc-470217e26c85||4020\n",
+                TableName.EXPRESSION: "3c2180aa-0aa4-411f-98dc-73ef87b447ed|ENST00000509541|TPM|0.72\n"
             },
         },
-        BundleType.CELLRANGER: {
-            'feea80a7-ec5b-4b20-9e14-7b45676875e5': {
-                TableName.ANALYSIS: "a7a93615-a8f7-4e2d-8f3f-62e79841a3f7|"
-                                    "feea80a7-ec5b-4b20-9e14-7b45676875e5.2018-12-12T235115.759620Z|"
-                                    "cellranger_v1.0.2|community",
-                TableName.SPECIMEN: "3902d552-081a-4e9d-83a4-0f8ea0f5b74c|NCBITAXON:9606|Homo sapiens|HANCESTRO:0005|"
-                                    "European|||EFO:0001272|adult|UBERON:0002405|immune system|UBERON:0002371|"
-                                    "bone marrow",
-                TableName.LIBRARY_PREPARATION: "6f367bb6-7fc6-4099-a053-005f38e690cb|OBI:0000869|polyA RNA extract|"
-                                               "EFO:0009310|10X v2 sequencing|3 prime tag|second",
-                TableName.PROJECT: "179bf9e6-5b33-4c5b-ae26-96c7270976b8|1M Immune Cells|Census of Immune Cells",
-                TableName.PUBLICATION: None,
-                TableName.CONTRIBUTOR: "179bf9e6-5b33-4c5b-ae26-96c7270976b8|Julia,,Waldman|Broad Institute",
-                TableName.CELL: "fed3f59022cac456e769e8a063829e0e|12befbdf-9bb8-44cc-886a-623a5e656604|"
-                                "179bf9e6-5b33-4c5b-ae26-96c7270976b8|3902d552-081a-4e9d-83a4-0f8ea0f5b74c|"
-                                "6f367bb6-7fc6-4099-a053-005f38e690cb|a7a93615-a8f7-4e2d-8f3f-62e79841a3f7|"
-                                "GATTCAGGTGCACTTA-1|634\n",
-                TableName.EXPRESSION: "c78f796e986ae508373972d00f54ecbd|ENSG00000198727|Count|4\n"
-            }
-        }
+        BundleType.CELLRANGER: {}
     }
 }

@@ -35,11 +35,11 @@ INPUT_BUNDLE_IDS = {
         "7ba67071-6fb3-43f8-ada8-ed5993195e2b.2018-10-24T225455.712647Z",
     ],
     "prod": [
-        "4d825362-dc29-4135-9f53-92c27955ddda.2019-02-02T072347.000888Z",
-        "ae066cbd-f9f8-438a-8c3c-43f5cd44a9eb.2019-02-02T042049.843007Z",
-        "684a7318-a405-450b-a616-f97ddbc34f8f.2019-02-01T183026.372619Z",
-        "e83d8b22-2090-4f34-868d-92a8749a401d.2019-02-02T021732.127000Z",
-        "2c1160e9-2324-4dfa-9776-d93f76d31fde.2018-11-21T140133.660897Z",
+        "ffd3bc7b-8f3b-4f97-aa2a-78f9bac93775.2019-05-14T122736.345000Z",
+        "f69b288c-fabc-4ac8-b50c-7abcae3731bc.2019-05-14T120110.781000Z",
+        "f8ba80a9-71b1-4c15-bcfc-c05a50660898.2019-05-14T122536.545000Z",
+        "fd202a54-7085-406d-a92a-aad6dd2d3ef0.2019-05-14T121656.910000Z",
+        "fffe55c1-18ed-401b-aa9a-6f64d0b93fec.2019-05-17T233932.932000Z",
     ]
 }
 
@@ -56,9 +56,9 @@ NOTIFICATION_TEST_DATA = {
     },
     # notification test does not run on prod, however other matrix environments may point to dss prod
     "prod": {
-        'bundle_fqid': "fffe55c1-18ed-401b-aa9a-6f64d0b93fec.2019-05-17T233932.932000Z",
+        'bundle_fqid': "ffc82dff-2490-409a-8519-98d6e8bd9a9b.2019-05-14T161401.716000Z",
         'cell_count': 1,
-        'exp_count': 11544
+        'exp_count': 39542
     }
 }
 
@@ -401,7 +401,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
                          "Only test filters against known bundles in prod")
     def test_ops(self):
 
-        # Filter should return two of the five test bundles
+        # Filter should return four of the five test bundles
         self.request_id = self._post_matrix_service_request(
             filter_={"op": "and",
                      "value": [
@@ -433,7 +433,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
 
         ds = loompy.connect(local_loom_path)
 
-        self.assertEqual(ds.shape[1], 2)
+        self.assertEqual(ds.shape[1], 4)
 
     def test_filter_detail(self):
 
