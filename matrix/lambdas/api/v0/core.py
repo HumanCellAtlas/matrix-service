@@ -117,7 +117,7 @@ def get_matrix(request_id: str):
                 requests.codes.ok)
     # Complete case
     elif request_tracker.is_request_complete():
-        matrix_results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
+        matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
 
         matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
 

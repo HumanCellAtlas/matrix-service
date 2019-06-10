@@ -25,7 +25,7 @@ class Driver:
         self.sqs_handler = SQSHandler()
         self.infra_config = MatrixInfraConfig()
         self.redshift_config = MatrixRedshiftConfig()
-        self.results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
+        self.query_results_bucket = os.environ['MATRIX_QUERY_RESULTS_BUCKET']
         self.s3_handler = S3Handler(os.environ['MATRIX_QUERY_BUCKET'])
 
     @property
@@ -61,17 +61,17 @@ class Driver:
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     def _format_and_store_queries_in_s3(self, queries: list):
-        feature_query = queries["feature_query"].format(results_bucket=self.results_bucket,
+        feature_query = queries["feature_query"].format(results_bucket=self.query_results_bucket,
                                                         request_id=self.request_id,
                                                         iam_role=self.redshift_role_arn)
         feature_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/feature", feature_query)
 
-        exp_query = queries["expression_query"].format(results_bucket=self.results_bucket,
+        exp_query = queries["expression_query"].format(results_bucket=self.query_results_bucket,
                                                        request_id=self.request_id,
                                                        iam_role=self.redshift_role_arn)
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
-        cell_query = queries["cell_query"].format(results_bucket=self.results_bucket,
+        cell_query = queries["cell_query"].format(results_bucket=self.query_results_bucket,
                                                   request_id=self.request_id,
                                                   iam_role=self.redshift_role_arn)
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
