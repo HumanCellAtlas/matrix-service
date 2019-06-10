@@ -58,8 +58,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
                                        odict.get(specimen_info["development_stage"], ""),
                                        specimen_info["organ"],
                                        odict.get(specimen_info["organ"], ""),
-                                       specimen_info["organ_part"],
-                                       odict.get(specimen_info["organ_part"], "")))
+                                       specimen_info["organ_parts"],
+                                       odict.get(specimen_info["organ_parts"], "")))
 
         library_data = set()
         for library_info in library_infos:
@@ -201,7 +201,7 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         return output
 
     def parse_organ(self, bundle_path):
-        """Get the organ and organ_part. Have to look at the whole bundle to see if
+        """Get the organ and organ_parts. Have to look at the whole bundle to see if
         it's an organoid.
         """
 
@@ -216,8 +216,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
 
             if len(model_organs) == 1:
                 return {"organ": next(iter(model_organs)) + " (organoid)",
-                        "organ_part": next(iter(model_organs)) + " (organoid)"}
-            return {"organ": "", "organ_part": ""}
+                        "organ_parts": next(iter(model_organs)) + " (organoid)"}
+            return {"organ": "", "organ_parts": ""}
 
         # Now see if it's a cell line with a selected cell type
         cell_line_json_paths = glob.glob(os.path.join(bundle_path, "cell_line_*.json"))
@@ -228,7 +228,7 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
                                         "selected_cell_types",
                                         "selected_cell_type")[0]["ontology"]
             return {"organ": selected_cell_type + " (cell line)",
-                    "organ_part": selected_cell_type + " (cell line)"}
+                    "organ_parts": selected_cell_type + " (cell line)"}
 
         specimen_json_paths = glob.glob(os.path.join(bundle_path, "specimen_from_organism_*.json"))
         organs = set()
@@ -236,13 +236,17 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         for specimen_json_path in specimen_json_paths:
             specimen_json = json.load(open(specimen_json_path))
             organ = specimen_json.get("organ", {}).get("ontology", "")
-            organ_part = specimen_json.get("organ_part", {}).get("ontology", "")
+            organ_part_list = specimen_json.get("organ_parts", [])
+            if organ_part_list:
+                organ_part = sorted(organ_part_list)[0].get("ontology", "")
+            else:
+                organ_part = ""
             organs.add(organ)
             organ_parts.add(organ_part)
 
         return {
             "organ": next(iter(organs)) if len(organs) == 1 else "",
-            "organ_part": next(iter(organ_parts)) if len(organ_parts) == 1 else ""
+            "organ_parts": next(iter(organ_parts)) if len(organ_parts) == 1 else ""
         }
 
     def parse_library_json(self, library_json_path):
