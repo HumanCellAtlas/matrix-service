@@ -14,7 +14,8 @@ logger = Logging.get_logger(__name__)
 class BatchHandler:
     def __init__(self):
         self.deployment_stage = os.environ['DEPLOYMENT_STAGE']
-        self.s3_results_bucket = os.environ.get('MATRIX_QUERY_RESULTS_BUCKET')
+        self.s3_results_bucket = os.environ.get('MATRIX_RESULTS_BUCKET')
+        self.s3_query_results_bucket = os.environ.get('MATRIX_QUERY_RESULTS_BUCKET')
         self.job_queue_arn = os.environ.get('BATCH_CONVERTER_JOB_QUEUE_ARN')
         self.job_def_arn = os.environ.get('BATCH_CONVERTER_JOB_DEFINITION_ARN')
         self._cloudwatch_handler = CloudwatchHandler()
@@ -37,9 +38,9 @@ class BatchHandler:
         is_compressed = (format == MatrixFormat.CSV.value or
                          format == MatrixFormat.MTX.value or
                          format == MatrixFormat.LOOM.value)
-        source_expression_manifest = f"s3://{self.s3_results_bucket}/{request_id}/expression_manifest"
-        source_cell_manifest = f"s3://{self.s3_results_bucket}/{request_id}/cell_metadata_manifest"
-        source_gene_manifest = f"s3://{self.s3_results_bucket}/{request_id}/gene_metadata_manifest"
+        source_expression_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/expression_manifest"
+        source_cell_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/cell_metadata_manifest"
+        source_gene_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/gene_metadata_manifest"
         target_path = f"s3://{self.s3_results_bucket}/{request_id}.{format}" + (".zip" if is_compressed else "")
         working_dir = "/data"
         command = ['python3',
