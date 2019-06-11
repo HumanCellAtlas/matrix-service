@@ -14,29 +14,36 @@ def _init_env_vars():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--instance-type",
-                        help="Amazon EC2 instance type to create and execute ETL on.",
+                        help="Amazon EC2 instance type to create and execute ETL on.\n"
+                             "One of --instance-type or --instance-name must be supplied.",
                         type=str,
                         default="c5d.4xlarge")
     parser.add_argument("--instance-name",
-                        help="Existing EC2 instance to execute ETL on.",
+                        help="Existing EC2 instance to execute ETL on.\n"
+                             "One of --instance-type or --instance-name must be supplied.",
                         type=str,
                         default="")
     parser.add_argument("--max-workers",
-                        help="Maximum number of concurrent threads during extraction.",
+                        help="Maximum number of concurrent threads to use during extraction (bundle download).",
                         type=int,
                         default=512)
     parser.add_argument("--state",
-                        help="ETL state (0=pre-ETL, 1=post-E, 2=post-ET, 3=post-ET and upload)",
+                        help="Current ETL machine state.\n"
+                             "0 = Pre-ETL: executes full ETL\n"
+                             "1 = Post-E:  executes transform and load only\n"
+                             "2 = Post-ET: executes load (includes upload to S3)\n"
+                             "3 = Post-ET: executes load (from S3)",
                         type=int,
                         default=0)
     parser.add_argument("--s3-upload-id",
-                        help="Upload UUID in dcp-matrix-service-preload-* S3 bucket "
-                             "to load Redshift from (required for state==3).",
+                        help="REQUIRED for state==3.\n"
+                             "S3 prefix (UUID) in dcp-matrix-service-preload-* S3 bucket to load Redshift from.",
                         type=str)
     parser.add_argument("--project-uuids",
-                        help="DCP Project UUIDs to perform ETL on.",
+                        help="List of DCP Project UUIDs to load into Redshift.\n"
+                             "If this parameter is not supplied, a full ETL will be performed.",
                         type=str,
                         nargs="*",
                         default="")
