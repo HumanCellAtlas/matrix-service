@@ -3,7 +3,10 @@ import concurrent.futures
 import multiprocessing
 import os
 
-from matrix.common.etl import (etl_dss_bundles,
+from matrix.common.aws.redshift_handler import RedshiftHandler
+from matrix.common.query_constructor import format_str_list
+from matrix.common.etl import (get_dss_client,
+                               etl_dss_bundles,
                                transform_bundle,
                                finalizer_reload,
                                finalizer_update,
@@ -88,6 +91,23 @@ def _build_dss_query(project_uuids):
     return q
 
 
+def _verify_load(es_query):
+    dss_client = get_dss_client(deployment_stage=os.environ['DEPLOYMENT_STAGE'])
+    response = dss_client.post_search.iterate(es_query=es_query,
+                                              replica='aws',
+                                              per_page=500)
+    expected_bundles = list(result['bundle_fqid'] for result in response)
+
+    print(f"Loading {len(expected_bundles)} bundles to {os.environ['DEPLOYMENT_STAGE']} complete.\n"
+          f"Verifying row counts in Redshift...")
+    redshift = RedshiftHandler()
+    count_bundles_query = f"SELECT COUNT(*) FROM analysis WHERE bundle_fqid IN {format_str_list(expected_bundles)}"
+    results = redshift.transaction(queries=[count_bundles_query],
+                                   return_results=True)
+    print(f"Found {results[0][0]} analysis rows for {len(expected_bundles)} expected bundles.")
+    assert(results[0][0] == len(expected_bundles))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-workers",
@@ -109,6 +129,7 @@ if __name__ == '__main__':
                         default="")
     args = parser.parse_args()
 
+    dss_query = _build_dss_query(project_uuids=args.project_uuids)
     staging_dir = os.path.abspath('/mnt')
     content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
     filename_patterns = ["*zarr*", # match expression data
@@ -117,7 +138,7 @@ if __name__ == '__main__':
 
     is_update = True if args.project_uuids else False
     if args.state == 0 or args.state == 1:
-        etl_dss_bundles(query=_build_dss_query(args.project_uuids),
+        etl_dss_bundles(query=dss_query,
                         content_type_patterns=content_type_patterns,
                         filename_patterns=filename_patterns,
                         transformer_cb=transform_bundle,
@@ -131,3 +152,4 @@ if __name__ == '__main__':
         upload_and_load(staging_dir, is_update=is_update)
     elif args.state == 3:
         load_tables(args.s3_upload_id, is_update=is_update)
+    _verify_load(es_query=dss_query)
