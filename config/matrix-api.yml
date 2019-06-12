@@ -18,7 +18,6 @@ paths:
         from the GET endpoint."
       operationId: matrix.lambdas.api.v0.core.post_matrix
       tags:
-        - API
         - v0
       requestBody:
         description: "Use either bundle_fqids or bundle_fqids_url to specify input analysis bundles; bundle_fqids
@@ -52,7 +51,6 @@ paths:
         the error message will be available in the message field."
       operationId: matrix.lambdas.api.v0.core.get_matrix
       tags:
-        - API
         - v0
       parameters:
         - in: path
@@ -80,7 +78,6 @@ paths:
       description: "Returns the list of expression matrix formats that can be requested from this service."
       operationId: matrix.lambdas.api.v0.core.get_formats
       tags:
-        - API
         - v0
       responses:
         "200":
@@ -97,9 +94,7 @@ paths:
       description: "Handles a DSS notification event such as bundle CREATE, DELETE and TOMBSTONE."
       operationId: matrix.lambdas.api.v0.core.dss_notification
       tags:
-        - DSS
         - internal
-        - v0
       requestBody:
         description: "DSS subscription event JSON payload"
         content:
@@ -118,7 +113,6 @@ paths:
       summary: Request an expression matrix
       operationId: matrix.lambdas.api.v1.core.post_matrix
       tags:
-        - API
         - v1
       description: >
         Request an expression matrix using a set of filters to be
@@ -196,7 +190,6 @@ paths:
       summary: 'Get status and result of a matrix request'
       operationId: matrix.lambdas.api.v1.core.get_matrix
       tags:
-        - API
         - v1
       parameters:
         - name: request_id
@@ -223,7 +216,6 @@ paths:
       summary: 'Get a list of permitted filters'
       operationId: matrix.lambdas.api.v1.core.get_filters
       tags:
-        - API
         - v1
       description: >
         Get a list of filters that a POST to /matrix will accept.
@@ -239,7 +231,6 @@ paths:
       summary: 'Get a description of a filter'
       operationId: matrix.lambdas.api.v1.core.get_filter_detail
       tags:
-        - API
         - v1
       description: >
         Get detailed information about a filter that can be applied
@@ -271,7 +262,6 @@ paths:
       summary: 'Get a list of available matrix formats'
       operationId: matrix.lambdas.api.v1.core.get_formats
       tags:
-        - API
         - v1
       description: >
         Get a list of matrix formats that a POST to /matrix
@@ -288,7 +278,6 @@ paths:
       summary: 'Get a description of a matrix format'
       operationId: matrix.lambdas.api.v1.core.get_format_detail
       tags:
-        - API
         - v1
       parameters:
         - name: format_name
@@ -315,7 +304,6 @@ paths:
       summary: 'Get a list of available feature types'
       operationId: matrix.lambdas.api.v1.core.get_features
       tags:
-        - API
         - v1
       description: >
         Get a list of matrix feature types that a POST to /matrix
@@ -332,7 +320,6 @@ paths:
       summary: 'Get a information about a matrix feature type'
       operationId: matrix.lambdas.api.v1.core.get_feature_detail
       tags:
-        - API
         - v1
       parameters:
         - name: feature_name
@@ -359,7 +346,6 @@ paths:
       summary: 'Get a list of available metadata fields'
       operationId: matrix.lambdas.api.v1.core.get_fields
       tags:
-        - API
         - v1
       description: >
         Get a list of metadata field names that a POST to
@@ -376,7 +362,6 @@ paths:
       summary: 'Get a description of a metadata field'
       operationId: matrix.lambdas.api.v1.core.get_field_detail
       tags:
-        - API
         - v1
       description: >
         Get detailed information about an available metadata field.

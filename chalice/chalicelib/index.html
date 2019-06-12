@@ -65,12 +65,12 @@
 
 <div id="swagger-ui"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.0.13/swagger-ui-bundle.js" integrity="sha256-aCOXWFczqyopoNlhLgud1jK0sLJ9iLtKyo++l+iZ52Q=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.0.13/swagger-ui-standalone-preset.js" integrity="sha256-PBAt6vT094Le9f8Z2slL0xKSC+xHTfrDSTlwngLe76w=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.18.3/swagger-ui-bundle.js" integrity="sha256-ikzfErnzj+FXkc/5BM8yeVHW1HUCtJorMJIUMwUTUr0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.18.3/swagger-ui-standalone-preset.js" integrity="sha256-m0KJX1sNDtfPeY979exlrm9ZTJjW1ycshfVAvoLCgfU=" crossorigin="anonymous"></script>
 <script>
 window.onload = function() {
   const ui = SwaggerUIBundle({
-    url: window.location.origin + "/v0/swagger.json",
+    url: window.location.origin + "/openapi.json",
     dom_id: '#swagger-ui',
     presets: [
       SwaggerUIBundle.presets.apis,
