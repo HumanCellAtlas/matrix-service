@@ -2,6 +2,7 @@ import typing
 import os
 
 import requests
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from matrix.common.config import MatrixInfraConfig, MatrixRedshiftConfig
 from matrix.common.logging import Logging
@@ -102,7 +103,7 @@ class Driver:
                      f"bundles_per_worker={self.bundles_per_worker}")
 
         if bundle_fqids_url:
-            response = requests.get(bundle_fqids_url)
+            response = self._get_bundle_manifest(bundle_fqids_url)
             resolved_bundle_fqids = self._parse_download_manifest(response.text)
         else:
             resolved_bundle_fqids = bundle_fqids
@@ -124,6 +125,11 @@ class Driver:
         for s3_obj_key in s3_obj_keys:
             self._add_request_query_to_sqs(s3_obj_key)
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
+
+    @retry(reraise=True, wait=wait_fixed(5), stop=stop_after_attempt(60))
+    def _get_bundle_manifest(self, bundle_fqids_url):
+        response = requests.get(bundle_fqids_url)
+        return response
 
     @staticmethod
     def _parse_download_manifest(data: str) -> typing.List[str]:
