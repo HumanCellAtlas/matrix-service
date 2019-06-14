@@ -190,9 +190,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         root = zarr.group(store=store)
 
         n_cells = root.expression_matrix.cell_id.shape[0]
-        chunk_size = root.expression_matrix.expression.chunks[0]
-        n_chunks = root.expression_matrix.expression.nchunks
-
+        chunk_size = root.expression_matrix.cell_id.chunks[0]
+        n_chunks = root.expression_matrix.cell_id.nchunks
         cell_lines = set()
         expression_lines = []
         for i in range(n_chunks):
