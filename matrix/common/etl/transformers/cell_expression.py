@@ -248,7 +248,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 if expr_values[i][j] == 0:
                     continue
 
-                gene_id = root.expression_matrix.gene_id[j]
+                gene_id = root.expression_matrix.gene_id[j].split(".")[0]
                 expression_line = '|'.join(
                     [cell_key,
                      gene_id,
