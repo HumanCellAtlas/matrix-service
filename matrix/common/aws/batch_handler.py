@@ -42,7 +42,7 @@ class BatchHandler:
         source_cell_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/cell_metadata_manifest"
         source_gene_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/gene_metadata_manifest"
         target_path = f"s3://{self.s3_results_bucket}/{request_id}.{format}" + (".zip" if is_compressed else "")
-        working_dir = "/data"
+        working_dir = f"/data/{request_id}"
         command = ['python3',
                    '/matrix_converter.py',
                    request_id,
