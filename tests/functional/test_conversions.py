@@ -264,7 +264,7 @@ class TestConversions(unittest.TestCase):
             expression_manifest_key=EXPRESSION_MANIFEST,
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
-            target_path="test.loom.zip",
+            target_path="test.loom",
             format="loom",
             working_dir=".")
 
@@ -275,14 +275,7 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
-            # Touch loom_readme.md so the conversion code can include it in the
-            # zip
-            open("loom_readme.md", "a")
-
             matrix_converter.run()
-
-        with zipfile.ZipFile("test.loom.zip") as loom_output:
-            loom_output.extractall()
 
         test_loom = loompy.connect("test.loom")
 
