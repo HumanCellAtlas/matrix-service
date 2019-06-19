@@ -248,7 +248,6 @@ class MatrixConverter:
                    arcname=os.path.join(os.path.basename(results_dir), "matrix.mtx.gz"))
         zipf.write(os.path.join(results_dir, "cells.tsv.gz"),
                    arcname=os.path.join(os.path.basename(results_dir), "cells.tsv.gz"))
-        zipf.write("mtx_readme.md")
         zipf.close()
 
         shutil.rmtree(results_dir)
@@ -396,7 +395,6 @@ class MatrixConverter:
                    arcname=os.path.join(os.path.basename(results_dir), "expression.csv"))
         zipf.write(os.path.join(results_dir, "cells.csv"),
                    arcname=os.path.join(os.path.basename(results_dir), "cells.csv"))
-        zipf.write("csv_readme.md")
         zipf.close()
 
         shutil.rmtree(results_dir)

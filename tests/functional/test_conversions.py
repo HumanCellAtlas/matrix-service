@@ -135,9 +135,6 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
-            # Touch csv_readme.md so the conversion code can include it in the
-            # csv
-            open("csv_readme.md", "a")
             matrix_converter.run()
 
         with zipfile.ZipFile("test.csv.zip") as csv_output:
@@ -147,7 +144,6 @@ class TestConversions(unittest.TestCase):
             self.assertIn("test.csv/expression.csv", members)
             self.assertIn("test.csv/genes.csv", members)
             self.assertIn("test.csv/cells.csv", members)
-            self.assertIn("csv_readme.md", members)
             self.assertEqual(len(members), 4)
 
             # Read in the expression data
@@ -203,9 +199,6 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
-            # Touch mtx_readme.md so the conversion code can include it in the
-            # csv
-            open("mtx_readme.md", "a")
             matrix_converter.run()
 
         with zipfile.ZipFile("test.mtx.zip") as mtx_output:
@@ -215,7 +208,6 @@ class TestConversions(unittest.TestCase):
             self.assertIn("test.mtx/matrix.mtx.gz", members)
             self.assertIn("test.mtx/genes.tsv.gz", members)
             self.assertIn("test.mtx/cells.tsv.gz", members)
-            self.assertIn("mtx_readme.md", members)
             self.assertEqual(len(members), 4)
 
             # Read in the cell and gene tables. We need both for mtx files
