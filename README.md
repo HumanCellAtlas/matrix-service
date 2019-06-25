@@ -88,7 +88,7 @@ The API also makes this information available via the `/matrix/formats` endpoint
 1. Run tests
 
 ```bash
-git clone git@github.com:HumanCellAtlas/matrix-service.git && cd matrix-service
+git clone https://github.com/HumanCellAtlas/matrix-service.git && cd matrix-service
 virtualenv -p python3 venv
 . venv/bin/activate
 pip install -r requirements-dev.txt --upgrade
