@@ -147,7 +147,6 @@ class MatrixConverter:
         Yields:
             dataframe of expression data
         """
-
         part_url = self.expression_manifest["part_urls"][slice_idx]
         expression_table_columns = ["cellkey", "featurekey", "exprvalue"]
         expression_dtype = {"cellkey": "object", "featurekey": "object", "exprvalue": "float32"}
@@ -186,6 +185,48 @@ class MatrixConverter:
                 if col in constants.TABLE_COLUMN_TO_METADATA_FIELD else col
                 for col in cols]
 
+    def _make_directory(self):
+        if not self.local_output_filename.endswith(".zip"):
+            self.local_output_filename += ".zip"
+        results_dir = os.path.join(self.working_dir,
+                                   os.path.splitext(self.local_output_filename)[0])
+        os.makedirs(results_dir)
+        return results_dir
+
+    def _zip_up_matrix_output(self, results_dir, matrix_file_names):
+        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w')
+        for filename in matrix_file_names:
+            zipf.write(os.path.join(results_dir, filename),
+                       arcname=os.path.join(os.path.basename(results_dir),
+                       filename))
+        zipf.close()
+        shutil.rmtree(results_dir)
+        return os.path.join(self.working_dir, self.local_output_filename)
+
+    def _write_out_gene_dataframe(self, results_dir, output_filename, compression=False):
+        gene_df = self._load_gene_table()
+        if compression:
+            gene_df.to_csv(os.path.join(results_dir, output_filename),
+                           index_label="featurekey",
+                           sep="\t", compression="gzip")
+        else:
+            gene_df.to_csv(os.path.join(results_dir, output_filename), index_label="featurekey")
+        return gene_df
+
+    def _create_cell_dataframe(self):
+        cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
+        return cell_df
+
+    def _write_out_cell_dataframe(self, results_dir, output_filename, cell_df, cellkeys, compression=False):
+        cell_df = cell_df.reindex(index=cellkeys)
+        if compression:
+            cell_df.to_csv(os.path.join(results_dir, output_filename),
+                           sep='\t',
+                           index_label="cellkey", compression="gzip")
+        else:
+            cell_df.to_csv(os.path.join(results_dir, output_filename), index_label="cellkey")
+        return cell_df
+
     def _to_mtx(self):
         """Write a zip file with an mtx and two metadata tsvs from Redshift query
         manifests.
@@ -193,19 +234,9 @@ class MatrixConverter:
         Returns:
            output_path: Path to the zip file.
         """
-        # Add zip to the output filename and create the directory where we will
-        # write output files.
-        if not self.local_output_filename.endswith(".zip"):
-            self.local_output_filename += ".zip"
-        results_dir = os.path.join(self.working_dir,
-                                   os.path.splitext(self.local_output_filename)[0])
-        os.makedirs(results_dir)
-
-        # Load the gene metadata and write it out to a tsv
-        gene_df = self._load_gene_table()
-        gene_df.to_csv(os.path.join(results_dir, "genes.tsv.gz"), index_label="featurekey",
-                       sep="\t", compression="gzip")
-        cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
+        results_dir = self._make_directory()
+        gene_df = self._write_out_gene_metadata(results_dir, "genes.tsv.gz", compression=True)
+        cell_df = self._create_cell_dataframe()
 
         # To follow 10x conventions, features are rows and cells are columns
         n_rows = gene_df.shape[0]
@@ -236,23 +267,10 @@ class MatrixConverter:
 
                         cellkeys.append(cell_group[0])
 
-        cell_df = cell_df.reindex(index=cellkeys)
-        cell_df.to_csv(os.path.join(results_dir, "cells.tsv.gz"), sep='\t',
-                       index_label="cellkey", compression="gzip")
-
-        # Create a zip file out of the three written files.
-        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w')
-        zipf.write(os.path.join(results_dir, "genes.tsv.gz"),
-                   arcname=os.path.join(os.path.basename(results_dir), "genes.tsv.gz"))
-        zipf.write(os.path.join(results_dir, "matrix.mtx.gz"),
-                   arcname=os.path.join(os.path.basename(results_dir), "matrix.mtx.gz"))
-        zipf.write(os.path.join(results_dir, "cells.tsv.gz"),
-                   arcname=os.path.join(os.path.basename(results_dir), "cells.tsv.gz"))
-        zipf.close()
-
-        shutil.rmtree(results_dir)
-
-        return os.path.join(self.working_dir, self.local_output_filename)
+        self._write_out_cell_metadata(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
+        file_names = ["genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz"]
+        zip_path = self._zip_up_matrix_output(results_dir, file_names)
+        return zip_path
 
     def _to_loom(self):
         """Write a loom file from Redshift query manifests.
@@ -275,13 +293,8 @@ class MatrixConverter:
         for key, val in row_attrs.items():
             row_attrs[key] = val.values
 
+        loom_part_dir = self._make_directory()
         loom_parts = []
-        loom_part_dir = os.path.join(self.working_dir, ".loom_parts")
-
-        if os.path.exists(loom_part_dir):
-            shutil.rmtree(loom_part_dir)
-
-        os.makedirs(loom_part_dir)
 
         # Iterate over the "slices" produced by the redshift query
         for slice_idx in range(self._n_slices()):
@@ -356,15 +369,9 @@ class MatrixConverter:
            output_path: Path to the new zip file.
         """
 
-        if not self.local_output_filename.endswith(".zip"):
-            self.local_output_filename += ".zip"
-
-        results_dir = os.path.join(self.working_dir,
-                                   os.path.splitext(self.local_output_filename)[0])
-        os.makedirs(results_dir)
-
-        gene_df = self._load_gene_table()
-        gene_df.to_csv(os.path.join(results_dir, "genes.csv"), index_label="featurekey")
+        results_dir = self._make_directory()
+        gene_df = self._write_out_gene_metadata(results_dir, "genes.csv")
+        cell_df = self._create_cell_dataframe()
 
         cellkeys = []
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
@@ -384,22 +391,10 @@ class MatrixConverter:
                                 columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
                         cellkeys.append(cell_group[0])
 
-        cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
-        cell_df = cell_df.reindex(index=cellkeys)
-        cell_df.to_csv(os.path.join(results_dir, "cells.csv"), index_label="cellkey")
-
-        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w', zipfile.ZIP_DEFLATED)
-        zipf.write(os.path.join(results_dir, "genes.csv"),
-                   arcname=os.path.join(os.path.basename(results_dir), "genes.csv"))
-        zipf.write(os.path.join(results_dir, "expression.csv"),
-                   arcname=os.path.join(os.path.basename(results_dir), "expression.csv"))
-        zipf.write(os.path.join(results_dir, "cells.csv"),
-                   arcname=os.path.join(os.path.basename(results_dir), "cells.csv"))
-        zipf.close()
-
-        shutil.rmtree(results_dir)
-
-        return os.path.join(self.working_dir, self.local_output_filename)
+        self._write_out_cell_metadata(results_dir, "cells.csv", cell_df, cellkeys)
+        file_names = ["genes.csv", "expression.csv", "cells.csv"]
+        zip_path = self._zip_up_matrix_output(results_dir, file_names)
+        return zip_path
 
     def _upload_converted_matrix(self, local_path, remote_path):
         """

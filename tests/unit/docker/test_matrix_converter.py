@@ -1,7 +1,11 @@
 import argparse
 import datetime
+import os
+import shutil
 import unittest
 from unittest import mock
+
+import pandas
 
 from matrix.common import date
 from matrix.common.request.request_tracker import Subtask
@@ -77,6 +81,84 @@ class TestMatrixConverter(unittest.TestCase):
 
         self.assertEqual(self.matrix_converter._n_slices(), 8)
 
+    def test__make_directory(self):
+        self.assertEqual(os.path.isdir('test_target'), False)
+        results_dir = self.matrix_converter._make_directory()
+
+        self.assertEqual(os.path.isdir('test_target'), True)
+        shutil.rmtree(results_dir)
+
+    def test__zip_up_matrix_output(self):
+        results_dir = self.matrix_converter._make_directory()
+        shutil.copyfile('LICENSE', './test_target/LICENSE')
+
+        path = self.matrix_converter._zip_up_matrix_output(results_dir, ['LICENSE'], 'README.md')
+
+        self.assertEqual(path, './test_target.zip')
+        os.remove('./test_target.zip')
+
+    @mock.patch("pandas.DataFrame.to_csv")
+    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._load_gene_table")
+    def test__write_out_gene_dataframe__with_compression(self, mock_load_gene_table, mock_to_csv):
+        results_dir = self.matrix_converter._make_directory()
+        mock_load_gene_table.return_value = pandas.DataFrame()
+
+        results = self.matrix_converter._write_out_gene_dataframe(results_dir, 'genes.csv.gz', compression=True)
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        mock_load_gene_table.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/genes.csv.gz',
+                                            compression='gzip',
+                                            index_label='featurekey',
+                                            sep='\t')
+        shutil.rmtree(results_dir)
+
+    @mock.patch("pandas.DataFrame.to_csv")
+    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._load_gene_table")
+    def test__write_out_gene_dataframe__without_compression(self, mock_load_gene_table, mock_to_csv):
+        results_dir = self.matrix_converter._make_directory()
+        mock_load_gene_table.return_value = pandas.DataFrame()
+
+        results = self.matrix_converter._write_out_gene_dataframe(results_dir, 'genes.csv', compression=False)
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        mock_load_gene_table.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/genes.csv', index_label='featurekey')
+        shutil.rmtree(results_dir)
+
+    @mock.patch("pandas.DataFrame.reindex")
+    @mock.patch("pandas.DataFrame.to_csv")
+    def test__write_out_cell_dataframe__with_compression(self, mock_to_csv, mock_reindex):
+        mock_reindex.return_value = pandas.DataFrame()
+        results_dir = './test_target'
+        results = self.matrix_converter._write_out_cell_dataframe(results_dir,
+                                                                  'cells.csv.gz',
+                                                                  pandas.DataFrame(),
+                                                                  [],
+                                                                  compression=True)
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        mock_reindex.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/cells.csv.gz',
+                                            compression='gzip',
+                                            index_label='cellkey',
+                                            sep='\t')
+
+    @mock.patch("pandas.DataFrame.reindex")
+    @mock.patch("pandas.DataFrame.to_csv")
+    def test__write_out_cell_dataframe__without_compression(self, mock_to_csv, mock_reindex):
+        mock_reindex.return_value = pandas.DataFrame()
+        results_dir = './test_target'
+        results = self.matrix_converter._write_out_cell_dataframe(results_dir,
+                                                                  'cells.csv',
+                                                                  pandas.DataFrame(),
+                                                                  [],
+                                                                  compression=False)
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        mock_reindex.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/cells.csv', index_label='cellkey')
+
     @mock.patch("pandas.read_csv")
     @mock.patch("s3fs.S3FileSystem.open")
     def test__load_cell_table_slice(self, mock_open, mock_pd_read_csv):
@@ -92,6 +174,28 @@ class TestMatrixConverter(unittest.TestCase):
 
         self.assertIn("project.project_core.project_short_name", pandas_kwargs["names"])
         self.assertTrue(pandas_args[0].startswith("s3://"))
+
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test__load_expression_table_slice(self, mock_open):
+        manifest_file_path = "tests/functional/res/expression_metadata_manifest"
+        with open(manifest_file_path) as f:
+            mock_open.return_value = f
+            self.matrix_converter.expression_manifest = self.matrix_converter._parse_manifest("test_manifest_key")
+        results = self.matrix_converter._load_expression_table_slice(0)
+        mock_open.assert_called_once()
+        self.assertEqual(type(results).__name__, 'generator')
+
+    @mock.patch("pandas.read_csv")
+    @mock.patch("s3fs.S3FileSystem.open")
+    def test__load_gene_table(self, mock_open, mock_pd_read_csv):
+        manifest_file_path = "tests/functional/res/gene_metadata_manifest"
+        with open(manifest_file_path) as f:
+            mock_open.return_value = f
+            mock_pd_read_csv.return_value = pandas.DataFrame()
+            self.matrix_converter.gene_manifest = self.matrix_converter._parse_manifest("test_manifest_key")
+            self.matrix_converter._load_gene_table()
+            mock_open.assert_called_once()
+            mock_pd_read_csv.assert_called_once()
 
     def test_converter_with_file_formats(self):
         for file_format in SUPPORTED_FORMATS:

@@ -1,0 +1,27 @@
+{
+  "entries": [
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0000_part_00.gz", "meta": { "content_length": 24953, "record_count": 4016 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0001_part_00.gz", "meta": { "content_length": 23822, "record_count": 3739 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0002_part_00.gz", "meta": { "content_length": 25868, "record_count": 4161 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0003_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0004_part_00.gz", "meta": { "content_length": 46664, "record_count": 7088 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0005_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0006_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/expression_0007_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }}
+  ],
+  "schema": {
+    "elements": [
+      {"name": "cellkey", "type": { "base": "character varying", "max_length": 60 }},
+      {"name": "featurekey", "type": { "base": "character varying", "max_length": 25 }},
+      {"name": "exrpvalue", "type": { "base": "real" }}
+    ]
+  },
+  "meta": {
+    "content_length": 121387,
+    "record_count": 19004
+  },
+  "author": {
+    "name": "Amazon Redshift",
+    "version": "1.0.0"
+  }
+}
