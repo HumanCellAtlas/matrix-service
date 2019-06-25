@@ -52,6 +52,11 @@ def post_matrix(body: dict):
     else:
         bundle_fqids = body['bundle_fqids']
         bundle_fqids_url = None
+        if len(bundle_fqids) == 0:
+            return ({'message': "Invalid parameters supplied. "
+                                "Please supply non empty `bundle_fqids`. "
+                                "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                    requests.codes.bad_request)
 
     request_id = str(uuid.uuid4())
     RequestTracker(request_id).initialize_request(format)
