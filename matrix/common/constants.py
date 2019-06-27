@@ -235,15 +235,131 @@ TABLE_COLUMN_TO_TABLE = {
 }
 
 FORMAT_DETAIL = {
-    MatrixFormat.LOOM.value: "Loom file format, see loompy.org",
-    MatrixFormat.CSV.value: ("Zip archive of expression values in a cell-by-gene "
-                             "CSV file, and gene and cell metadata in two separate "
-                             "CSV files."),
-    MatrixFormat.MTX.value: ("Zip archive of expression values in a Matrix Market "
-                             "Exchange formatted file, and gene and cell metadata in "
-                             "two separate TSV files. See "
-                             "https://math.nist.gov/MatrixMarket/formats.html for "
-                             "futher details.")
+    MatrixFormat.LOOM.value: """
+<h2>HCA Matrix Service Loom Output</h2>
+
+<p>The Loom-formatted output from the matrix service contains a Loom file with the
+cells and metadata fields specified in the query.
+The Loom format is documented more fully, along with code samples,
+<a href="https://linnarssonlab.org/loompy/index.html">here</a>.</p>
+
+<p>Per Loom
+<a href="https://linnarssonlab.org/loompy/conventions/index.html">conventions</a>, columns
+in the loom-formatted expression matrix represent cells, and rows represent
+genes. The column and row attributes follow Loom conventions where applicable
+as well: <code>CellID</code> uniquely identifies a cell, <code>Gene</code> is a gene name, and
+<code>Accession</code> is an ensembl gene id.</p>
+
+<p>Descriptions of the remaining metadata fields are available at the
+<a href="https://prod.data.humancellatlas.org/metadata">HCA Data Browser</a>.</p>Loom file format,
+see loompy.org
+""",
+    MatrixFormat.CSV.value: """
+<h2>HCA Matrix Service CSV Output</h2>
+<p>The csv-formatted output from the matrix service is a zip archive that contains three files:</p>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Filename</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;directory_name&gt;/expression.csv</td>
+<td>Expression values</td>
+</tr>
+<tr>
+<td>&lt;directory_name&gt;/cells.csv</td>
+<td>Cell metadata</td>
+</tr>
+<tr>
+<td>&lt;directory_name&gt;/genes.csv</td>
+<td>Gene (or transcript) metadata</td>
+</tr>
+</tbody>
+</table>
+<h3><code>expression.csv</code></h3>
+<p>The first row is the header, and the first entry in the header is <code>cellkey</code>.
+This is a unique identifier for the cell and is present in both the expression csv and cell
+metadata csv. The remaining header are Ensembl IDs for the genes (or depending on the request,
+transcripts).</p>
+
+<p>The remaining rows each contain all the expression values for a cell, so cells are rows and
+genes are columns. The expression values are meant to be a "raw" count, so for SmartSeq2
+experiments, this is the <code>expected_count</code> field from
+<a href="http://deweylab.biostat.wisc.edu/rsem/rsem-calculate-expression.html#output">RSEM
+output</a>.</p>
+
+<p>For 10x experiments analyzed with Cell Ranger, this is read from the
+<code>matrix.mtx</code> file that Cell Ranger produces as its filtered feature-barcode
+matrix.</p>
+
+<h3><code>cells.csv</code></h3>
+<p>The cell metadata table is oriented like the expression table, where each row represents a cell.
+Each column is a different metadata field. Descriptions of some of the metadata fields can be
+found at the <a href="https://prod.data.humancellatlas.org/metadata">HCA Data Browser</a>.
+Additional fields, <code>genes_detected</code> for example, are calculated during secondary
+analysis. Full descriptions of those fields are forthcoming.</p>
+
+<h3><code>genes.csv</code></h3>
+<p>The gene metadata contains basic information about the genes in the count matrix. Each row is a
+gene, and each row corresponds to a column in the expression csv. Note that <code>featurename</code> is not
+unique.</p>
+""",
+    MatrixFormat.MTX.value: """
+<h2>HCA Matrix Service MTX Output</h2>
+<p>The mtx-formatted output from the matrix service is a zip archive that contains
+three files:</p>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Filename</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;directory_name&gt;/matrix.mtx.gz</td>
+<td>Expression values</td>
+</tr>
+<tr>
+<td>&lt;directory_name&gt;/cells.tsv.gz</td>
+<td>Cell metadata</td>
+</tr>
+<tr>
+<td>&lt;directory_name&gt;/genes.tsv.gz</td>
+<td>Gene (or transcript) metadata</td>
+</tr>
+</tbody>
+</table>
+
+<h3><code>matrix.mtx.gz</code></h3>
+<p>This file contains expression values in the
+<a href="https://math.nist.gov/MatrixMarket/formats.html">matrix market exchange format</a>.
+This is a sparse format where only the non-zero expression values are recorded. The
+columns in this file correspond to cells, and the rows correspond to genes or transcripts.
+The column and row indices are aligned with the rows of the cell and gene metadata TSVs,
+respectively.</p>
+
+<p>The expression values are meant to be a "raw" count, so for SmartSeq2 experiments, this
+is the <code>expected_count</code> field from
+<a href="http://deweylab.biostat.wisc.edu/rsem/rsem-calculate-expression.html#output">RSEM
+output</a>. For 10x experiments analyzed with Cell Ranger, this is read from the
+<code>matrix.mtx</code> file that Cell Ranger produces as its filtered feature-barcode matrix.</p>
+
+<h3><code>cells.tsv.gz</code></h3>
+<p>Each row of the cell metadata table represents a cell, and each column is a different metadata
+field. Descriptions of some of the metadata fields can be found at the
+<a href="https://prod.data.humancellatlas.org/metadata">HCA Data Browser</a>. Additional
+fields, <code>genes_detected</code> for example, are calculated during secondary analysis.
+Full descriptions of those fields are forthcoming.</p>
+
+<h3><code>genes.tsv.gz</code></h3>
+<p>The gene metadata contains basic information about the genes in the count matrix.
+Each row is a gene, and each row corresponds to the same row in the expression mtx file.
+Note that <code>featurename</code> is not unique.</p>
+"""
 }
 
 FIELD_DETAIL = {

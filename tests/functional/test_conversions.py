@@ -135,9 +135,6 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
-            # Touch csv_readme.md so the conversion code can include it in the
-            # csv
-            open("csv_readme.md", "a")
             matrix_converter.run()
 
         with zipfile.ZipFile("test.csv.zip") as csv_output:
@@ -147,8 +144,7 @@ class TestConversions(unittest.TestCase):
             self.assertIn("test.csv/expression.csv", members)
             self.assertIn("test.csv/genes.csv", members)
             self.assertIn("test.csv/cells.csv", members)
-            self.assertIn("csv_readme.md", members)
-            self.assertEqual(len(members), 4)
+            self.assertEqual(len(members), 3)
 
             # Read in the expression data
             csv_expression = {}
@@ -203,9 +199,6 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
-            # Touch mtx_readme.md so the conversion code can include it in the
-            # csv
-            open("mtx_readme.md", "a")
             matrix_converter.run()
 
         with zipfile.ZipFile("test.mtx.zip") as mtx_output:
@@ -215,8 +208,7 @@ class TestConversions(unittest.TestCase):
             self.assertIn("test.mtx/matrix.mtx.gz", members)
             self.assertIn("test.mtx/genes.tsv.gz", members)
             self.assertIn("test.mtx/cells.tsv.gz", members)
-            self.assertIn("mtx_readme.md", members)
-            self.assertEqual(len(members), 4)
+            self.assertEqual(len(members), 3)
 
             # Read in the cell and gene tables. We need both for mtx files
             # since the mtx itself is just numbers and indices.
@@ -264,7 +256,7 @@ class TestConversions(unittest.TestCase):
             expression_manifest_key=EXPRESSION_MANIFEST,
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
-            target_path="test.loom.zip",
+            target_path="test.loom",
             format="loom",
             working_dir=".")
 
@@ -275,14 +267,7 @@ class TestConversions(unittest.TestCase):
 
             mock_request_tracker.return_value.creation_date = "1983-10-11T000000.00Z"
 
-            # Touch loom_readme.md so the conversion code can include it in the
-            # zip
-            open("loom_readme.md", "a")
-
             matrix_converter.run()
-
-        with zipfile.ZipFile("test.loom.zip") as loom_output:
-            loom_output.extractall()
 
         test_loom = loompy.connect("test.loom")
 

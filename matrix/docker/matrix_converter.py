@@ -248,7 +248,6 @@ class MatrixConverter:
                    arcname=os.path.join(os.path.basename(results_dir), "matrix.mtx.gz"))
         zipf.write(os.path.join(results_dir, "cells.tsv.gz"),
                    arcname=os.path.join(os.path.basename(results_dir), "cells.tsv.gz"))
-        zipf.write("mtx_readme.md")
         zipf.close()
 
         shutil.rmtree(results_dir)
@@ -263,10 +262,8 @@ class MatrixConverter:
         """
 
         # Put loom on the output filename if it's not already there.
-        if not self.local_output_filename.endswith(".zip"):
-            self.local_output_filename += ".zip"
-
-        loom_filename = self.local_output_filename.rstrip(".zip")
+        if not self.local_output_filename.endswith(".loom"):
+            self.local_output_filename += ".loom"
 
         # Read the row (gene) attributes and then set some conventional names
         gene_df = self._load_gene_table()
@@ -344,17 +341,11 @@ class MatrixConverter:
 
         # Using the loompy method, combine all the chunks together into a
         # single file.
-        print(f"Parts complete. Writing to {loom_filename}")
+        print(f"Parts complete. Writing to {self.local_output_filename}")
         loompy.combine(loom_parts,
                        key="Accession",
-                       output_file=os.path.join(self.working_dir, loom_filename))
+                       output_file=os.path.join(self.working_dir, self.local_output_filename))
         shutil.rmtree(loom_part_dir)
-
-        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w')
-        zipf.write(os.path.join(self.working_dir, loom_filename),
-                   arcname=loom_filename)
-        zipf.write("loom_readme.md")
-        zipf.close()
 
         return os.path.join(self.working_dir, self.local_output_filename)
 
@@ -404,7 +395,6 @@ class MatrixConverter:
                    arcname=os.path.join(os.path.basename(results_dir), "expression.csv"))
         zipf.write(os.path.join(results_dir, "cells.csv"),
                    arcname=os.path.join(os.path.basename(results_dir), "cells.csv"))
-        zipf.write("csv_readme.md")
         zipf.close()
 
         shutil.rmtree(results_dir)

@@ -35,9 +35,7 @@ class BatchHandler:
                              request_id,
                              format])
 
-        is_compressed = (format == MatrixFormat.CSV.value or
-                         format == MatrixFormat.MTX.value or
-                         format == MatrixFormat.LOOM.value)
+        is_compressed = format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value
         source_expression_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/expression_manifest"
         source_cell_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/cell_metadata_manifest"
         source_gene_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/gene_metadata_manifest"
