@@ -105,6 +105,11 @@ class Driver:
         if bundle_fqids_url:
             response = self._get_bundle_manifest(bundle_fqids_url)
             resolved_bundle_fqids = self._parse_download_manifest(response.text)
+            if len(resolved_bundle_fqids) == 0:
+                error_msg = "no bundles found in the supplied bundle manifest"
+                logger.info(error_msg)
+                self.request_tracker.log_error(error_msg)
+                return
         else:
             resolved_bundle_fqids = bundle_fqids
         logger.debug(f"resolved bundles: {resolved_bundle_fqids}")

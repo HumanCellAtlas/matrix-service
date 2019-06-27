@@ -26,24 +26,24 @@ def post_matrix(body: dict):
     if format not in expected_formats:
         return ({'message': "Invalid parameters supplied. "
                             "Please supply a valid `format`. "
-                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                            "Visit https://matrix.data.humancellatlas.org for more information."},
                 requests.codes.bad_request)
     if has_ids and has_url:
         return ({'message': "Invalid parameters supplied. "
                             "Please supply either one of `bundle_fqids` or `bundle_fqids_url`. "
-                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                            "Visit https://matrix.data.humancellatlas.org for more information."},
                 requests.codes.bad_request)
 
     if not has_ids and not has_url:
         return ({'message': "Invalid parameters supplied. "
                             "One of `bundle_fqids` or `bundle_fqids_url` must be supplied. "
-                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                            "Visit https://matrix.data.humancellatlas.org for more information."},
                 requests.codes.bad_request)
 
     if not has_url and len(json.dumps(body['bundle_fqids'])) > 128000:
         return ({'message': "List of bundle fqids is too large. "
                             "Consider using bundle_fqids_url instead. "
-                            "Visit https://matrix.dev.data.humancellatlas.org for more information."},
+                            "Visit https://matrix.data.humancellatlas.org for more information."},
                 requests.codes.request_entity_too_large)
 
     if has_url:
@@ -52,6 +52,11 @@ def post_matrix(body: dict):
     else:
         bundle_fqids = body['bundle_fqids']
         bundle_fqids_url = None
+        if len(bundle_fqids) == 0:
+            return ({'message': "Invalid parameters supplied. "
+                                "Please supply non empty `bundle_fqids`. "
+                                "Visit https://matrix.data.humancellatlas.org for more information."},
+                    requests.codes.bad_request)
 
     request_id = str(uuid.uuid4())
     RequestTracker(request_id).initialize_request(format)
