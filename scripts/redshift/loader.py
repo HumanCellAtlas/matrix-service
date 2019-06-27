@@ -3,15 +3,9 @@ import concurrent.futures
 import multiprocessing
 import os
 
+from matrix.common import etl
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.query_constructor import format_str_list
-from matrix.common.etl import (get_dss_client,
-                               etl_dss_bundles,
-                               transform_bundle,
-                               finalizer_reload,
-                               finalizer_update,
-                               upload_and_load,
-                               load_tables)
 
 # Match all SS2 and 10X analysis bundles
 DSS_SEARCH_QUERY_TEMPLATE = {
@@ -92,7 +86,7 @@ def _build_dss_query(project_uuids):
 
 
 def _verify_load(es_query):
-    dss_client = get_dss_client(deployment_stage=os.environ['DEPLOYMENT_STAGE'])
+    dss_client = etl.get_dss_client(deployment_stage=os.environ['DEPLOYMENT_STAGE'])
     response = dss_client.post_search.iterate(es_query=es_query,
                                               replica='aws',
                                               per_page=500)
@@ -138,18 +132,18 @@ if __name__ == '__main__':
 
     is_update = True if args.project_uuids else False
     if args.state == 0 or args.state == 1:
-        etl_dss_bundles(query=dss_query,
-                        content_type_patterns=content_type_patterns,
-                        filename_patterns=filename_patterns,
-                        transformer_cb=transform_bundle,
-                        finalizer_cb=finalizer_update if is_update else finalizer_reload,
-                        staging_directory=staging_dir,
-                        deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                        max_workers=args.max_workers,
-                        max_dispatchers=multiprocessing.cpu_count(),
-                        dispatcher_executor_class=concurrent.futures.ProcessPoolExecutor)
+        etl.etl_dss_bundles(query=dss_query,
+                            content_type_patterns=content_type_patterns,
+                            filename_patterns=filename_patterns,
+                            transformer_cb=etl.transform_bundle,
+                            finalizer_cb=etl.finalizer_update if is_update else etl.finalizer_reload,
+                            staging_directory=staging_dir,
+                            deployment_stage=os.environ['DEPLOYMENT_STAGE'],
+                            max_workers=args.max_workers,
+                            max_dispatchers=multiprocessing.cpu_count(),
+                            dispatcher_executor_class=concurrent.futures.ProcessPoolExecutor)
     elif args.state == 2:
-        upload_and_load(staging_dir, is_update=is_update)
+        etl.upload_and_load(staging_dir, is_update=is_update)
     elif args.state == 3:
-        load_tables(args.s3_upload_id, is_update=is_update)
+        etl.load_tables(args.s3_upload_id, is_update=is_update)
     _verify_load(es_query=dss_query)
