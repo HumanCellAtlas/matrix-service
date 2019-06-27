@@ -1,0 +1,20 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/7.0.2/sequence_file",
+    "schema_type": "file",
+    "file_core": {
+        "file_name": "pbmc4k_200k_S1_L001_R2_001.fastq.gz",
+        "file_format": "fastq.gz",
+        "checksum": "85794ef36e009cf7ca339c660d3492a1"
+    },
+    "read_index": "read2",
+    "lane_index": 1,
+    "read_length": 98,
+    "insdc_run": [
+        "SRR0000000"
+    ],
+    "provenance": {
+        "document_id": "608c4ea3-9506-435a-ae6b-cfe3dfd1b0ba",
+        "submission_date": "2019-03-14T17:43:53.561Z",
+        "update_date": "2019-03-14T18:21:26.531Z"
+    }
+}

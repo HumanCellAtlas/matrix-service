@@ -1,0 +1,40 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/protocol/sequencing/4.4.6/library_preparation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "lib_prep_1",
+        "protocol_name": "A dummy library prep protocol",
+        "protocol_description": "A dummy library prep description",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "input_nucleic_acid_molecule": {
+        "text": "polyA RNA",
+        "ontology": "OBI:0000869",
+        "ontology_label": "polyA RNA"
+    },
+    "library_construction_approach": {
+        "text": "10x v2",
+        "ontology": "EFO:0009310",
+        "ontology_label": "10X v2 sequencing"
+    },
+    "end_bias": "full length",
+    "primer": "poly-dT",
+    "strand": "unstranded",
+    "umi_barcode": {
+        "barcode_read": "Read 1",
+        "barcode_offset": 0,
+        "barcode_length": 16
+    },
+    "library_preamplification_method": {
+        "text": "Rapid Amplification of cDNA Ends",
+        "ontology": "EFO:0004182",
+        "ontology_label": "Rapid Amplification of cDNA Ends"
+    },
+    "provenance": {
+        "document_id": "ffb71426-42a4-42c0-89cc-f12b4a806554",
+        "submission_date": "2019-03-14T17:43:53.586Z",
+        "update_date": "2019-03-14T17:43:59.454Z"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "process_core": {
+        "process_id": "process_id_1"
+    },
+    "schema_type": "process",
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/process/6.0.7/process",
+    "provenance": {
+        "document_id": "154b71b9-698d-4539-a62b-1aea10c9709d",
+        "submission_date": "2019-03-14T17:43:53.597Z",
+        "update_date": "2019-03-14T17:43:59.565Z"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/file/5.3.6/analysis_file",
+    "file_core": {
+        "file_format": "csv",
+        "file_name": "empty_drops_result.csv"
+    },
+    "schema_type": "file",
+    "provenance": {
+        "document_id": "434823ca-1805-406f-86e9-1c5cea94c30f",
+        "submission_date": "2019-05-03T18:28:32.176Z",
+        "update_date": "2019-05-03T18:35:21.674Z"
+    }
+}

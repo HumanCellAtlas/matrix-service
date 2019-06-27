@@ -1,0 +1,83 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/biomaterial/14.0.3/donor_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "donor_ID_1",
+        "biomaterial_name": "This is a dummy donor",
+        "biomaterial_description": "This is a dummy donor description",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DRB1 0401 protective allele",
+        "biosd_biomaterial": "SAMN00000000",
+        "insdc_biomaterial": "SRS0000000"
+    },
+    "human_specific": {
+        "body_mass_index": 36.4,
+        "ethnicity": [
+            {
+                "text": "European",
+                "ontology": "HANCESTRO:0005",
+                "ontology_label": "European"
+            }
+        ]
+    },
+    "death": {
+        "cause_of_death": "motor vehicle accident",
+        "cold_perfused": false,
+        "days_on_ventilator": 4.0,
+        "hardy_scale": 0,
+        "time_of_death": "1999-01-21T00:00:00Z",
+        "organ_donation_death_type": "Donation after circulatory death (DCD)"
+    },
+    "medical_history": {
+        "alcohol_history": "1 units/day",
+        "medication": "Naproxen 500mg/day,",
+        "nutritional_state": "normal",
+        "smoking_history": "Smoker, 5/day for 10 years, stopped 1995"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "organism_age": "20",
+    "organism_age_unit": {
+        "text": "year",
+        "ontology": "UO:0000036",
+        "ontology_label": "year"
+    },
+    "development_stage": {
+        "text": "human adult stage",
+        "ontology": "HsapDv:0000087"
+    },
+    "diseases": [
+        {
+            "text": "H syndrome",
+            "ontology": "MONDO:0011273",
+            "ontology_label": "H syndrome"
+        }
+    ],
+    "gestational_age": "5-7",
+    "height": "160",
+    "height_unit": {
+        "text": "cm",
+        "ontology": "UO:0000015",
+        "ontology_label": "centimeter"
+    },
+    "is_living": "no",
+    "weight": "60",
+    "weight_unit": {
+        "text": "kg",
+        "ontology": "UO:0000009",
+        "ontology_label": "kilogram"
+    },
+    "sex": "male",
+    "provenance": {
+        "document_id": "81f274d6-dcd9-4273-8afb-ac1efae82c02",
+        "submission_date": "2019-03-14T17:43:53.539Z",
+        "update_date": "2019-03-14T17:43:59.512Z"
+    }
+}

@@ -15,6 +15,7 @@ build:
 	rm -rf target
 	mkdir target
 	pip install -r requirements.txt -t target/ --upgrade --no-compile
+	cp target.in/blosc.cpython-36m-x86_64-linux-gnu.so target/numcodecs
 	find target/ -name "*.so" | xargs strip -s
 	cp -R ../../matrix target/
 	cp -R *.py target/

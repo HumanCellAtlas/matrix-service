@@ -1,0 +1,22 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/protocol/biomaterial_collection/5.0.8/dissociation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "dissociation_protocol_1",
+        "protocol_name": "A dummy dissociation protocol",
+        "protocol_description": "A dummmy description of a dissociation protocol",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "dissociation_method": {
+        "text": "fluorescence-activated cell sorting",
+        "ontology": "EFO:0009108",
+        "ontology_label": "fluorescence-activated cell sorting"
+    },
+    "provenance": {
+        "document_id": "70bccddf-dc37-46f3-9332-76ea9570e393",
+        "submission_date": "2019-03-14T17:43:53.575Z",
+        "update_date": "2019-03-14T17:43:59.411Z"
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "describedBy": "https://schema.integration.data.humancellatlas.org/type/protocol/biomaterial_collection/8.2.11/collection_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "collection_protocol_1",
+        "protocol_name": "A dummy collection protocol",
+        "protocol_description": "A dummy collection protocol description",
+        "publication_doi": "10.1101/193219",
+        "protocols_io_doi": "10.17504/protocols.io.mgjc3un",
+        "document": "my_cool_protocol.pdf"
+    },
+    "collection_method": {
+        "text": "organ extraction",
+        "ontology": "EFO:0009124",
+        "ontology_label": "organ extraction"
+    },
+    "protocol_reagents": [
+        {
+            "retail_name": "SureCell WTA 3' Library Prep Kit",
+            "catalog_number": "20014279",
+            "manufacturer": "Illumina",
+            "lot_number": "10001A",
+            "expiry_date": "2018-01-31",
+            "kit_titer": "Titer: Specification is 3.0x10^7"
+        }
+    ],
+    "provenance": {
+        "document_id": "08a40f7c-43bf-4f2d-8e53-dd570ad0d907",
+        "submission_date": "2019-03-14T17:43:53.571Z",
+        "update_date": "2019-03-14T17:43:59.404Z"
+    }
+}
