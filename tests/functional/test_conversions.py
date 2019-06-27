@@ -144,7 +144,7 @@ class TestConversions(unittest.TestCase):
             self.assertIn("test.csv/expression.csv", members)
             self.assertIn("test.csv/genes.csv", members)
             self.assertIn("test.csv/cells.csv", members)
-            self.assertEqual(len(members), 4)
+            self.assertEqual(len(members), 3)
 
             # Read in the expression data
             csv_expression = {}
@@ -208,7 +208,7 @@ class TestConversions(unittest.TestCase):
             self.assertIn("test.mtx/matrix.mtx.gz", members)
             self.assertIn("test.mtx/genes.tsv.gz", members)
             self.assertIn("test.mtx/cells.tsv.gz", members)
-            self.assertEqual(len(members), 4)
+            self.assertEqual(len(members), 3)
 
             # Read in the cell and gene tables. We need both for mtx files
             # since the mtx itself is just numbers and indices.
