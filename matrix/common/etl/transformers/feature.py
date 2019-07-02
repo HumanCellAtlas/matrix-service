@@ -1,4 +1,5 @@
 import gzip
+import os
 import shutil
 import typing
 import urllib.request
@@ -14,17 +15,19 @@ class FeatureTransformer(MetadataToPsvTransformer):
     WRITE_LOCK = Lock()
     ANNOTATION_FTP_URL = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_27/" \
                          "gencode.v27.chr_patch_hapl_scaff.annotation.gtf.gz"
-    FILENAME = "gencode_annotation.gtf"
-    GZIP_FILENAME = FILENAME + ".gz"
 
     def __init__(self, staging_dir):
         super(FeatureTransformer, self).__init__(staging_dir)
+
+        self.annotation_file = os.path.join(self.staging_dir, "gencode_annotation.gtf")
+        self.annotation_file_gz = os.path.join(self.staging_dir, "gencode_annotation.gtf.gz")
+
         self._fetch_annotations()
 
     def _fetch_annotations(self):
-        urllib.request.urlretrieve(self.ANNOTATION_FTP_URL, self.GZIP_FILENAME)
-        with gzip.open(self.GZIP_FILENAME, 'rb') as f_in:
-            with open(self.FILENAME, 'wb') as f_out:
+        urllib.request.urlretrieve(self.ANNOTATION_FTP_URL, self.annotation_file_gz)
+        with gzip.open(self.annotation_file_gz, 'rb') as f_in:
+            with open(self.annotation_file, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
     def _write_rows_to_psvs(self, *args: typing.Tuple):
@@ -34,7 +37,7 @@ class FeatureTransformer(MetadataToPsvTransformer):
     def _parse_from_metadatas(self, filename):
         features = set()
 
-        for line in open(self.FILENAME):
+        for line in open(self.annotation_file):
             # Skip comments
             if line.startswith("#"):
                 continue

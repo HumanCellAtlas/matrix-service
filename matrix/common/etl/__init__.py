@@ -23,16 +23,16 @@ from .transformers.project_publication_contributor import ProjectPublicationCont
 logger = Logging.get_logger(__name__)
 
 
-def run_etl(query: dict,
-            content_type_patterns: typing.List[str],
-            filename_patterns: typing.List[str],
-            transformer_cb,
-            finalizer_cb,
-            staging_directory,
-            deployment_stage: str,
-            max_workers: int=256,
-            max_dispatchers: int=1,
-            dispatcher_executor_class: concurrent.futures.Executor=concurrent.futures.ProcessPoolExecutor):
+def etl_dss_bundles(query: dict,
+                    content_type_patterns: typing.List[str],
+                    filename_patterns: typing.List[str],
+                    transformer_cb,
+                    finalizer_cb,
+                    staging_directory,
+                    deployment_stage: str,
+                    max_workers: int=256,
+                    max_dispatchers: int=1,
+                    dispatcher_executor_class: concurrent.futures.Executor=concurrent.futures.ProcessPoolExecutor):
     """
     Extracts specified DSS bundles and files to local disk, transforms to PSV, uploads to S3, loads into Redshift.
     :param query: ES query to match bundles
@@ -41,8 +41,10 @@ def run_etl(query: dict,
     :param transformer_cb: Callback to run per downloaded bundle
     :param finalizer_cb: Callback to run after all bundles downloaded
     :param staging_directory: Local directory to stage extracted data
-    :param max_workers: Max number of parallel executions
     :param deployment_stage: Matrix Service deployment stage
+    :param max_workers: Max number of parallel executions during extraction
+    :param max_dispatchers: Max number of parallel exeuctions during transformation
+    :param dispatcher_executor_class: The concurrent.futures.Executor class to manage dispatch executors
     """
     logger.info(f"Loading {deployment_stage} redshift cluster via ETL")
 
@@ -78,71 +80,88 @@ def transform_bundle(bundle_uuid: str,
                      bundle_manifest_path: str,
                      extractor: DSSExtractor):
     """
-    Transforms a downloaded bundle into PSV rows - per bundle transformer passed to ETL.
+    Per bundle callback passed to DSSExtractor.extract.
+    Generates cell and expression table rows from a downloaded DSS bundle.
     :param bundle_uuid: Downloaded bundle UUID
     :param bundle_version: Downloaded bundle version
     :param bundle_path: Local path to downloaded bundle dir
     :param extractor: ETL extractor object
     """
     logger.info(f"ETL: Downloaded bundle {bundle_uuid}.{bundle_version}. Transforming to PSV.")
-    transformers = [
-        CellExpressionTransformer(extractor.sd)
-    ]
+    transformer = CellExpressionTransformer(extractor.sd)
+    try:
+        transformer.transform(bundle_path)
+    except Exception as ex:
+        _log_error(f"{bundle_uuid}.{bundle_version}", ex, traceback.format_exc(), extractor)
+
+
+def _run_transformers(extractor: DSSExtractor, transformers: list):
+    """
+    Executes a provided list of transformers.
+    :param extractor: DSSExtractor
+    :param transformers: List of MetadataToPsvTransformers to execute
+    """
+    logger.info(f"ETL: All bundles downloaded. Performing final PSV transformations.")
 
     for transformer in transformers:
         try:
-            transformer.transform(bundle_path)
+            transformer.transform(os.path.join(extractor.sd, 'bundles'))
         except Exception as ex:
-            _log_error(f"{bundle_uuid}.{bundle_version}", ex, traceback.format_exc(), extractor)
+            _log_error(transformer.__class__.__name__, ex, traceback.format_exc(), extractor)
+
+    logger.info(f"ETL: All transformations complete.")
 
 
 def finalizer_reload(extractor: DSSExtractor):
     """
-    Final transformer during ETL, invokes loader - finalizer passed to ETL.
-    :param extractor: ETL extractor object
+    Final callback during ETL for loading an empty database. Invokes Loader.
     """
-    logger.info(f"ETL: All bundles downloaded. Performing final PSV transformations.")
-    transformers = [
+    _run_transformers(extractor, [
         FeatureTransformer(extractor.sd),
         AnalysisTransformer(extractor.sd),
         SpecimenLibraryTransformer(extractor.sd),
         ProjectPublicationContributorTransformer(extractor.sd)
-    ]
-
-    for transformer in transformers:
-        try:
-            transformer.transform(os.path.join(extractor.sd, 'bundles'))
-        except Exception as ex:
-            _log_error(transformer.__class__.__name__, ex, traceback.format_exc(), extractor)
-
-    logger.info(f"ETL: All transformations complete.")
-    load_from_local_files(extractor.sd, is_update=False)
+    ])
+    upload_and_load(extractor.sd, is_update=False)
 
 
 def finalizer_update(extractor: DSSExtractor):
     """
-    Final transformer during ETL for a single bundle
-    :param extractor:
+    Final callback during ETL to perform database updates. Invokes Loader with update flag.
     :return:
     """
-    logger.info(f"ETL: All bundles downloaded. Performing final PSV transformations.")
-    transformers = [
+    _run_transformers(extractor, [
+        FeatureTransformer(extractor.sd),
         AnalysisTransformer(extractor.sd),
         SpecimenLibraryTransformer(extractor.sd),
         ProjectPublicationContributorTransformer(extractor.sd)
-    ]
+    ])
+    upload_and_load(extractor.sd, is_update=True)
 
-    for transformer in transformers:
-        try:
-            transformer.transform(os.path.join(extractor.sd, 'bundles'))
-        except Exception as ex:
-            _log_error(transformer.__class__.__name__, ex, traceback.format_exc(), extractor)
 
-    logger.info(f"ETL: All transformations complete.")
-    load_from_local_files(extractor.sd, is_update=True)
+def finalizer_notification(extractor: DSSExtractor):
+    """
+    Final callback during ETL to handle DSS notifications. Invokes Loader with update flag.
+    :return:
+    """
+    _run_transformers(extractor, [
+        AnalysisTransformer(extractor.sd),
+        SpecimenLibraryTransformer(extractor.sd),
+        ProjectPublicationContributorTransformer(extractor.sd)
+    ])
+    upload_and_load(extractor.sd, is_update=True)
 
 
 def _log_error(entity: str, exception: Exception, trace: str, extractor: DSSExtractor):
+    """
+    Logs an ETL error and exception stack trace to a file.
+    Error messages and exceptions are written to 'errors.txt'
+    A list of failed entities are written to 'failed_transforms.txt'
+    :param entity: A MetadataToPsvTransformer, or a bundle FQID for CellExpressionTransformer errors
+    :param exception: Thrown exception string
+    :param trace: Exception stack trace
+    :param extractor: DSSExtractor
+    """
     logger.error(f"Failed to transform {entity}.", exception)
 
     timestamp = date.get_datetime_now(as_string=True)
@@ -155,23 +174,29 @@ def _log_error(entity: str, exception: Exception, trace: str, extractor: DSSExtr
         fh.write(f"{entity}\n")
 
 
-def load_from_local_files(staging_dir, is_update: bool=False):
+def upload_and_load(staging_dir: str, is_update: bool=False):
+    """
+    Uploads generated PSV files to S3 and loads Redshift tables from S3.
+    :param staging_dir: DSSExtractor staging directory
+    :param is_update: True if existing rows are being updated, else False
+    """
     job_id = str(uuid.uuid4())
-    _upload_to_s3(os.path.join(staging_dir, MetadataToPsvTransformer.OUTPUT_DIRNAME), job_id)
-    _populate_all_tables(job_id, is_update=is_update)
+
+    _upload_dir_to_s3(job_id=job_id,
+                      local_dir=os.path.join(staging_dir, MetadataToPsvTransformer.OUTPUT_DIRNAME))
+    load_tables(job_id=job_id,
+                is_update=is_update)
 
 
-def load_from_s3(job_id: str):
-    _populate_all_tables(job_id, is_update=False)
-
-
-def _upload_to_s3(output_dir, job_id: str):
+def _upload_dir_to_s3(job_id: str, local_dir: str):
     """
-    Uploads to S3 all files in OUTPUT_DIR.
+    Uploads all files in local_dir to S3.
+    :param job_id: UUID used as S3 prefix during upload
+    :param local_dir: Local directory to upload files from
     """
-    for name in os.listdir(output_dir):
+    for name in os.listdir(local_dir):
         logger.info(f"ETL: Uploading {name} to {os.environ['MATRIX_PRELOAD_BUCKET']}.")
-        path = os.path.join(output_dir, name)
+        path = os.path.join(local_dir, name)
         if os.path.isdir(path):
             for filename in os.listdir(path):
                 _upload_file_to_s3(os.path.join(path, filename), f"{job_id}/{name}/{filename}")
@@ -179,7 +204,7 @@ def _upload_to_s3(output_dir, job_id: str):
             _upload_file_to_s3(path, f"{job_id}/{name}")
 
 
-def _upload_file_to_s3(path_to_file, s3_prefix):
+def _upload_file_to_s3(path_to_file: str, s3_prefix: str):
     """
     Uploads a file to S3 preload bucket.
     :param path_to_file: Local path to file to upload
@@ -192,9 +217,11 @@ def _upload_file_to_s3(path_to_file, s3_prefix):
         print(e)
 
 
-def _populate_all_tables(job_id: str, is_update: bool=False):
+def load_tables(job_id: str, is_update: bool=False):
     """
-    Creates tables and loads PSVs in S3 into Redshift via SQL COPY.
+    Creates tables and loads PSVs from S3 into Redshift via SQL COPY.
+    :param job_id: UUID of the S3 prefix containinng the data to load in
+    :param is_update: True if existing database rows will be updated, else False
     """
     _create_tables()
     lock_query = """LOCK TABLE write_lock"""

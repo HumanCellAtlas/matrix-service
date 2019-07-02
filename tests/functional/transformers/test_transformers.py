@@ -4,7 +4,7 @@ import shutil
 import unittest
 
 from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, BundleType
-from matrix.common.etl import run_etl
+from matrix.common.etl import etl_dss_bundles
 from matrix.common.etl.transformers.analysis import AnalysisTransformer
 from matrix.common.etl.transformers.cell_expression import CellExpressionTransformer
 from matrix.common.etl.transformers.project_publication_contributor import ProjectPublicationContributorTransformer
@@ -86,15 +86,15 @@ class TestTransformers(unittest.TestCase):
                              "*.results",  # match SS2 results files
                              "*.mtx", "genes.tsv", "barcodes.tsv"]  # match 10X results files
 
-        run_etl(query=query,
-                content_type_patterns=content_type_patterns,
-                filename_patterns=filename_patterns,
-                transformer_cb=None,
-                finalizer_cb=None,
-                staging_directory=os.path.abspath(TestTransformers.OUTPUT_DIR),
-                deployment_stage=TestTransformers.DEPLOYMENT_STAGE,
-                max_workers=4,
-                dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
+        etl_dss_bundles(query=query,
+                        content_type_patterns=content_type_patterns,
+                        filename_patterns=filename_patterns,
+                        transformer_cb=None,
+                        finalizer_cb=None,
+                        staging_directory=os.path.abspath(TestTransformers.OUTPUT_DIR),
+                        deployment_stage=TestTransformers.DEPLOYMENT_STAGE,
+                        max_workers=4,
+                        dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
 
     @staticmethod
     def _cleanup():

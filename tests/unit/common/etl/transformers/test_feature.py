@@ -10,7 +10,7 @@ class TestFeatureTransformer(unittest.TestCase):
     @mock.patch("matrix.common.etl.transformers.feature.FeatureTransformer._fetch_annotations")
     def test_parse_from_metadatas(self, mock_fetch_annotations):
         transformer = FeatureTransformer("")
-        transformer.FILENAME = "tests/functional/res/etl/annotation.gtf"
+        transformer.annotation_file = "tests/functional/res/etl/annotation.gtf"
         parsed = transformer._parse_from_metadatas("")
 
         feature_table = parsed[0][0]

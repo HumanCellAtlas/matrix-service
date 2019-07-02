@@ -54,22 +54,23 @@ class NotificationHandler:
                 }
             }
         }
+        staging_dir = "/tmp"
         content_type_patterns = ['application/json; dcp-type="metadata*"']
         filename_patterns = ["*zarr*",  # match expression data
                              "*.results",  # match SS2 results files
                              "*.mtx", "genes.tsv", "barcodes.tsv"]  # match 10X results files
 
         # clean up working directory in case of Lambda container reuse
-        shutil.rmtree(f"/tmp/{MetadataToPsvTransformer.OUTPUT_DIRNAME}", ignore_errors=True)
-        etl.run_etl(query=query,
-                    content_type_patterns=content_type_patterns,
-                    filename_patterns=filename_patterns,
-                    transformer_cb=etl.transform_bundle,
-                    finalizer_cb=etl.finalizer_update,
-                    staging_directory=os.path.abspath("/tmp"),
-                    deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                    max_workers=16,
-                    dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
+        shutil.rmtree(f"{staging_dir}/{MetadataToPsvTransformer.OUTPUT_DIRNAME}", ignore_errors=True)
+        etl.etl_dss_bundles(query=query,
+                            content_type_patterns=content_type_patterns,
+                            filename_patterns=filename_patterns,
+                            transformer_cb=etl.transform_bundle,
+                            finalizer_cb=etl.finalizer_notification,
+                            staging_directory=os.path.abspath(staging_dir),
+                            deployment_stage=os.environ['DEPLOYMENT_STAGE'],
+                            max_workers=16,
+                            dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
 
     def remove_bundle(self):
         self.redshift.transaction([
