@@ -15,19 +15,25 @@ example to get started, try this
 For information on the technical architecture of the service, please see
 [Matrix Service Technical Architecture](https://allspark.dev.data.humancellatlas.org/HumanCellAtlas/matrix-service/wikis/Technical-Architecture).
 
-## API: https://matrix.data.humancellatlas.org
+## API
 
-The complete API documentation is available [here](https://matrix.data.humancellatlas.org).
+The API is available at https://matrix.data.humancellatlas.org. The complete API documentation is available [here](https://matrix.data.humancellatlas.org).
 
-### Requesting a matrix
+### Versions
+
+Version `v0` of the API exposes a bundle-centric interface and has been deprecated in favor of `v1` which enables
+querying interface and is described below. `v0` will continue to be maintained for internal use purposes only.
+
+### v1
+
 Expression matrices are generated asynchronously for which results are retrieved via a polling architecture.
 To request the generation of a matrix, submit a POST request to `/v1/matrix` and receive a job ID. Use this ID to poll
 `/v1/matrix/<ID>` to retrieve the status and results of your request. 
 
 When requesting a matrix, users are required to select cells by specifying [metadata/expression data filters](#Filter).
 Optionally, they may also specify which [metadata fields](#Fields) to include in the matrix, the
-[output format](#Format) and the [feature type](#Feature) to describe. These 4 fields are supplied in the body of the
-POST request:
+[output format](#Format) and the [feature type](#Feature) to describe. These 4 fields are defined in the body of the
+POST request and are described below:
 ```json
 {
   "filter": {},
@@ -38,13 +44,13 @@ POST request:
   "feature": "string"
 }
 ```
-#### Filter
+### Filter
 
 To select cells, the API supports a simple yet expressive language for specifying complex metadata and expression data
 filters capable of representing nested AND/OR structures as a JSON object. There are two types of filter objects to
 achieve this:
 
-*Comparison filter*
+#### Comparison filter
 ```
 {
   "op": one of [ =, !=, >, <, >=, <=, in ],
@@ -53,7 +59,7 @@ achieve this:
 }
 ```
 
-*Logical filter*
+#### Logical filter
 ```
 {
   "op": one of [ and, or, not ],
@@ -63,7 +69,7 @@ achieve this:
 
 These filter types can be recursively nested via the `value` field of a logical filter.
 
-*Filter object examples*
+#### Filter examples
 
 Select all full length cells:
 ```
@@ -100,13 +106,13 @@ detected:
 The list of available filter names is available at `/v1/filters`. To retrieve more information about a specific filter,
 GET `/v1/filters/<filter>`.
 
-#### Fields
+### Fields
 
 Users can specify a list of metadata fields to be exported with an expression matrix. The list of available metadata
 fields is available at `/v1/fields`. More information about a specific field is available at
 `/v1/fields/<field>`.
 
-#### Format
+### Format
 
 The Matrix Service supports generating matrices in the following 3 formats:
 
@@ -117,7 +123,7 @@ The Matrix Service supports generating matrices in the following 3 formats:
 This list is also available at `/v1/formats` with additional information for a specific format available at
 `/v1/formats/<format>`.
 
-#### Feature
+### Feature
 
 The Matrix Service also supports generating cell by transcript matrices in addition to cell by gene matrices. To select
 the feature type, specify either `gene` (default) or `transcript` in the POST request. The list of available features is
