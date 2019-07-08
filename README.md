@@ -108,17 +108,17 @@ GET `/v1/filters/<filter>`.
 
 ### Fields
 
-Users can specify a list of metadata fields to be exported with an expression matrix. The list of available metadata
-fields is available at `/v1/fields`. More information about a specific field is available at
-`/v1/fields/<field>`.
+Users can specify a list of metadata fields to be exported with an expression matrix. By default,
+all available metadata fields are included in the generated matrix. The list of available metadata
+fields is available at `/v1/fields`. More information about a specific field is available at `/v1/fields/<field>`.
 
 ### Format
 
 The Matrix Service supports generating matrices in the following 3 formats:
 
-- [.loom](http://loompy.org/) (default)
-- [.csv](https://en.wikipedia.org/wiki/Comma-separated_values)
-- [.mtx](https://math.nist.gov/MatrixMarket/formats.html)
+- [loom](http://loompy.org/) (default)
+- [csv](https://en.wikipedia.org/wiki/Comma-separated_values)
+- [mtx](https://math.nist.gov/MatrixMarket/formats.html)
 
 This list is also available at `/v1/formats` with additional information for a specific format available at
 `/v1/formats/<format>`.
@@ -126,8 +126,10 @@ This list is also available at `/v1/formats` with additional information for a s
 ### Feature
 
 The Matrix Service also supports generating cell by transcript matrices in addition to cell by gene matrices. To select
-the feature type, specify either `gene` (default) or `transcript` in the POST request. The list of available features is
-available at `/v1/features` with additional information for a specific feature available at `/v1/features/<feature>`.
+the feature type, specify either `gene` (default) or `transcript` in the POST request. Note that some assay types are
+incompatible with certain feature types. For example, if `transcript` is selected as the feature type, data from 3'
+assays will not be included in the generated matrix. The list of available features is available at `/v1/features` with
+additional information for a specific feature available at `/v1/features/<feature>`.
 
 ## Developer Getting Started
 
