@@ -1,79 +1,137 @@
 # Expression Matrix Service
 
 [![Production Health Check](https://status.data.humancellatlas.org/service/matrix-health-check-prod.svg)](https://matrix.data.humancellatlas.org/)
-[![Master Deployment Status](https://status.data.humancellatlas.org/build/HumanCellAtlas/matrix-service/prod.svg)](https://allspark.dev.data.humancellatlas.org/HumanCellAtlas/matrix-service/pipelines)
 [![Test Coverage](https://codecov.io/gh/HumanCellAtlas/matrix-service/branch/master/graph/badge.svg)](https://codecov.io/gh/HumanCellAtlas/matrix-service)
 
 ## Overview
 
-The Matrix Service (MS) provides an interface to aggregrate, query and access gene expression matrices stored in the
-[Human Cell Atlas](https://staging.data.humancellatlas.org/) [Data Coordination
-Platform](https://www.humancellatlas.org/data-sharing) (DCP). Expression data are read from the
-[DCP Data Store](https://github.com/HumanCellAtlas/data-store), processed in [AWS Lambda](https://aws.amazon.com/lambda/)
-and [AWS Batch](https://aws.amazon.com/batch/) and the results are stored in [Amazon S3](https://aws.amazon.com/s3/)
-buckets. The service exposes a [REST API](https://matrix.staging.data.humancellatlas.org) for querying and retrieving
-expression matrix results with support for the following [file formats](#file-formats).
+The Matrix Service consumes data from the [HCA](https://prod.data.humancellatlas.org/)
+[Data Store](https://github.com/HumanCellAtlas/data-store) to dynamically generate cell by gene expression matrices.
+Users can select cells to include in their matrix by specifying metadata and expression value filters via the API.
+Matrices also include metadata per cell for which fields to include can be specified in the POST request. For a quick
+example to get started, try this
+[Jupytner Notebook vignette](https://github.com/HumanCellAtlas/matrix-service/blob/master/docs/HCA%20Matrix%20Service%20to%20Scanpy.ipynb).
 
-### Components
+For information on the technical architecture of the service, please see
+[Matrix Service Technical Architecture](https://allspark.dev.data.humancellatlas.org/HumanCellAtlas/matrix-service/wikis/Technical-Architecture).
 
-The logical flow of an expression matrix request is illustrated in the diagram below
-[[LucidChart](https://www.lucidchart.com/invitations/accept/cdb424df-a72f-4391-9549-e83364c7234c)].
-A description of each component follows.
+## API
 
-![alt text](matrix_architecture.svg)
+The API is available at https://matrix.data.humancellatlas.org. The complete API documentation is available [here](https://matrix.data.humancellatlas.org).
 
-#### Matrix API
+### Versions
 
-The REST API is a [Chalice](https://github.com/aws/chalice) app that adopts [Swagger/OpenAPI](https://swagger.io/)'s
-approach to specification driven development and leverages [Connexion](https://github.com/zalando/connexion) for
-input parameter validation. The Chalice app is deployed with [Amazon API Gateway](https://aws.amazon.com/api-gateway/)
-and [AWS Lambda](https://aws.amazon.com/lambda/). The full API documentation can be found
-[here](https://matrix.staging.data.humancellatlas.org).
+Version `v0` of the API exposes a bundle-centric interface and has been deprecated in favor of `v1` which enables
+querying interface and is described below. `v0` will continue to be maintained for internal use purposes only.
 
-#### Lambdas
+### v1
 
-The preparation of an expression matrix occurs in the following five stages: the driver, mapper, worker, reducer and
-the converter. The first four stages are deployed in AWS Lambda and are collectively responsible for preparing a
-[zarr file structure](https://zarr.readthedocs.io/en/stable/) representing the resultant expression matrix. The
-following table provides a description of each lambda:
+Expression matrices are generated asynchronously for which results are retrieved via a polling architecture.
+To request the generation of a matrix, submit a POST request to `/v1/matrix` and receive a job ID. Use this ID to poll
+`/v1/matrix/<ID>` to retrieve the status and results of your request. 
 
-| **Lambda** | **Description** |
-|---|---|
-| Driver | Initializes the matrix request in DynamoDB tables responsible for tracking the request's progress and invokes N mapper lambdas distributing the load of input bundles. |
-| Mapper | For each input bundle, reads its metadata to retrieve chunking boundaries (i.e. a subset of matrix rows) used in parallel processing; invokes M worker lambdas distributing determined chunks. |
-| Worker | For each chunk, apply the user-supplied query and write the matched rows to the resultant expression matrix in S3. The last worker to complete will invoke the reducer lambda. |
-| Reducer | Finalizes the resultant expression matrix's zarr structure in S3. If the user-requested file format is not ``zarr``, invokes an AWS Batch job to convert the zarr to the desired file format. Otherwise, completes the request. |
+When requesting a matrix, users are required to select cells by specifying [metadata/expression data filters](#Filter).
+Optionally, they may also specify which [metadata fields](#Fields) to include in the matrix, the
+[output format](#Format) and the [feature type](#Feature) to describe. These 4 fields are defined in the body of the
+POST request and are described below:
+```json
+{
+  "filter": {},
+  "fields": [
+    "string"
+  ],
+  "format": "string",
+  "feature": "string"
+}
+```
+### Filter
 
-#### File Converter
+To select cells, the API supports a simple yet expressive language for specifying complex metadata and expression data
+filters capable of representing nested AND/OR structures as a JSON object. There are two types of filter objects to
+achieve this:
 
-A file conversion job deployed on AWS Batch is used to support multiple output [file formats](#file-formats). This job
-converts ``.zarr`` expression matrices to the desired file format and writes the result to S3.
+#### Comparison filter
+```
+{
+  "op": one of [ =, !=, >, <, >=, <=, in ],
+  "field": a metadata filter,
+  "value": string or int or list
+}
+```
 
-#### DynamoDB
+#### Logical filter
+```
+{
+  "op": one of [ and, or, not ],
+  "value": array of 2 filter objects if op==and|or, filter object if op==not
+}
+```
 
-DynamoDB tables are used to track the state and progress of a request. The following is a description of the tables:
+These filter types can be recursively nested via the `value` field of a logical filter.
 
-| **Table name** | **Description** |
-|---|---|
-| Cache table | Caches requests by a hash of its input parameters. |
-| State table | Tracks the progress of a request. |
-| Output table | Stores output values of the request (e.g. file format, errors). |
-| Lock table | Manages locks for across distributed nodes. |
+#### Filter examples
 
+Select all full length cells:
+```
+...
+  "filter": {
+    "op": ">=",
+    "value": "full length",
+    "field": "library_preparation_protocol.end_bias"
+  }
+...
+```
 
-### File formats
+Select all cells from the "Single cell transcriptome analysis of human pancreas" project with at least 3000 genes
+detected:
+```
+...
+  "filter": {
+    "op": "and",
+    "value": [
+      {
+        "op": "=",
+        "value": "Single cell transcriptome analysis of human pancreas",
+        "field": "project.project_core.project_short_name"},
+      {
+        "op": ">=",
+        "value": 3000,
+        "field": "genes_detected"
+      }
+    ]
+  }
+...
+```
 
-The DCP MS enables users to prepare expression matrices in several formats by supplying the `format` parameter in the
-POST request to the `/matrix` endpoint. The following is a list of supported file formats:
+The list of available filter names is available at `/v1/filters`. To retrieve more information about a specific filter,
+GET `/v1/filters/<filter>`.
 
-- [.zarr](https://zarr.readthedocs.io/en/stable/) (default)
-- [.loom](http://loompy.org/)
-- [.csv](https://en.wikipedia.org/wiki/Comma-separated_values)
-- [.mtx](https://math.nist.gov/MatrixMarket/formats.html)
+### Fields
 
-The API also makes this information available via the `/matrix/formats` endpoint.
+Users can specify a list of metadata fields to be exported with an expression matrix. By default,
+all available metadata fields are included in the generated matrix. The list of available metadata
+fields is available at `/v1/fields`. More information about a specific field is available at `/v1/fields/<field>`.
 
-## Getting Started
+### Format
+
+The Matrix Service supports generating matrices in the following 3 formats:
+
+- [loom](http://loompy.org/) (default)
+- [csv](https://en.wikipedia.org/wiki/Comma-separated_values)
+- [mtx](https://math.nist.gov/MatrixMarket/formats.html)
+
+This list is also available at `/v1/formats` with additional information for a specific format available at
+`/v1/formats/<format>`.
+
+### Feature
+
+The Matrix Service also supports generating cell by transcript matrices in addition to cell by gene matrices. To select
+the feature type, specify either `gene` (default) or `transcript` in the POST request. Note that some assay types are
+incompatible with certain feature types. For example, if `transcript` is selected as the feature type, data from 3'
+assays will not be included in the generated matrix. The list of available features is available at `/v1/features` with
+additional information for a specific feature available at `/v1/features/<feature>`.
+
+## Developer Getting Started
 
 ### Requirements
 
@@ -120,14 +178,3 @@ cd chalice
 make build && cd ..
 ./scripts/matrix-service-api.py
 ```
-
-#### Logs
-
-All API logs, AWS Lambda logs and AWS Batch logs can be found in
-[Amazon CloudWatch Metrics](https://console.aws.amazon.com/cloudwatch/home?region=us-east-1) under following prefixes:
-
-| **Component** | **Log Group Prefix** | **Log Stream Prefix** |
-|---|---|---|
-| Matrix API | _/aws/lambda/matrix-service-api-_ | - |
-| Lambdas | _/aws/lambda/dcp-matrix-service-_ | - |
-| File converter | _/aws/batch/job_ | _dcp-matrix-converter-job-definition-_ |
