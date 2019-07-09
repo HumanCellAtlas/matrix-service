@@ -6,11 +6,14 @@ This script creates a readonly user in the redshift db
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.config import MatrixRedshiftConfig
 
-matrix_config = MatrixRedshiftConfig()
-redshift_handler = RedshiftHandler()
+
+def retrieve_redshift_config():  # pragma: no cover
+    return MatrixRedshiftConfig()
 
 
 def handler():
+    matrix_config = retrieve_redshift_config()
+    redshift_handler = RedshiftHandler()
     readonly_username = matrix_config.readonly_username
     readonly_password = matrix_config.readonly_password
     drop_user_query = f"DROP USER IF EXISTS {readonly_username};"
@@ -24,5 +27,6 @@ def handler():
     redshift_handler.transaction([grant_public_query, grant_information_schema_query])
     print("permissions applied to readonly user")
 
-if __name__ == '__main__':
+
+if __name__ == '__main__':  # pragma: no cover
     handler()
