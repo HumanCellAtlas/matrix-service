@@ -69,6 +69,33 @@ ALL_10X_SS2_MATCH_TERMS = [
 ]
 
 
+def load(args):
+    dss_query = _build_dss_query(project_uuids=args.project_uuids)
+    staging_dir = os.path.abspath('/mnt')
+    content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
+    filename_patterns = ["*zarr*", # match expression data
+                         "*.results", # match SS2 raw count files
+                         "*.mtx", "genes.tsv", "barcodes.tsv"] # match 10X raw count files
+
+    is_update = True if args.project_uuids else False
+    if args.state == 0 or args.state == 1:
+        etl.etl_dss_bundles(query=dss_query,
+                            content_type_patterns=content_type_patterns,
+                            filename_patterns=filename_patterns,
+                            transformer_cb=etl.transform_bundle,
+                            finalizer_cb=etl.finalizer_update if is_update else etl.finalizer_reload,
+                            staging_directory=staging_dir,
+                            deployment_stage=os.environ['DEPLOYMENT_STAGE'],
+                            max_workers=args.max_workers,
+                            max_dispatchers=multiprocessing.cpu_count(),
+                            dispatcher_executor_class=concurrent.futures.ProcessPoolExecutor)
+    elif args.state == 2:
+        etl.upload_and_load(staging_dir, is_update=is_update)
+    elif args.state == 3:
+        etl.load_tables(args.s3_upload_id, is_update=is_update)
+    _verify_load(es_query=dss_query)
+
+
 def _build_dss_query(project_uuids):
     q = DSS_SEARCH_QUERY_TEMPLATE
 
@@ -102,7 +129,7 @@ def _verify_load(es_query):
     assert(results[0][0] == len(expected_bundles))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-workers",
                         help="Maximum number of concurrent threads during extraction.",
@@ -121,29 +148,6 @@ if __name__ == '__main__':
                         type=str,
                         nargs="*",
                         default="")
-    args = parser.parse_args()
+    _args = parser.parse_args()
 
-    dss_query = _build_dss_query(project_uuids=args.project_uuids)
-    staging_dir = os.path.abspath('/mnt')
-    content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
-    filename_patterns = ["*zarr*", # match expression data
-                         "*.results", # match SS2 raw count files
-                         "*.mtx", "genes.tsv", "barcodes.tsv"] # match 10X raw count files
-
-    is_update = True if args.project_uuids else False
-    if args.state == 0 or args.state == 1:
-        etl.etl_dss_bundles(query=dss_query,
-                            content_type_patterns=content_type_patterns,
-                            filename_patterns=filename_patterns,
-                            transformer_cb=etl.transform_bundle,
-                            finalizer_cb=etl.finalizer_update if is_update else etl.finalizer_reload,
-                            staging_directory=staging_dir,
-                            deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                            max_workers=args.max_workers,
-                            max_dispatchers=multiprocessing.cpu_count(),
-                            dispatcher_executor_class=concurrent.futures.ProcessPoolExecutor)
-    elif args.state == 2:
-        etl.upload_and_load(staging_dir, is_update=is_update)
-    elif args.state == 3:
-        etl.load_tables(args.s3_upload_id, is_update=is_update)
-    _verify_load(es_query=dss_query)
+    load(_args)
