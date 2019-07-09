@@ -6,8 +6,39 @@ import requests
 import hca
 from matrix.common.config import MatrixInfraConfig
 
-if __name__ == '__main__':
-    gcp_service_acct_creds = json.loads(base64.b64decode(MatrixInfraConfig().gcp_service_acct_creds).decode())
+
+# DSSClient functions are generated at runtime and are difficult to mock
+def get_subscriptions(dss_client: hca.dss.DSSClient,
+                      replica: str,
+                      subscription_type: str):  # pragma: no cover
+    return dss_client.get_subscriptions(replica=replica,
+                                        subscription_type=subscription_type)['subscriptions']
+
+
+def delete_subscription(dss_client: hca.dss.DSSClient,
+                        replica: str,
+                        subscription_type: str,
+                        uuid: str):  # pragma: no cover
+    return dss_client.delete_subscription(replica=replica,
+                                          subscription_type=subscription_type,
+                                          uuid=uuid)
+
+
+def put_subscription(dss_client: hca.dss.DSSClient,
+                     callback_url: str,
+                     jmespath_query: str,
+                     replica: str):  # pragma: no cover
+    return dss_client.put_subscription(callback_url=callback_url,
+                                       jmespath_query=jmespath_query,
+                                       replica=replica)
+
+
+def retrieve_gcp_credentials():  # pragma: no cover
+    return json.loads(base64.b64decode(MatrixInfraConfig().gcp_service_acct_creds).decode())
+
+
+def recreate_dss_subscription():
+    gcp_service_acct_creds = retrieve_gcp_credentials()
     with open('gcp_creds.json', 'w') as outfile:
         json.dump(gcp_service_acct_creds, outfile)
     try:
@@ -28,18 +59,26 @@ if __name__ == '__main__':
 
         dss_client = hca.dss.DSSClient(swagger_url=swagger_url)
 
-        for subscription in dss_client.get_subscriptions(replica=replica, subscription_type="jmespath")["subscriptions"]:
+        for subscription in get_subscriptions(dss_client=dss_client, replica=replica, subscription_type="jmespath"):
             if matrix_callback == subscription["callback_url"]:
-                res = dss_client.delete_subscription(replica=replica, subscription_type="jmespath", uuid=subscription["uuid"])
+                res = delete_subscription(dss_client=dss_client,
+                                          replica=replica,
+                                          subscription_type="jmespath",
+                                          uuid=subscription["uuid"])
                 print("Deleted subscription {}: {}".format(subscription["uuid"], res))
 
         print("Not resubscribing to dss for the time being.")
-        # resp = dss_client.put_subscription(callback_url=matrix_callback,
-        #                                    jmespath_query=jmespath_query,
-        #                                    replica="aws")
+        # resp = put_subscription(dss_client=dss_client,
+        #                         callback_url=matrix_callback,
+        #                         jmespath_query=jmespath_query,
+        #                         replica="aws")
         # print("Created subscription {}: {}".format(resp["uuid"], resp))
 
     except Exception as e:
         print(e)
-    print("deleted creds file")
     os.remove(os.getcwd() + "/gcp_creds.json")
+    print("deleted creds file")
+
+
+if __name__ == '__main__':  # pragma: no cover
+    recreate_dss_subscription()
