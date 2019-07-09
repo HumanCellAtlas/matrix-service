@@ -3,8 +3,12 @@ import datetime
 import getpass
 import os
 import subprocess
+import sys
 
-from ec2_instance_manager import EC2InstanceManager
+pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))  # noqa
+sys.path.insert(0, pkg_root)  # noqa
+
+from scripts.redshift.ec2_instance_manager import EC2InstanceManager
 
 
 def _init_env_vars():
@@ -13,7 +17,34 @@ def _init_env_vars():
     os.chdir("../scripts/redshift")
 
 
-if __name__ == '__main__':
+def launch_loader(args):
+    _init_env_vars()
+
+    # spin up a new EC2 instance if necessary
+    if not args.instance_name:
+        instance_name = f"{getpass.getuser()}-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}"
+        print(f"No existing instance provided. Spinning up new EC2 {args.instance_type} instance: {instance_name}.")
+        ec2_instance = EC2InstanceManager(name=instance_name)
+        ec2_instance.create(instance_type=args.instance_type)
+    else:
+        print(f"Skipping instance creation. Using instance {args.instance_name}.")
+        ec2_instance = EC2InstanceManager(name=args.instance_name)
+
+    if args.state == 0:
+        print("Clearing all downloaded and generated files.")
+        ec2_instance.clear_dir("/mnt/*")
+    elif args.state == 1:
+        print("Clearing all generated files.")
+        ec2_instance.clear_dir("/mnt/output/*")
+
+    ec2_instance.provision()
+    ec2_instance.run(max_workers=args.max_workers,
+                     state=args.state,
+                     s3_upload_id=args.s3_upload_id,
+                     project_uuids=args.project_uuids)
+
+
+if __name__ == '__main__':  # pragma: no cover
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--instance-type",
                         help="Amazon EC2 instance type to create and execute ETL on.\n"
@@ -47,29 +78,6 @@ if __name__ == '__main__':
                         type=str,
                         nargs="*",
                         default="")
-    args = parser.parse_args()
+    _args = parser.parse_args()
 
-    _init_env_vars()
-
-    # spin up a new EC2 instance if necessary
-    if not args.instance_name:
-        instance_name = f"{getpass.getuser()}-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}"
-        print(f"No existing instance provided. Spinning up new EC2 {args.instance_type} instance: {instance_name}.")
-        ec2_instance = EC2InstanceManager(name=instance_name)
-        ec2_instance.create(instance_type=args.instance_type)
-    else:
-        print(f"Skipping instance creation. Using instance {args.instance_name}.")
-        ec2_instance = EC2InstanceManager(name=args.instance_name)
-
-    if args.state == 0:
-        print("Clearing all downloaded and generated files.")
-        ec2_instance.clear_dir("/mnt/*")
-    elif args.state == 1:
-        print("Clearing all generated files.")
-        ec2_instance.clear_dir("/mnt/output/*")
-
-    ec2_instance.provision()
-    ec2_instance.run(max_workers=args.max_workers,
-                     state=args.state,
-                     s3_upload_id=args.s3_upload_id,
-                     project_uuids=args.project_uuids)
+    launch_loader(_args)
