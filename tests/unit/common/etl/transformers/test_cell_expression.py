@@ -1,3 +1,4 @@
+import mock
 import os
 import unittest
 
@@ -8,9 +9,22 @@ from matrix.common.etl.transformers.cell_expression import CellExpressionTransfo
 class TestCellExpressionTransformer(unittest.TestCase):
     def setUp(self):
         self.transformer = CellExpressionTransformer("")
+        self.test_table_data = [
+            (TableName.CELL, ["cell_row_1", "cell_row_2"], "path/to/bundle"),
+            (TableName.EXPRESSION, ["expr_row_1", "expr_row_2"], "path/to/bundle")
+        ]
+
+    def test_write_rows_to_psvs(self):
+        with mock.patch("gzip.open", mock.mock_open()) as mock_open:
+            self.transformer._write_rows_to_psvs(self.test_table_data[0],
+                                                 self.test_table_data[1])
+            handle = mock_open()
+            mock_open.assert_any_call("output/cell/bundle.cell.data.gz", "w")
+            mock_open.assert_any_call("output/expression/bundle.expression.data.gz", "w")
+            self.assertEqual(handle.writelines.call_count, 2)
 
     def test_parse_from_metadatas(self):
-        parsed = self.transformer._parse_from_metadatas("tests/functional/res/etl/bundle")
+        parsed = self.transformer._parse_from_metadatas("tests/functional/res/etl/ss2_bundle")
 
         cell_table = parsed[0][0]
         cell_rows = parsed[0][1]
@@ -25,15 +39,28 @@ class TestCellExpressionTransformer(unittest.TestCase):
         self.assertEqual(expression_table, TableName.EXPRESSION)
         self.assertEqual(expression_rows[0], "635badd5-7d62-4db3-b509-f290a12a1336|ENST00000373020|TPM|92.29\n")
 
-    def test_parse_optimus(self):
-        cell_lines, expression_lines = self.transformer._parse_optimus_bundle(
-            bundle_dir=os.path.abspath("tests/functional/res/etl/d65ef9e6-3fd1-4026-9843-ff573c9e66c8")
+    def test_parse_cellranger(self):
+        cell_lines, expression_lines = self.transformer._parse_cellranger_bundle(
+            bundle_dir=os.path.abspath("tests/functional/res/etl/cellranger_bundle")
         )
         self.assertEqual(len(cell_lines), 5)
-        self.assertTrue("aaa573518b66eb105c09fd34d0418a13|493a6adc-54b5-4388-ba11-c37686562127|"
+        self.assertTrue("ef5f664f968c3f758eee9e7bf61a5947|021d111b-4941-4e33-a2d1-8c3478f0cbd7|"
+                        "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|f1bf7167-5948-4d55-9090-1f30a39fc564|"
+                        "7fa4f1e6-fa10-46eb-88e8-ebdadbf3eeab|d8a9ebfa-e1be-451f-bf10-b2486647a89b|"
+                        "AAACCTGAGCGCCTCA-1|58\n" in cell_lines)
+
+        self.assertEqual(len(expression_lines), 299)
+        self.assertEqual(expression_lines[0], "ae56180ac0270feb7ddcf481b0f1ff47|ENSG00000198786|Count|2\n")
+
+    def test_parse_optimus(self):
+        cell_lines, expression_lines = self.transformer._parse_optimus_bundle(
+            bundle_dir=os.path.abspath("tests/functional/res/etl/optimus_bundle")
+        )
+        self.assertEqual(len(cell_lines), 5)
+        self.assertTrue("ccae491402354c4c1cdbb527a9a3d680|493a6adc-54b5-4388-ba11-c37686562127|"
                         "dbb40797-8eba-44f8-81d8-6f0c2e2ed0b5|88bc1e69-624e-4e12-b0a2-e1b64832ec3f|"
                         "ffb71426-42a4-42c0-89cc-f12b4a806554|17987139-5441-4335-8a36-2ec986eee282|"
-                        "GTCGGGTTCACGGTTA|71\n" in cell_lines)
+                        "AGTGGGAGTACAGACG|12\n" in cell_lines)
 
         self.assertEqual(len(expression_lines), 174)
-        self.assertEqual(expression_lines[0], "0ef1dea5d73efc2f4cfaaeeaea2dd10c|GUK1|Count|1.0\n")
+        self.assertEqual(expression_lines[0], "ccae491402354c4c1cdbb527a9a3d680|GUK1|Count|1.0\n")

@@ -33,9 +33,9 @@ class MetadataToPsvTransformer:
         """
         Writes row(s) to specified PSV file(s).
 
-        :param args: n Tuples (TableName, Set(Tuple)) where
+        :param args: n Tuples (TableName, Set(str)) where
                 TableName: the table to write to and
-                Set(Tuple): A Tuple represents a row to write
+                Set(str): A str element represents a row to write
         :return: None
         """
         for arg in args:
