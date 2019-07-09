@@ -1,0 +1,13 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+    "schema_type": "file",
+    "file_core": {
+        "file_name": "barcodes.tsv",
+        "file_format": "tsv"
+    },
+    "provenance": {
+        "document_id": "99241c57-9260-4991-9675-0fce069a7406",
+        "submission_date": "2019-01-09T17:07:58.240Z",
+        "update_date": "2019-01-09T17:12:42.498Z"
+    }
+}

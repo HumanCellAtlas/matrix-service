@@ -1,0 +1,13 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+    "schema_type": "file",
+    "file_core": {
+        "file_name": "molecule_info.h5",
+        "file_format": "h5"
+    },
+    "provenance": {
+        "document_id": "eccd2143-afd7-41bb-b306-b565cb55399c",
+        "submission_date": "2019-01-09T17:07:58.621Z",
+        "update_date": "2019-01-09T17:12:51.543Z"
+    }
+}

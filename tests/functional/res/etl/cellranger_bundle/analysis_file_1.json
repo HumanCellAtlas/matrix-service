@@ -1,0 +1,13 @@
+{
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+    "schema_type": "file",
+    "file_core": {
+        "file_name": "genes.tsv",
+        "file_format": "tsv"
+    },
+    "provenance": {
+        "document_id": "7aa2f834-3b94-483e-aafb-99419fcf3ebd",
+        "submission_date": "2019-01-09T17:07:58.313Z",
+        "update_date": "2019-01-09T17:12:45.534Z"
+    }
+}
