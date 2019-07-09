@@ -18,7 +18,7 @@ lint:
 	flake8 $(MODULES) --exclude $(EXCLUDE) *.py
 
 unit-tests:
-	PYTHONWARNINGS=ignore:ResourceWarning coverage run --source=matrix \
+	PYTHONWARNINGS=ignore:ResourceWarning coverage run --source=matrix,scripts --omit=scripts/build_missing_wheels.py,scripts/matrix-service-api.py,scripts/redshift/ec2_instance_manager.py\
 		-m unittest discover --start-directory tests/unit --top-level-directory . --verbose
 
 functional-tests:
