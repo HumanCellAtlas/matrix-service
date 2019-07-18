@@ -42,7 +42,7 @@ class RequestTracker:
     def is_initialized(self) -> bool:
         try:
             self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                               request_id=self.request_id)
+                                               key=self.request_id)
         except MatrixException:
             return False
 
@@ -57,7 +57,7 @@ class RequestTracker:
         if not self._num_bundles:
             self._num_bundles =\
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.NUM_BUNDLES.value]
+                                                   key=self.request_id)[RequestTableField.NUM_BUNDLES.value]
         return self._num_bundles
 
     @property
@@ -80,7 +80,7 @@ class RequestTracker:
         if not self._format:
             self._format =\
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.FORMAT.value]
+                                                   key=self.request_id)[RequestTableField.FORMAT.value]
         return self._format
 
     @property
@@ -89,7 +89,7 @@ class RequestTracker:
         The batch job id for matrix conversion corresponding with a request.
         :return: str The batch job id
         """
-        table_item = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        table_item = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         batch_job_id = table_item.get(RequestTableField.BATCH_JOB_ID.value)
         if not batch_job_id or batch_job_id == "N/A":
             return None
@@ -114,7 +114,7 @@ class RequestTracker:
         :return: str creation date
         """
         return self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                  request_id=self.request_id)[RequestTableField.CREATION_DATE.value]
+                                                  key=self.request_id)[RequestTableField.CREATION_DATE.value]
 
     @property
     def timeout(self) -> bool:
@@ -131,7 +131,7 @@ class RequestTracker:
         :return: str The error message if one exists, else empty string
         """
         error = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
+                                                   key=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
         return error if error else ""
 
     def initialize_request(self, fmt: str) -> None:
@@ -183,7 +183,7 @@ class RequestTracker:
         i.e. if all expected reducers and converters have completed.
         :return: bool True if complete, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
                             request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
         converter_complete = (request_state[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value] ==
@@ -197,7 +197,7 @@ class RequestTracker:
         and is ready for conversion
         :return: bool True if complete, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
                             request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
         return queries_complete

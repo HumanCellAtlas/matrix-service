@@ -39,6 +39,7 @@ class DynamoTable(Enum):
     Names of dynamo tables in matrix service
     """
     REQUEST_TABLE = os.getenv("DYNAMO_REQUEST_TABLE_NAME")
+    DATA_TABLE = os.getenv("DYNAMO_DATA_TABLE_NAME")
 
 
 class DynamoHandler:
@@ -48,17 +49,19 @@ class DynamoHandler:
     def __init__(self):
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
         self._request_table = self._dynamo.Table(DynamoTable.REQUEST_TABLE.value)
+        self._data_table = self._dynamo.Table(DynamoTable.DATA_TABLE.value)
 
-    def _get_dynamo_table_resource_from_enum(self, dynamo_table: DynamoTable):
-        """Retrieve dynamo table resource for a given dynamo table name.
-
-        Input:
-            dynamo_table: (DynamoTable), Enum
-        Output:
-            boto3 dynamodb resource
-        """
-        if dynamo_table == DynamoTable.REQUEST_TABLE:
-            return self._request_table
+        # Stores access information to Dynamo resources
+        self.tables = {
+            DynamoTable.REQUEST_TABLE: {
+                'key_name': "RequestId",
+                'resource': self._request_table
+            },
+            DynamoTable.DATA_TABLE: {
+                'key_name': "Version",
+                'resource': self._data_table
+            }
+        }
 
     def create_request_table_entry(self,
                                    request_id: str,
@@ -89,60 +92,60 @@ class DynamoHandler:
             }
         )
 
-    def get_table_item(self, table: DynamoTable, request_id: str=""):
-        """Retrieves dynamobdb item corresponding with request_id in the specified table.
+    def get_table_item(self, table: DynamoTable, key: str=""):
+        """Retrieves dynamobdb item with corresponding primary key in the specified table.
 
         Input:
             table: (DynamoTable) enum
-            request_id: (str) request id key in table
+            key: (str) primary key in table
         Output:
             item: dynamodb item
         """
 
-        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
+        dynamo_table = self.tables[table]['resource']
+        key_name = self.tables[table]['key_name']
         try:
-            table_key = {'RequestId': request_id}
             item = dynamo_table.get_item(
-                Key=table_key,
+                Key={key_name: key},
                 ConsistentRead=True
             )['Item']
         except KeyError:
             raise MatrixException(status=requests.codes.not_found,
-                                  title=f"Unable to find table item with request ID "
-                                        f"{request_id} from DynamoDb Table {table.value}.")
+                                  title=f"Unable to find table item with primary key "
+                                        f"{key_name} from DynamoDb Table {table.value}.")
 
         return item
 
-    def increment_table_field(self, table: DynamoTable, request_id: str, field_enum: TableField, increment_size: int):
+    def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField, increment_size: int):
         """Increment value in dynamo table
         Args:
             table: DynamoTable enum
-            request_id: request id key in table
+            key: primary key in table
             field_enum: field enum to increment
             increment_size: Amount by which to increment the field.
         Returns:
             start_value, end_value: The values before and after incrementing
         """
-        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
-        key_dict = {"RequestId": request_id}
+        dynamo_table = self.tables[table]['resource']
+        key_dict = {self.tables[table]['key_name']: key}
         start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
         return start_value, end_value
 
     def set_table_field_with_value(self,
                                    table: DynamoTable,
-                                   request_id: str,
+                                   key: str,
                                    field_enum: TableField,
                                    field_value: typing.Union[str, int]):
         """
         Set value in dynamo table
         Args:
             table: DynamoTable enum
-            request_id: request id key in table
+            key: primary key in table
             field_enum: field enum to increment
             field_value: Value to set for field
         """
-        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
-        key_dict = {"RequestId": request_id}
+        dynamo_table = self.tables[table]['resource']
+        key_dict = {self.tables[table]['key_name']: key}
         self._set_field(dynamo_table, key_dict, field_enum, field_value)
 
     def _set_field(self, table, key_dict: dict, field_enum: TableField, field_value: typing.Union[str, int]):
@@ -170,7 +173,7 @@ class DynamoHandler:
         Args:
           table: boto3 resource for a dynamodb table
           key_dict: Dict for the key in the table
-          field_value: Name of the field to increment
+          field_enum: Name of the field to increment
           increment_size: Amount by which to increment the field.
         Returns:
           start_value, end_value: The values before and after incrementing
