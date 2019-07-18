@@ -1,6 +1,16 @@
 resource "aws_s3_bucket" "matrix-results" {
   bucket = "dcp-matrix-service-results-${var.deployment_stage}"
   acl    = "public-read"
+
+  lifecycle_rule {
+    id      = "matrix_service_results_expiration"
+
+    expiration {
+      days = 30
+    }
+
+    enabled = true
+  }
 }
 
 resource "aws_s3_bucket_policy" "matrix_results_bucket_policy" {
