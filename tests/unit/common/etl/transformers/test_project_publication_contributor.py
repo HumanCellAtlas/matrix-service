@@ -9,7 +9,7 @@ class TestProjectPublicationContributor(unittest.TestCase):
         self.transformer = ProjectPublicationContributorTransformer("")
 
     def test_parse_from_metadatas(self):
-        parsed = self.transformer._parse_from_metadatas("tests/functional/res/etl/bundle")
+        parsed = self.transformer._parse_from_metadatas("tests/functional/res/etl/ss2_bundle")
 
         project_table = parsed[0][0]
         project_rows = parsed[0][1]

@@ -1,0 +1,164 @@
+{
+    "analysis_run_type": "run",
+    "describedBy": "http://schema.integration.data.humancellatlas.org/type/process/analysis/8.0.3/analysis_process",
+    "input_bundles": [
+        "3eebea0c-8b80-4007-a860-6802a215276d"
+    ],
+    "inputs": [
+        {
+            "parameter_name": "fastqs",
+            "parameter_value": "gs://org-hca-dss-checkout-integration/bundles/3eebea0c-8b80-4007-a860-6802a215276d.2018-10-05T145809.216048Z/R1.fastq.gz, gs://org-hca-dss-checkout-integration/bundles/3eebea0c-8b80-4007-a860-6802a215276d.2018-10-05T145809.216048Z/R2.fastq.gz, gs://org-hca-dss-checkout-integration/bundles/3eebea0c-8b80-4007-a860-6802a215276d.2018-10-05T145809.216048Z/I1.fastq.gz"
+        },
+        {
+            "parameter_name": "sample_id",
+            "parameter_value": "021d111b-4941-4e33-a2d1-8c3478f0cbd7"
+        },
+        {
+            "parameter_name": "reference_name",
+            "parameter_value": "GRCh38"
+        },
+        {
+            "parameter_name": "transcriptome_tar_gz",
+            "parameter_value": "gs://hca-dcp-mint-test-data/reference/GRCh38_Gencode/GRCh38_GencodeV27_Primary_CellRanger.tar"
+        },
+        {
+            "parameter_name": "expect_cells",
+            "parameter_value": "10000"
+        }
+    ],
+    "outputs": [
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "tsv",
+                "file_name": "barcodes.tsv"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "tsv",
+                "file_name": "genes.tsv"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "mtx",
+                "file_name": "matrix.mtx"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "h5",
+                "file_name": "filtered_gene_bc_matrices_h5.h5"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "csv",
+                "file_name": "metrics_summary.csv"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "h5",
+                "file_name": "molecule_info.h5"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "bam",
+                "file_name": "possorted_genome_bam.bam"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "bai",
+                "file_name": "possorted_genome_bam.bam.bai"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "h5",
+                "file_name": "raw_gene_bc_matrices_h5.h5"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "unknown",
+                "file_name": "web_summary.html"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "tsv",
+                "file_name": "raw_barcodes.tsv"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "tsv",
+                "file_name": "raw_genes.tsv"
+            },
+            "schema_type": "file"
+        },
+        {
+            "describedBy": "http://schema.integration.data.humancellatlas.org/type/file/5.3.4/analysis_file",
+            "file_core": {
+                "file_format": "mtx",
+                "file_name": "raw_matrix.mtx"
+            },
+            "schema_type": "file"
+        }
+    ],
+    "process_core": {
+        "process_id": "7a1ed3ab-18f0-4c59-a312-969bd49e48d4"
+    },
+    "process_type": {
+        "text": "analysis"
+    },
+    "reference_bundle": "bf51d668-3e14-4843-9bc7-5d676fdf0e01",
+    "schema_type": "process",
+    "tasks": [
+        {
+            "cpus": 64,
+            "disk_size": "local-disk 400 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-cellranger:v1.0.0",
+            "log_err": "gs://broad-dsde-mint-test-cromwell-execution/caas-cromwell-executions/Adapter10xCount/8595ec0c-7f29-4806-aaac-d0fd6034d0dc/call-analysis/CellRanger.CellRanger/7a1ed3ab-18f0-4c59-a312-969bd49e48d4/call-cellranger_count/stderr",
+            "log_out": "gs://broad-dsde-mint-test-cromwell-execution/caas-cromwell-executions/Adapter10xCount/8595ec0c-7f29-4806-aaac-d0fd6034d0dc/call-analysis/CellRanger.CellRanger/7a1ed3ab-18f0-4c59-a312-969bd49e48d4/call-cellranger_count/stdout",
+            "memory": "416 GB",
+            "start_time": "2019-01-09T16:54:36.105Z",
+            "stop_time": "2019-01-09T16:54:47.293Z",
+            "task_name": "cellranger_count",
+            "zone": "us-central1-b"
+        }
+    ],
+    "timestamp_start_utc": "2019-01-09T16:54:34.066Z",
+    "timestamp_stop_utc": "2019-01-09T16:54:48.346Z",
+    "provenance": {
+        "document_id": "17096f69-a950-4480-aa37-754251dede8a",
+        "submission_date": "2019-01-09T17:07:57.117Z",
+        "update_date": "2019-01-09T17:08:03.480Z"
+    }
+}
