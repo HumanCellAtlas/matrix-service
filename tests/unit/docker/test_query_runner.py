@@ -43,7 +43,8 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         request_id = str(uuid.uuid4())
         payload = {
             'request_id': request_id,
-            's3_obj_key': "test_s3_obj_key"
+            's3_obj_key': "test_s3_obj_key",
+            'type': "test_type"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
         mock_is_ready_for_conversion.return_value = False
@@ -73,7 +74,8 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         request_id = str(uuid.uuid4())
         payload = {
             'request_id': request_id,
-            's3_obj_key': "test_s3_obj_key"
+            's3_obj_key': "test_s3_obj_key",
+            'type': "test_type"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
         mock_is_ready_for_conversion.return_value = True
@@ -98,7 +100,8 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         request_id = str(uuid.uuid4())
         payload = {
             'request_id': request_id,
-            's3_obj_key': "test_s3_obj_key"
+            's3_obj_key': "test_s3_obj_key",
+            'type': "test_type"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
         mock_complete_subtask.side_effect = MatrixException(status=requests.codes.not_found, title=f"Unable to find")
