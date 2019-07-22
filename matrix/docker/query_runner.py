@@ -1,6 +1,7 @@
 """Script to pull from sqs and run redshift queries. Will be dockerized."""
 import json
 import os
+from enum import Enum
 
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.redshift_handler import RedshiftHandler
@@ -11,6 +12,12 @@ from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
+
+
+class QueryType(Enum):
+    CELL = "cell"
+    EXPRESSION = "expression"
+    FEATURE = "feature"
 
 
 class QueryRunner:
@@ -30,6 +37,9 @@ class QueryRunner:
     def query_job_deadletter_q_url(self):
         return self.matrix_infra_config.query_job_deadletter_q_url
 
+    def check_cache(self):
+        pass
+
     def run(self, max_loops=None):
         loops = 0
         while max_loops is None or loops < max_loops:
@@ -43,6 +53,7 @@ class QueryRunner:
                 request_tracker = RequestTracker(request_id)
                 Logging.set_correlation_id(logger, value=request_id)
                 obj_key = payload['s3_obj_key']
+                query_type = payload['type']
                 receipt_handle = message['ReceiptHandle']
                 try:
                     logger.info(f"Fetching query from {obj_key}")
@@ -51,6 +62,9 @@ class QueryRunner:
                     logger.info(f"Running query from {obj_key}")
                     self.redshift_handler.transaction([query], read_only=True)
                     logger.info(f"Finished running query from {obj_key}")
+
+                    if query_type == QueryType.CELL:
+                        self.check_cache()
 
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")
                     self.sqs_handler.delete_message_from_queue(self.query_job_q_url, receipt_handle)
