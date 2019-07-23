@@ -92,7 +92,7 @@ class TestMatrixConverter(unittest.TestCase):
         results_dir = self.matrix_converter._make_directory()
         shutil.copyfile('LICENSE', './test_target/LICENSE')
 
-        path = self.matrix_converter._zip_up_matrix_output(results_dir, ['LICENSE'], 'README.md')
+        path = self.matrix_converter._zip_up_matrix_output(results_dir, ['LICENSE'])
 
         self.assertEqual(path, './test_target.zip')
         os.remove('./test_target.zip')
