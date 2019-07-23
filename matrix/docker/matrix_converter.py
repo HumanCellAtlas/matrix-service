@@ -235,7 +235,7 @@ class MatrixConverter:
            output_path: Path to the zip file.
         """
         results_dir = self._make_directory()
-        gene_df = self._write_out_gene_metadata(results_dir, "genes.tsv.gz", compression=True)
+        gene_df = self._write_out_gene_dataframe(results_dir, "genes.tsv.gz", compression=True)
         cell_df = self._create_cell_dataframe()
 
         # To follow 10x conventions, features are rows and cells are columns
@@ -267,7 +267,7 @@ class MatrixConverter:
 
                         cellkeys.append(cell_group[0])
 
-        self._write_out_cell_metadata(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
+        self._write_out_cell_dataframe(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
         file_names = ["genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names)
         return zip_path
@@ -370,7 +370,7 @@ class MatrixConverter:
         """
 
         results_dir = self._make_directory()
-        gene_df = self._write_out_gene_metadata(results_dir, "genes.csv")
+        gene_df = self._write_out_gene_dataframe(results_dir, "genes.csv")
         cell_df = self._create_cell_dataframe()
 
         cellkeys = []
@@ -391,7 +391,7 @@ class MatrixConverter:
                                 columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
                         cellkeys.append(cell_group[0])
 
-        self._write_out_cell_metadata(results_dir, "cells.csv", cell_df, cellkeys)
+        self._write_out_cell_dataframe(results_dir, "cells.csv", cell_df, cellkeys)
         file_names = ["genes.csv", "expression.csv", "cells.csv"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names)
         return zip_path
