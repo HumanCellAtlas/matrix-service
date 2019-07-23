@@ -293,8 +293,13 @@ class MatrixConverter:
         for key, val in row_attrs.items():
             row_attrs[key] = val.values
 
-        loom_part_dir = self._make_directory()
         loom_parts = []
+        loom_part_dir = os.path.join(self.working_dir, ".loom_parts")
+
+        if os.path.exists(loom_part_dir):
+            shutil.rmtree(loom_part_dir)
+
+        os.makedirs(loom_part_dir)
 
         # Iterate over the "slices" produced by the redshift query
         for slice_idx in range(self._n_slices()):
