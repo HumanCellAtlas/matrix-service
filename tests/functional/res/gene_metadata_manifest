@@ -1,0 +1,31 @@
+{
+  "entries": [
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0000_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0001_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0002_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0003_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0004_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0005_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0006_part_00.gz", "meta": { "content_length": 1347129, "record_count": 63925 }},
+    {"url":"s3://dcp-matrix-service-query-results-dev/0054bae4-0314-40e5-8694-a8c76531a144/gene_metadata_0007_part_00.gz", "meta": { "content_length": 20, "record_count": 0 }}
+  ],
+  "schema": {
+    "elements": [
+      {"name": "featurekey", "type": { "base": "character varying", "max_length": 25 }},
+      {"name": "featurename", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "featuretype", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "chromosome", "type": { "base": "character varying", "max_length": 40 }},
+      {"name": "featurestart", "type": { "base": "integer" }},
+      {"name": "featureend", "type": { "base": "integer" }},
+      {"name": "isgene", "type": { "base": "boolean" }}
+    ]
+  },
+  "meta": {
+    "content_length": 1347269,
+    "record_count": 63925
+  },
+  "author": {
+    "name": "Amazon Redshift",
+    "version": "1.0.0"
+  }
+}
