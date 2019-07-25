@@ -54,6 +54,8 @@ CREATE_QUERY_TEMPLATE = {
             file_version       VARCHAR(30) NOT NULL,
             barcode            VARCHAR(32),
             genes_detected     INTEGER,
+            total_umis         INTEGER,
+            emptydrops_is_cell BOOLEAN,
             PRIMARY KEY(cellkey),
             FOREIGN KEY(projectkey) REFERENCES project{1}(projectkey),
             FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),
