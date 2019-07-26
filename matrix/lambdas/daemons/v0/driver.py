@@ -39,8 +39,8 @@ expression_query_template = """
 
 cell_query_template = """
     UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid,
-    cell.file_version, specimen.*, library_preparation.*, analysis.bundle_uuid,
-    analysis.bundle_version, project.short_name
+    cell.file_version, cell.total_umis, cell.emptrydrops_is_cell, specimen.*,
+    library_preparation.*, analysis.bundle_uuid, analysis.bundle_version, project.short_name
     FROM cell
     LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
