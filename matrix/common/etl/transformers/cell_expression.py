@@ -16,11 +16,13 @@ from matrix.common.aws.redshift_handler import TableName
 from matrix.common.etl.dcp_zarr_store import DCPZarrStore
 from matrix.common.exceptions import MatrixException
 
-EMPTYDROPS_MIN_COUNT = 100
-
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
     """Reads SS2 and 10X bundles and writes out rows for expression and cell tables in PSV format."""
+
+    # The minimum UMI count in the emptydrops result required to include a
+    # putative cell in the matrix service.
+    emptydrops_min_count = 100
 
     def __init__(self, staging_dir):
         super(CellExpressionTransformer, self).__init__(staging_dir)
@@ -269,7 +271,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         barcodes = root.expression_matrix.cell_id[start_row:end_row]
 
         for i in range(chunk_size):
-            if emptydrops_result[barcodes[i]]["total_umi_count"] < EMPTYDROPS_MIN_COUNT:
+            if emptydrops_result[barcodes[i]]["total_umi_count"] < self.emptydrops_min_count:
                 continue
             cell_key = self._generate_10x_cell_key(keys["bundle_uuid"], barcodes[i])
             gene_count = numpy.count_nonzero(expr_values[i])
