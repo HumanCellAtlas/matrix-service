@@ -90,7 +90,7 @@ def transform_bundle(bundle_uuid: str,
     logger.info(f"ETL: Downloaded bundle {bundle_uuid}.{bundle_version}. Transforming to PSV.")
     transformer = CellExpressionTransformer(extractor.sd)
     try:
-        transformer.transform(bundle_path)
+        transformer.transform_bundle(bundle_path, bundle_manifest_path)
     except Exception as ex:
         _log_error(f"{bundle_uuid}.{bundle_version}", ex, traceback.format_exc(), extractor)
 

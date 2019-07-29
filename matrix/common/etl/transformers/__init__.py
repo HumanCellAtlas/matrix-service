@@ -15,14 +15,23 @@ class MetadataToPsvTransformer:
         self.output_dir = os.path.join(staging_dir,
                                        MetadataToPsvTransformer.OUTPUT_DIRNAME)
 
-    def transform(self, bundle_dir: str):
+    def transform(self, bundle_search_dir: str):
         """
-        Parses a bundle's JSON metadata and writes rows to corresponding PSV file(s).
-        :param bundle_dir: Local path to bundle contents
+        Parse a directory containing one or more bundle directories to extract
+        metadata PSV rows and write them to a file.
+        :param bundle_search_dir: Local path to bundle contents
         """
-        self._write_rows_to_psvs(*self._parse_from_metadatas(bundle_dir))
+        self._write_rows_to_psvs(*self._parse_from_metadatas(bundle_search_dir))
 
-    def _parse_from_metadatas(self, bundle_dir: str):
+    def transform_bundle(self, bundle_dir: str, bundle_manifest_path: str):
+        """
+        Parses one bundle's JSON metadata and writes rows to corresponding PSV file(s).
+        :param bundle_dir: Local path to bundle contents
+        :param bundle_manifest_path: Path to the bundle's manifest
+        """
+        self._write_rows_to_psvs(*self._parse_from_metadatas(bundle_dir, bundle_manifest_path))
+
+    def _parse_from_metadatas(self, bundle_dir: str, bundle_manifest_path: typing.Optional[str] = None):
         """
         Parses JSON metadata for a bundle into set(s) of PSV rows.
         :param bundle_dir: Local path to bundle contents
