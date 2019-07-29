@@ -14,7 +14,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         resp = mock.Mock()
         resp.json.return_value = {'label': 'EXAMPLE_ONTOTLOGY'}
         mock_get.return_value = resp
-        parsed = self.transformer._parse_from_metadatas("tests/functional/res/etl/ss2_bundle")
+        parsed = self.transformer._parse_from_metadatas("tests/functional/res/etl/ss2_bundle.version")
 
         specimen_table = parsed[0][0]
         specimen_rows = parsed[0][1]
