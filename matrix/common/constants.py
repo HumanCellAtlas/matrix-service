@@ -50,6 +50,8 @@ CREATE_QUERY_TEMPLATE = {
             specimenkey        VARCHAR(60) NOT NULL,
             librarykey         VARCHAR(60) NOT NULL,
             analysiskey        VARCHAR(60) NOT NULL,
+            file_uuid          VARCHAR(60) NOT NULL,
+            file_version       VARCHAR(30) NOT NULL,
             barcode            VARCHAR(32),
             genes_detected     INTEGER,
             PRIMARY KEY(cellkey),
@@ -168,6 +170,8 @@ CREATE_QUERY_TEMPLATE = {
 TABLE_COLUMN_TO_METADATA_FIELD = {
     'cell_suspension_id': 'cell_suspension.provenance.document_id',
     'genes_detected': 'genes_detected',
+    'file_uuid': 'file_uuid',
+    'file_version': 'file_version',
     'specimenkey': 'specimen_from_organism.provenance.document_id',
     'genus_species_ontology': 'specimen_from_organism.genus_species.ontology',
     'genus_species_label': 'specimen_from_organism.genus_species.ontology_label',
@@ -205,6 +209,8 @@ METADATA_FIELD_TO_TYPE = {k: ("categorical" if k != "genes_detected" else "numer
 TABLE_COLUMN_TO_TABLE = {
     'cell_suspension_id': 'cell',
     'genes_detected': 'cell',
+    'file_uuid': 'cell',
+    'file_version': 'cell',
     'specimenkey': 'specimen',
     'genus_species_ontology': 'specimen',
     'genus_species_label': 'specimen',
@@ -421,6 +427,12 @@ FIELD_DETAIL = {
         "Unique identifier for the secondary analysis protocol.",
     "dss_bundle_fqid":
         "Fully-qualified identifier for the source bundle in the HCA Data Storage System.",
+    "file_uuid":
+        ("The UUID for one of this cell's source files. This field corresponds to the "
+         "file_uuid field in HCA metadata TSV files."),
+    "file_version":
+        ("The version for one of this cell's source files. This field corresponds to the "
+         "file_version field in HCA metadata TSV files."),
     "analysis_protocol.protocol_core.protocol_id":
         "A unique ID for the secondary analysis protocol.",
     "analysis_working_group_approval_status":

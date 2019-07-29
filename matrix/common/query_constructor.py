@@ -11,8 +11,9 @@ COMPARISON_OPERATORS = [
 
 LOGICAL_OPERATORS = ["and", "or", "not"]
 
-DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "specimen.*",
-                  "library_preparation.*", "project.*", "analysis.*"]
+DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "cell.file_uuid",
+                  "cell.file_version", "specimen.*", "library_preparation.*", "project.*",
+                  "analysis.*"]
 
 DEFAULT_FEATURE = constants.MatrixFeature.GENE.value
 
