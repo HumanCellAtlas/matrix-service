@@ -74,7 +74,8 @@ class EC2InstanceManager:
             max_workers: int,
             state: int,
             s3_upload_id: str,
-            project_uuids: list):
+            project_uuids: list,
+            bundle_uuids: list):
         print("Running loader")
         _shell("aegea",
                "ssh",
@@ -83,4 +84,5 @@ class EC2InstanceManager:
                f"export ACCOUNT_ID={self.account_id} && source environment && sudo pip3 install -U setuptools && "
                f"sudo pip3 install -r requirements.txt && python3 loader.py --max-workers {max_workers} "
                f"--state {state} --s3-upload-id {s3_upload_id}"
-               + (f" --project-uuids {' '.join(project_uuids)}" if project_uuids else ""))
+               + (f" --project-uuids {' '.join(project_uuids)}" if project_uuids else "")
+               + (f" --bundle-uuids {' '.join(bundle_uuids)}" if bundle_uuids else ""))
