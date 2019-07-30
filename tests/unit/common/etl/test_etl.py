@@ -60,7 +60,7 @@ class TestEtl(unittest.TestCase):
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.etl._log_error")
-    @mock.patch("matrix.common.etl.transformers.cell_expression.CellExpressionTransformer.transform")
+    @mock.patch("matrix.common.etl.transformers.cell_expression.CellExpressionTransformer.transform_bundle")
     def test_transform_bundle(self, mock_cell_expression_transform, mock_log_error, mock_swagger_spec):
         mock_swagger_spec.return_value = self.stub_swagger_spec
         extractor = DSSExtractor(staging_directory="test_dir",
@@ -69,7 +69,7 @@ class TestEtl(unittest.TestCase):
                                  dss_client=get_dss_client("dev"))
 
         transform_bundle("test_uuid", "test_version", "test_path", "test_manifest_path", extractor)
-        mock_cell_expression_transform.assert_called_once_with("test_path")
+        mock_cell_expression_transform.assert_called_once_with("test_path", "test_manifest_path")
 
         e = Exception()
         mock_cell_expression_transform.side_effect = e

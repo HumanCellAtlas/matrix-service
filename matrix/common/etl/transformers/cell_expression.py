@@ -39,22 +39,22 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             with gzip.open(out_file_path, 'w') as out_file:
                 out_file.writelines((row.encode() for row in rows))
 
-    def _parse_from_metadatas(self, bundle_dir):
+    def _parse_from_metadatas(self, bundle_dir, bundle_manifest_path):
         protocol_id = json.load(
             open(os.path.join(bundle_dir, "analysis_protocol_0.json")))['protocol_core']['protocol_id']
         if protocol_id.startswith("smartseq2"):
-            cell_lines, expression_lines = self._parse_ss2_bundle(bundle_dir)
+            cell_lines, expression_lines = self._parse_ss2_bundle(bundle_dir, bundle_manifest_path)
         elif protocol_id.startswith("optimus"):
-            cell_lines, expression_lines = self._parse_optimus_bundle(bundle_dir)
+            cell_lines, expression_lines = self._parse_optimus_bundle(bundle_dir, bundle_manifest_path)
         elif protocol_id.startswith("cellranger"):
-            cell_lines, expression_lines = self._parse_cellranger_bundle(bundle_dir)
+            cell_lines, expression_lines = self._parse_cellranger_bundle(bundle_dir, bundle_manifest_path)
         else:
             raise MatrixException(400, f"Failed to parse cell and expression metadata. "
                                        f"Unsupported analysis protocol {protocol_id}.")
 
         return (TableName.CELL, cell_lines, bundle_dir), (TableName.EXPRESSION, expression_lines, bundle_dir)
 
-    def _parse_ss2_bundle(self, bundle_dir):
+    def _parse_ss2_bundle(self, bundle_dir, bundle_manifest_path):
         """
         Parses SS2 analysis files into PSV rows for cell and expression Redshift tables.
         """
@@ -88,6 +88,11 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         genes_detected = sum((1 for k in genes_values.values() if k["Count"] > 0))
 
+        file_uuid = [f for f in json.load(open(bundle_manifest_path))["files"]
+                     if f["name"].endswith(".genes.results")][0]["uuid"]
+        file_version = [f for f in json.load(open(bundle_manifest_path))["files"]
+                        if f["name"].endswith(".genes.results")][0]["version"]
+
         cell_lines = ['|'.join([
             cell_key,
             cell_key,
@@ -95,6 +100,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             keys["specimen_key"],
             keys["library_key"],
             keys["analysis_key"],
+            file_uuid,
+            file_version,
             "",
             str(genes_detected)]) + '\n']
 
@@ -122,7 +129,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
         return cell_lines, expression_lines
 
-    def _parse_cellranger_bundle(self, bundle_dir):
+    def _parse_cellranger_bundle(self, bundle_dir, bundle_manifest_path):
         """
         Parses cellranger analysis files into PSV rows for cell and expression Redshift tables.
         """
@@ -155,6 +162,11 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 cell_gene_counts[cell_key] = {}
             cell_gene_counts[cell_key][gene] = cell_gene_counts[cell_key].get(gene, 0) + v
 
+        file_uuid = [f for f in json.load(open(bundle_manifest_path))["files"]
+                     if f["name"].endswith("matrix.mtx")][0]["uuid"]
+        file_version = [f for f in json.load(open(bundle_manifest_path))["files"]
+                        if f["name"].endswith("matrix.mtx")][0]["version"]
+
         for cell_key, gene_count_dict in cell_gene_counts.items():
 
             for gene, count in gene_count_dict.items():
@@ -173,17 +185,24 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                  keys["specimen_key"],
                  keys["library_key"],
                  keys["analysis_key"],
+                 file_uuid,
+                 file_version,
                  cell_to_barcode[cell_key],
                  str(gene_count)]) + '\n'
             cell_lines.add(cell_line)
 
         return cell_lines, expression_lines
 
-    def _parse_optimus_bundle(self, bundle_dir):
+    def _parse_optimus_bundle(self, bundle_dir, bundle_manifest_path):
         """
         Parses optimus analysis files into PSV rows for cell and expression Redshift tables.
         """
         keys = self._parse_keys(bundle_dir)
+
+        file_uuid = [f for f in json.load(open(bundle_manifest_path))["files"]
+                     if f["name"].endswith(".zattrs")][0]["uuid"]
+        file_version = [f for f in json.load(open(bundle_manifest_path))["files"]
+                        if f["name"].endswith(".zattrs")][0]["version"]
 
         # read expression matrix from zarr
         store = DCPZarrStore(bundle_dir=bundle_dir)
@@ -197,6 +216,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         for i in range(n_chunks):
             self._parse_optimus_chunk(
                 keys=keys,
+                file_uuid=file_uuid,
+                file_version=file_version,
                 root=root,
                 start_row=chunk_size * i,
                 end_row=(i + 1) * chunk_size if (i + 1) * chunk_size < n_cells else n_cells,
@@ -208,6 +229,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
 
     def _parse_optimus_chunk(self,
                              keys: dict,
+                             file_uuid: str,
+                             file_version: str,
                              root: zarr.Group,
                              start_row: int,
                              end_row: int,
@@ -217,6 +240,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         Parses a chunk of a zarr group containing an expression matrix into cell and expression PSV lines.
         Modifies cell_lines and expression_lines.
         :param keys: Metadata keys generated by _parse_keys
+        :param file_uuid: UUID of the file used for joining with rest of HCA metadata
+        :param file_version: Version of the file used for joining with rest of HCA metadata
         :param root: Zarr group of the full expression matrix
         :param start_row: Start row of the chunk
         :param end_row: End row of the chunk
@@ -238,6 +263,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                  keys["specimen_key"],
                  keys["library_key"],
                  keys["analysis_key"],
+                 file_uuid,
+                 file_version,
                  barcodes[i],
                  str(gene_count)]
             ) + '\n'
