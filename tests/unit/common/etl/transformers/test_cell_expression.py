@@ -23,7 +23,7 @@ class TestCellExpressionTransformer(unittest.TestCase):
             mock_open.assert_any_call("output/expression/bundle.expression.data.gz", "w")
             self.assertEqual(handle.writelines.call_count, 2)
 
-    def test_parse_from_metadatas(self):
+    def test_parse_ss2(self):
         parsed = self.transformer._parse_from_metadatas(
             "tests/functional/res/etl/ss2_bundle.version",
             "tests/functional/res/etl/ss2_bundle_manifest.json")
@@ -43,10 +43,13 @@ class TestCellExpressionTransformer(unittest.TestCase):
         self.assertEqual(expression_rows[0], "635badd5-7d62-4db3-b509-f290a12a1336|ENST00000373020|TPM|92.29\n")
 
     def test_parse_cellranger(self):
-        cell_lines, expression_lines = self.transformer._parse_cellranger_bundle(
+        parsed = self.transformer._parse_from_metadatas(
             bundle_dir=os.path.abspath("tests/functional/res/etl/cellranger_bundle.version"),
             bundle_manifest_path=os.path.abspath("tests/functional/res/etl/cellranger_bundle_manifest.json")
         )
+        cell_lines = parsed[0][1]
+        expression_lines = parsed[1][1]
+
         self.assertEqual(len(cell_lines), 5)
         self.assertTrue("6aa7c3ef80f5f8edfbf4e940df2aa7a9|021d111b-4941-4e33-a2d1-8c3478f0cbd7|"
                         "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|f1bf7167-5948-4d55-9090-1f30a39fc564|"
@@ -58,10 +61,13 @@ class TestCellExpressionTransformer(unittest.TestCase):
         self.assertEqual(expression_lines[0], "9fb52283dff6cf6234b18d35723e4f24|ENSG00000198786|Count|2\n")
 
     def test_parse_optimus(self):
-        cell_lines, expression_lines = self.transformer._parse_optimus_bundle(
+        parsed = self.transformer._parse_from_metadatas(
             bundle_dir=os.path.abspath("tests/functional/res/etl/optimus_bundle.version"),
             bundle_manifest_path=os.path.abspath("tests/functional/res/etl/optimus_bundle_manifest.json")
         )
+        cell_lines = parsed[0][1]
+        expression_lines = parsed[1][1]
+
         self.assertEqual(len(cell_lines), 5)
         self.assertTrue("5469c35c54d5b403cb00da7d9ea16879|493a6adc-54b5-4388-ba11-c37686562127|"
                         "dbb40797-8eba-44f8-81d8-6f0c2e2ed0b5|88bc1e69-624e-4e12-b0a2-e1b64832ec3f|"
