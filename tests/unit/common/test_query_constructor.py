@@ -416,7 +416,7 @@ MANIFEST VERBOSE
             filter_, query_constructor.DEFAULT_FIELDS, feature)
 
         expected_cell_query = ("""
-UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid, cell.file_version, cell.total_umis, cell.emptrydrops_is_cell, specimen.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501
+UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid, cell.file_version, cell.total_umis, cell.emptydrops_is_cell, specimen.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501
 """
 FROM cell
   LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
