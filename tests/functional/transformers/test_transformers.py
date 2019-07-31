@@ -60,12 +60,18 @@ class TestTransformers(unittest.TestCase):
     def _transform_and_validate(bundle_uuid: str, btype: BundleType, expected_rows: dict):
         bundles_dir = os.path.join(TestTransformers.OUTPUT_DIR, "bundles")
         bundle_dir = os.path.join(bundles_dir, os.listdir(bundles_dir)[0])
+        bundle_manifest_dir = os.path.join(TestTransformers.OUTPUT_DIR, "bundle_manifests")
+        bundle_manifest_path = os.path.join(bundle_manifest_dir,
+                                            os.listdir(bundle_manifest_dir)[0])
 
         for transformer_class in TestTransformers.TRANSFORMERS:
             transformer = transformer_class(bundle_dir)
             logger.info(f"Testing {transformer.__class__.__name__} on {bundle_uuid}")
 
-            actual_rows = transformer._parse_from_metadatas(bundle_dir)
+            if isinstance(transformer, CellExpressionTransformer):
+                actual_rows = transformer._parse_from_metadatas(bundle_dir, bundle_manifest_path)
+            else:
+                actual_rows = transformer._parse_from_metadatas(bundle_dir)
 
             validator = TestTransformers.VALIDATORS[transformer.__class__.__name__]()
             validator.validate(actual_rows, expected_rows, btype)
