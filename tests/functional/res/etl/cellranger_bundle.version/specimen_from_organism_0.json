@@ -23,11 +23,11 @@
         "ontology": "UBERON:0000955",
         "ontology_label": "brain"
     },
-    "organ_part": {
+    "organ_parts": [{
         "text": "amygdala",
         "ontology": "UBERON:0001876",
         "ontology_label": "amygdala"
-    },
+    }],
     "diseases": [
         {
             "text": "atrophic vulva",

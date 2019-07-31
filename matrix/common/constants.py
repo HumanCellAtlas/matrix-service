@@ -114,8 +114,8 @@ CREATE_QUERY_TEMPLATE = {
             development_stage_label     VARCHAR(40),
             organ_ontology              VARCHAR(40),
             organ_label                 VARCHAR(40),
-            organ_part_ontology         VARCHAR(40),
-            organ_part_label            VARCHAR(40),
+            organ_parts_ontology        VARCHAR(40),
+            organ_parts_label           VARCHAR(40),
             PRIMARY KEY(specimenkey))
             DISTSTYLE ALL
             SORTKEY(specimenkey)
@@ -185,8 +185,8 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'development_stage_label': 'donor_organism.development_stage.ontology_label',
     'organ_ontology': 'derived_organ_ontology',
     'organ_label': 'derived_organ_label',
-    'organ_part_ontology': 'derived_organ_part_ontology',
-    'organ_part_label': 'derived_organ_part_label',
+    'organ_parts_ontology': 'derived_organ_parts_ontology',
+    'organ_parts_label': 'derived_organ_parts_label',
     'librarykey': 'library_preparation_protocol.provenance.document_id',
     'input_nucleic_acid_ontology': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology',
     'input_nucleic_acid_label': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology_label',
@@ -226,8 +226,8 @@ TABLE_COLUMN_TO_TABLE = {
     'development_stage_label': 'specimen',
     'organ_ontology': 'specimen',
     'organ_label': 'specimen',
-    'organ_part_ontology': 'specimen',
-    'organ_part_label': 'specimen',
+    'organ_parts_ontology': 'specimen',
+    'organ_parts_label': 'specimen',
     'librarykey': 'library_preparation',
     'input_nucleic_acid_ontology': 'library_preparation',
     'input_nucleic_acid_label': 'library_preparation',
@@ -402,11 +402,11 @@ FIELD_DETAIL = {
          "cell lines and organoids, the term is for the organ model."),
     "derived_organ_label":
         "The preferred label for the derived_organ_ontology term.",
-    "derived_organ_part_ontology":
+    "derived_organ_parts_ontology":
         ("An ontology term identifier in the form of prefix:accession for the specific part of the organ "
          "that the biomaterial came from. For cell lines and organoids, the term refers to the organ model."),
-    "derived_organ_part_label":
-        "The preferred label for the derived_organ_part_ontology term.",
+    "derived_organ_parts_label":
+        "The preferred label for the derived_organ_parts_ontology term.",
     "library_preparation_protocol.provenance.document_id":
         "Unique identifier for how a sequencing library was prepared.",
     "library_preparation_protocol.input_nucleic_acid_molecule.ontology":

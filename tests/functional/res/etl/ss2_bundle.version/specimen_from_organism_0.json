@@ -27,11 +27,11 @@
         "ontology": "UBERON:0002113",
         "ontology_label": "kidney"
     },
-    "organ_part": {
+    "organ_parts": [{
         "text": "tongue taste bud",
         "ontology": "UBERON:0014451",
         "ontology_label": "tongue taste bud"
-    },
+    }],
     "diseases": [
         {
             "text": "H syndrome",

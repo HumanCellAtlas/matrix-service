@@ -33,7 +33,7 @@ ETL_TEST_BUNDLES = {
                                     "smartseq2_v2.3.0|blessed",
                 TableName.SPECIMEN: "942ed1bf-d638-4d6c-9953-97deb555604b|NCBITAXON:9606|Homo sapiens|HANCESTRO:0016|"
                                     "African American or Afro-Caribbean|MONDO:0011273|H syndrome|EFO:0001272|adult|"
-                                    "UBERON:0002113|kidney||",
+                                    "UBERON:0002113|kidney|UBERON:0014451|tongue taste bud",
                 TableName.LIBRARY_PREPARATION: "2c25e25e-6dff-4028-a649-7b454aeb175a|OBI:0000869|polyA RNA extract|"
                                                "EFO:0008931|Smart-seq2|full length|unstranded",
                 TableName.PROJECT: "4556d1c7-b6a0-4829-9dfb-ab2b668eb445|integration/Smart-seq2/2019-05-24T18:04:07Z|"
@@ -82,7 +82,7 @@ ETL_TEST_BUNDLES = {
                                     "smartseq2_v2.3.0|blessed",
                 TableName.SPECIMEN: "04b3083a-5f27-43e5-bb6a-520d083fa8b8|NCBITAXON:9606|Homo sapiens|HANCESTRO:0016|"
                                     "African American or Afro-Caribbean|MONDO:0011273|H syndrome|EFO:0001272|adult|"
-                                    "UBERON:0002113|kidney||",
+                                    "UBERON:0002113|kidney|UBERON:0014451|tongue taste bud",
                 TableName.LIBRARY_PREPARATION: "2b91bdab-103c-45f8-a55e-761d3131221c|OBI:0000869|polyA RNA extract|"
                                                "EFO:0008931|Smart-seq2|full length|unstranded",
                 TableName.PROJECT: "f6d7a66a-d8b2-4240-9673-56b19eb9c9c0|staging/Smart-seq2/2019-05-24T18:05:06Z|"
@@ -107,7 +107,7 @@ ETL_TEST_BUNDLES = {
                                     "smartseq2_v2.3.0|blessed",
                 TableName.SPECIMEN: "79926ae9-f27d-4ebe-9646-a0188fc145af|NCBITAXON:9606|Homo sapiens|HANCESTRO:0005|"
                                     "European|PATO:0000461|normal|HSAPDV:0000091|human late adulthood stage|"
-                                    "UBERON:0001264|pancreas||",
+                                    "UBERON:0001264|pancreas|UBERON:0000006|islet of Langerhans",
                 TableName.LIBRARY_PREPARATION: "3ab6b486-f900-4f70-ab34-98859ac5f77a|OBI:0000869|polyA RNA extract|"
                                                "EFO:0008931|Smart-seq2|full length|unstranded",
                 TableName.PROJECT: "cddab57b-6868-4be4-806f-395ed9dd635a|"
