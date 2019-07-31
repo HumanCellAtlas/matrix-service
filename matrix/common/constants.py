@@ -113,9 +113,9 @@ CREATE_QUERY_TEMPLATE = {
             development_stage_ontology  VARCHAR(40),
             development_stage_label     VARCHAR(40),
             organ_ontology              VARCHAR(40),
-            organ_label                 VARCHAR(40),
+            organ_label                 VARCHAR(100),
             organ_parts_ontology        VARCHAR(40),
-            organ_parts_label           VARCHAR(40),
+            organ_parts_label           VARCHAR(100),
             PRIMARY KEY(specimenkey))
             DISTSTYLE ALL
             SORTKEY(specimenkey)

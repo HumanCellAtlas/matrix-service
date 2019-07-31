@@ -75,7 +75,7 @@ def load(args):
     content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
     filename_patterns = ["*zarr*", # match expression data
                          "*.results", # match SS2 raw count files
-                         "*.mtx", "genes.tsv", "barcodes.tsv"] # match 10X raw count files
+                         "*.mtx", "genes.tsv", "barcodes.tsv", "empty_drops_result.csv"] # match 10X raw count files
 
     is_update = True if args.project_uuids or args.bundle_uuids else False
     if args.state == 0 or args.state == 1:
