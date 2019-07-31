@@ -70,14 +70,14 @@ ALL_10X_SS2_MATCH_TERMS = [
 
 
 def load(args):
-    dss_query = _build_dss_query(project_uuids=args.project_uuids)
+    dss_query = _build_dss_query(project_uuids=args.project_uuids, bundle_uuids=args.bundle_uuids)
     staging_dir = os.path.abspath('/mnt')
     content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
     filename_patterns = ["*zarr*", # match expression data
                          "*.results", # match SS2 raw count files
                          "*.mtx", "genes.tsv", "barcodes.tsv"] # match 10X raw count files
 
-    is_update = True if args.project_uuids else False
+    is_update = True if args.project_uuids or args.bundle_uuids else False
     if args.state == 0 or args.state == 1:
         etl.etl_dss_bundles(query=dss_query,
                             content_type_patterns=content_type_patterns,
@@ -96,8 +96,11 @@ def load(args):
     _verify_load(es_query=dss_query)
 
 
-def _build_dss_query(project_uuids):
+def _build_dss_query(project_uuids=None, bundle_uuids=None):
     q = DSS_SEARCH_QUERY_TEMPLATE
+
+    if not project_uuids and not bundle_uuids:
+        q['query']['bool']['must'][0]['bool']['should'] = ALL_10X_SS2_MATCH_TERMS
 
     if project_uuids:
         for uuid in project_uuids:
@@ -106,8 +109,14 @@ def _build_dss_query(project_uuids):
                     "files.project_json.provenance.document_id": uuid
                 }
             })
-    else:
-        q['query']['bool']['must'][0]['bool']['should'] = ALL_10X_SS2_MATCH_TERMS
+
+    if bundle_uuids:
+        for uuid in bundle_uuids:
+            q['query']['bool']['must'][0]['bool']['should'].append({
+                "match": {
+                    "uuid": uuid
+                }
+            })
 
     return q
 
@@ -145,6 +154,11 @@ if __name__ == '__main__':  # pragma: no cover
                         type=str)
     parser.add_argument("--project-uuids",
                         help="DCP Project UUIDs to perform ETL on.",
+                        type=str,
+                        nargs="*",
+                        default="")
+    parser.add_argument("--bundle-uuids",
+                        help="DCP Bundle UUIDs to perform ETL on.",
                         type=str,
                         nargs="*",
                         default="")
