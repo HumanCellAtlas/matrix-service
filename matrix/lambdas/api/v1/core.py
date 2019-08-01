@@ -171,6 +171,12 @@ def _redshift_detail_lookup(name, description):
         if None in results:
             results[""] = results[None]
             results.pop(None)
+        if True in results:
+            results["True"] = results[True]
+            results.pop(True)
+        if False in results:
+            results["False"] = results[False]
+            results.pop(False)
         return ({
             "field_name": name,
             "field_description": description,
