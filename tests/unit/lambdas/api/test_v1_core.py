@@ -315,6 +315,24 @@ class TestCore(unittest.TestCase):
                 "maximum": 100})
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
+    def test_get_filter_detail_boolean(self, mock_transaction):
+        filter_ = 'emptydrops_is_cell'
+        description = constants.FILTER_DETAIL[filter_]
+
+        mock_transaction.return_value = [(True, 123), (False, 456), (None, 789)]
+
+        response = core.get_filter_detail(filter_)
+
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertDictEqual(
+            response[0],
+            {
+                "field_name": filter_,
+                "field_description": description,
+                "field_type": "categorical",
+                "cell_counts": {"True": 123, "False": 456, "": 789}})
+
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     def test_get_field(self, mock_transaction):
         response = core.get_field_detail("not.a.real.field.")
         self.assertEqual(response[1], requests.codes.not_found)

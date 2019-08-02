@@ -108,6 +108,8 @@ class MatrixConverter:
         cell_table_columns = self._map_columns(self.cell_manifest["columns"])
         cell_table_dtype = {c: "category" for c in cell_table_columns}
         cell_table_dtype["genes_detected"] = "uint32"
+        cell_table_dtype["total_umis"] = "uint32"
+        cell_table_dtype["emptydrops_is_cell"] = "bool"
         cell_table_dtype["cellkey"] = "object"
 
         part_url = self.cell_manifest["part_urls"][slice_idx]

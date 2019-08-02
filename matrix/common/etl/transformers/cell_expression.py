@@ -15,10 +15,17 @@ from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
 from matrix.common.etl.dcp_zarr_store import DCPZarrStore
 from matrix.common.exceptions import MatrixException
+from matrix.common.logging import Logging
+
+logger = Logging.get_logger(__name__)
 
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
     """Reads SS2 and 10X bundles and writes out rows for expression and cell tables in PSV format."""
+
+    # The minimum UMI count in the emptydrops result required to include a
+    # putative cell in the matrix service.
+    emptydrops_min_count = 100
 
     def __init__(self, staging_dir):
         super(CellExpressionTransformer, self).__init__(staging_dir)
@@ -103,7 +110,9 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             file_uuid,
             file_version,
             "",
-            str(genes_detected)]) + '\n']
+            str(genes_detected),
+            "",
+            ""]) + '\n']
 
         expression_lines = []
         for transcript_id, expr_values in isoforms_values.items():
@@ -188,7 +197,9 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                  file_uuid,
                  file_version,
                  cell_to_barcode[cell_key],
-                 str(gene_count)]) + '\n'
+                 str(gene_count),
+                 "",
+                 ""]) + '\n'
             cell_lines.add(cell_line)
 
         return cell_lines, expression_lines
@@ -197,6 +208,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         """
         Parses optimus analysis files into PSV rows for cell and expression Redshift tables.
         """
+
         keys = self._parse_keys(bundle_dir)
 
         file_uuid = [f for f in json.load(open(bundle_manifest_path))["files"]
@@ -204,6 +216,12 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         file_version = [f for f in json.load(open(bundle_manifest_path))["files"]
                         if f["name"].endswith(".zattrs")][0]["version"]
 
+        emptydrops_result = {}
+        with open(os.path.join(bundle_dir, "empty_drops_result.csv")) as emptydrops_file:
+            reader = csv.DictReader(emptydrops_file)
+            for row in reader:
+                emptydrops_result[row["CellId"]] = {"total_umi_count": int(row["Total"]),
+                                                    "is_cell": row["IsCell"] == "TRUE"}
         # read expression matrix from zarr
         store = DCPZarrStore(bundle_dir=bundle_dir)
         root = zarr.group(store=store)
@@ -213,6 +231,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         n_chunks = root.expression_matrix.cell_id.nchunks
         cell_lines = set()
         expression_lines = []
+
+        logger.info(f"Optimus bundle has {n_cells} cells and {n_chunks} chunks.")
         for i in range(n_chunks):
             self._parse_optimus_chunk(
                 keys=keys,
@@ -222,7 +242,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 start_row=chunk_size * i,
                 end_row=(i + 1) * chunk_size if (i + 1) * chunk_size < n_cells else n_cells,
                 cell_lines=cell_lines,
-                expression_lines=expression_lines
+                expression_lines=expression_lines,
+                emptydrops_result=emptydrops_result
             )
 
         return cell_lines, expression_lines
@@ -235,7 +256,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                              start_row: int,
                              end_row: int,
                              cell_lines: set,
-                             expression_lines: list):
+                             expression_lines: list,
+                             emptydrops_result: dict):
         """
         Parses a chunk of a zarr group containing an expression matrix into cell and expression PSV lines.
         Modifies cell_lines and expression_lines.
@@ -247,13 +269,17 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         :param end_row: End row of the chunk
         :param cell_lines: Output cell PSV lines
         :param expression_lines: Output expression PSV lines
+        :param emptydrops_result: Dict from cell barcode to UMI count and emptydrops call
         """
+        logger.info(f"Parsing rows {start_row} to {end_row}.")
         chunk_size = end_row - start_row
-        n_genes = root.expression_matrix.gene_id.shape[0]
         expr_values = root.expression_matrix.expression[start_row:end_row]
         barcodes = root.expression_matrix.cell_id[start_row:end_row]
 
+        gene_ids = numpy.array([g.split(".")[0] for g in root.expression_matrix.gene_id])
         for i in range(chunk_size):
+            if emptydrops_result[barcodes[i]]["total_umi_count"] < self.emptydrops_min_count:
+                continue
             cell_key = self._generate_10x_cell_key(keys["bundle_uuid"], barcodes[i])
             gene_count = numpy.count_nonzero(expr_values[i])
             cell_line = '|'.join(
@@ -266,21 +292,22 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                  file_uuid,
                  file_version,
                  barcodes[i],
-                 str(gene_count)]
+                 str(gene_count),
+                 str(emptydrops_result[barcodes[i]]["total_umi_count"]),
+                 't' if emptydrops_result[barcodes[i]]["is_cell"] else 'f']
             ) + '\n'
             cell_lines.add(cell_line)
 
-            for j in range(n_genes):
-                # skip 0 counts
-                if expr_values[i][j] == 0:
-                    continue
+            cell_expr_values = expr_values[i]
+            nonzero_gene_ids = gene_ids[cell_expr_values != 0]
+            nonzero_cevs = cell_expr_values[cell_expr_values != 0]
 
-                gene_id = root.expression_matrix.gene_id[j].split(".")[0]
+            for j in range(nonzero_gene_ids.shape[0]):
                 expression_line = '|'.join(
                     [cell_key,
-                     gene_id,
+                     nonzero_gene_ids[j],
                      "Count",
-                     str(expr_values[i][j])]
+                     str(nonzero_cevs[j])]
                 ) + '\n'
                 expression_lines.append(expression_line)
 

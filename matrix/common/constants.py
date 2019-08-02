@@ -54,6 +54,8 @@ CREATE_QUERY_TEMPLATE = {
             file_version       VARCHAR(30) NOT NULL,
             barcode            VARCHAR(32),
             genes_detected     INTEGER,
+            total_umis         INTEGER,
+            emptydrops_is_cell BOOLEAN,
             PRIMARY KEY(cellkey),
             FOREIGN KEY(projectkey) REFERENCES project{1}(projectkey),
             FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),
@@ -174,6 +176,9 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'genes_detected': 'genes_detected',
     'file_uuid': 'file_uuid',
     'file_version': 'file_version',
+    'barcode': 'barcode',
+    'total_umis': 'total_umis',
+    'emptydrops_is_cell': 'emptydrops_is_cell',
     'specimenkey': 'specimen_from_organism.provenance.document_id',
     'genus_species_ontology': 'specimen_from_organism.genus_species.ontology',
     'genus_species_label': 'specimen_from_organism.genus_species.ontology_label',
@@ -207,14 +212,18 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
 
 METADATA_FIELD_TO_TABLE_COLUMN = {v: k for k, v in TABLE_COLUMN_TO_METADATA_FIELD.items()}
 
-METADATA_FIELD_TO_TYPE = {k: ("categorical" if k != "genes_detected" else "numeric")
-                          for k in METADATA_FIELD_TO_TABLE_COLUMN}
+METADATA_FIELD_TO_TYPE = {k: "categorical" for k in METADATA_FIELD_TO_TABLE_COLUMN}
+METADATA_FIELD_TO_TYPE["genes_detected"] = "numeric"
+METADATA_FIELD_TO_TYPE["total_umis"] = "numeric"
 
 TABLE_COLUMN_TO_TABLE = {
     'cell_suspension_id': 'cell',
     'genes_detected': 'cell',
     'file_uuid': 'cell',
     'file_version': 'cell',
+    'total_umis': 'cell',
+    'barcode': 'cell',
+    'emptydrops_is_cell': 'cell',
     'specimenkey': 'specimen',
     'genus_species_ontology': 'specimen',
     'genus_species_label': 'specimen',
@@ -379,6 +388,11 @@ FIELD_DETAIL = {
         "Unique identifier for the suspension of cells or nuclei derived from the collected or cultured specimen.",
     "genes_detected":
         "Count of genes with a non-zero count.",
+    "total_umis":
+        "Count of UMIs (for droplet-based assays).",
+    "barcode": "Cell barcode (for droplet-based assays).",
+    "emptydrops_is_cell":
+        "Cell call from emptyDrops run with default parameters (for droplet-based assays).",
     "specimen_from_organism.provenance.document_id":
         "Unique identified for the specimen that was collected from the donor organism.",
     "specimen_from_organism.genus_species.ontology":
