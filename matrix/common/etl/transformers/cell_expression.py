@@ -19,6 +19,7 @@ from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
 
+
 class CellExpressionTransformer(MetadataToPsvTransformer):
     """Reads SS2 and 10X bundles and writes out rows for expression and cell tables in PSV format."""
 
@@ -272,7 +273,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         """
         logger.info(f"Parsing rows {start_row} to {end_row}.")
         chunk_size = end_row - start_row
-        n_genes = root.expression_matrix.gene_id.shape[0]
         expr_values = root.expression_matrix.expression[start_row:end_row]
         barcodes = root.expression_matrix.cell_id[start_row:end_row]
 
