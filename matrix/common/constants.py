@@ -176,6 +176,7 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'genes_detected': 'genes_detected',
     'file_uuid': 'file_uuid',
     'file_version': 'file_version',
+    'barcode': 'barcode',
     'total_umis': 'total_umis',
     'emptydrops_is_cell': 'emptydrops_is_cell',
     'specimenkey': 'specimen_from_organism.provenance.document_id',
@@ -221,6 +222,7 @@ TABLE_COLUMN_TO_TABLE = {
     'file_uuid': 'cell',
     'file_version': 'cell',
     'total_umis': 'cell',
+    'barcode': 'cell',
     'emptydrops_is_cell': 'cell',
     'specimenkey': 'specimen',
     'genus_species_ontology': 'specimen',
@@ -388,6 +390,7 @@ FIELD_DETAIL = {
         "Count of genes with a non-zero count.",
     "total_umis":
         "Count of UMIs (for droplet-based assays).",
+    "barcode": "Cell barcode (for droplet-based assays).",
     "emptydrops_is_cell":
         "Cell call from emptyDrops run with default parameters (for droplet-based assays).",
     "specimen_from_organism.provenance.document_id":
