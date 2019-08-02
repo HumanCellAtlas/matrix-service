@@ -15,7 +15,9 @@ from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
 from matrix.common.etl.dcp_zarr_store import DCPZarrStore
 from matrix.common.exceptions import MatrixException
+from matrix.common.logging import Logging
 
+logger = Logging.get_logger(__name__)
 
 class CellExpressionTransformer(MetadataToPsvTransformer):
     """Reads SS2 and 10X bundles and writes out rows for expression and cell tables in PSV format."""
@@ -205,6 +207,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         """
         Parses optimus analysis files into PSV rows for cell and expression Redshift tables.
         """
+
         keys = self._parse_keys(bundle_dir)
 
         file_uuid = [f for f in json.load(open(bundle_manifest_path))["files"]
@@ -227,6 +230,8 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         n_chunks = root.expression_matrix.cell_id.nchunks
         cell_lines = set()
         expression_lines = []
+
+        logger.info(f"Optimus bundle has {n_cells} cells and {n_chunks} chunks.")
         for i in range(n_chunks):
             self._parse_optimus_chunk(
                 keys=keys,
@@ -265,11 +270,13 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         :param expression_lines: Output expression PSV lines
         :param emptydrops_result: Dict from cell barcode to UMI count and emptydrops call
         """
+        logger.info(f"Parsing rows {start_row} to {end_row}.")
         chunk_size = end_row - start_row
         n_genes = root.expression_matrix.gene_id.shape[0]
         expr_values = root.expression_matrix.expression[start_row:end_row]
         barcodes = root.expression_matrix.cell_id[start_row:end_row]
 
+        gene_ids = numpy.array([g.split(".")[0] for g in root.expression_matrix.gene_id])
         for i in range(chunk_size):
             if emptydrops_result[barcodes[i]]["total_umi_count"] < self.emptydrops_min_count:
                 continue
@@ -291,17 +298,16 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             ) + '\n'
             cell_lines.add(cell_line)
 
-            for j in range(n_genes):
-                # skip 0 counts
-                if expr_values[i][j] == 0:
-                    continue
+            cell_expr_values = expr_values[i]
+            nonzero_gene_ids = gene_ids[cell_expr_values != 0]
+            nonzero_cevs = cell_expr_values[cell_expr_values != 0]
 
-                gene_id = root.expression_matrix.gene_id[j].split(".")[0]
+            for j in range(nonzero_gene_ids.shape[0]):
                 expression_line = '|'.join(
                     [cell_key,
-                     gene_id,
+                     nonzero_gene_ids[j],
                      "Count",
-                     str(expr_values[i][j])]
+                     str(nonzero_cevs[j])]
                 ) + '\n'
                 expression_lines.append(expression_line)
 
