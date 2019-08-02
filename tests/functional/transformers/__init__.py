@@ -23,7 +23,7 @@ ETL_TEST_BUNDLES = {
                 TableName.CELL: "2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|"
                                 "1f6aecb3-09a0-432b-bece-d2790da570d6|ca71bc0a-977d-4825-9ead-9e5741afe8e3|"
                                 "84dd5dd7-cad0-4874-a36e-d2ca7e9d1489|5f7dee36-68e8-41c8-9e5f-50f3c772176a|"
-                                "e11a1b8b-c83a-419b-bbb7-dc5d214770d0|2019-02-11T171726.073959Z||3859\n",
+                                "e11a1b8b-c83a-419b-bbb7-dc5d214770d0|2019-02-11T171726.073959Z||3859||\n",
                 TableName.EXPRESSION: "2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|ENST00000373020|TPM|92.29\n"
             },
             '343dbc5f-bfe8-4f51-b493-a508d017125c': {
@@ -44,7 +44,7 @@ ETL_TEST_BUNDLES = {
                 TableName.CELL: "e584b404-9937-49fe-a323-5e18511f7035|e584b404-9937-49fe-a323-5e18511f7035|"
                                 "4556d1c7-b6a0-4829-9dfb-ab2b668eb445|942ed1bf-d638-4d6c-9953-97deb555604b|"
                                 "2c25e25e-6dff-4028-a649-7b454aeb175a|223f7882-3ba8-4da6-af37-494aa593fcd9|"
-                                "91c3a4fb-b756-4200-b1bf-87253d431f2c|2019-05-24T185543.995479Z||3859\n",
+                                "91c3a4fb-b756-4200-b1bf-87253d431f2c|2019-05-24T185543.995479Z||3859||\n",
                 TableName.EXPRESSION: "e584b404-9937-49fe-a323-5e18511f7035|ENST00000373020|TPM|92.29\n"
             },
         },
@@ -68,7 +68,7 @@ ETL_TEST_BUNDLES = {
                                 "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|f1bf7167-5948-4d55-9090-1f30a39fc564|"
                                 "7fa4f1e6-fa10-46eb-88e8-ebdadbf3eeab|0603fcfc-a3eb-4442-a6bc-ed4495f0362c|"
                                 "aee36f18-c90f-403a-81cb-c7af96185e1c|2019-01-07T214220.472672Z|"
-                                "TGAGCATAGTACGATA-1|148\n",
+                                "TGAGCATAGTACGATA-1|148||\n",
                 TableName.EXPRESSION: "488dc8c5ce601b9833aad68b22cdae0e|ENSG00000198786|Count|2\n"
             },
         }
@@ -92,7 +92,7 @@ ETL_TEST_BUNDLES = {
                 TableName.CELL: "891c905c-7219-4b55-9c1b-4a5d7044e626|891c905c-7219-4b55-9c1b-4a5d7044e626|"
                                 "f6d7a66a-d8b2-4240-9673-56b19eb9c9c0|04b3083a-5f27-43e5-bb6a-520d083fa8b8|"
                                 "2b91bdab-103c-45f8-a55e-761d3131221c|7484c788-61af-403b-92a8-be3ca94d8789|"
-                                "eaa4b7d1-dd99-4f87-bc22-6fe2337720c0|2019-05-24T192722.908661Z||3859\n",
+                                "eaa4b7d1-dd99-4f87-bc22-6fe2337720c0|2019-05-24T192722.908661Z||3859||\n",
                 TableName.EXPRESSION: "891c905c-7219-4b55-9c1b-4a5d7044e626|ENST00000373020|TPM|92.29\n",
             },
         },
@@ -120,7 +120,7 @@ ETL_TEST_BUNDLES = {
                 TableName.CELL: "3c2180aa-0aa4-411f-98dc-73ef87b447ed|3c2180aa-0aa4-411f-98dc-73ef87b447ed|"
                                 "cddab57b-6868-4be4-806f-395ed9dd635a|79926ae9-f27d-4ebe-9646-a0188fc145af|"
                                 "3ab6b486-f900-4f70-ab34-98859ac5f77a|3ec8dd71-5631-4d03-a6fc-470217e26c85|"
-                                "6ffea35a-f721-4995-bf97-7c9fa9ea30cf|2019-05-15T003246.351336Z||4020\n",
+                                "6ffea35a-f721-4995-bf97-7c9fa9ea30cf|2019-05-15T003246.351336Z||4020||\n",
                 TableName.EXPRESSION: "3c2180aa-0aa4-411f-98dc-73ef87b447ed|ENST00000509541|TPM|0.72\n"
             },
         },
