@@ -30,9 +30,9 @@ import scipy
 from matrix.docker.matrix_converter import MatrixConverter
 
 # This is the 2544 pancreas data in a public bucket.
-CELL_MANIFEST = "s3://hca-matrix-conversion-test-data/pancreas/cell_metadata_manifest"
-GENE_MANIFEST = "s3://hca-matrix-conversion-test-data/pancreas/gene_metadata_manifest"
-EXPRESSION_MANIFEST = "s3://hca-matrix-conversion-test-data/pancreas/expression_manifest"
+CELL_MANIFEST = "s3://hca-matrix-conversion-test-data/Tissue-stability/cell_metadata_manifest"
+GENE_MANIFEST = "s3://hca-matrix-conversion-test-data/Tissue-stability/gene_metadata_manifest"
+EXPRESSION_MANIFEST = "s3://hca-matrix-conversion-test-data/Tissue-stability/expression_manifest"
 
 
 class TestConversions(unittest.TestCase):
@@ -91,6 +91,11 @@ class TestConversions(unittest.TestCase):
         for cell_psv in cell_psvs:
             for row in gzip.GzipFile(fileobj=io.BytesIO(cls._read_s3_url(cell_psv))):
                 row_dict = dict(zip(cell_columns, row.strip().split(b'|')))
+                for k, v in row_dict.items():
+                    if v == b't':
+                        row_dict[k] = b'True'
+                    elif v == b'f':
+                        row_dict[k] = b'False'
                 cell_data[row_dict["cellkey"].decode()] = {k: v.decode() for
                                                            k, v in row_dict.items()}
 
