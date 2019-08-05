@@ -12,7 +12,7 @@ ETL_TEST_BUNDLES = {
                                     "smartseq2_v2.2.0|blessed",
                 TableName.SPECIMEN: "ca71bc0a-977d-4825-9ead-9e5741afe8e3|NCBITAXON:9606|Homo sapiens|HANCESTRO:0016|"
                                     "African American or Afro-Caribbean|MONDO:0011273|H syndrome|EFO:0001272|adult|"
-                                    "UBERON:0002113|kidney|UBERON:0014451|tongue taste bud",
+                                    "UBERON:0002113|kidney||",
                 TableName.LIBRARY_PREPARATION: "84dd5dd7-cad0-4874-a36e-d2ca7e9d1489|OBI:0000869|polyA RNA extract|"
                                                "EFO:0008931|Smart-seq2|full length|unstranded",
                 TableName.PROJECT: "1f6aecb3-09a0-432b-bece-d2790da570d6|integration/Smart-seq2/2019-02-11T16:26:25Z|"
@@ -55,8 +55,7 @@ ETL_TEST_BUNDLES = {
                                     "baed2abb-bf4a-4239-a605-38c7a1129596|2019-01-07T214226.767214Z|"
                                     "cellranger_v1.0.2|community",
                 TableName.SPECIMEN: "f1bf7167-5948-4d55-9090-1f30a39fc564|NCBITAXON:9606|Homo sapiens|HANCESTRO:0005|"
-                                    "European|MONDO:0001932|atrophic vulva|||UBERON:0000955|brain|UBERON:0001876|"
-                                    "amygdala",
+                                    "European|MONDO:0001932|atrophic vulva|||UBERON:0000955|brain||",
                 TableName.LIBRARY_PREPARATION: "7fa4f1e6-fa10-46eb-88e8-ebdadbf3eeab|OBI:0000869|polyA RNA extract|"
                                                "EFO:0009310|10X v2 sequencing|full length|unstranded",
                 TableName.PROJECT: "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|Q4_DEMO-project_PRJNA248302|"
