@@ -3,9 +3,12 @@ import unittest
 
 from scripts.redshift.loader import (load,
                                      _build_dss_query,
+                                     _generate_metadata_schema_version_clause,
                                      _verify_load,
+                                     MetadataSchemaName,
                                      DSS_SEARCH_QUERY_TEMPLATE,
-                                     ALL_10X_SS2_MATCH_TERMS)
+                                     ALL_10X_SS2_MATCH_TERMS,
+                                     LATEST_SUPPORTED_MD_SCHEMA_VERSIONS)
 
 
 class TestLoader(unittest.TestCase):
@@ -70,10 +73,16 @@ class TestLoader(unittest.TestCase):
         mock_load_tables.assert_called_once_with(args.s3_upload_id, is_update=True)
         mock_verify_load.assert_called_once_with(es_query=mock_build_dss_query.return_value)
 
-    def test_build_dss_query__default(self):
+    @mock.patch("scripts.redshift.loader._generate_metadata_schema_version_clause")
+    def test_build_dss_query(self, mock_generate_metadata_schema_version_clause):
+        mock_generate_metadata_schema_version_clause.return_value = {}
+
         with self.subTest("Default select all query"):
             expected_query = DSS_SEARCH_QUERY_TEMPLATE
             expected_query['query']['bool']['must'][0]['bool']['should'] = ALL_10X_SS2_MATCH_TERMS
+            for name in MetadataSchemaName:
+                expected_query['query']['bool']['must'].append(
+                    mock_generate_metadata_schema_version_clause.return_value)
 
             query = _build_dss_query(None)
             self.assertEqual(query, expected_query)
@@ -135,6 +144,55 @@ class TestLoader(unittest.TestCase):
 
             query = _build_dss_query(project_uuids, bundle_uuids)
             self.assertEqual(query, expected_query)
+
+    def test_generate_metadata_schema_version_clause(self):
+        metadata_schema_clause = _generate_metadata_schema_version_clause(MetadataSchemaName.PROJECT)
+        expected = {
+            "bool": {
+                "should": [
+                    {
+                        "bool": {
+                            "must_not": {
+                                "exists": {
+                                    "field": f"files.project_json.provenance.schema_major_version"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "range": {
+                            "files.project_json.provenance.schema_major_version": {
+                                "gte": 1,
+                                "lte":
+                                    LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]['major'] - 1
+                            }
+                        }
+                    },
+                    {
+                        "bool": {
+                            "must": [
+                                {
+                                    "term": {
+                                        "files.project_json.provenance.schema_major_version":
+                                            LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]['major']
+                                    }
+                                },
+                                {
+                                    "range": {
+                                        "files.project_json.provenance.schema_minor_version": {
+                                            "lte":
+                                                LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]['minor']
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "minimum_should_match": 1
+            }
+        }
+        self.assertEqual(metadata_schema_clause, expected)
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.common.query_constructor.format_str_list")

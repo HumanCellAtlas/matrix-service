@@ -2,10 +2,58 @@ import argparse
 import concurrent.futures
 import multiprocessing
 import os
+from enum import Enum
 
 from matrix.common import etl
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.query_constructor import format_str_list
+
+
+class MetadataSchemaName(Enum):
+    PROJECT = "project"
+    LIBRARY_PREPARATION_PROTOCOL = "library_preparation_protocol"
+    ANALYSIS_PROTOCOL = "analysis_protocol"
+    SPECIMEN_FROM_ORGANISM = "specimen_from_organism"
+    DONOR_ORGANISM = "donor_organism"
+    CELL_LINE = "cell_line"
+    CELL_SUSPENSION = "cell_suspension"
+    ORGANOID = "organoid"
+
+
+LATEST_SUPPORTED_MD_SCHEMA_VERSIONS = {
+    MetadataSchemaName.PROJECT: {
+        'major': 14,
+        'minor': 0
+    },
+    MetadataSchemaName.LIBRARY_PREPARATION_PROTOCOL: {
+        'major': 6,
+        'minor': 1
+    },
+    MetadataSchemaName.ANALYSIS_PROTOCOL: {
+        'major': 9,
+        'minor': 0
+    },
+    MetadataSchemaName.SPECIMEN_FROM_ORGANISM: {
+        'major': 10,
+        'minor': 2
+    },
+    MetadataSchemaName.DONOR_ORGANISM: {
+        'major': 15,
+        'minor': 3
+    },
+    MetadataSchemaName.CELL_LINE: {
+        'major': 14,
+        'minor': 3
+    },
+    MetadataSchemaName.CELL_SUSPENSION: {
+        'major': 13,
+        'minor': 1
+    },
+    MetadataSchemaName.ORGANOID: {
+        'major': 11,
+        'minor': 1
+    }
+}
 
 # Match all SS2 and 10X analysis bundles
 DSS_SEARCH_QUERY_TEMPLATE = {
@@ -39,11 +87,12 @@ DSS_SEARCH_QUERY_TEMPLATE = {
                         ],
                         "minimum_number_should_match": 1
                     }
-                }
+                },
             ]
         }
     }
 }
+
 
 ALL_10X_SS2_MATCH_TERMS = [
     {
@@ -96,6 +145,57 @@ def load(args):
     _verify_load(es_query=dss_query)
 
 
+def _generate_metadata_schema_version_clause(schema_name: MetadataSchemaName) -> dict:
+    """
+    Generates an ES query clause that selects all supported schema versions for schema_name
+    :param schema_name: MetadataSchemaName to generate clause for
+    :return: dict ES query clause
+    """
+    return {
+        "bool": {
+            "should": [
+                {
+                    "bool": {
+                        "must_not": {
+                            "exists": {
+                                "field": f"files.{schema_name.value}_json.provenance.schema_major_version"
+                            }
+                        }
+                    }
+                },
+                {
+                    "range": {
+                        f"files.{schema_name.value}_json.provenance.schema_major_version": {
+                            "gte": 1,
+                            "lte": LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[schema_name]['major'] - 1
+                        }
+                    }
+                },
+                {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    f"files.{schema_name.value}_json.provenance.schema_major_version":
+                                        LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[schema_name]['major']
+                                }
+                            },
+                            {
+                                "range": {
+                                    f"files.{schema_name.value}_json.provenance.schema_minor_version": {
+                                        "lte": LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[schema_name]['minor']
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "minimum_should_match": 1
+        }
+    }
+
+
 def _build_dss_query(project_uuids=None, bundle_uuids=None):
     q = DSS_SEARCH_QUERY_TEMPLATE
 
@@ -117,6 +217,9 @@ def _build_dss_query(project_uuids=None, bundle_uuids=None):
                     "uuid": uuid
                 }
             })
+
+    for schema_name in MetadataSchemaName:
+        q['query']['bool']['must'].append(_generate_metadata_schema_version_clause(schema_name))
 
     return q
 
