@@ -5,6 +5,11 @@ import s3fs
 from matrix.common import constants
 
 
+class MatrixQueryResultsNotFound(Exception):
+    """Error indicating access to query results not found in S3"""
+    pass
+
+
 class QueryResultsReader:
     """
     Provides an abstract API to load large Redshift query results
@@ -45,7 +50,10 @@ class QueryResultsReader:
                     Redshift slice
                 "record_count": total number of records returned by the query
         """
-        manifest = json.load(self._s3fs.open(manifest_key))
+        try:
+            manifest = json.load(self._s3fs.open(manifest_key))
+        except FileNotFoundError:
+            raise MatrixQueryResultsNotFound(f"Unable to locate query results at {manifest_key}.")
 
         return {
             "columns": [e["name"] for e in manifest["schema"]["elements"]],

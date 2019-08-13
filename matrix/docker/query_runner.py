@@ -37,9 +37,6 @@ class QueryRunner:
     def query_job_deadletter_q_url(self):
         return self.matrix_infra_config.query_job_deadletter_q_url
 
-    def check_cache(self):
-        pass
-
     def run(self, max_loops=None):
         loops = 0
         while max_loops is None or loops < max_loops:
@@ -64,7 +61,11 @@ class QueryRunner:
                     logger.info(f"Finished running query from {obj_key}")
 
                     if query_type == QueryType.CELL:
-                        self.check_cache()
+                        cached_result_s3_key = request_tracker.retrieve_cached_result_s3_key()
+                        if cached_result_s3_key:
+                            s3 = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+                            s3.copy_obj(cached_result_s3_key, request_tracker.s3_results_key)
+                            return
 
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")
                     self.sqs_handler.delete_message_from_queue(self.query_job_q_url, receipt_handle)

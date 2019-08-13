@@ -1,3 +1,5 @@
+import hashlib
+import os
 from datetime import timedelta
 from enum import Enum
 
@@ -5,8 +7,11 @@ from matrix.common import date
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
+from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
+from matrix.common.query.cell_query_results_reader import CellQueryResultsReader
+from matrix.common.query.query_results_reader import MatrixQueryResultsNotFound
 
 logger = Logging.get_logger(__name__)
 
@@ -32,12 +37,15 @@ class RequestTracker:
         Logging.set_correlation_id(logger, request_id)
 
         self.request_id = request_id
+        self._request_hash = None
+        self._data_version = None
         self._num_bundles = None
         self._format = None
 
         self.dynamo_handler = DynamoHandler()
         self.cloudwatch_handler = CloudwatchHandler()
         self.batch_handler = BatchHandler()
+        self.s3_results_bucket_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
 
     @property
     def is_initialized(self) -> bool:
@@ -48,6 +56,52 @@ class RequestTracker:
             return False
 
         return True
+
+    @property
+    def request_hash(self) -> str:
+        """
+        Unique hash generated using request parameters.
+        If a request hash does not exist, one will be attempted to be generated.
+        :return: str Request hash
+        """
+        if not self._request_hash:
+            self._request_hash = self.dynamo_handler.get_table_item(
+                DynamoTable.REQUEST_TABLE,
+                request_id=self.request_id
+            )[RequestTableField.REQUEST_HASH.value]
+
+            if self._request_hash == "N/A":
+                try:
+                    self._request_hash = self.generate_request_hash()
+                    self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
+                                                                   self.request_id,
+                                                                   RequestTableField.REQUEST_HASH,
+                                                                   self._request_hash)
+                except MatrixQueryResultsNotFound as e:
+                    logger.warning(e)
+
+        return self._request_hash
+
+    @property
+    def s3_results_key(self) -> str:
+        """
+        The key where matrix results for this request are stored in the results S3 bucket.
+        :return: str S3 prefix
+        """
+        return f"{self.data_version}/{self.request_hash}"
+
+    @property
+    def data_version(self) -> int:
+        """
+        The Redshift data version this request is generated on.
+        :return: int Data version
+        """
+        if not self._data_version:
+            self._data_version =\
+                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   request_id=self.request_id)[RequestTableField.DATA_VERSION.value]
+
+        return self._data_version
 
     @property
     def num_bundles(self) -> int:
@@ -145,6 +199,26 @@ class RequestTracker:
             metric_value=1
         )
 
+    def generate_request_hash(self) -> str:
+        """
+        Generates a request hash uniquely identifying a request by its input parameters.
+        Requires cell query results to exist, else raises MatrixQueryResultsNotFound.
+        :return: str Request hash
+        """
+        cell_manifest_key = f"s3://{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{self.request_id}/cell_metadata_manifest"
+        reader = CellQueryResultsReader(cell_manifest_key)
+        cell_df = reader.load_results()
+        cellkeys = cell_df.index
+
+        h = hashlib.md5()
+        # TODO: include feature
+        h.update(self.format)
+        for key in cellkeys:
+            h.update(key)
+        request_hash = h.hexdigest()
+
+        return request_hash
+
     def expect_subtask_execution(self, subtask: Subtask):
         """
         Expect the execution of 1 Subtask by tracking it in DynamoDB.
@@ -178,19 +252,17 @@ class RequestTracker:
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1)
 
-    def is_request_complete(self) -> bool:
+    def retrieve_cached_result_s3_key(self) -> str:
         """
-        Checks whether the request has completed,
-        i.e. if all expected reducers and converters have completed.
-        :return: bool True if complete, else False
+        Retrieves the S3 prefix of an existing matrix result that corresponds to this request's request hash.
+        Returns "" if no such result exists
+        :return: S3 prefix of cached result
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
-        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value]
-                            == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
-        converter_complete = (request_state[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value]
-                              == request_state[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value])
+        objects = self.s3_results_bucket_handler.ls(self.s3_results_key)
 
-        return queries_complete and converter_complete
+        if len(objects) > 0:
+            return objects[0]['Key']
+        return ""
 
     def is_request_ready_for_conversion(self) -> bool:
         """
@@ -202,6 +274,13 @@ class RequestTracker:
         queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value]
                             == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
         return queries_complete
+
+    def is_request_complete(self) -> bool:
+        """
+        Checks whether the request has completed.
+        :return: bool True if complete, else False
+        """
+        return self.s3_results_bucket_handler.exists(f"{self.s3_results_key}/{self.request_id}.{self.format}")
 
     def complete_request(self, duration: float):
         """

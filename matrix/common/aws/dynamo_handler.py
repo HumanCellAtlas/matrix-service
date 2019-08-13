@@ -20,6 +20,8 @@ class RequestTableField(TableField):
     Field names for Request table in DynamoDB.
     """
     REQUEST_ID = "RequestId"
+    REQUEST_HASH = "RequestHash"
+    DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
     FORMAT = "Format"
     NUM_BUNDLES = "NumBundles"
@@ -75,6 +77,8 @@ class DynamoHandler:
         self._request_table.put_item(
             Item={
                 RequestTableField.REQUEST_ID.value: request_id,
+                RequestTableField.REQUEST_HASH.value: "N/A",
+                RequestTableField.DATA_VERSION.value: 0,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
                 RequestTableField.NUM_BUNDLES.value: -1,
