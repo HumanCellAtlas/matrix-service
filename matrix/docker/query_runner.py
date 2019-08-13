@@ -61,7 +61,7 @@ class QueryRunner:
                     logger.info(f"Finished running query from {obj_key}")
 
                     if query_type == QueryType.CELL:
-                        cached_result_s3_key = request_tracker.retrieve_cached_result_s3_key()
+                        cached_result_s3_key = request_tracker.lookup_cached_result()
                         if cached_result_s3_key:
                             s3 = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
                             s3.copy_obj(cached_result_s3_key, request_tracker.s3_results_key)

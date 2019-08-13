@@ -264,11 +264,11 @@ class RequestTracker:
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1)
 
-    def retrieve_cached_result_s3_key(self) -> str:
+    def lookup_cached_result(self) -> str:
         """
-        Retrieves the S3 prefix of an existing matrix result that corresponds to this request's request hash.
+        Retrieves the S3 key of an existing matrix result that corresponds to this request's request hash.
         Returns "" if no such result exists
-        :return: S3 prefix of cached result
+        :return: S3 key of cached result
         """
         objects = self.s3_results_bucket_handler.ls(self.s3_results_prefix)
 
