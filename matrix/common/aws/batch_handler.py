@@ -5,7 +5,6 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
-from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
@@ -22,12 +21,13 @@ class BatchHandler:
         self._client = boto3.client("batch", region_name=os.environ['AWS_DEFAULT_REGION'])
 
     @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-    def schedule_matrix_conversion(self, request_id: str, format: str):
+    def schedule_matrix_conversion(self, request_id: str, format: str, s3_results_key: str):
         """
         Schedule a matrix conversion job within aws batch infra
 
         :param request_id: UUID identifying a matrix service request.
         :param format: User requested output file format of final expression matrix.
+        :param s3_results_key: S3 key where the matrix results will be written to.
         """
         Logging.set_correlation_id(logger, value=request_id)
         job_name = "-".join(["conversion",
@@ -35,11 +35,10 @@ class BatchHandler:
                              request_id,
                              format])
 
-        is_compressed = format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value
         source_expression_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/expression_manifest"
         source_cell_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/cell_metadata_manifest"
         source_gene_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/gene_metadata_manifest"
-        target_path = f"s3://{self.s3_results_bucket}/{request_id}.{format}" + (".zip" if is_compressed else "")
+        target_path = f"s3://{self.s3_results_bucket}/{s3_results_key}"
         working_dir = f"/data/{request_id}"
         command = ['python3',
                    '/matrix_converter.py',

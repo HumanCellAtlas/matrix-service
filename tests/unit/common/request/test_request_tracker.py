@@ -1,9 +1,11 @@
+import os
 import uuid
 from unittest import mock
 from datetime import timedelta
 
 from matrix.common import date
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
+from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.aws.cloudwatch_handler import MetricName
@@ -22,6 +24,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler = DynamoHandler()
 
         self.create_test_request_table()
+        self.create_s3_results_bucket()
 
         self.dynamo_handler.create_request_table_entry(self.request_id, "test_format")
 
@@ -104,14 +107,11 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_is_request_complete(self):
         self.assertFalse(self.request_tracker.is_request_complete())
 
-        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
-                                                  self.request_id,
-                                                  RequestTableField.COMPLETED_CONVERTER_EXECUTIONS,
-                                                  1)
-        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
-                                                  self.request_id,
-                                                  RequestTableField.COMPLETED_QUERY_EXECUTIONS,
-                                                  3)
+        s3_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+
+        s3_handler.store_content_in_s3(
+            f"{self.request_tracker.s3_results_key}/{self.request_id}.{self.request_tracker.format}", "")
+
         self.assertTrue(self.request_tracker.is_request_complete())
 
     def test_is_request_ready_for_conversion(self):

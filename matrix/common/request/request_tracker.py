@@ -12,6 +12,7 @@ from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
 from matrix.common.query.cell_query_results_reader import CellQueryResultsReader
 from matrix.common.query.query_results_reader import MatrixQueryResultsNotFound
+from matrix.common.constants import MatrixFormat
 
 logger = Logging.get_logger(__name__)
 
@@ -83,12 +84,23 @@ class RequestTracker:
         return self._request_hash
 
     @property
-    def s3_results_key(self) -> str:
+    def s3_results_prefix(self) -> str:
         """
-        The key where matrix results for this request are stored in the results S3 bucket.
+        The S3 prefix where results for this request hash are stored in the results bucket.
         :return: str S3 prefix
         """
         return f"{self.data_version}/{self.request_hash}"
+
+    @property
+    def s3_results_key(self) -> str:
+        """
+        The S3 key where matrix results for this request are stored in the results bucket.
+        :return: str S3 key
+        """
+        is_compressed = self.format == MatrixFormat.CSV.value or self.format == MatrixFormat.MTX.value
+
+        return f"{self.data_version}/{self.request_hash}/{self.request_id}.{self.format}" + \
+               (".zip" if is_compressed else "")
 
     @property
     def data_version(self) -> int:
@@ -258,7 +270,7 @@ class RequestTracker:
         Returns "" if no such result exists
         :return: S3 prefix of cached result
         """
-        objects = self.s3_results_bucket_handler.ls(self.s3_results_key)
+        objects = self.s3_results_bucket_handler.ls(self.s3_results_prefix)
 
         if len(objects) > 0:
             return objects[0]['Key']
@@ -280,7 +292,7 @@ class RequestTracker:
         Checks whether the request has completed.
         :return: bool True if complete, else False
         """
-        return self.s3_results_bucket_handler.exists(f"{self.s3_results_key}/{self.request_id}.{self.format}")
+        return self.s3_results_bucket_handler.exists(self.s3_results_key)
 
     def complete_request(self, duration: float):
         """
