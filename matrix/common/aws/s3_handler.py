@@ -26,13 +26,13 @@ class S3Handler:
 
     def copy_obj(self, src_key, dst_key):
         src = {
-            'Bucket': self.s3_bucket,
+            'Bucket': self.s3_bucket.name,
             'Key': src_key
         }
-        self.s3.copy(src, self.s3_bucket, dst_key)
+        self.s3.copy(src, self.s3_bucket.name, dst_key)
 
     def ls(self, key):
-        response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket, Prefix=key)
+        response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket.name, Prefix=key)
         return response.get('Contents', [])
 
     def exists(self, key):
