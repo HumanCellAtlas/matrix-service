@@ -2,7 +2,6 @@ import time
 
 
 class WaitFor:
-
     EXPONENTIAL_BACKOFF_FACTOR = 1.618
 
     def __init__(self, func, *args, backoff_factor=EXPONENTIAL_BACKOFF_FACTOR):
@@ -22,8 +21,8 @@ class WaitFor:
                 return retval
             self._wait_until_next_check_time()
         else:
-            raise RuntimeError(f"Function {self._function_signature()} did not return value {value} " +
-                               f"within {timeout_seconds} seconds")
+            raise RuntimeError(f"Function {self._function_signature()} did not return value {value} "
+                               + f"within {timeout_seconds} seconds")
 
     def to_return_a_value_other_than(self, other_than_value=None, timeout_seconds=60):
         self.start_time = time.time()
@@ -35,8 +34,8 @@ class WaitFor:
                 return retval
             self._wait_until_next_check_time()
         else:
-            raise RuntimeError(f"Function {self._function_signature()} did not return a non-{other_than_value} value " +
-                               f"within {timeout_seconds} seconds")
+            raise RuntimeError(f"Function {self._function_signature()} did not return a non-{other_than_value} value "
+                               + f"within {timeout_seconds} seconds")
 
     def _call_func(self):
         retval = self.func(*self.func_args)

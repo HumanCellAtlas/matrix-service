@@ -3,9 +3,9 @@ import json
 import os
 
 from matrix.common.aws.batch_handler import BatchHandler
+from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.aws.sqs_handler import SQSHandler
-from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.config import MatrixInfraConfig
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
@@ -76,6 +76,7 @@ class QueryRunner:
 def main():
     query_runner = QueryRunner()
     query_runner.run()
+
 
 if __name__ == "__main__":
     print("STARTED query runner")

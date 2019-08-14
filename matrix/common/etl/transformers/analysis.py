@@ -3,8 +3,8 @@ import pathlib
 import typing
 from threading import Lock
 
-from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
+from . import MetadataToPsvTransformer
 
 
 class AnalysisTransformer(MetadataToPsvTransformer):
@@ -30,8 +30,8 @@ class AnalysisTransformer(MetadataToPsvTransformer):
             bundle_uuid, bundle_version = bundle_fqid.split(".", 1)
             protocol = analysis_dict["protocol_core"]["protocol_id"]
             awg_disposition = ("blessed" if
-                               protocol.startswith("smartseq2") or
-                               protocol.startswith("optimus")
+                               protocol.startswith("smartseq2")
+                               or protocol.startswith("optimus")
                                else "community")
 
             analyses.add(self._generate_psv_row(key, bundle_fqid, bundle_uuid, bundle_version,

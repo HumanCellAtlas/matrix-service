@@ -1,12 +1,12 @@
 from datetime import timedelta
 from enum import Enum
 
-from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
-from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common import date
+from matrix.common.aws.batch_handler import BatchHandler
+from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
+from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.exceptions import MatrixException
 from matrix.common.logging import Logging
-from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 
 logger = Logging.get_logger(__name__)
 
@@ -27,6 +27,7 @@ class RequestTracker:
     """
     Provides an interface for tracking a request's parameters and state.
     """
+
     def __init__(self, request_id: str):
         Logging.set_correlation_id(logger, request_id)
 
@@ -55,7 +56,7 @@ class RequestTracker:
         :return: int Number of bundles
         """
         if not self._num_bundles:
-            self._num_bundles =\
+            self._num_bundles = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
                                                    request_id=self.request_id)[RequestTableField.NUM_BUNDLES.value]
         return self._num_bundles
@@ -78,7 +79,7 @@ class RequestTracker:
         :return: str The file format (one of MatrixFormat)
         """
         if not self._format:
-            self._format =\
+            self._format = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
                                                    request_id=self.request_id)[RequestTableField.FORMAT.value]
         return self._format
@@ -184,10 +185,10 @@ class RequestTracker:
         :return: bool True if complete, else False
         """
         request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
-        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
-                            request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
-        converter_complete = (request_state[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value] ==
-                              request_state[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value])
+        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value]
+                            == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
+        converter_complete = (request_state[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value]
+                              == request_state[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value])
 
         return queries_complete and converter_complete
 
@@ -198,8 +199,8 @@ class RequestTracker:
         :return: bool True if complete, else False
         """
         request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
-        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value] ==
-                            request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
+        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value]
+                            == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
         return queries_complete
 
     def complete_request(self, duration: float):

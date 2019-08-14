@@ -12,10 +12,9 @@ import loompy
 import pandas
 import s3fs
 
-from matrix.common import constants
-from matrix.common import date
-from matrix.common.logging import Logging
+from matrix.common import constants, date
 from matrix.common.constants import MatrixFormat
+from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 LOGGER = Logging.get_logger(__file__)
@@ -57,8 +56,8 @@ class MatrixConverter:
             os.remove(local_converted_path)
 
             self.request_tracker.complete_subtask_execution(Subtask.CONVERTER)
-            self.request_tracker.complete_request(duration=(date.get_datetime_now() -
-                                                  date.to_datetime(self.request_tracker.creation_date))
+            self.request_tracker.complete_request(duration=(date.get_datetime_now()
+                                                            - date.to_datetime(self.request_tracker.creation_date))
                                                   .total_seconds())
         except Exception as e:
             LOGGER.info(f"Matrix Conversion failed on {self.args.request_id} with error {str(e)}")
@@ -200,7 +199,7 @@ class MatrixConverter:
         for filename in matrix_file_names:
             zipf.write(os.path.join(results_dir, filename),
                        arcname=os.path.join(os.path.basename(results_dir),
-                       filename))
+                                            filename))
         zipf.close()
         shutil.rmtree(results_dir)
         return os.path.join(self.working_dir, self.local_output_filename)
@@ -261,10 +260,10 @@ class MatrixConverter:
                         single_cell_df = cell_group[1]
                         single_cell_coo = single_cell_df.pivot(
                             index="featurekey", columns="cellkey", values="exprvalue").reindex(
-                                index=gene_df.index).to_sparse().to_coo()
+                            index=gene_df.index).to_sparse().to_coo()
 
                         for row, col, value in zip(single_cell_coo.row, single_cell_coo.col, single_cell_coo.data):
-                            exp_f.write(f"{row+1} {col+cell_count+1} {value}\n".encode())
+                            exp_f.write(f"{row + 1} {col + cell_count + 1} {value}\n".encode())
                         cell_count += 1
 
                         cellkeys.append(cell_group[0])
@@ -325,10 +324,9 @@ class MatrixConverter:
                     # are rows. Reindex so all dataframes have the same row
                     # order, and then sparsify because this is a very empty
                     # dataset usually.
-                    sparse_cell_dfs.append(
-                        single_cell_df.pivot(
-                            index="featurekey", columns="cellkey", values="exprvalue")
-                        .reindex(index=row_attrs["Accession"]).to_sparse())
+                    sparse_cell_dfs.append(single_cell_df
+                                           .pivot(index="featurekey", columns="cellkey", values="exprvalue")
+                                           .reindex(index=row_attrs["Accession"]).to_sparse())
 
                 # Concatenate the cell dataframes together. This is what we'll
                 # write to disk.
@@ -395,7 +393,7 @@ class MatrixConverter:
                         single_cell_df = cell_group[1]
                         single_cell_df.pivot(
                             index="cellkey", columns="featurekey", values="exprvalue").reindex(
-                                columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
+                            columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
                         cellkeys.append(cell_group[0])
 
         self._write_out_cell_dataframe(results_dir, "cells.csv", cell_df, cellkeys)
@@ -443,6 +441,7 @@ def main(args):
 
     matrix_converter = MatrixConverter(args)
     matrix_converter.run()
+
 
 if __name__ == "__main__":
     print(f"STARTED with argv: {sys.argv}")

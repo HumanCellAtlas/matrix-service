@@ -1,17 +1,17 @@
-import typing
 import os
+import typing
 
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from matrix.common.config import MatrixInfraConfig, MatrixRedshiftConfig
-from matrix.common.logging import Logging
-from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.aws.redshift_handler import RedshiftHandler
-from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.aws.s3_handler import S3Handler
+from matrix.common.aws.sqs_handler import SQSHandler
+from matrix.common.config import MatrixInfraConfig, MatrixRedshiftConfig
+from matrix.common.logging import Logging
 from matrix.common.query_constructor import format_str_list
+from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
 
@@ -69,7 +69,8 @@ class Driver:
     """
     Formats and stores redshift queries in s3 and sqs for execution.
     """
-    def __init__(self, request_id: str, bundles_per_worker: int=100):
+
+    def __init__(self, request_id: str, bundles_per_worker: int = 100):
         Logging.set_correlation_id(logger, value=request_id)
 
         self.request_id = request_id
