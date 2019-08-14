@@ -20,38 +20,54 @@ class MetadataSchemaName(Enum):
     ORGANOID = "organoid"
 
 
-LATEST_SUPPORTED_MD_SCHEMA_VERSIONS = {
+SUPPORTED_METADATA_SCHEMA_VERSIONS = {
     MetadataSchemaName.PROJECT: {
-        'major': 14,
-        'minor': 0
+        'max_major': 14,
+        'max_minor': 0,
+        'min_major': 1,
+        'min_minor': 0
     },
     MetadataSchemaName.LIBRARY_PREPARATION_PROTOCOL: {
-        'major': 6,
-        'minor': 1
+        'max_major': 6,
+        'max_minor': 1,
+        'min_major': 1,
+        'min_minor': 0
     },
     MetadataSchemaName.ANALYSIS_PROTOCOL: {
-        'major': 9,
-        'minor': 0
+        'max_major': 9,
+        'max_minor': 0,
+        'min_major': 1,
+        'min_minor': 0
     },
     MetadataSchemaName.SPECIMEN_FROM_ORGANISM: {
-        'major': 10,
-        'minor': 2
+        'max_major': 10,
+        'max_minor': 2,
+        'min_major': 9,
+        'min_minor': 0
     },
     MetadataSchemaName.DONOR_ORGANISM: {
-        'major': 15,
-        'minor': 3
+        'max_major': 15,
+        'max_minor': 3,
+        'min_major': 1,
+        'min_minor': 0
     },
     MetadataSchemaName.CELL_LINE: {
-        'major': 14,
-        'minor': 3
+        'max_major': 14,
+        'max_minor': 3,
+        'min_major': 1,
+        'min_minor': 0
     },
     MetadataSchemaName.CELL_SUSPENSION: {
-        'major': 13,
-        'minor': 1
+        'max_major': 13,
+        'max_minor': 1,
+        'min_major': 1,
+        'min_minor': 0
     },
     MetadataSchemaName.ORGANOID: {
-        'major': 11,
-        'minor': 1
+        'max_major': 11,
+        'max_minor': 1,
+        'min_major': 1,
+        'min_minor': 0
     }
 }
 
@@ -93,7 +109,6 @@ DSS_SEARCH_QUERY_TEMPLATE = {
     }
 }
 
-
 ALL_10X_SS2_MATCH_TERMS = [
     {
         "match": {
@@ -121,10 +136,10 @@ ALL_10X_SS2_MATCH_TERMS = [
 def load(args):
     dss_query = _build_dss_query(project_uuids=args.project_uuids, bundle_uuids=args.bundle_uuids)
     staging_dir = os.path.abspath('/mnt')
-    content_type_patterns = ['application/json; dcp-type="metadata*"'] # match metadata
-    filename_patterns = ["*zarr*", # match expression data
-                         "*.results", # match SS2 raw count files
-                         "*.mtx", "genes.tsv", "barcodes.tsv", "empty_drops_result.csv"] # match 10X raw count files
+    content_type_patterns = ['application/json; dcp-type="metadata*"']  # match metadata
+    filename_patterns = ["*zarr*",  # match expression data
+                         "*.results",  # match SS2 raw count files
+                         "*.mtx", "genes.tsv", "barcodes.tsv", "empty_drops_result.csv"]  # match 10X raw count files
 
     is_update = True if args.project_uuids or args.bundle_uuids else False
     if args.state == 0 or args.state == 1:
@@ -147,14 +162,21 @@ def load(args):
 
 def _generate_metadata_schema_version_clause(schema_name: MetadataSchemaName) -> dict:
     """
-    Generates an ES query clause that selects all supported schema versions for schema_name
-    :param schema_name: MetadataSchemaName to generate clause for
+    Generates an ES query clause that will be used to filter bundles from the DSS based on the compatibility of the
+    schema version. For the given metadata schema name, the clause will return True (i.e. will allow the bundle to
+    trigger a notification) if the version is not populated in the metadata schema (this is for the purpose of
+    backwards compatibility since the population of the schema version is new as of 2019-08-14) OR if the schema
+    version that is populated is both greater than or equal to the minimum specified major and minor version in the
+    MetadataSchemaName AND also less than or equal to the maximum specified major and minor version.
+
+    :param schema_name: the MetadataSchemaName from which to generate clause
     :return: dict ES query clause
     """
     return {
         "bool": {
             "should": [
                 {
+                    # This clause allows the schema version to be unpopulated.
                     "bool": {
                         "must_not": {
                             "exists": {
@@ -164,32 +186,57 @@ def _generate_metadata_schema_version_clause(schema_name: MetadataSchemaName) ->
                     }
                 },
                 {
-                    "range": {
-                        f"files.{schema_name.value}_json.provenance.schema_major_version": {
-                            "gte": 1,
-                            "lte": LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[schema_name]['major'] - 1
-                        }
-                    }
-                },
-                {
+                    # This clause handles versions with the major version equal to the min and a minor version
+                    # greater than or equal to the minimum specified.
                     "bool": {
                         "must": [
                             {
                                 "term": {
                                     f"files.{schema_name.value}_json.provenance.schema_major_version":
-                                        LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[schema_name]['major']
+                                        SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]['min_major']
                                 }
                             },
                             {
                                 "range": {
                                     f"files.{schema_name.value}_json.provenance.schema_minor_version": {
-                                        "lte": LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[schema_name]['minor']
+                                        "gte": SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]['min_minor']
                                     }
                                 }
                             }
                         ]
                     }
-                }
+                },
+                {
+                    # This clauses handles versions with the major version equal to the max and a minor version less
+                    # than or equal to the maximum specified.
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    f"files.{schema_name.value}_json.provenance.schema_major_version":
+                                        SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]['max_major']
+                                }
+                            },
+                            {
+                                "range": {
+                                    f"files.{schema_name.value}_json.provenance.schema_minor_version": {
+                                        "lte": SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]['max_minor']
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    # This clause handles the rest of the cases where the schema major version is between the minimum
+                    # and maximum specified.
+                    "range": {
+                        f"files.{schema_name.value}_json.provenance.schema_major_version": {
+                            "gte": SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]['min_major'] + 1,
+                            "lte": SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]['max_major'] - 1
+                        }
+                    }
+                },
             ],
             "minimum_should_match": 1
         }
@@ -238,7 +285,7 @@ def _verify_load(es_query):
     results = redshift.transaction(queries=[count_bundles_query],
                                    return_results=True)
     print(f"Found {results[0][0]} analysis rows for {len(expected_bundles)} expected bundles.")
-    assert(results[0][0] == len(expected_bundles))
+    assert (results[0][0] == len(expected_bundles))
 
 
 if __name__ == '__main__':  # pragma: no cover

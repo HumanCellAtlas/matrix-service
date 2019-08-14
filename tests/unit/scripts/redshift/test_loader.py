@@ -1,5 +1,6 @@
-import mock
 import unittest
+
+import mock
 
 from scripts.redshift.loader import (load,
                                      _build_dss_query,
@@ -7,8 +8,7 @@ from scripts.redshift.loader import (load,
                                      _verify_load,
                                      MetadataSchemaName,
                                      DSS_SEARCH_QUERY_TEMPLATE,
-                                     ALL_10X_SS2_MATCH_TERMS,
-                                     LATEST_SUPPORTED_MD_SCHEMA_VERSIONS)
+                                     ALL_10X_SS2_MATCH_TERMS)
 
 
 class TestLoader(unittest.TestCase):
@@ -146,7 +146,18 @@ class TestLoader(unittest.TestCase):
             self.assertEqual(query, expected_query)
 
     def test_generate_metadata_schema_version_clause(self):
-        metadata_schema_clause = _generate_metadata_schema_version_clause(MetadataSchemaName.PROJECT)
+        test_metadata_schema_versions = {
+            MetadataSchemaName.PROJECT: {
+                'max_major': 56,
+                'max_minor': 78,
+                'min_major': 12,
+                'min_minor': 34
+            }
+        }
+
+        with mock.patch('scripts.redshift.loader.SUPPORTED_METADATA_SCHEMA_VERSIONS', test_metadata_schema_versions):
+            metadata_schema_clause = _generate_metadata_schema_version_clause(MetadataSchemaName.PROJECT)
+
         expected = {
             "bool": {
                 "should": [
@@ -160,12 +171,21 @@ class TestLoader(unittest.TestCase):
                         }
                     },
                     {
-                        "range": {
-                            "files.project_json.provenance.schema_major_version": {
-                                "gte": 1,
-                                "lte":
-                                    LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]['major'] - 1
-                            }
+                        "bool": {
+                            "must": [
+                                {
+                                    "term": {
+                                        f"files.project_json.provenance.schema_major_version": 12
+                                    }
+                                },
+                                {
+                                    "range": {
+                                        f"files.project_json.provenance.schema_minor_version": {
+                                            "gte": 34
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     {
@@ -173,21 +193,27 @@ class TestLoader(unittest.TestCase):
                             "must": [
                                 {
                                     "term": {
-                                        "files.project_json.provenance.schema_major_version":
-                                            LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]['major']
+                                        f"files.project_json.provenance.schema_major_version": 56
                                     }
                                 },
                                 {
                                     "range": {
-                                        "files.project_json.provenance.schema_minor_version": {
-                                            "lte":
-                                                LATEST_SUPPORTED_MD_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]['minor']
+                                        f"files.project_json.provenance.schema_minor_version": {
+                                            "lte": 78
                                         }
                                     }
                                 }
                             ]
                         }
-                    }
+                    },
+                    {
+                        "range": {
+                            f"files.project_json.provenance.schema_major_version": {
+                                "gte": 13,
+                                "lte": 55
+                            }
+                        }
+                    },
                 ],
                 "minimum_should_match": 1
             }
