@@ -1,6 +1,6 @@
 import os
-from enum import Enum
 import typing
+from enum import Enum
 
 import boto3
 
@@ -27,7 +27,7 @@ class CloudwatchHandler:
     def put_metric_data(self,
                         metric_name: MetricName,
                         metric_value: typing.Union[int, float],
-                        metric_dimensions: typing.List[dict]=None):
+                        metric_dimensions: typing.List[dict] = None):
         """
         Puts a cloudwatch metric data point
 

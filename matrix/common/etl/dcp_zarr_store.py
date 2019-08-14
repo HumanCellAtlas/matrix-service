@@ -65,10 +65,7 @@ class DCPZarrStore(MutableMapping):
         return transformed_key in self.keys()
 
     def __eq__(self, other):
-        return (
-            isinstance(other, DCPZarrStore) and
-            self.zarr_files == other.zarr_files
-        )
+        return isinstance(other, DCPZarrStore) and self.zarr_files == other.zarr_files
 
     def keys(self):
         return (k.split(DCPZarrStore._separator_char, 1)[1] for k in self.zarr_files)

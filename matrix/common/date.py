@@ -1,11 +1,10 @@
 import datetime
 import typing
 
-
 FORMAT_STRING = "%Y-%m-%dT%H%M%S.%fZ"
 
 
-def get_datetime_now(as_string: bool=False) -> typing.Union[datetime.datetime, str]:
+def get_datetime_now(as_string: bool = False) -> typing.Union[datetime.datetime, str]:
     now = datetime.datetime.utcnow()
     return to_string(now) if as_string else now
 

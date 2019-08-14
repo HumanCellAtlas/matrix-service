@@ -1,10 +1,10 @@
-import boto3
 import concurrent.futures
 import os
 import traceback
 import typing
 import uuid
 
+import boto3
 import hca
 import psycopg2
 from dcplib.etl import DSSExtractor
@@ -14,11 +14,11 @@ from matrix.common.aws.redshift_handler import RedshiftHandler, TableName
 from matrix.common.constants import CREATE_QUERY_TEMPLATE, MATRIX_ENV_TO_DSS_ENV
 from matrix.common.logging import Logging
 from .transformers import MetadataToPsvTransformer
-from .transformers.cell_expression import CellExpressionTransformer
 from .transformers.analysis import AnalysisTransformer
+from .transformers.cell_expression import CellExpressionTransformer
 from .transformers.feature import FeatureTransformer
-from .transformers.specimen_library import SpecimenLibraryTransformer
 from .transformers.project_publication_contributor import ProjectPublicationContributorTransformer
+from .transformers.specimen_library import SpecimenLibraryTransformer
 
 logger = Logging.get_logger(__name__)
 
@@ -30,9 +30,9 @@ def etl_dss_bundles(query: dict,
                     finalizer_cb,
                     staging_directory,
                     deployment_stage: str,
-                    max_workers: int=256,
-                    max_dispatchers: int=1,
-                    dispatcher_executor_class: concurrent.futures.Executor=concurrent.futures.ProcessPoolExecutor):
+                    max_workers: int = 256,
+                    max_dispatchers: int = 1,
+                    dispatcher_executor_class: concurrent.futures.Executor = concurrent.futures.ProcessPoolExecutor):
     """
     Extracts specified DSS bundles and files to local disk, transforms to PSV, uploads to S3, loads into Redshift.
     :param query: ES query to match bundles
@@ -174,7 +174,7 @@ def _log_error(entity: str, exception: Exception, trace: str, extractor: DSSExtr
         fh.write(f"{entity}\n")
 
 
-def upload_and_load(staging_dir: str, is_update: bool=False):
+def upload_and_load(staging_dir: str, is_update: bool = False):
     """
     Uploads generated PSV files to S3 and loads Redshift tables from S3.
     :param staging_dir: DSSExtractor staging directory
@@ -217,7 +217,7 @@ def _upload_file_to_s3(path_to_file: str, s3_prefix: str):
         print(e)
 
 
-def load_tables(job_id: str, is_update: bool=False):
+def load_tables(job_id: str, is_update: bool = False):
     """
     Creates tables and loads PSVs from S3 into Redshift via SQL COPY.
     :param job_id: UUID of the S3 prefix containinng the data to load in

@@ -7,8 +7,8 @@ import boto3
 import botocore
 import requests
 
-from matrix.common.exceptions import MatrixException
 from matrix.common import date
+from matrix.common.exceptions import MatrixException
 
 
 class TableField(Enum):
@@ -45,6 +45,7 @@ class DynamoHandler:
     """
     Interface for interacting with DynamoDB Tables.
     """
+
     def __init__(self):
         self._dynamo = boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION'])
         self._request_table = self._dynamo.Table(DynamoTable.REQUEST_TABLE.value)
@@ -89,7 +90,7 @@ class DynamoHandler:
             }
         )
 
-    def get_table_item(self, table: DynamoTable, request_id: str=""):
+    def get_table_item(self, table: DynamoTable, request_id: str = ""):
         """Retrieves dynamobdb item corresponding with request_id in the specified table.
 
         Input:
@@ -109,7 +110,7 @@ class DynamoHandler:
         except KeyError:
             raise MatrixException(status=requests.codes.not_found,
                                   title=f"Unable to find table item with request ID "
-                                        f"{request_id} from DynamoDb Table {table.value}.")
+                                  f"{request_id} from DynamoDb Table {table.value}.")
 
         return item
 

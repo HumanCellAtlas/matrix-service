@@ -9,8 +9,8 @@ from threading import Lock
 import requests
 from humancellatlas.data.metadata.api import lookup
 
-from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
+from . import MetadataToPsvTransformer
 
 
 class SpecimenLibraryTransformer(MetadataToPsvTransformer):
@@ -97,7 +97,7 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
 
         # Match a trailing comment like "... (organoid)" or "... (cell line)". If there
         # is a match, strip it off and hold on to it.
-        special_match = re.match("(.*)(\ \(.*\))", term_id)
+        special_match = re.match(r'(.*)(\\(.*\)))', term_id)
         if special_match:
             is_special = True
             term_id = special_match.groups()[0]

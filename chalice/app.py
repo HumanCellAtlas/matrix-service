@@ -5,11 +5,12 @@ import re
 import sys
 
 import boto3
-import chalice
 import connexion
 
-pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "chalicelib")) # noqa
-sys.path.insert(0, pkg_root) # noqa
+import chalice
+
+pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "chalicelib"))  # noqa
+sys.path.insert(0, pkg_root)  # noqa
 from matrix.common.aws.redshift_handler import RedshiftHandler
 
 ecs_client = boto3.client("ecs", region_name=os.environ['AWS_DEFAULT_REGION'])
