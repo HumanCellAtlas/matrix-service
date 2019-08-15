@@ -46,7 +46,6 @@ class RequestTracker:
         self.dynamo_handler = DynamoHandler()
         self.cloudwatch_handler = CloudwatchHandler()
         self.batch_handler = BatchHandler()
-        self.s3_results_bucket_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
 
     @property
     def is_initialized(self) -> bool:
@@ -79,7 +78,7 @@ class RequestTracker:
                                                                    RequestTableField.REQUEST_HASH,
                                                                    self._request_hash)
                 except MatrixQueryResultsNotFound as e:
-                    logger.warning(e)
+                    logger.warning(f"Failed to generate a request hash. {e}")
 
         return self._request_hash
 
@@ -108,8 +107,8 @@ class RequestTracker:
         The Redshift data version this request is generated on.
         :return: int Data version
         """
-        if not self._data_version:
-            self._data_version =\
+        if self._data_version is None:
+            self._data_version = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
                                                    request_id=self.request_id)[RequestTableField.DATA_VERSION.value]
 
@@ -224,9 +223,9 @@ class RequestTracker:
 
         h = hashlib.md5()
         # TODO: include feature
-        h.update(self.format)
+        h.update(self.format.encode())
         for key in cellkeys:
-            h.update(key)
+            h.update(key.encode())
         request_hash = h.hexdigest()
 
         return request_hash
@@ -270,7 +269,8 @@ class RequestTracker:
         Returns "" if no such result exists
         :return: S3 key of cached result
         """
-        objects = self.s3_results_bucket_handler.ls(self.s3_results_prefix)
+        results_bucket = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+        objects = results_bucket.ls(f"{self.s3_results_prefix}/")
 
         if len(objects) > 0:
             return objects[0]['Key']
@@ -292,7 +292,8 @@ class RequestTracker:
         Checks whether the request has completed.
         :return: bool True if complete, else False
         """
-        return self.s3_results_bucket_handler.exists(self.s3_results_key)
+        results_bucket = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+        return results_bucket.exists(self.s3_results_key)
 
     def complete_request(self, duration: float):
         """

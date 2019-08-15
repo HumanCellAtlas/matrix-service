@@ -1,6 +1,7 @@
 """Script to pull from sqs and run redshift queries. Will be dockerized."""
 import json
 import os
+import traceback
 from enum import Enum
 
 from matrix.common.aws.batch_handler import BatchHandler
@@ -60,7 +61,7 @@ class QueryRunner:
                     self.redshift_handler.transaction([query], read_only=True)
                     logger.info(f"Finished running query from {obj_key}")
 
-                    if query_type == QueryType.CELL:
+                    if query_type == QueryType.CELL.value:
                         cached_result_s3_key = request_tracker.lookup_cached_result()
                         if cached_result_s3_key:
                             s3 = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
@@ -82,6 +83,7 @@ class QueryRunner:
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
                     request_tracker.log_error(str(e))
+                    logger.error(traceback.format_exc())
                     logger.info(f"Adding {message} to {self.query_job_deadletter_q_url}")
                     self.sqs_handler.add_message_to_queue(self.query_job_deadletter_q_url, payload)
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")
