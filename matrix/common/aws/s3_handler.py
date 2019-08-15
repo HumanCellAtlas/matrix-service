@@ -29,7 +29,7 @@ class S3Handler:
             'Bucket': self.s3_bucket.name,
             'Key': src_key
         }
-        self.s3.copy(src, self.s3_bucket.name, dst_key)
+        self.s3_bucket.copy(src, dst_key)
 
     def ls(self, key):
         response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket.name, Prefix=key)
