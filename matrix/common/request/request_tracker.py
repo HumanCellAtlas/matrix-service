@@ -162,7 +162,7 @@ class RequestTracker:
             self._metadata_fields = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
                                                    request_id=self.request_id)[RequestTableField.METADATA_FIELDS.value]
-        return self._feature
+        return self._metadata_fields
 
     @property
     def feature(self) -> str:

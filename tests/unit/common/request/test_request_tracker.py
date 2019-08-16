@@ -106,6 +106,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
 
+    def test_metadata_fields(self):
+        self.assertEqual(self.request_tracker.metadata_fields, ["test_field_1", "test_field_2"])
+
     def test_feature(self):
         self.assertEqual(self.request_tracker.feature, "test_feature")
 
