@@ -45,7 +45,7 @@ resource "aws_ecs_task_definition" "query_runner" {
     ],
     "memory": 512,
     "cpu": 256,
-    "image": "humancellatlas/matrix-query-runner:15",
+    "image": "humancellatlas/matrix-query-runner:16",
     "name": "query-runner-${var.deployment_stage}",
     "logConfiguration": {
         "logDriver": "awslogs",
@@ -171,7 +171,9 @@ resource "aws_iam_role_policy" "query_runner" {
           ],
           "Resource": [
             "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}",
-            "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}/*"
+            "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}/*",
+            "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
+            "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
           ]
         },
         {
