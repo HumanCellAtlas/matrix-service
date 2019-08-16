@@ -28,7 +28,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.create_test_request_table()
         self.create_s3_results_bucket()
 
-        self.dynamo_handler.create_request_table_entry(self.request_id, "test_format")
+        self.dynamo_handler.create_request_table_entry(self.request_id, "test_format", "test_feature")
 
     def test_is_initialized(self):
         self.assertTrue(self.request_tracker.is_initialized)
@@ -103,6 +103,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
 
+    def test_feature(self):
+        self.assertEqual(self.request_tracker.feature, "test_feature")
+
     def test_batch_job_id(self):
         self.assertEqual(self.request_tracker.batch_job_id, None)
 
@@ -155,7 +158,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_initialize_request(self, mock_create_request_table_entry, mock_create_cw_metric):
         self.request_tracker.initialize_request("test_format")
 
-        mock_create_request_table_entry.assert_called_once_with(self.request_id, "test_format")
+        mock_create_request_table_entry.assert_called_once_with(self.request_id, "test_format", "gene")
         mock_create_cw_metric.assert_called_once()
 
     @mock.patch("matrix.common.query.cell_query_results_reader.CellQueryResultsReader.load_results")
@@ -164,10 +167,10 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_load_results.return_value = pandas.DataFrame(index=["test_cell_key_1", "test_cell_key_2"])
 
         h = hashlib.md5()
-        h.update(self.request_tracker.format.encode("utf-8"))
-        # h.update(self.request_tracker.feature.encode("utf-8)
-        h.update("test_cell_key_1".encode("utf-8"))
-        h.update("test_cell_key_2".encode("utf-8"))
+        h.update(self.request_tracker.feature.encode())
+        h.update(self.request_tracker.format.encode())
+        h.update("test_cell_key_1".encode())
+        h.update("test_cell_key_2".encode())
 
         self.assertEqual(self.request_tracker.generate_request_hash(), h.hexdigest())
 

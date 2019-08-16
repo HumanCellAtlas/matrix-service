@@ -4,6 +4,7 @@ from datetime import timedelta
 from enum import Enum
 
 from matrix.common import date
+from matrix.common.constants import MatrixFeature
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
@@ -42,6 +43,7 @@ class RequestTracker:
         self._data_version = None
         self._num_bundles = None
         self._format = None
+        self._feature = None
 
         self.dynamo_handler = DynamoHandler()
         self.cloudwatch_handler = CloudwatchHandler()
@@ -150,6 +152,18 @@ class RequestTracker:
         return self._format
 
     @property
+    def feature(self) -> str:
+        """
+        The request's user-specified feature type (gene|transcript) of the resultant expression matrix.
+        :return: str Feature (gene|transcript)
+        """
+        if not self._feature:
+            self._feature = \
+                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   request_id=self.request_id)[RequestTableField.FEATURE.value]
+        return self._feature
+
+    @property
     def batch_job_id(self) -> str:
         """
         The batch job id for matrix conversion corresponding with a request.
@@ -200,11 +214,12 @@ class RequestTracker:
                                                    request_id=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
         return error if error else ""
 
-    def initialize_request(self, fmt: str) -> None:
+    def initialize_request(self, fmt: str, feature: str = MatrixFeature.GENE.value) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
-        :param format: Request output format for matrix conversion
+        :param fmt: Request output format for matrix conversion
+        :param feature: Feature type to generate expression counts for (one of MatrixFeature)
         """
-        self.dynamo_handler.create_request_table_entry(self.request_id, fmt)
+        self.dynamo_handler.create_request_table_entry(self.request_id, fmt, feature)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST,
             metric_value=1
@@ -222,7 +237,7 @@ class RequestTracker:
         cellkeys = cell_df.index
 
         h = hashlib.md5()
-        # TODO: include feature
+        h.update(self.feature.encode())
         h.update(self.format.encode())
         for key in cellkeys:
             h.update(key.encode())

@@ -8,6 +8,7 @@ import botocore
 import requests
 
 from matrix.common import date
+from matrix.common.constants import MatrixFeature
 from matrix.common.exceptions import MatrixException
 
 
@@ -24,6 +25,7 @@ class RequestTableField(TableField):
     DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
     FORMAT = "Format"
+    FEATURE = "Feature"
     NUM_BUNDLES = "NumBundles"
     ROW_COUNT = "RowCount"
     EXPECTED_DRIVER_EXECUTIONS = "ExpectedDriverExecutions"
@@ -65,13 +67,15 @@ class DynamoHandler:
 
     def create_request_table_entry(self,
                                    request_id: str,
-                                   fmt: str):
+                                   fmt: str,
+                                   feature: str = MatrixFeature.GENE.value):
         """
         Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
         of a Matrix Request.
 
         :param request_id: UUID identifying a matrix service request.
         :param fmt: User requested output file format of final expression matrix.
+        :param feature: User requested feature type of final expression matrix (gene|transcript).
         """
 
         self._request_table.put_item(
@@ -81,6 +85,7 @@ class DynamoHandler:
                 RequestTableField.DATA_VERSION.value: 0,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
+                RequestTableField.FEATURE.value: feature,
                 RequestTableField.NUM_BUNDLES.value: -1,
                 RequestTableField.ROW_COUNT.value: 0,
                 RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,

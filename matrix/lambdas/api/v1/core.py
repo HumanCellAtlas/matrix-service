@@ -22,6 +22,7 @@ matrix_infra_config = MatrixInfraConfig()
 
 def post_matrix(body: dict):
 
+    feature = body.get("feature", query_constructor.DEFAULT_FEATURE)
     format_ = body['format'] if 'format' in body else MatrixFormat.LOOM.value
     expected_formats = [mf.value for mf in MatrixFormat]
 
@@ -43,13 +44,13 @@ def post_matrix(body: dict):
                 requests.codes.request_entity_too_large)
 
     request_id = str(uuid.uuid4())
-    RequestTracker(request_id).initialize_request(format_)
+    RequestTracker(request_id).initialize_request(format_, feature)
 
     driver_payload = {
         'request_id': request_id,
         'filter': body["filter"],
         'fields': body.get("fields", query_constructor.DEFAULT_FIELDS),
-        'feature': body.get("feature", query_constructor.DEFAULT_FEATURE)
+        'feature': feature
     }
     lambda_handler.invoke(LambdaName.DRIVER_V1, driver_payload)
 
