@@ -124,7 +124,7 @@ def get_matrix(request_id: str):
                  'eta': "",
                  'message': f"Request {request_id} has successfully completed. "
                             f"The resultant expression matrix is available for download at "
-                            f"{matrix_location} for 30 days."},
+                            f"{matrix_location}."},
                 requests.codes.ok)
 
     # Timeout case
