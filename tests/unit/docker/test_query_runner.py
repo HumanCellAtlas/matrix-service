@@ -122,3 +122,44 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         message_body = json.loads(deadletter_queue_messages[0]['Body'])
         self.assertEqual(message_body['request_id'], request_id)
         self.assertEqual(message_body['s3_obj_key'], "test_s3_obj_key")
+
+    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.schedule_matrix_conversion")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_ready_for_conversion")
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.copy_obj")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.format", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.write_batch_job_id_to_db")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.lookup_cached_result")
+    @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.load_content_from_obj_key")
+    def test_run__with_one_message_in_queue_and_hash_cached_result(self,
+                                                                   mock_load_obj,
+                                                                   mock_transaction,
+                                                                   mock_lookup_cached_result,
+                                                                   mock_write_batch_job_id_to_db,
+                                                                   mock_format,
+                                                                   mock_s3_results_key,
+                                                                   mock_copy_obj,
+                                                                   mock_is_request_ready_for_conversion,
+                                                                   mock_schedule_matrix_conversion):
+        request_id = str(uuid.uuid4())
+        payload = {
+            'request_id': request_id,
+            's3_obj_key': "test_s3_obj_key",
+            'type': "cell"
+        }
+        self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
+        mock_format.return_value = "test_format"
+        mock_s3_results_key.return_value = "test_s3_results_key"
+        mock_lookup_cached_result.return_value = "test_cached_result_key"
+        # mock_schedule_conversion.return_value = "123-123"
+
+        self.query_runner.run()
+
+        # mock_schedule_conversion.assert_called_once_with(request_id,
+        #                                                  "test_format",
+        #                                                  "test_s3_results_key")
+        mock_copy_obj.assert_called_once_with("test_cached_result_key", "test_s3_results_key")
+        mock_is_request_ready_for_conversion.assert_not_called()
+        mock_write_batch_job_id_to_db.assert_not_called()
+        mock_schedule_matrix_conversion.assert_not_called()
