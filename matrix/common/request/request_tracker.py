@@ -119,7 +119,7 @@ class RequestTracker:
 
     @property
     def timeout(self) -> bool:
-        timeout = date.to_datetime(self.creation_date) < date.get_datetime_now() - timedelta(hours=12)
+        timeout = date.to_datetime(self.creation_date) < date.get_datetime_now() - timedelta(hours=36)
         if timeout:
             self.log_error("This request has timed out after 12 hours."
                            "Please try again by resubmitting the POST request.")
