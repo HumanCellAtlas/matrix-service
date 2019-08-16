@@ -155,11 +155,11 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                 new_callable=mock.PropertyMock)
     def test_timeout(self, mock_creation_date, mock_log_error):
         # no timeout
-        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=11, minutes=59))
+        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=35, minutes=59))
         self.assertFalse(self.request_tracker.timeout)
 
         # timeout
-        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=12, minutes=1))
+        mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=36, minutes=1))
         self.assertTrue(self.request_tracker.timeout)
         mock_log_error.assert_called_once()
 
