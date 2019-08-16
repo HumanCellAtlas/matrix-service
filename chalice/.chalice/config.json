@@ -13,11 +13,17 @@
         "LAMBDA_WORKER_FUNCTION_NAME": "dcp-matrix-service-worker-dev",
         "LAMBDA_REDUCER_FUNCTION_NAME": "dcp-matrix-service-reducer-dev",
         "DYNAMO_STATE_TABLE_NAME": "dcp-matrix-service-state-table-dev",
-        "MATRIX_VERSION": "a1efa8d",
+        "MATRIX_VERSION": "v1.1.0-56-g850b72b",
         "LAMBDA_NOTIFICATIONS_FUNCTION_NAME": "dcp-matrix-service-notifications-dev",
         "DYNAMO_OUTPUT_TABLE_NAME": "dcp-matrix-service-output-table-dev",
         "MATRIX_RESULTS_BUCKET": "dcp-matrix-service-results-dev",
-        "LAMBDA_NOTIFICATION_FUNCTION_NAME": "dcp-matrix-service-notification-dev"
+        "LAMBDA_NOTIFICATION_FUNCTION_NAME": "dcp-matrix-service-notification-dev",
+        "LAMBDA_DRIVER_V0_FUNCTION_NAME": "dcp-matrix-service-driver-v0-dev",
+        "LAMBDA_DRIVER_V1_FUNCTION_NAME": "dcp-matrix-service-driver-v1-dev",
+        "DYNAMO_REQUEST_TABLE_NAME": "dcp-matrix-service-request-table-dev",
+        "BATCH_CONVERTER_JOB_QUEUE_ARN": "arn:aws:batch:us-east-1::job-queue/dcp-matrix-converter-queue-dev",
+        "BATCH_CONVERTER_JOB_DEFINITION_ARN": "arn:aws:batch:us-east-1::job-definition/dcp-matrix-converter-job-definition-dev",
+        "MATRIX_QUERY_RESULTS_BUCKET": "dcp-matrix-service-query-results-dev"
       }
     },
     "integration": {
