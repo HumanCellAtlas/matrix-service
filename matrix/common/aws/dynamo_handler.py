@@ -25,6 +25,7 @@ class RequestTableField(TableField):
     DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
     FORMAT = "Format"
+    METADATA_FIELDS = "MetadataFields"
     FEATURE = "Feature"
     NUM_BUNDLES = "NumBundles"
     ROW_COUNT = "RowCount"
@@ -68,6 +69,7 @@ class DynamoHandler:
     def create_request_table_entry(self,
                                    request_id: str,
                                    fmt: str,
+                                   metadata_fields: list = None,
                                    feature: str = MatrixFeature.GENE.value):
         """
         Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
@@ -75,6 +77,7 @@ class DynamoHandler:
 
         :param request_id: UUID identifying a matrix service request.
         :param fmt: User requested output file format of final expression matrix.
+        :param metadata_fields: User requested metadata fields to include in the expression matrix.
         :param feature: User requested feature type of final expression matrix (gene|transcript).
         """
 
@@ -85,6 +88,7 @@ class DynamoHandler:
                 RequestTableField.DATA_VERSION.value: 0,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
+                RequestTableField.METADATA_FIELDS.value: [] if metadata_fields is None else metadata_fields,
                 RequestTableField.FEATURE.value: feature,
                 RequestTableField.NUM_BUNDLES.value: -1,
                 RequestTableField.ROW_COUNT.value: 0,

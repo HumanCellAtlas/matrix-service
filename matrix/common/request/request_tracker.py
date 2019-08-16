@@ -43,6 +43,7 @@ class RequestTracker:
         self._data_version = None
         self._num_bundles = None
         self._format = None
+        self._metadata_fields = None
         self._feature = None
 
         self.dynamo_handler = DynamoHandler()
@@ -152,6 +153,18 @@ class RequestTracker:
         return self._format
 
     @property
+    def metadata_fields(self) -> list:
+        """
+        The request's user-specified list of metadata fields to include in the resultant expression matrix.
+        :return:  list List of metadata fields
+        """
+        if not self._metadata_fields:
+            self._metadata_fields = \
+                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   request_id=self.request_id)[RequestTableField.METADATA_FIELDS.value]
+        return self._feature
+
+    @property
     def feature(self) -> str:
         """
         The request's user-specified feature type (gene|transcript) of the resultant expression matrix.
@@ -214,12 +227,19 @@ class RequestTracker:
                                                    request_id=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
         return error if error else ""
 
-    def initialize_request(self, fmt: str, feature: str = MatrixFeature.GENE.value) -> None:
+    def initialize_request(self,
+                           fmt: str,
+                           metadata_fields: list = None,
+                           feature: str = MatrixFeature.GENE.value) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         :param fmt: Request output format for matrix conversion
+        :param metadata_fields: Metadata fields to include in expression matrix
         :param feature: Feature type to generate expression counts for (one of MatrixFeature)
         """
-        self.dynamo_handler.create_request_table_entry(self.request_id, fmt, feature)
+        self.dynamo_handler.create_request_table_entry(self.request_id,
+                                                       fmt,
+                                                       [] if metadata_fields is None else metadata_fields,
+                                                       feature)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST,
             metric_value=1
@@ -239,6 +259,10 @@ class RequestTracker:
         h = hashlib.md5()
         h.update(self.feature.encode())
         h.update(self.format.encode())
+
+        for field in self.metadata_fields:
+            h.update(field.encode())
+
         for key in cellkeys:
             h.update(key.encode())
         request_hash = h.hexdigest()
