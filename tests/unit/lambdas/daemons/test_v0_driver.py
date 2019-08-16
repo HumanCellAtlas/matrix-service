@@ -6,6 +6,7 @@ from matrix.common.aws.dynamo_handler import DynamoTable, RequestTableField
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
 from matrix.lambdas.daemons.v0.driver import Driver
+from matrix.common.query_constructor import QueryType
 
 
 class TestDriver(unittest.TestCase):
@@ -143,10 +144,11 @@ class TestDriver(unittest.TestCase):
         self._driver.config = config
         test_query_loc = "test_path"
 
-        self._driver._add_request_query_to_sqs(test_query_loc)
+        self._driver._add_request_query_to_sqs(QueryType.CELL, test_query_loc)
 
         payload = {
             'request_id': self.request_id,
-            's3_obj_key': test_query_loc
+            's3_obj_key': test_query_loc,
+            'type': "cell"
         }
         mock_add_to_queue.assert_called_once_with("query_job_q_url", payload)

@@ -86,12 +86,12 @@ class Driver:
             QueryType.FEATURE: feature_query_obj_key
         }
 
-    def _add_request_query_to_sqs(self, q_type: QueryType, s3_obj_key: str):
+    def _add_request_query_to_sqs(self, query_type: QueryType, s3_obj_key: str):
         queue_url = self.query_job_q_url
         payload = {
             'request_id': self.request_id,
             's3_obj_key': s3_obj_key,
-            'type': q_type.value
+            'type': query_type.value
         }
         logger.debug(f"Adding {payload} to sqs {queue_url}")
         self.sqs_handler.add_message_to_queue(queue_url, payload)

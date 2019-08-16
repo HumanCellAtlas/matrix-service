@@ -112,9 +112,11 @@ def get_matrix(request_id: str):
 
         matrix_location = ""
         if format == MatrixFormat.LOOM.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}"
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
+                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}"
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
+                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.COMPLETE.value,
@@ -122,7 +124,7 @@ def get_matrix(request_id: str):
                  'eta': "",
                  'message': f"Request {request_id} has successfully completed. "
                             f"The resultant expression matrix is available for download at "
-                            f"{matrix_location}"},
+                            f"{matrix_location} for 30 days."},
                 requests.codes.ok)
 
     # Timeout case

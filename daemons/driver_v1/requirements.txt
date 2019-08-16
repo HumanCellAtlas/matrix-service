@@ -1,3 +1,6 @@
+dcplib==2.1.0
+pandas==0.23.4
+psycopg2==2.7.5
 requests==2.20.0
-dcplib==1.6.5
+s3fs==0.1.6
 tenacity==5.0.2

@@ -10,8 +10,8 @@ from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.config import MatrixInfraConfig, MatrixRedshiftConfig
 from matrix.common.logging import Logging
-from matrix.common.query_constructor import format_str_list
 from matrix.common.request.request_tracker import RequestTracker, Subtask
+from matrix.common.query_constructor import format_str_list, QueryType
 
 logger = Logging.get_logger(__name__)
 
@@ -129,8 +129,8 @@ class Driver:
             self.request_tracker.log_error(error_msg)
             return
 
-        for s3_obj_key in s3_obj_keys:
-            self._add_request_query_to_sqs(s3_obj_key)
+        for key in s3_obj_keys:
+            self._add_request_query_to_sqs(key, s3_obj_keys[key])
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     @retry(reraise=True, wait=wait_fixed(5), stop=stop_after_attempt(60))
@@ -165,13 +165,18 @@ class Driver:
                                                 format_str_list(resolved_bundle_fqids))
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
 
-        return [feature_query_obj_key, exp_query_obj_key, cell_query_obj_key]
+        return {
+            QueryType.CELL: cell_query_obj_key,
+            QueryType.EXPRESSION: exp_query_obj_key,
+            QueryType.FEATURE: feature_query_obj_key
+        }
 
-    def _add_request_query_to_sqs(self, s3_obj_key: str):
+    def _add_request_query_to_sqs(self, query_type: QueryType, s3_obj_key: str):
         queue_url = self.query_job_q_url
         payload = {
             'request_id': self.request_id,
-            's3_obj_key': s3_obj_key
+            's3_obj_key': s3_obj_key,
+            'type': query_type.value
         }
         logger.debug(f"Adding {payload} to sqs {queue_url}")
         self.sqs_handler.add_message_to_queue(queue_url, payload)
