@@ -32,7 +32,7 @@ class TestCore(unittest.TestCase):
         body.update({'bundle_fqids_url': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V0, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format, [], "gene")
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
@@ -55,7 +55,7 @@ class TestCore(unittest.TestCase):
         body.update({'bundle_fqids': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V0, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format, [], "gene")
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)

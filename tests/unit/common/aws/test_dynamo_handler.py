@@ -49,6 +49,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         self.assertTrue(all(field.value in entry for field in RequestTableField))
         self.assertEqual(entry[RequestTableField.FORMAT.value], self.format)
+        self.assertEqual(entry[RequestTableField.METADATA_FIELDS.value], [])
+        self.assertEqual(entry[RequestTableField.FEATURE.value], "gene")
         self.assertEqual(entry[RequestTableField.DATA_VERSION.value], 0)
         self.assertEqual(entry[RequestTableField.REQUEST_HASH.value], "N/A")
         self.assertEqual(entry[RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)
