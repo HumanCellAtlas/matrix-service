@@ -1,6 +1,8 @@
 """Script to pull from sqs and run redshift queries. Will be dockerized."""
 import json
 import os
+import traceback
+from enum import Enum
 
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.redshift_handler import RedshiftHandler
@@ -11,6 +13,12 @@ from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 
 logger = Logging.get_logger(__name__)
+
+
+class QueryType(Enum):
+    CELL = "cell"
+    EXPRESSION = "expression"
+    FEATURE = "feature"
 
 
 class QueryRunner:
@@ -43,6 +51,7 @@ class QueryRunner:
                 request_tracker = RequestTracker(request_id)
                 Logging.set_correlation_id(logger, value=request_id)
                 obj_key = payload['s3_obj_key']
+                query_type = payload['type']
                 receipt_handle = message['ReceiptHandle']
                 try:
                     logger.info(f"Fetching query from {obj_key}")
@@ -52,6 +61,13 @@ class QueryRunner:
                     self.redshift_handler.transaction([query], read_only=True)
                     logger.info(f"Finished running query from {obj_key}")
 
+                    if query_type == QueryType.CELL.value:
+                        cached_result_s3_key = request_tracker.lookup_cached_result()
+                        if cached_result_s3_key:
+                            s3 = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+                            s3.copy_obj(cached_result_s3_key, request_tracker.s3_results_key)
+                            return
+
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")
                     self.sqs_handler.delete_message_from_queue(self.query_job_q_url, receipt_handle)
 
@@ -60,11 +76,14 @@ class QueryRunner:
 
                     if request_tracker.is_request_ready_for_conversion():
                         logger.info("Scheduling batch conversion job")
-                        batch_job_id = self.batch_handler.schedule_matrix_conversion(request_id, request_tracker.format)
+                        batch_job_id = self.batch_handler.schedule_matrix_conversion(request_id,
+                                                                                     request_tracker.format,
+                                                                                     request_tracker.s3_results_key)
                         request_tracker.write_batch_job_id_to_db(batch_job_id)
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
                     request_tracker.log_error(str(e))
+                    logger.error(traceback.format_exc())
                     logger.info(f"Adding {message} to {self.query_job_deadletter_q_url}")
                     self.sqs_handler.add_message_to_queue(self.query_job_deadletter_q_url, payload)
                     logger.info(f"Deleting {message} from {self.query_job_q_url}")

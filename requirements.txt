@@ -1,8 +1,8 @@
 boto3==1.9.145
 botocore==1.12.145
 connexion[swagger-ui]==2.2.0
-dcplib==1.6.5
-hca==4.3.3
+dcplib==2.1.0
+hca==6.3.0
 inflection==0.3.1
 itsdangerous==0.24
 loompy==2.0.15

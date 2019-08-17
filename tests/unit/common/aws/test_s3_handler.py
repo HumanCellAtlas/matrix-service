@@ -32,3 +32,36 @@ class TestS3Handler(MatrixTestCaseUsingMockAWS):
         content = self.s3_handler.load_content_from_obj_key(obj_key)
 
         self.assertEqual(content, 'test_content')
+
+    def test_copy_obj(self):
+        src_key = "test_key"
+        dst_key = "test_key_copy"
+        test_content = "test_content"
+
+        self.s3_handler.store_content_in_s3(src_key, test_content)
+        self.s3_handler.copy_obj(src_key, dst_key)
+
+        content = self.s3_handler.load_content_from_obj_key(src_key)
+        content_copy = self.s3_handler.load_content_from_obj_key(dst_key)
+
+        self.assertEqual(content, content_copy)
+
+    def test_ls(self):
+        obj_key = "test_key"
+        test_content = "test_content"
+
+        results = self.s3_handler.ls(obj_key)
+        self.assertFalse(results)
+
+        self.s3_handler.store_content_in_s3(obj_key, test_content)
+        results = self.s3_handler.ls(obj_key)
+        self.assertEqual(len(results), 1)
+
+    def test_exists(self):
+        obj_key = "test_key"
+        test_content = "test_content"
+
+        self.assertFalse(self.s3_handler.exists(obj_key))
+
+        self.s3_handler.store_content_in_s3(obj_key, test_content)
+        self.assertTrue(self.s3_handler.exists(obj_key))

@@ -22,6 +22,8 @@ matrix_infra_config = MatrixInfraConfig()
 
 def post_matrix(body: dict):
 
+    feature = body.get("feature", query_constructor.DEFAULT_FEATURE)
+    fields = body.get("fields", query_constructor.DEFAULT_FIELDS)
     format_ = body['format'] if 'format' in body else MatrixFormat.LOOM.value
     expected_formats = [mf.value for mf in MatrixFormat]
 
@@ -43,13 +45,13 @@ def post_matrix(body: dict):
                 requests.codes.request_entity_too_large)
 
     request_id = str(uuid.uuid4())
-    RequestTracker(request_id).initialize_request(format_)
+    RequestTracker(request_id).initialize_request(format_, fields, feature)
 
     driver_payload = {
         'request_id': request_id,
         'filter': body["filter"],
-        'fields': body.get("fields", query_constructor.DEFAULT_FIELDS),
-        'feature': body.get("feature", query_constructor.DEFAULT_FEATURE)
+        'fields': fields,
+        'feature': feature
     }
     lambda_handler.invoke(LambdaName.DRIVER_V1, driver_payload)
 
@@ -112,9 +114,11 @@ def get_matrix(request_id: str):
 
         matrix_location = ""
         if format == MatrixFormat.LOOM.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}"
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
+                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}"
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{request_id}.{format}.zip"
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
+                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.COMPLETE.value,
@@ -122,7 +126,7 @@ def get_matrix(request_id: str):
                  'eta': "",
                  'message': f"Request {request_id} has successfully completed. "
                             f"The resultant expression matrix is available for download at "
-                            f"{matrix_location}"},
+                            f"{matrix_location}."},
                 requests.codes.ok)
 
     # Timeout case

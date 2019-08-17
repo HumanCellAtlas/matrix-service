@@ -91,13 +91,11 @@ class TestConversions(unittest.TestCase):
         for cell_psv in cell_psvs:
             for row in gzip.GzipFile(fileobj=io.BytesIO(cls._read_s3_url(cell_psv))):
                 row_dict = dict(zip(cell_columns, row.strip().split(b'|')))
-                for k, v in row_dict.items():
-                    if v == b't':
-                        row_dict[k] = b'True'
-                    elif v == b'f':
-                        row_dict[k] = b'False'
                 cell_data[row_dict["cellkey"].decode()] = {k: v.decode() for
                                                            k, v in row_dict.items()}
+                total_umis = cell_data[row_dict["cellkey"].decode()]["total_umis"]
+                cell_data[row_dict["cellkey"].decode()]["total_umis"] = (total_umis if total_umis == "nan"
+                                                                         else str(float(total_umis)))
 
         return cell_data
 

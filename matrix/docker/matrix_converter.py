@@ -2,7 +2,6 @@
 
 import argparse
 import gzip
-import json
 import os
 import shutil
 import sys
@@ -12,10 +11,14 @@ import loompy
 import pandas
 import s3fs
 
-from matrix.common import constants, date
+from matrix.common import date
 from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
+from matrix.common.query.cell_query_results_reader import CellQueryResultsReader
+from matrix.common.query.expression_query_results_reader import ExpressionQueryResultsReader
+from matrix.common.query.feature_query_results_reader import FeatureQueryResultsReader
+from matrix.docker.query_runner import QueryType
 
 LOGGER = Logging.get_logger(__file__)
 SUPPORTED_FORMATS = [item.value for item in MatrixFormat]
@@ -27,9 +30,7 @@ class MatrixConverter:
         self.args = args
         self.format = args.format
         self.request_tracker = RequestTracker(args.request_id)
-        self.expression_manifest = None
-        self.cell_manifest = None
-        self.gene_manifest = None
+        self.query_results = {}
 
         self.local_output_filename = os.path.basename(os.path.normpath(args.target_path))
         self.target_path = args.target_path
@@ -41,9 +42,11 @@ class MatrixConverter:
     def run(self):
         try:
             LOGGER.debug(f"Beginning matrix conversion run for {self.args.request_id}")
-            self.expression_manifest = self._parse_manifest(self.args.expression_manifest_key)
-            self.cell_manifest = self._parse_manifest(self.args.cell_metadata_manifest_key)
-            self.gene_manifest = self._parse_manifest(self.args.gene_metadata_manifest_key)
+            self.query_results = {
+                QueryType.CELL: CellQueryResultsReader(self.args.cell_metadata_manifest_key),
+                QueryType.EXPRESSION: ExpressionQueryResultsReader(self.args.expression_manifest_key),
+                QueryType.FEATURE: FeatureQueryResultsReader(self.args.gene_metadata_manifest_key)
+            }
 
             LOGGER.debug(f"Beginning conversion to {self.format}")
             local_converted_path = getattr(self, f"_to_{self.format}")()
@@ -64,127 +67,13 @@ class MatrixConverter:
             self.request_tracker.log_error(str(e))
             raise e
 
-    def _parse_manifest(self, manifest_key):
-        """Parse a manifest file produced by a Redshift UNLOAD query.
-
-        Args:
-            manifest_key: S3 location of the manifest file.
-
-        Returns:
-            dict with three keys:
-                "columns": the column headers for the tables
-                "part_urls": full S3 urls for the files containing results from each
-                    Redshift slice
-                "record_count": total number of records returned by the query
-        """
-        manifest = json.load(self.FS.open(manifest_key))
-
-        return {
-            "columns": [e["name"] for e in manifest["schema"]["elements"]],
-            "part_urls": [e["url"] for e in manifest["entries"] if e["meta"]["record_count"]],
-            "record_count": manifest["meta"]["record_count"]
-        }
-
     def _n_slices(self):
         """Return the number of slices associated with this Redshift result.
 
         Redshift UNLOAD creates on object per "slice" of the cluster. We might want to
         iterate over that, so this get the count of them.
         """
-        return len(self.cell_manifest["part_urls"])
-
-    def _load_cell_table_slice(self, slice_idx):
-        """Load the cell metadata table from a particular result slice.
-
-        Args:
-            slice_idx: Index of the slice to get cell metadata for
-
-        Returns:
-            dataframe of cell metadata. Index is "cellkey" and other columns are metadata
-            fields.
-        """
-
-        cell_table_columns = self._map_columns(self.cell_manifest["columns"])
-        cell_table_dtype = {c: "category" for c in cell_table_columns}
-        cell_table_dtype["genes_detected"] = "uint32"
-        cell_table_dtype["total_umis"] = "uint32"
-        cell_table_dtype["emptydrops_is_cell"] = "bool"
-        cell_table_dtype["cellkey"] = "object"
-
-        part_url = self.cell_manifest["part_urls"][slice_idx]
-        df = pandas.read_csv(
-            part_url, sep='|', header=None, names=cell_table_columns,
-            dtype=cell_table_dtype, true_values=["t"], false_values=["f"],
-            index_col="cellkey")
-
-        return df
-
-    def _load_gene_table(self):
-        """Load the gene metadata table.
-
-        Returns:
-            dataframe of gene metadata. Index is "featurekey"
-        """
-
-        gene_table_columns = self._map_columns(self.gene_manifest["columns"])
-
-        dfs = []
-        for part_url in self.gene_manifest["part_urls"]:
-            df = pandas.read_csv(part_url, sep='|', header=None, names=gene_table_columns,
-                                 true_values=["t"], false_values=["f"],
-                                 index_col="featurekey")
-
-            dfs.append(df)
-        return pandas.concat(dfs)
-
-    def _load_expression_table_slice(self, slice_idx, chunksize=1000000):
-        """Load expression data from a slice, yielding the data by a fixed number
-        of rows.
-
-        Args:
-            slice_idx: Index of the slice to get data for
-            chunksize: Number of rows to yield at once
-
-        Yields:
-            dataframe of expression data
-        """
-        part_url = self.expression_manifest["part_urls"][slice_idx]
-        expression_table_columns = ["cellkey", "featurekey", "exprvalue"]
-        expression_dtype = {"cellkey": "object", "featurekey": "object", "exprvalue": "float32"}
-
-        # Iterate over chunks of the remote file. We have to set a fixed set
-        # number of rows to read, but we also want to make sure that all the
-        # rows from a given cell are yielded with each chunk. So we are going
-        # to keep track of the "remainder", rows from the end of a chunk for a
-        # cell the spans a chunk boundary.
-        remainder = None
-        for chunk in pandas.read_csv(
-                part_url, sep="|", names=expression_table_columns,
-                dtype=expression_dtype, header=None, chunksize=chunksize):
-
-            # If we have some rows from the previous chunk, prepend them to
-            # this one
-            if remainder is not None:
-                adjusted_chunk = pandas.concat([remainder, chunk], axis=0, copy=False)
-            else:
-                adjusted_chunk = chunk
-
-            # Now get the rows for the cell at the end of this chunk that spans
-            # the boundary. Remove them from the chunk we yield, but keep them
-            # in the remainder.
-            last_cellkey = adjusted_chunk.tail(1).cellkey.values[0]
-            remainder = adjusted_chunk.loc[adjusted_chunk['cellkey'] == last_cellkey]
-            adjusted_chunk = adjusted_chunk[adjusted_chunk.cellkey != last_cellkey]
-
-            yield adjusted_chunk
-
-        if remainder is not None:
-            yield remainder
-
-    def _map_columns(self, cols):
-        return [constants.TABLE_COLUMN_TO_METADATA_FIELD[col]
-                if col in constants.TABLE_COLUMN_TO_METADATA_FIELD else col
-                for col in cols]
+        return len(self.query_results[QueryType.CELL].manifest["part_urls"])
 
     def _make_directory(self):
         if not self.local_output_filename.endswith(".zip"):
@@ -205,7 +94,7 @@ class MatrixConverter:
         return os.path.join(self.working_dir, self.local_output_filename)
 
     def _write_out_gene_dataframe(self, results_dir, output_filename, compression=False):
-        gene_df = self._load_gene_table()
+        gene_df = self.query_results[QueryType.FEATURE].load_results()
         if compression:
             gene_df.to_csv(os.path.join(results_dir, output_filename),
                            index_label="featurekey",
@@ -213,10 +102,6 @@ class MatrixConverter:
         else:
             gene_df.to_csv(os.path.join(results_dir, output_filename), index_label="featurekey")
         return gene_df
-
-    def _create_cell_dataframe(self):
-        cell_df = pandas.concat([self._load_cell_table_slice(s) for s in range(self._n_slices())], copy=False)
-        return cell_df
 
     def _write_out_cell_dataframe(self, results_dir, output_filename, cell_df, cellkeys, compression=False):
         cell_df = cell_df.reindex(index=cellkeys)
@@ -237,12 +122,12 @@ class MatrixConverter:
         """
         results_dir = self._make_directory()
         gene_df = self._write_out_gene_dataframe(results_dir, "genes.tsv.gz", compression=True)
-        cell_df = self._create_cell_dataframe()
+        cell_df = self.query_results[QueryType.CELL].load_results()
 
         # To follow 10x conventions, features are rows and cells are columns
         n_rows = gene_df.shape[0]
         n_cols = cell_df.shape[0]
-        n_nonzero = self.expression_manifest["record_count"]
+        n_nonzero = self.query_results[QueryType.EXPRESSION].manifest["record_count"]
 
         cellkeys = []
 
@@ -253,7 +138,7 @@ class MatrixConverter:
 
             cell_count = 0
             for slice_idx in range(self._n_slices()):
-                for chunk in self._load_expression_table_slice(slice_idx):
+                for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
 
                     grouped = chunk.groupby("cellkey")
                     for cell_group in grouped:
@@ -285,7 +170,7 @@ class MatrixConverter:
             self.local_output_filename += ".loom"
 
         # Read the row (gene) attributes and then set some conventional names
-        gene_df = self._load_gene_table()
+        gene_df = self.query_results[QueryType.FEATURE].load_results()
         gene_df["featurekey"] = gene_df.index
         row_attrs = gene_df.to_dict("series")
         # Not expected to be unique
@@ -306,12 +191,12 @@ class MatrixConverter:
         for slice_idx in range(self._n_slices()):
 
             # Get the cell metadata for all the cells in this slice
-            cell_df = self._load_cell_table_slice(slice_idx)
+            cell_df = self.query_results[QueryType.CELL].load_slice(slice_idx)
 
             # Iterate over fixed-size chunks of expression data from this
             # slice.
             chunk_idx = 0
-            for chunk in self._load_expression_table_slice(slice_idx):
+            for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
                 print(f"Loading chunk {chunk_idx} from slice {slice_idx}")
                 sparse_cell_dfs = []
 
@@ -376,7 +261,7 @@ class MatrixConverter:
 
         results_dir = self._make_directory()
         gene_df = self._write_out_gene_dataframe(results_dir, "genes.csv")
-        cell_df = self._create_cell_dataframe()
+        cell_df = self.query_results[QueryType.CELL].load_results()
 
         cellkeys = []
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
@@ -386,7 +271,7 @@ class MatrixConverter:
             exp_f.write('\n')
 
             for slice_idx in range(self._n_slices()):
-                for chunk in self._load_expression_table_slice(slice_idx):
+                for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
                     # Group the data by cellkey and iterate over each cell
                     grouped = chunk.groupby("cellkey")
                     for cell_group in grouped:

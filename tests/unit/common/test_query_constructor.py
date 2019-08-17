@@ -1,6 +1,7 @@
 import unittest
 
 from matrix.common import query_constructor
+from matrix.docker.query_runner import QueryType
 
 
 class TestFilterWhereConstruction(unittest.TestCase):
@@ -257,7 +258,7 @@ GZIP
 MANIFEST VERBOSE
 ;
 """
-        self.assertEqual(queries["expression_query"], expected_exp_query)
+        self.assertEqual(queries[QueryType.EXPRESSION], expected_exp_query)
 
         expected_feature_query = """
 UNLOAD ($$SELECT *
@@ -268,7 +269,7 @@ IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE;
 """
-        self.assertEqual(queries["feature_query"], expected_feature_query)
+        self.assertEqual(queries[QueryType.FEATURE], expected_feature_query)
 
     def test_nested(self):
         filter_ = \
@@ -336,7 +337,7 @@ GZIP
 MANIFEST VERBOSE
 ;
 """)
-        self.assertEqual(queries["cell_query"], expected_cell_query)
+        self.assertEqual(queries[QueryType.CELL], expected_cell_query)
 
         expected_exp_query = ("""
 UNLOAD ($$SELECT cell.cellkey, expression.featurekey, expression.exrpvalue
@@ -357,7 +358,7 @@ GZIP
 MANIFEST VERBOSE
 ;
 """)
-        self.assertEqual(queries["expression_query"], expected_exp_query)
+        self.assertEqual(queries[QueryType.EXPRESSION], expected_exp_query)
 
 
 class TestNameConversion(unittest.TestCase):
@@ -391,7 +392,7 @@ GZIP
 MANIFEST VERBOSE
 ;
 """)
-        self.assertEqual(queries["cell_query"], expected_cell_query)
+        self.assertEqual(queries[QueryType.CELL], expected_cell_query)
 
     def test_filter_conversion(self):
         filter_ = \
@@ -430,7 +431,7 @@ GZIP
 MANIFEST VERBOSE
 ;
 """)
-        self.assertEqual(queries["cell_query"], expected_cell_query)
+        self.assertEqual(queries[QueryType.CELL], expected_cell_query)
 
         expected_exp_query = ("""
 UNLOAD ($$SELECT cell.cellkey, expression.featurekey, expression.exrpvalue
@@ -450,7 +451,7 @@ GZIP
 MANIFEST VERBOSE
 ;
 """)
-        self.assertEqual(queries["expression_query"], expected_exp_query)
+        self.assertEqual(queries[QueryType.EXPRESSION], expected_exp_query)
 
 
 class TestDetailQuery(unittest.TestCase):

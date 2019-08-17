@@ -23,27 +23,56 @@
         "lambda:InvokeFunction"
       ],
       "Resource": [
-        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-driver-dev",
-        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-notification-dev"
+        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-driver-v0-dev",
+        "arn:aws:lambda:us-east-1:861229788715:function:dcp-matrix-service-driver-v1-dev"
       ]
     },
     {
       "Effect": "Allow",
       "Action": [
-        "dynamodb:GetItem"
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-dev",
-        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-output-table-dev"
+        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-request-table-dev"
       ]
     },
     {
       "Effect": "Allow",
       "Action": [
-        "dynamodb:PutItem"
+        "sqs:SendMessage"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:861229788715:table/dcp-matrix-service-state-table-dev"
+        "arn:aws:sqs:us-east-1:861229788715:dcp-matrix-notification-queue-dev"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:us-east-1:861229788715:secret:dcp/matrix/dev/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "batch:Describe*"
+      ],
+      "Resource": [
+        "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:Describe*"
+      ],
+      "Resource": [
+        "*"
       ]
     }
   ]

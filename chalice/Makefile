@@ -8,6 +8,7 @@ export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                  LAMBDA_NOTIFICATION_FUNCTION_NAME \
                                  DYNAMO_REQUEST_TABLE_NAME \
                                  MATRIX_RESULTS_BUCKET \
+                                 MATRIX_QUERY_RESULTS_BUCKET \
                                  BATCH_CONVERTER_JOB_QUEUE_ARN \
                                  BATCH_CONVERTER_JOB_DEFINITION_ARN
 
@@ -21,6 +22,7 @@ build:
 	mkdir -p chalicelib/matrix/lambdas
 	cp -R ../matrix/lambdas/api chalicelib/matrix/lambdas
 	cp -R ../matrix/common chalicelib/matrix
+	cp -R ../matrix/docker chalicelib/matrix
 	mkdir -p chalicelib/config
 	envsubst '$$API_HOST' < ../config/matrix-api.yml > chalicelib/config/matrix-api.yml
 	shopt -s nullglob; for wheel in vendor.in/*/*.whl; do unzip -q -o -d vendor $$wheel; done

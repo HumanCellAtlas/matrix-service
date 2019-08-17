@@ -1,9 +1,13 @@
+import hashlib
+import os
+import pandas
 import uuid
 from unittest import mock
 from datetime import timedelta
 
 from matrix.common import date
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
+from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.aws.cloudwatch_handler import MetricName
@@ -22,11 +26,91 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler = DynamoHandler()
 
         self.create_test_request_table()
+        self.create_s3_results_bucket()
 
-        self.dynamo_handler.create_request_table_entry(self.request_id, "test_format")
+        self.dynamo_handler.create_request_table_entry(self.request_id,
+                                                       "test_format",
+                                                       ["test_field_1", "test_field_2"],
+                                                       "test_feature")
+
+    def test_is_initialized(self):
+        self.assertTrue(self.request_tracker.is_initialized)
+
+        new_request_tracker = RequestTracker("test_uuid")
+        self.assertFalse(new_request_tracker.is_initialized)
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.generate_request_hash")
+    def test_request_hash(self, mock_generate_request_hash):
+        mock_generate_request_hash.return_value = "test_hash"
+
+        with self.subTest("Test generation and storage in Dynamo on first access"):
+            self.assertEqual(self.request_tracker.request_hash, "test_hash")
+            mock_generate_request_hash.assert_called_once()
+
+            stored_request_hash = self.dynamo_handler.get_table_item(
+                DynamoTable.REQUEST_TABLE,
+                request_id=self.request_id
+            )[RequestTableField.REQUEST_HASH.value]
+
+            self.assertEqual(self.request_tracker._request_hash, "test_hash")
+            self.assertEqual(stored_request_hash, "test_hash")
+
+        with self.subTest("Test immediate retrieval on future accesses"):
+            self.assertEqual(self.request_tracker.request_hash, "test_hash")
+            mock_generate_request_hash.assert_called_once()
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.request_hash",
+                new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.data_version",
+                new_callable=mock.PropertyMock)
+    def test_s3_results_prefix(self, mock_data_version, mock_request_hash):
+        mock_data_version.return_value = "test_data_version"
+        mock_request_hash.return_value = "test_request_hash"
+
+        self.assertEqual(self.request_tracker.s3_results_prefix, "test_data_version/test_request_hash")
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.format",
+                new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.request_hash",
+                new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.data_version",
+                new_callable=mock.PropertyMock)
+    def test_s3_results_key(self, mock_data_version, mock_request_hash, mock_format):
+        mock_data_version.return_value = "test_data_version"
+        mock_request_hash.return_value = "test_request_hash"
+        mock_format.return_value = "loom"
+
+        self.assertEqual(self.request_tracker.s3_results_key,
+                         f"test_data_version/test_request_hash/{self.request_id}.loom")
+
+        mock_format.return_value = "csv"
+        self.assertEqual(self.request_tracker.s3_results_key,
+                         f"test_data_version/test_request_hash/{self.request_id}.csv.zip")
+
+        mock_format.return_value = "mtx"
+        self.assertEqual(self.request_tracker.s3_results_key,
+                         f"test_data_version/test_request_hash/{self.request_id}.mtx.zip")
+
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    def test_data_version(self, mock_get_table_item):
+        mock_get_table_item.return_value = {RequestTableField.DATA_VERSION.value: 0}
+
+        with self.subTest("Test Dynamo read on first access"):
+            self.assertEqual(self.request_tracker.data_version, 0)
+            mock_get_table_item.assert_called_once()
+
+        with self.subTest("Test cached access on successive reads"):
+            self.assertEqual(self.request_tracker.data_version, 0)
+            mock_get_table_item.assert_called_once()
 
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
+
+    def test_metadata_fields(self):
+        self.assertEqual(self.request_tracker.metadata_fields, ["test_field_1", "test_field_2"])
+
+    def test_feature(self):
+        self.assertEqual(self.request_tracker.feature, "test_feature")
 
     def test_batch_job_id(self):
         self.assertEqual(self.request_tracker.batch_job_id, None)
@@ -80,8 +164,25 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_initialize_request(self, mock_create_request_table_entry, mock_create_cw_metric):
         self.request_tracker.initialize_request("test_format")
 
-        mock_create_request_table_entry.assert_called_once_with(self.request_id, "test_format")
+        mock_create_request_table_entry.assert_called_once_with(self.request_id, "test_format", [], "gene")
         mock_create_cw_metric.assert_called_once()
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.metadata_fields", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.query.cell_query_results_reader.CellQueryResultsReader.load_results")
+    @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
+    def test_generate_request_hash(self, mock_parse_manifest, mock_load_results, mock_metadata_fields):
+        mock_load_results.return_value = pandas.DataFrame(index=["test_cell_key_1", "test_cell_key_2"])
+        mock_metadata_fields.return_value = ["test_field_1", "test_field_2"]
+
+        h = hashlib.md5()
+        h.update(self.request_tracker.feature.encode())
+        h.update(self.request_tracker.format.encode())
+        h.update("test_field_1".encode())
+        h.update("test_field_2".encode())
+        h.update("test_cell_key_1".encode())
+        h.update("test_cell_key_2".encode())
+
+        self.assertEqual(self.request_tracker.generate_request_hash(), h.hexdigest())
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_expect_subtask_execution(self, mock_increment_table_field):
@@ -101,17 +202,29 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                                                            RequestTableField.COMPLETED_DRIVER_EXECUTIONS,
                                                            1)
 
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_prefix",
+                new_callable=mock.PropertyMock)
+    def test_lookup_cached_result(self, mock_s3_results_prefix):
+        mock_s3_results_prefix.return_value = "test_prefix"
+        s3_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+
+        with self.subTest("Do not match in S3 'directories'"):
+            s3_handler.store_content_in_s3("test_prefix", "test_content")
+            self.assertEqual(self.request_tracker.lookup_cached_result(), "")
+
+        with self.subTest("Successfully retrieve a result key"):
+            s3_handler.store_content_in_s3("test_prefix/test_result_1", "test_content")
+            s3_handler.store_content_in_s3("test_prefix/test_result_2", "test_content")
+            self.assertEqual(self.request_tracker.lookup_cached_result(), "test_prefix/test_result_1")
+
     def test_is_request_complete(self):
         self.assertFalse(self.request_tracker.is_request_complete())
 
-        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
-                                                  self.request_id,
-                                                  RequestTableField.COMPLETED_CONVERTER_EXECUTIONS,
-                                                  1)
-        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
-                                                  self.request_id,
-                                                  RequestTableField.COMPLETED_QUERY_EXECUTIONS,
-                                                  3)
+        s3_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
+
+        s3_handler.store_content_in_s3(
+            f"{self.request_tracker.s3_results_key}/{self.request_id}.{self.request_tracker.format}", "")
+
         self.assertTrue(self.request_tracker.is_request_complete())
 
     def test_is_request_ready_for_conversion(self):

@@ -3,6 +3,7 @@
 import typing
 
 from matrix.common import constants
+from matrix.docker.query_runner import QueryType
 
 COMPARISON_OPERATORS = [
     "=", ">=", "<=", "<", ">", "!=", "in"
@@ -165,7 +166,7 @@ def translate_fields(fields: typing.List[str]) -> typing.List[str]:
 
 def create_matrix_request_queries(filter_: typing.Dict[str, typing.Any],
                                   fields: typing.List[str],
-                                  feature: str) -> typing.Dict[str, str]:
+                                  feature: str) -> typing.Dict[QueryType, str]:
     """Based on values from the matrix request, create an appropriate
     set of redshift queries to serve the request.
     """
@@ -184,9 +185,9 @@ def create_matrix_request_queries(filter_: typing.Dict[str, typing.Any],
     feature_query = FEATURE_QUERY_TEMPLATE.format(feature_where_clause=feature_where_clause)
 
     return {
-        "expression_query": expression_query,
-        "cell_query": cell_query,
-        "feature_query": feature_query
+        QueryType.EXPRESSION: expression_query,
+        QueryType.CELL: cell_query,
+        QueryType.FEATURE: feature_query
     }
 
 

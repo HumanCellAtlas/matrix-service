@@ -222,7 +222,7 @@ resource "aws_batch_job_definition" "converter_job_def" {
     container_properties = <<CONTAINER_PROPERTIES
 {
   "command": [],
-  "image": "humancellatlas/matrix-converter:28",
+  "image": "humancellatlas/matrix-converter:29",
   "memory": 8192,
   "vcpus": 2,
   "jobRoleArn": "${aws_iam_role.converter_job_role.arn}",

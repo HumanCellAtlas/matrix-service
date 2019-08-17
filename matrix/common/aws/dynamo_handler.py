@@ -8,6 +8,7 @@ import botocore
 import requests
 
 from matrix.common import date
+from matrix.common.constants import MatrixFeature
 from matrix.common.exceptions import MatrixException
 
 
@@ -20,8 +21,12 @@ class RequestTableField(TableField):
     Field names for Request table in DynamoDB.
     """
     REQUEST_ID = "RequestId"
+    REQUEST_HASH = "RequestHash"
+    DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
     FORMAT = "Format"
+    METADATA_FIELDS = "MetadataFields"
+    FEATURE = "Feature"
     NUM_BUNDLES = "NumBundles"
     ROW_COUNT = "RowCount"
     EXPECTED_DRIVER_EXECUTIONS = "ExpectedDriverExecutions"
@@ -63,20 +68,28 @@ class DynamoHandler:
 
     def create_request_table_entry(self,
                                    request_id: str,
-                                   fmt: str):
+                                   fmt: str,
+                                   metadata_fields: list = None,
+                                   feature: str = MatrixFeature.GENE.value):
         """
         Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
         of a Matrix Request.
 
         :param request_id: UUID identifying a matrix service request.
         :param fmt: User requested output file format of final expression matrix.
+        :param metadata_fields: User requested metadata fields to include in the expression matrix.
+        :param feature: User requested feature type of final expression matrix (gene|transcript).
         """
 
         self._request_table.put_item(
             Item={
                 RequestTableField.REQUEST_ID.value: request_id,
+                RequestTableField.REQUEST_HASH.value: "N/A",
+                RequestTableField.DATA_VERSION.value: 0,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
+                RequestTableField.METADATA_FIELDS.value: [] if metadata_fields is None else metadata_fields,
+                RequestTableField.FEATURE.value: feature,
                 RequestTableField.NUM_BUNDLES.value: -1,
                 RequestTableField.ROW_COUNT.value: 0,
                 RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,

@@ -82,7 +82,7 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
     @staticmethod
     def create_s3_results_bucket():
         boto3.resource("s3", region_name=os.environ['AWS_DEFAULT_REGION']) \
-             .create_bucket(Bucket=os.environ['S3_RESULTS_BUCKET'])
+             .create_bucket(Bucket=os.environ['MATRIX_RESULTS_BUCKET'])
 
     @staticmethod
     def create_s3_queries_bucket():
