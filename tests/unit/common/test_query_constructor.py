@@ -1,5 +1,6 @@
 import unittest
 
+from matrix.common import constants
 from matrix.common import query_constructor
 from matrix.docker.query_runner import QueryType
 
@@ -414,7 +415,7 @@ MANIFEST VERBOSE
 
         feature = "transcript"
         queries = query_constructor.create_matrix_request_queries(
-            filter_, query_constructor.DEFAULT_FIELDS, feature)
+            filter_, constants.DEFAULT_FIELDS, feature)
 
         expected_cell_query = ("""
 UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid, cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, specimen.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501

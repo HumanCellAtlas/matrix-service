@@ -32,6 +32,15 @@ class BundleType(Enum):
     CELLRANGER = "cellranger"
 
 
+DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "cell.file_uuid",
+                  "cell.file_version", "cell.total_umis", "cell.emptydrops_is_cell",
+                  "cell.barcode", "specimen.*", "library_preparation.*", "project.*",
+                  "analysis.*"]
+
+
+DEFAULT_FEATURE = MatrixFeature.GENE.value
+
+
 MATRIX_ENV_TO_DSS_ENV = {
     'predev': "prod",
     'dev': "prod",

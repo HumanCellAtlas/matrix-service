@@ -4,7 +4,7 @@ import unittest
 import uuid
 from unittest import mock
 
-from matrix.common.constants import MatrixFormat, MatrixRequestStatus
+from matrix.common.constants import MatrixFormat, MatrixRequestStatus, DEFAULT_FIELDS
 from matrix.common.date import get_datetime_now
 from matrix.common.exceptions import MatrixException
 from matrix.common.aws.dynamo_handler import RequestTableField
@@ -32,7 +32,7 @@ class TestCore(unittest.TestCase):
         body.update({'bundle_fqids_url': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V0, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format, [], "gene")
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format, DEFAULT_FIELDS, "gene")
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
@@ -55,7 +55,7 @@ class TestCore(unittest.TestCase):
         body.update({'bundle_fqids': None})
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V0, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format, [], "gene")
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format, DEFAULT_FIELDS, "gene")
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)

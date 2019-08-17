@@ -4,7 +4,7 @@ from datetime import timedelta
 from enum import Enum
 
 from matrix.common import date
-from matrix.common.constants import MatrixFeature
+from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
@@ -229,8 +229,8 @@ class RequestTracker:
 
     def initialize_request(self,
                            fmt: str,
-                           metadata_fields: list = None,
-                           feature: str = MatrixFeature.GENE.value) -> None:
+                           metadata_fields: list = DEFAULT_FIELDS,
+                           feature: str = DEFAULT_FEATURE) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         :param fmt: Request output format for matrix conversion
         :param metadata_fields: Metadata fields to include in expression matrix
@@ -238,7 +238,7 @@ class RequestTracker:
         """
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        fmt,
-                                                       [] if metadata_fields is None else metadata_fields,
+                                                       metadata_fields,
                                                        feature)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST,
@@ -265,6 +265,7 @@ class RequestTracker:
 
         for key in cellkeys:
             h.update(key.encode())
+
         request_hash = h.hexdigest()
 
         return request_hash

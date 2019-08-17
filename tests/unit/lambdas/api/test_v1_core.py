@@ -4,7 +4,7 @@ import unittest
 import uuid
 from unittest import mock
 
-from matrix.common import constants, query_constructor
+from matrix.common import constants
 from matrix.common.constants import MatrixFormat, MatrixRequestStatus
 from matrix.common.date import get_datetime_now
 from matrix.common.exceptions import MatrixException
@@ -30,12 +30,12 @@ class TestCore(unittest.TestCase):
 
         response = core.post_matrix(body)
         body.update({'request_id': mock.ANY})
-        body.update({'fields': query_constructor.DEFAULT_FIELDS})
-        body.update({'feature': query_constructor.DEFAULT_FEATURE})
+        body.update({'fields': constants.DEFAULT_FIELDS})
+        body.update({'feature': constants.DEFAULT_FEATURE})
         body.pop('format')
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V1, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_, query_constructor.DEFAULT_FIELDS, "gene")
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_, constants.DEFAULT_FIELDS, "gene")
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)

@@ -22,8 +22,8 @@ matrix_infra_config = MatrixInfraConfig()
 
 def post_matrix(body: dict):
 
-    feature = body.get("feature", query_constructor.DEFAULT_FEATURE)
-    fields = body.get("fields", query_constructor.DEFAULT_FIELDS)
+    feature = body.get("feature", constants.DEFAULT_FEATURE)
+    fields = body.get("fields", constants.DEFAULT_FIELDS)
     format_ = body['format'] if 'format' in body else MatrixFormat.LOOM.value
     expected_formats = [mf.value for mf in MatrixFormat]
 

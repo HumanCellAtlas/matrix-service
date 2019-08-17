@@ -8,6 +8,7 @@ from datetime import timedelta
 from matrix.common import date
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.aws.s3_handler import S3Handler
+from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.aws.cloudwatch_handler import MetricName
@@ -164,7 +165,10 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_initialize_request(self, mock_create_request_table_entry, mock_create_cw_metric):
         self.request_tracker.initialize_request("test_format")
 
-        mock_create_request_table_entry.assert_called_once_with(self.request_id, "test_format", [], "gene")
+        mock_create_request_table_entry.assert_called_once_with(self.request_id,
+                                                                "test_format",
+                                                                DEFAULT_FIELDS,
+                                                                DEFAULT_FEATURE)
         mock_create_cw_metric.assert_called_once()
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.metadata_fields", new_callable=mock.PropertyMock)

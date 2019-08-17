@@ -8,7 +8,7 @@ import botocore
 import requests
 
 from matrix.common import date
-from matrix.common.constants import MatrixFeature
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS
 from matrix.common.exceptions import MatrixException
 
 
@@ -69,8 +69,8 @@ class DynamoHandler:
     def create_request_table_entry(self,
                                    request_id: str,
                                    fmt: str,
-                                   metadata_fields: list = None,
-                                   feature: str = MatrixFeature.GENE.value):
+                                   metadata_fields: list = DEFAULT_FIELDS,
+                                   feature: str = DEFAULT_FEATURE):
         """
         Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
         of a Matrix Request.
@@ -88,7 +88,7 @@ class DynamoHandler:
                 RequestTableField.DATA_VERSION.value: 0,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
-                RequestTableField.METADATA_FIELDS.value: [] if metadata_fields is None else metadata_fields,
+                RequestTableField.METADATA_FIELDS.value: metadata_fields,
                 RequestTableField.FEATURE.value: feature,
                 RequestTableField.NUM_BUNDLES.value: -1,
                 RequestTableField.ROW_COUNT.value: 0,

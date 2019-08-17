@@ -5,6 +5,7 @@ import mock
 import boto3
 
 from tests.unit import MatrixTestCaseUsingMockAWS
+from matrix.common.constants import DEFAULT_FIELDS
 from matrix.common.aws.dynamo_handler import DynamoHandler
 from matrix.common.aws.dynamo_handler import RequestTableField
 from matrix.common.aws.dynamo_handler import DynamoTable
@@ -49,7 +50,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         self.assertTrue(all(field.value in entry for field in RequestTableField))
         self.assertEqual(entry[RequestTableField.FORMAT.value], self.format)
-        self.assertEqual(entry[RequestTableField.METADATA_FIELDS.value], [])
+        self.assertEqual(entry[RequestTableField.METADATA_FIELDS.value], DEFAULT_FIELDS)
         self.assertEqual(entry[RequestTableField.FEATURE.value], "gene")
         self.assertEqual(entry[RequestTableField.DATA_VERSION.value], 0)
         self.assertEqual(entry[RequestTableField.REQUEST_HASH.value], "N/A")
