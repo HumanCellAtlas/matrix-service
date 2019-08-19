@@ -14,7 +14,7 @@ import s3fs
 
 from . import validation
 from .wait_for import WaitFor
-from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus
+from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus, DEFAULT_FIELDS, DEFAULT_FEATURE
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.query_constructor import format_str_list
 
@@ -119,7 +119,7 @@ class MatrixServiceTest(unittest.TestCase):
         csv_metrics = validation.calculate_ss2_metrics_csv(matrix_location)
         self._compare_metrics(direct_metrics, csv_metrics)
 
-    def _cleanup_matrix_results(self, request_id):
+    def _cleanup_matrix_result(self, request_id):
         s3_file_system = s3fs.S3FileSystem(anon=False)
 
         matrix_location = self._retrieve_matrix_location(request_id)
@@ -166,7 +166,7 @@ class TestMatrixServiceV0(MatrixServiceTest):
 
     def tearDown(self):
         if hasattr(self, 'request_id') and self.request_id:
-            self._cleanup_matrix_results(self.request_id)
+            self._cleanup_matrix_result(self.request_id)
 
     def test_single_bundle_request(self):
         self.request_id = self._post_matrix_service_request(
@@ -198,6 +198,32 @@ class TestMatrixServiceV0(MatrixServiceTest):
         WaitFor(self._poll_get_matrix_service_request, self.request_id) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
         self._analyze_mtx_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+
+    def test_cache_hit_matrix_service(self):
+        request_id_1 = self._post_matrix_service_request(
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
+        # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
+        WaitFor(self._poll_get_matrix_service_request, request_id_1) \
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+        self._analyze_loom_matrix_results(request_id_1, INPUT_BUNDLE_IDS[self.dss_env])
+
+        request_id_2 = self._post_matrix_service_request(
+            bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
+        # timeout seconds is reduced to 300 as cache hits do not run conversion in batch.
+        WaitFor(self._poll_get_matrix_service_request, request_id_2) \
+            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
+        self._analyze_loom_matrix_results(request_id_2, INPUT_BUNDLE_IDS[self.dss_env])
+
+        matrix_location_1 = self._retrieve_matrix_location(request_id_1)
+        matrix_location_2 = self._retrieve_matrix_location(request_id_2)
+
+        loom_metrics_1 = validation.calculate_ss2_metrics_loom(matrix_location_1)
+        loom_metrics_2 = validation.calculate_ss2_metrics_loom(matrix_location_2)
+
+        self._compare_metrics(loom_metrics_1, loom_metrics_2)
+
+        self._cleanup_matrix_result(request_id_1)
+        self._cleanup_matrix_result(request_id_2)
 
     def test_matrix_service_without_specified_output(self):
         self.request_id = self._post_matrix_service_request(
@@ -351,7 +377,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
 
     def tearDown(self):
         if hasattr(self, 'request_id') and self.request_id:
-            self._cleanup_matrix_results(self.request_id)
+            self._cleanup_matrix_result(self.request_id)
 
     def _post_matrix_service_request(self, filter_, fields=None, feature=None, format_=None):
         data = {"filter": filter_}
@@ -374,16 +400,40 @@ class TestMatrixServiceV1(MatrixServiceTest):
 
     def test_mtx_output_matrix_service(self):
 
-        self.request_id = self._post_matrix_service_request(
+        request_id_1 = self._post_matrix_service_request(
             filter_={"op": "in",
                      "field": "dss_bundle_fqid",
                      "value": INPUT_BUNDLE_IDS[self.dss_env]},
             format_="mtx")
 
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
+        WaitFor(self._poll_get_matrix_service_request, request_id_1) \
             .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_mtx_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+        self._analyze_mtx_matrix_results(request_id_1, INPUT_BUNDLE_IDS[self.dss_env])
+
+        with self.subTest("Testing cache hit path with explicit parameters"):
+            request_id_2 = self._post_matrix_service_request(
+                filter_={"op": "in",
+                         "field": "dss_bundle_fqid",
+                         "value": INPUT_BUNDLE_IDS[self.dss_env]},
+                format_="mtx",
+                fields=DEFAULT_FIELDS,
+                feature=DEFAULT_FEATURE)
+            # timeout seconds is reduced to 300 as cache hits do not run conversion in batch.
+            WaitFor(self._poll_get_matrix_service_request, request_id_2) \
+                .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
+            self._analyze_mtx_matrix_results(request_id_2, INPUT_BUNDLE_IDS[self.dss_env])
+
+            matrix_location_1 = self._retrieve_matrix_location(request_id_1)
+            matrix_location_2 = self._retrieve_matrix_location(request_id_2)
+
+            mtx_metrics_1 = validation.calculate_ss2_metrics_mtx(matrix_location_1)
+            mtx_metrics_2 = validation.calculate_ss2_metrics_mtx(matrix_location_2)
+
+            self._compare_metrics(mtx_metrics_1, mtx_metrics_2)
+
+            self._cleanup_matrix_result(request_id_1)
+            self._cleanup_matrix_result(request_id_2)
 
     def test_request_fields(self):
 
