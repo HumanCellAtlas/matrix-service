@@ -61,15 +61,15 @@ class QueryRunner:
                     self.redshift_handler.transaction([query], read_only=True)
                     logger.info(f"Finished running query from {obj_key}")
 
+                    logger.info(f"Deleting {message} from {self.query_job_q_url}")
+                    self.sqs_handler.delete_message_from_queue(self.query_job_q_url, receipt_handle)
+
                     if query_type == QueryType.CELL.value:
                         cached_result_s3_key = request_tracker.lookup_cached_result()
                         if cached_result_s3_key:
                             s3 = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
                             s3.copy_obj(cached_result_s3_key, request_tracker.s3_results_key)
-                            return
-
-                    logger.info(f"Deleting {message} from {self.query_job_q_url}")
-                    self.sqs_handler.delete_message_from_queue(self.query_job_q_url, receipt_handle)
+                            continue
 
                     logger.info("Incrementing completed queries in state table")
                     request_tracker.complete_subtask_execution(Subtask.QUERY)

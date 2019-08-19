@@ -126,6 +126,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.schedule_matrix_conversion")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_ready_for_conversion")
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.copy_obj")
+    @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.delete_message_from_queue")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.write_batch_job_id_to_db")
@@ -139,6 +140,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
                                                                    mock_write_batch_job_id_to_db,
                                                                    mock_format,
                                                                    mock_s3_results_key,
+                                                                   mock_delete_message_from_queue,
                                                                    mock_copy_obj,
                                                                    mock_is_request_ready_for_conversion,
                                                                    mock_schedule_matrix_conversion):
@@ -152,13 +154,10 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         mock_format.return_value = "test_format"
         mock_s3_results_key.return_value = "test_s3_results_key"
         mock_lookup_cached_result.return_value = "test_cached_result_key"
-        # mock_schedule_conversion.return_value = "123-123"
 
-        self.query_runner.run()
+        self.query_runner.run(max_loops=1)
 
-        # mock_schedule_conversion.assert_called_once_with(request_id,
-        #                                                  "test_format",
-        #                                                  "test_s3_results_key")
+        mock_delete_message_from_queue.assert_called_once_with("test_query_job_q_name", mock.ANY)
         mock_copy_obj.assert_called_once_with("test_cached_result_key", "test_s3_results_key")
         mock_is_request_ready_for_conversion.assert_not_called()
         mock_write_batch_job_id_to_db.assert_not_called()
