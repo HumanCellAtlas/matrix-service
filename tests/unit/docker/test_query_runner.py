@@ -152,13 +152,9 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         mock_format.return_value = "test_format"
         mock_s3_results_key.return_value = "test_s3_results_key"
         mock_lookup_cached_result.return_value = "test_cached_result_key"
-        # mock_schedule_conversion.return_value = "123-123"
 
-        self.query_runner.run()
+        self.query_runner.run(max_loops=1)
 
-        # mock_schedule_conversion.assert_called_once_with(request_id,
-        #                                                  "test_format",
-        #                                                  "test_s3_results_key")
         mock_copy_obj.assert_called_once_with("test_cached_result_key", "test_s3_results_key")
         mock_is_request_ready_for_conversion.assert_not_called()
         mock_write_batch_job_id_to_db.assert_not_called()
