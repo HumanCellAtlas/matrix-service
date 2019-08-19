@@ -119,6 +119,17 @@ class MatrixServiceTest(unittest.TestCase):
         csv_metrics = validation.calculate_ss2_metrics_csv(matrix_location)
         self._compare_metrics(direct_metrics, csv_metrics)
 
+    def _cleanup_matrix_results(self, request_id):
+        s3_file_system = s3fs.S3FileSystem(anon=False)
+
+        matrix_location = self._retrieve_matrix_location(request_id)
+        results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
+        if matrix_location.find(results_bucket) > -1:
+            s3_key = matrix_location[matrix_location.find(results_bucket):]
+            s3_file_system.rm(s3_key)
+
+        self.request_id = None
+
     def _compare_metrics(self, metrics_1, metrics_2):
         for metric in metrics_1:
             delta = metrics_1[metric] / 100000
@@ -152,6 +163,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
         self.redshift_handler = RedshiftHandler()
+
+    def tearDown(self):
+        if hasattr(self, 'request_id') and self.request_id:
+            self._cleanup_matrix_results(self.request_id)
 
     def test_single_bundle_request(self):
         self.request_id = self._post_matrix_service_request(
@@ -333,6 +348,10 @@ class TestMatrixServiceV1(MatrixServiceTest):
         self.headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         self.verbose = True
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
+
+    def tearDown(self):
+        if hasattr(self, 'request_id') and self.request_id:
+            self._cleanup_matrix_results(self.request_id)
 
     def _post_matrix_service_request(self, filter_, fields=None, feature=None, format_=None):
         data = {"filter": filter_}
