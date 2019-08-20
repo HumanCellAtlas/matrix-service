@@ -1,13 +1,16 @@
 """Script to convert the outputs of Redshift queries into different formats."""
 
 import argparse
+import datetime
 import gzip
+import itertools
 import os
 import shutil
 import sys
 import zipfile
 
-import loompy
+import h5py
+import numpy
 import pandas
 import s3fs
 
@@ -165,6 +168,13 @@ class MatrixConverter:
            output_path: Path to the new loom file.
         """
 
+        def _grouper(iterable, n):
+            args = [iter(iterable)] * n
+            return itertools.zip_longest(*args, fillvalue=None)
+
+        def _timestamp():
+            return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")
+
         # Put loom on the output filename if it's not already there.
         if not self.local_output_filename.endswith(".loom"):
             self.local_output_filename += ".loom"
@@ -172,85 +182,85 @@ class MatrixConverter:
         # Read the row (gene) attributes and then set some conventional names
         gene_df = self.query_results[QueryType.FEATURE].load_results()
         gene_df["featurekey"] = gene_df.index
-        row_attrs = gene_df.to_dict("series")
-        # Not expected to be unique
-        row_attrs["Gene"] = row_attrs.pop("featurename")
-        row_attrs["Accession"] = row_attrs.pop("featurekey")
-        for key, val in row_attrs.items():
-            row_attrs[key] = val.values
 
-        loom_parts = []
-        loom_part_dir = os.path.join(self.working_dir, ".loom_parts")
+        gene_count = gene_df.shape[0]
+        cell_count = self.query_results[QueryType.CELL]._parse_manifest()["record_count"]
 
-        if os.path.exists(loom_part_dir):
-            shutil.rmtree(loom_part_dir)
+        loom_path = os.path.join(self.working_dir, self.local_output_filename)
+        loom_file = h5py.File(loom_path, mode="w")
 
-        os.makedirs(loom_part_dir)
+        loom_file.attrs["CreationDate"] = _timestamp()
+        loom_file.attrs["LOOM_SPEC_VERSION"] = "2.0.1"
 
-        # Iterate over the "slices" produced by the redshift query
+        matrix_dataset = loom_file.create_dataset(
+            "matrix",
+            shape=(gene_count, cell_count),
+            dtype="float32",
+            compression="gzip",
+            compression_opts=2,
+            chunks=(gene_count, 1))
+
+        cell_ids = []
+        cell_counter = 0
         for slice_idx in range(self._n_slices()):
-
-            # Get the cell metadata for all the cells in this slice
-            cell_df = self.query_results[QueryType.CELL].load_slice(slice_idx)
-
-            # Iterate over fixed-size chunks of expression data from this
-            # slice.
-            chunk_idx = 0
             for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
-                print(f"Loading chunk {chunk_idx} from slice {slice_idx}")
-                sparse_cell_dfs = []
-
-                # Group the data by cellkey and iterate over each cell
                 grouped = chunk.groupby("cellkey")
-                for cell_group in grouped:
-                    single_cell_df = cell_group[1]
 
-                    # Reshape the dataframe so cellkey is a column and features
-                    # are rows. Reindex so all dataframes have the same row
-                    # order, and then sparsify because this is a very empty
-                    # dataset usually.
-                    sparse_cell_dfs.append(single_cell_df
-                                           .pivot(index="featurekey", columns="cellkey", values="exprvalue")
-                                           .reindex(index=row_attrs["Accession"]).to_sparse())
+                for cell_group in _grouper(grouped, 50):
+                    single_cells_df = pandas.concat((c[1] for c in cell_group if c), axis=0, copy=False)
+                    pivoted = single_cells_df.pivot(
+                        index="featurekey", columns="cellkey", values="exrpvalue").reindex(
+                            index=gene_df.index, fill_value=0)
+                    cell_ids.extend(pivoted.columns.to_list())
+                    matrix_dataset[:, cell_counter:cell_counter + pivoted.shape[1]] = pivoted
+                    cell_counter += pivoted.shape[1]
+        matrix_dataset.attrs["last_modified"] = _timestamp()
 
-                # Concatenate the cell dataframes together. This is what we'll
-                # write to disk.
-                if not sparse_cell_dfs:
-                    continue
-                sparse_expression_matrix = pandas.concat(sparse_cell_dfs, axis=1, copy=True)
+        cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cell_ids)
+        col_attrs_group = loom_file.create_group("col_attrs")
+        cell_id_dset = col_attrs_group.create_dataset("CellID", data=cell_df.index, dtype=h5py.special_dtype(vlen=str),
+                                                      compression='gzip', compression_opts=2, chunks=(256,))
+        cell_id_dset.attrs["last_modified"] = _timestamp()
 
-                # Get the cell metadata dataframe for just the cell in this
-                # chunk
-                chunk_cell_df = cell_df.reindex(index=sparse_expression_matrix.columns)
-                chunk_cell_df["cellkey"] = chunk_cell_df.index
-                for col in chunk_cell_df.columns:
-                    if chunk_cell_df[col].dtype.name == "category":
-                        chunk_cell_df[col] = chunk_cell_df[col].astype("object")
-                col_attrs = chunk_cell_df.to_dict("series")
-                col_attrs["CellID"] = col_attrs.pop("cellkey")
+        for cell_metadata_field in cell_df:
+            cell_metadata = cell_df[cell_metadata_field]
+            if cell_metadata.dtype == numpy.dtype("O"):
+                h5_dtype = h5py.special_dtype(vlen=str)
+            else:
+                h5_dtype = cell_metadata.dtype
+            dset = col_attrs_group.create_dataset(cell_metadata_field, data=cell_metadata, dtype=h5_dtype,
+                                                  compression='gzip', compression_opts=2, chunks=(256,))
+            dset.attrs["last_modified"] = _timestamp()
+        col_attrs_group.attrs["last_modified"] = _timestamp()
 
-                # Just a thing you have to do...
-                for key, val in col_attrs.items():
-                    col_attrs[key] = val.values
+        row_attrs_group = loom_file.create_group("row_attrs")
+        acc_dset = row_attrs_group.create_dataset("Accession", data=gene_df.index, dtype=h5py.special_dtype(vlen=str),
+                                                  compression='gzip', compression_opts=2, chunks=(256,))
+        acc_dset.attrs["last_modified"] = _timestamp()
+        name_dset = row_attrs_group.create_dataset("Gene", data=gene_df["featurename"],
+                                                   dtype=h5py.special_dtype(vlen=str),
+                                                   compression='gzip', compression_opts=2, chunks=(256,))
+        name_dset.attrs["last_modified"] = _timestamp()
 
-                # Write the data from this chunk to its own file.
-                loom_part_path = os.path.join(loom_part_dir,
-                                              f"matrix.{slice_idx}.{chunk_idx}.loom")
-                print(f"Writing to {loom_part_path}")
-                loompy.create(
-                    loom_part_path, sparse_expression_matrix.to_coo(), row_attrs, col_attrs)
-                loom_parts.append(loom_part_path)
-                chunk_idx += 1
+        for gene_metadata_field in gene_df:
+            if gene_metadata_field == "featurename":
+                continue
+            gene_metadata = gene_df[gene_metadata_field]
+            if gene_metadata.dtype == numpy.dtype("O"):
+                h5_dtype = h5py.special_dtype(vlen=str)
+            else:
+                h5_dtype = gene_metadata.dtype
+            dset = row_attrs_group.create_dataset(gene_metadata_field, data=gene_metadata, dtype=h5_dtype,
+                                                  compression='gzip', compression_opts=2, chunks=(256,))
+            dset.attrs["last_modified"] = _timestamp()
+        row_attrs_group.attrs["last_modified"] = _timestamp()
 
-        # Using the loompy method, combine all the chunks together into a
-        # single file.
-        print(f"Parts complete. Writing to {self.local_output_filename}")
-        loompy.combine(loom_parts,
-                       key="Accession",
-                       output_file=os.path.join(self.working_dir, self.local_output_filename))
-        shutil.rmtree(loom_part_dir)
+        loom_file.create_group("layers")
+        loom_file.create_group("row_graphs")
 
-        return os.path.join(self.working_dir, self.local_output_filename)
+        loom_file.attrs["last_modified"] = _timestamp()
+
+        return loom_path
 
     def _to_csv(self):
         """Write a zip file with csvs from Redshift query manifests and readme.
