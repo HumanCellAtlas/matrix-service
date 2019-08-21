@@ -9,8 +9,6 @@ ADD code /
 RUN pip3 install -U pip \
  && pip install -r /requirements.txt
 
-RUN sed -i -e "s/TkAgg/Agg/g" /usr/local/lib/python3.6/dist-packages/matplotlib/mpl-data/matplotlibrc
-
 ENV AWS_DEFAULT_REGION='us-east-1'
 
 RUN chmod +x /matrix_converter.py
