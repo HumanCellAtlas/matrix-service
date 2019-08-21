@@ -42,9 +42,23 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.generate_request_hash")
     def test_request_hash(self, mock_generate_request_hash):
-        mock_generate_request_hash.return_value = "test_hash"
+        with self.subTest("Test skip generation in API deployments:"):
+            os.environ['MATRIX_VERSION'] = "test_version"
+            self.assertEqual(self.request_tracker.request_hash, "N/A")
+            mock_generate_request_hash.assert_not_called()
+
+            stored_request_hash = self.dynamo_handler.get_table_item(
+                DynamoTable.REQUEST_TABLE,
+                request_id=self.request_id
+            )[RequestTableField.REQUEST_HASH.value]
+
+            self.assertEqual(self.request_tracker._request_hash, "N/A")
+            self.assertEqual(stored_request_hash, "N/A")
+
+            del os.environ['MATRIX_VERSION']
 
         with self.subTest("Test generation and storage in Dynamo on first access"):
+            mock_generate_request_hash.return_value = "test_hash"
             self.assertEqual(self.request_tracker.request_hash, "test_hash")
             mock_generate_request_hash.assert_called_once()
 
