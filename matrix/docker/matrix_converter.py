@@ -10,7 +10,7 @@ import sys
 import zipfile
 
 import h5py
-import numpy
+import loompy
 import pandas
 import s3fs
 
@@ -184,7 +184,9 @@ class MatrixConverter:
         gene_df["featurekey"] = gene_df.index
 
         gene_count = gene_df.shape[0]
-        cell_count = self.query_results[QueryType.CELL]._parse_manifest()["record_count"]
+        cell_count = self.query_results[QueryType.CELL].manifest["record_count"]
+
+        os.makedirs(self.working_dir)
 
         loom_path = os.path.join(self.working_dir, self.local_output_filename)
         loom_file = h5py.File(loom_path, mode="w")
@@ -209,8 +211,8 @@ class MatrixConverter:
                 for cell_group in _grouper(grouped, 50):
                     single_cells_df = pandas.concat((c[1] for c in cell_group if c), axis=0, copy=False)
                     pivoted = single_cells_df.pivot(
-                        index="featurekey", columns="cellkey", values="exrpvalue").reindex(
-                            index=gene_df.index, fill_value=0)
+                        index="featurekey", columns="cellkey", values="exprvalue").reindex(
+                            index=gene_df.index).fillna(0.0)
                     cell_ids.extend(pivoted.columns.to_list())
                     matrix_dataset[:, cell_counter:cell_counter + pivoted.shape[1]] = pivoted
                     cell_counter += pivoted.shape[1]
@@ -218,40 +220,36 @@ class MatrixConverter:
 
         cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cell_ids)
         col_attrs_group = loom_file.create_group("col_attrs")
-        cell_id_dset = col_attrs_group.create_dataset("CellID", data=cell_df.index, dtype=h5py.special_dtype(vlen=str),
-                                                      compression='gzip', compression_opts=2, chunks=(256,))
+        cell_id_dset = col_attrs_group.create_dataset(
+            "CellID", data=loompy.normalize_attr_values(cell_df.index.to_numpy()),
+            compression='gzip', compression_opts=2, chunks=(256,))
         cell_id_dset.attrs["last_modified"] = _timestamp()
 
         for cell_metadata_field in cell_df:
             cell_metadata = cell_df[cell_metadata_field]
-            if cell_metadata.dtype == numpy.dtype("O"):
-                h5_dtype = h5py.special_dtype(vlen=str)
-            else:
-                h5_dtype = cell_metadata.dtype
-            dset = col_attrs_group.create_dataset(cell_metadata_field, data=cell_metadata, dtype=h5_dtype,
-                                                  compression='gzip', compression_opts=2, chunks=(256,))
+            dset = col_attrs_group.create_dataset(
+                cell_metadata_field, data=loompy.normalize_attr_values(cell_metadata.to_numpy()),
+                compression='gzip', compression_opts=2, chunks=(256,))
             dset.attrs["last_modified"] = _timestamp()
         col_attrs_group.attrs["last_modified"] = _timestamp()
 
         row_attrs_group = loom_file.create_group("row_attrs")
-        acc_dset = row_attrs_group.create_dataset("Accession", data=gene_df.index, dtype=h5py.special_dtype(vlen=str),
-                                                  compression='gzip', compression_opts=2, chunks=(256,))
+        acc_dset = row_attrs_group.create_dataset(
+            "Accession", data=loompy.normalize_attr_values(gene_df.index.to_numpy()),
+            compression='gzip', compression_opts=2, chunks=(256,))
         acc_dset.attrs["last_modified"] = _timestamp()
-        name_dset = row_attrs_group.create_dataset("Gene", data=gene_df["featurename"],
-                                                   dtype=h5py.special_dtype(vlen=str),
-                                                   compression='gzip', compression_opts=2, chunks=(256,))
+        name_dset = row_attrs_group.create_dataset(
+            "Gene", data=loompy.normalize_attr_values(gene_df["featurename"].to_numpy()),
+            compression='gzip', compression_opts=2, chunks=(256,))
         name_dset.attrs["last_modified"] = _timestamp()
 
         for gene_metadata_field in gene_df:
             if gene_metadata_field == "featurename":
                 continue
             gene_metadata = gene_df[gene_metadata_field]
-            if gene_metadata.dtype == numpy.dtype("O"):
-                h5_dtype = h5py.special_dtype(vlen=str)
-            else:
-                h5_dtype = gene_metadata.dtype
-            dset = row_attrs_group.create_dataset(gene_metadata_field, data=gene_metadata, dtype=h5_dtype,
-                                                  compression='gzip', compression_opts=2, chunks=(256,))
+            dset = row_attrs_group.create_dataset(
+                gene_metadata_field, data=loompy.normalize_attr_values(gene_metadata.to_numpy()),
+                compression='gzip', compression_opts=2, chunks=(256,))
             dset.attrs["last_modified"] = _timestamp()
         row_attrs_group.attrs["last_modified"] = _timestamp()
 
