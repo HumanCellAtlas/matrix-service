@@ -5,9 +5,9 @@ import requests
 
 from matrix.docker.query_runner import QueryRunner
 from matrix.common.aws.sqs_handler import SQSHandler
-from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.exceptions import MatrixException
+from tests.unit import MatrixTestCaseUsingMockAWS
 
 
 class TestQueryRunner(MatrixTestCaseUsingMockAWS):

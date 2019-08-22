@@ -10,8 +10,8 @@ from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, Request
 from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
 from matrix.common.request.request_tracker import RequestTracker, Subtask
-from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.aws.cloudwatch_handler import MetricName
+from tests.unit import MatrixTestCaseUsingMockAWS
 
 
 class TestRequestTracker(MatrixTestCaseUsingMockAWS):

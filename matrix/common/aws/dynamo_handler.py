@@ -8,8 +8,9 @@ import botocore
 import requests
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.exceptions import MatrixException
+from matrix.common.v1_api_handler import V1ApiHandler
 
 
 class DynamoTable(Enum):
@@ -31,7 +32,7 @@ class DataVersionTableField(TableField):
     """
     DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
-    PROJECT_UUIDS = "ProjectUuids"
+    PROJECT_CELL_COUNTS = "ProjectCellCounts"
     METADATA_SCHEMA_VERSIONS = "MetadataSchemaVersions"
 
 
@@ -107,6 +108,29 @@ class DynamoHandler:
             str Primary key
         """
         return self.tables[dynamo_table]['primary_key']
+
+    def create_data_version_table_entry(self, version: int):
+        """
+        Put a new item in the Data Version table responsible for describing the current and
+        previous Redshift data versions for a deployment.
+        If the new version already exists, it will be overwritten by the new entry.
+        :param version: Version number to create
+        """
+        api_handler = V1ApiHandler()
+        project_cell_counts = api_handler.describe_filter("project.provenance.document_id")['cell_counts']
+
+        metadata_schema_versions = {}
+        for schema_name in SUPPORTED_METADATA_SCHEMA_VERSIONS:
+            metadata_schema_versions[schema_name.value] = SUPPORTED_METADATA_SCHEMA_VERSIONS[schema_name]
+
+        self._get_dynamo_table_resource_from_enum(DynamoTable.DATA_VERSION_TABLE).put_item(
+            Item={
+                DataVersionTableField.DATA_VERSION.value: version,
+                DataVersionTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
+                DataVersionTableField.PROJECT_CELL_COUNTS.value: project_cell_counts,
+                DataVersionTableField.METADATA_SCHEMA_VERSIONS.value: metadata_schema_versions
+            }
+        )
 
     def create_request_table_entry(self,
                                    request_id: str,
