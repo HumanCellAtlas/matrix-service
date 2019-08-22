@@ -8,7 +8,7 @@ itsdangerous==0.24
 loompy==2.0.15
 MarkupSafe==1.0
 numpy==1.15.2
-pandas==0.23.4
+pandas==0.25.0
 psycopg2==2.7.5
 PyYAML==4.2b1
 requests==2.20.0
