@@ -28,6 +28,9 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.create_test_deployment_table()
         self.create_test_request_table()
 
+        self.init_test_data_version_table()
+        self.init_test_deployment_table()
+
         self.handler = DynamoHandler()
 
     def _get_data_version_table_response_and_entry(self):

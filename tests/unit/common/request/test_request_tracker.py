@@ -26,8 +26,13 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.request_tracker = RequestTracker(self.request_id)
         self.dynamo_handler = DynamoHandler()
 
+        self.create_test_data_version_table()
+        self.create_test_deployment_table()
         self.create_test_request_table()
         self.create_s3_results_bucket()
+
+        self.init_test_data_version_table()
+        self.init_test_deployment_table()
 
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        "test_format",

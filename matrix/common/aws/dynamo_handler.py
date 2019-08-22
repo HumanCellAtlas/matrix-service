@@ -146,12 +146,15 @@ class DynamoHandler:
         :param metadata_fields: User requested metadata fields to include in the expression matrix.
         :param feature: User requested feature type of final expression matrix (gene|transcript).
         """
+        data_version = \
+            self.get_table_item(table=DynamoTable.DEPLOYMENT_TABLE,
+                                key=os.environ['DEPLOYMENT_STAGE'])[DeploymentTableField.CURRENT_DATA_VERSION.value]
 
         self._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE).put_item(
             Item={
                 RequestTableField.REQUEST_ID.value: request_id,
                 RequestTableField.REQUEST_HASH.value: "N/A",
-                RequestTableField.DATA_VERSION.value: 0,
+                RequestTableField.DATA_VERSION.value: data_version,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
                 RequestTableField.METADATA_FIELDS.value: metadata_fields,

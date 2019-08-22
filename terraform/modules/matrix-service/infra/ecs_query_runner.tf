@@ -24,6 +24,14 @@ resource "aws_ecs_task_definition" "query_runner" {
         "value": "dcp-matrix-service-query-results-${var.deployment_stage}"
       },
       {
+        "name": "DYNAMO_DATA_VERSION_TABLE_NAME",
+        "value": "dcp-matrix-service-data-version-table-${var.deployment_stage}"
+      },
+      {
+        "name": "DYNAMO_DEPLOYMENT_TABLE_NAME",
+        "value": "dcp-matrix-service-deployment-table-${var.deployment_stage}"
+      },
+      {
         "name": "DYNAMO_REQUEST_TABLE_NAME",
         "value": "dcp-matrix-service-request-table-${var.deployment_stage}"
       },
@@ -45,7 +53,7 @@ resource "aws_ecs_task_definition" "query_runner" {
     ],
     "memory": 512,
     "cpu": 256,
-    "image": "humancellatlas/matrix-query-runner:16",
+    "image": "humancellatlas/matrix-query-runner:18",
     "name": "query-runner-${var.deployment_stage}",
     "logConfiguration": {
         "logDriver": "awslogs",
@@ -187,6 +195,8 @@ resource "aws_iam_role_policy" "query_runner" {
             "dynamodb:PutItem"
           ],
           "Resource": [
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-data-version-table-${var.deployment_stage}",
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-deployment-table-${var.deployment_stage}",
             "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/dcp-matrix-service-request-table-${var.deployment_stage}"
           ]
         },
