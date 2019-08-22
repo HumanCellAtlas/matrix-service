@@ -13,6 +13,8 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = "test_sk"
 os.environ['LAMBDA_DRIVER_V0_FUNCTION_NAME'] = "test_driver_v0_name"
 os.environ['LAMBDA_DRIVER_V1_FUNCTION_NAME'] = "test_driver_v1_name"
 os.environ['LAMBDA_NOTIFICATION_FUNCTION_NAME'] = "test_notification_name"
+os.environ['DYNAMO_DATA_VERSION_TABLE_NAME'] = "test_data_version_table_name"
+os.environ['DYNAMO_DEPLOYMENT_TABLE_NAME'] = "test_deployment_table_name"
 os.environ['DYNAMO_REQUEST_TABLE_NAME'] = "test_request_table_name"
 os.environ['MATRIX_RESULTS_BUCKET'] = "test_results_bucket"
 os.environ['MATRIX_QUERY_BUCKET'] = "test_query_bucket"
@@ -56,6 +58,50 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
     def tearDown(self):
         self.dynamo_mock.stop()
         self.s3_mock.stop()
+
+    @staticmethod
+    def create_test_data_version_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
+            TableName=os.environ['DYNAMO_DATA_VERSION_TABLE_NAME'],
+            KeySchema=[
+                {
+                    'AttributeName': "DataVersion",
+                    'KeyType': "HASH",
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': "DataVersion",
+                    'AttributeType': "S",
+                }
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 25,
+                'WriteCapacityUnits': 25,
+            },
+        )
+
+    @staticmethod
+    def create_test_deployment_table():
+        boto3.resource("dynamodb", region_name=os.environ['AWS_DEFAULT_REGION']).create_table(
+            TableName=os.environ['DYNAMO_DEPLOYMENT_TABLE_NAME'],
+            KeySchema=[
+                {
+                    'AttributeName': "Deployment",
+                    'KeyType': "HASH",
+                }
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': "Deployment",
+                    'AttributeType': "S",
+                }
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 25,
+                'WriteCapacityUnits': 25,
+            },
+        )
 
     @staticmethod
     def create_test_request_table():

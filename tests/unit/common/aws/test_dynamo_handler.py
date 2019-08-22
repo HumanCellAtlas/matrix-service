@@ -24,6 +24,8 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.request_id = str(uuid.uuid4())
         self.format = "zarr"
 
+        self.create_test_data_version_table()
+        self.create_test_deployment_table()
         self.create_test_request_table()
 
         self.handler = DynamoHandler()
@@ -89,7 +91,10 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         key_dict = {"RequestId": self.request_id}
         field_enum = RequestTableField.COMPLETED_DRIVER_EXECUTIONS
-        self.handler._increment_field(self.handler._request_table, key_dict, field_enum, 15)
+        self.handler._increment_field(self.handler._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE),
+                                      key_dict,
+                                      field_enum,
+                                      15)
         response, entry = self._get_request_table_response_and_entry()
         self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 15)
         self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
@@ -101,26 +106,32 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
 
         key_dict = {"RequestId": self.request_id}
         field_enum = RequestTableField.BATCH_JOB_ID
-        self.handler._set_field(self.handler._request_table, key_dict, field_enum, "123-123")
+        self.handler._set_field(self.handler._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE),
+                                key_dict,
+                                field_enum,
+                                "123-123")
         response, entry = self._get_request_table_response_and_entry()
         self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value], "123-123")
 
     def test_get_request_table_entry(self):
         self.handler.create_request_table_entry(self.request_id, self.format)
-        entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         self.assertEqual(entry[RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)
 
         key_dict = {"RequestId": self.request_id}
         field_enum = RequestTableField.COMPLETED_DRIVER_EXECUTIONS
-        self.handler._increment_field(self.handler._request_table, key_dict, field_enum, 15)
-        entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        self.handler._increment_field(self.handler._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE),
+                                      key_dict,
+                                      field_enum,
+                                      15)
+        entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 15)
 
     def test_get_table_item(self):
         self.assertRaises(MatrixException, self.handler.get_table_item,
                           DynamoTable.REQUEST_TABLE,
-                          request_id=self.request_id)
+                          key=self.request_id)
 
         self.handler.create_request_table_entry(self.request_id, self.format)
-        entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         self.assertEqual(entry[RequestTableField.ROW_COUNT.value], 0)

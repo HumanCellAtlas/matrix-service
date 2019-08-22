@@ -54,7 +54,7 @@ class RequestTracker:
     def is_initialized(self) -> bool:
         try:
             self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                               request_id=self.request_id)
+                                               key=self.request_id)
         except MatrixException:
             return False
 
@@ -70,7 +70,7 @@ class RequestTracker:
         if self._request_hash == "N/A":
             self._request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
-                request_id=self.request_id
+                key=self.request_id
             )[RequestTableField.REQUEST_HASH.value]
 
             # Do not generate request hash in API requests to avoid timeouts.
@@ -115,7 +115,7 @@ class RequestTracker:
         if self._data_version is None:
             self._data_version = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.DATA_VERSION.value]
+                                                   key=self.request_id)[RequestTableField.DATA_VERSION.value]
 
         return self._data_version
 
@@ -128,7 +128,7 @@ class RequestTracker:
         if not self._num_bundles:
             self._num_bundles = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.NUM_BUNDLES.value]
+                                                   key=self.request_id)[RequestTableField.NUM_BUNDLES.value]
         return self._num_bundles
 
     @property
@@ -151,7 +151,7 @@ class RequestTracker:
         if not self._format:
             self._format = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.FORMAT.value]
+                                                   key=self.request_id)[RequestTableField.FORMAT.value]
         return self._format
 
     @property
@@ -163,7 +163,7 @@ class RequestTracker:
         if not self._metadata_fields:
             self._metadata_fields = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.METADATA_FIELDS.value]
+                                                   key=self.request_id)[RequestTableField.METADATA_FIELDS.value]
         return self._metadata_fields
 
     @property
@@ -175,7 +175,7 @@ class RequestTracker:
         if not self._feature:
             self._feature = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.FEATURE.value]
+                                                   key=self.request_id)[RequestTableField.FEATURE.value]
         return self._feature
 
     @property
@@ -184,7 +184,7 @@ class RequestTracker:
         The batch job id for matrix conversion corresponding with a request.
         :return: str The batch job id
         """
-        table_item = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        table_item = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         batch_job_id = table_item.get(RequestTableField.BATCH_JOB_ID.value)
         if not batch_job_id or batch_job_id == "N/A":
             return None
@@ -209,7 +209,7 @@ class RequestTracker:
         :return: str creation date
         """
         return self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                  request_id=self.request_id)[RequestTableField.CREATION_DATE.value]
+                                                  key=self.request_id)[RequestTableField.CREATION_DATE.value]
 
     @property
     def is_expired(self):
@@ -242,7 +242,7 @@ class RequestTracker:
         :return: str The error message if one exists, else empty string
         """
         error = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
-                                                   request_id=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
+                                                   key=self.request_id)[RequestTableField.ERROR_MESSAGE.value]
         return error if error else ""
 
     def initialize_request(self,
@@ -340,7 +340,7 @@ class RequestTracker:
         and is ready for conversion
         :return: bool True if complete, else False
         """
-        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, request_id=self.request_id)
+        request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value]
                             == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
         return queries_complete

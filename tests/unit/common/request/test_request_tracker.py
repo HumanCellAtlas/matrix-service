@@ -64,7 +64,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
             stored_request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
-                request_id=self.request_id
+                key=self.request_id
             )[RequestTableField.REQUEST_HASH.value]
 
             self.assertEqual(self.request_tracker._request_hash, "test_hash")
