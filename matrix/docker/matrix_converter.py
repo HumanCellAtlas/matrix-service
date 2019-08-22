@@ -117,6 +117,11 @@ class MatrixConverter:
             cell_df.to_csv(os.path.join(results_dir, output_filename), index_label="cellkey")
         return cell_df
 
+    @staticmethod
+    def _grouper(iterable, n):
+        args = [iter(iterable)] * n
+        return itertools.zip_longest(*args, fillvalue=None)
+
     def _to_mtx(self):
         """Write a zip file with an mtx and two metadata tsvs from Redshift query
         manifests.
@@ -141,21 +146,25 @@ class MatrixConverter:
             exp_f.write(f"{n_rows} {n_cols} {n_nonzero}\n".encode())
 
             cell_count = 0
+
             for slice_idx in range(self._n_slices()):
                 for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
-
                     grouped = chunk.groupby("cellkey")
-                    for cell_group in grouped:
-                        single_cell_df = cell_group[1]
-                        single_cell_coo = single_cell_df.pivot(
+
+                    for cell_group in self._grouper(grouped, 50):
+                        single_cells_df = pandas.concat((c[1] for c in cell_group if c), axis=0, copy=False)
+                        pivoted = single_cells_df.pivot(
                             index="featurekey", columns="cellkey", values="exprvalue").reindex(
-                            index=gene_df.index).to_sparse().to_coo()
+                            index=gene_df.index).fillna(0.0)
+                        coo = pivoted.astype(pandas.SparseDtype(float, fill_value=0.0)).sparse.to_coo()
 
-                        for row, col, value in zip(single_cell_coo.row, single_cell_coo.col, single_cell_coo.data):
-                            exp_f.write(f"{row + 1} {col + cell_count + 1} {value}\n".encode())
-                        cell_count += 1
+                        lines = []
+                        for row, col, value in zip(coo.row, coo.col, coo.data):
+                            lines.append(f"{row + 1} {col + cell_count + 1} {value}\n")
+                        exp_f.write(''.join(lines).encode())
 
-                        cellkeys.append(cell_group[0])
+                        cell_count += pivoted.shape[1]
+                        cellkeys.extend(pivoted.columns.to_list())
 
         self._write_out_cell_dataframe(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
         file_names = ["genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz"]
@@ -168,10 +177,6 @@ class MatrixConverter:
         Returns:
            output_path: Path to the new loom file.
         """
-
-        def _grouper(iterable, n):
-            args = [iter(iterable)] * n
-            return itertools.zip_longest(*args, fillvalue=None)
 
         def _timestamp():
             return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")
@@ -187,7 +192,7 @@ class MatrixConverter:
         gene_count = gene_df.shape[0]
         cell_count = self.query_results[QueryType.CELL].manifest["record_count"]
 
-        os.makedirs(self.working_dir)
+        os.makedirs(self.working_dir, exist_ok=True)
 
         loom_path = os.path.join(self.working_dir, self.local_output_filename)
         loom_file = h5py.File(loom_path, mode="w")
@@ -203,23 +208,23 @@ class MatrixConverter:
             compression_opts=2,
             chunks=(gene_count, 1))
 
-        cell_ids = []
+        cellkeys = []
         cell_counter = 0
         for slice_idx in range(self._n_slices()):
             for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
                 grouped = chunk.groupby("cellkey")
 
-                for cell_group in _grouper(grouped, 50):
+                for cell_group in self._grouper(grouped, 50):
                     single_cells_df = pandas.concat((c[1] for c in cell_group if c), axis=0, copy=False)
                     pivoted = single_cells_df.pivot(
                         index="featurekey", columns="cellkey", values="exprvalue").reindex(
                             index=gene_df.index).fillna(0.0)
-                    cell_ids.extend(pivoted.columns.to_list())
+                    cellkeys.extend(pivoted.columns.to_list())
                     matrix_dataset[:, cell_counter:cell_counter + pivoted.shape[1]] = pivoted
                     cell_counter += pivoted.shape[1]
         matrix_dataset.attrs["last_modified"] = _timestamp()
 
-        cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cell_ids)
+        cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cellkeys)
         col_attrs_group = loom_file.create_group("col_attrs")
         cell_id_dset = col_attrs_group.create_dataset(
             "CellID", data=loompy.normalize_attr_values(cell_df.index.to_numpy()),
@@ -270,7 +275,6 @@ class MatrixConverter:
 
         results_dir = self._make_directory()
         gene_df = self._write_out_gene_dataframe(results_dir, "genes.csv")
-        cell_df = self.query_results[QueryType.CELL].load_results()
 
         cellkeys = []
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
@@ -281,15 +285,16 @@ class MatrixConverter:
 
             for slice_idx in range(self._n_slices()):
                 for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
-                    # Group the data by cellkey and iterate over each cell
                     grouped = chunk.groupby("cellkey")
-                    for cell_group in grouped:
-                        single_cell_df = cell_group[1]
-                        single_cell_df.pivot(
+                    for cell_group in self._grouper(grouped, 50):
+                        single_cells_df = pandas.concat((c[1] for c in cell_group if c), axis=0, copy=False)
+                        pivoted = single_cells_df.pivot(
                             index="cellkey", columns="featurekey", values="exprvalue").reindex(
-                            columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
-                        cellkeys.append(cell_group[0])
+                                columns=gene_df.index)
+                        pivoted.to_csv(exp_f, header=False, na_rep='0', chunksize=50)
+                        cellkeys.extend(pivoted.index.to_list())
 
+        cell_df = self.query_results[QueryType.CELL].load_results()
         self._write_out_cell_dataframe(results_dir, "cells.csv", cell_df, cellkeys)
         file_names = ["genes.csv", "expression.csv", "cells.csv"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names, zipfile.ZIP_DEFLATED)
