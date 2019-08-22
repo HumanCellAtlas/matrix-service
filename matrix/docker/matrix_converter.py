@@ -86,8 +86,9 @@ class MatrixConverter:
         os.makedirs(results_dir)
         return results_dir
 
-    def _zip_up_matrix_output(self, results_dir, matrix_file_names):
-        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w')
+    def _zip_up_matrix_output(self, results_dir, matrix_file_names, compression=zipfile.ZIP_STORED):
+        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w',
+                               compression)
         for filename in matrix_file_names:
             zipf.write(os.path.join(results_dir, filename),
                        arcname=os.path.join(os.path.basename(results_dir),
@@ -291,7 +292,7 @@ class MatrixConverter:
 
         self._write_out_cell_dataframe(results_dir, "cells.csv", cell_df, cellkeys)
         file_names = ["genes.csv", "expression.csv", "cells.csv"]
-        zip_path = self._zip_up_matrix_output(results_dir, file_names)
+        zip_path = self._zip_up_matrix_output(results_dir, file_names, zipfile.ZIP_DEFLATED)
         return zip_path
 
     def _upload_converted_matrix(self, local_path, remote_path):
