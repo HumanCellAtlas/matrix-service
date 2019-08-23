@@ -130,13 +130,20 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
 
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_expired",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
-    def test_get_matrix_processing__post_driver(self, mock_is_request_complete, mock_get_table_item, mock_initialized):
+    def test_get_matrix_processing__post_driver(self,
+                                                mock_is_request_complete,
+                                                mock_get_table_item,
+                                                mock_initialized,
+                                                mock_is_expired):
         request_id = str(uuid.uuid4())
         mock_initialized.return_value = True
         mock_is_request_complete.return_value = False
+        mock_is_expired.return_value = False
         mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
                                             RequestTableField.FORMAT.value: "test_format",
                                             RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
@@ -239,16 +246,34 @@ class TestCore(unittest.TestCase):
 
         self.assertEqual(resp[1], requests.codes.ok)
 
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_expired",
+                new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
+    def test_get_matrix_expired(self, mock_is_request_complete, mock_get_table_item, mock_is_expired):
+        request_id = str(uuid.uuid4())
+        mock_is_request_complete.return_value = False
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "test_format"}
+        mock_is_expired.return_value = True
+
+        response = get_matrix(request_id)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.EXPIRED.value)
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_expired",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.timeout",
                 new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_matrix_timeout(self, mock_is_request_complete, mock_get_table_item,
-                                mock_timeout):
+                                mock_timeout, mock_is_expired):
         request_id = str(uuid.uuid4())
         mock_is_request_complete.return_value = False
         mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
                                             RequestTableField.FORMAT.value: "test_format"}
+        mock_is_expired.return_value = False
         mock_timeout.return_value = True
 
         response = get_matrix(request_id)
