@@ -22,6 +22,7 @@ class MatrixRequestStatus(Enum):
     COMPLETE = "Complete"
     IN_PROGRESS = "In Progress"
     FAILED = "Failed"
+    EXPIRED = "Expired"
 
 
 class BundleType(Enum):

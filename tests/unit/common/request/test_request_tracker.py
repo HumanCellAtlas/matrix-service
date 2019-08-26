@@ -284,6 +284,32 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date",
                 new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.exists")
+    def test_is_expired(self, mock_exists, mock_creation_date, mock_log_error):
+        with self.subTest("Expired"):
+            mock_exists.return_value = False
+            mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(days=30, minutes=1))
+
+            self.assertTrue(self.request_tracker.is_expired)
+            mock_log_error.assert_called_once()
+            mock_log_error.reset_mock()
+
+        with self.subTest("Not expired. Matrix DNE but not past expiration date"):
+            mock_exists.return_value = False
+            mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(days=29))
+
+            self.assertFalse(self.request_tracker.is_expired)
+            mock_log_error.assert_not_called()
+
+        with self.subTest("Not expired. Matrix exists"):
+            mock_exists.return_value = True
+
+            self.assertFalse(self.request_tracker.is_expired)
+            mock_log_error.assert_not_called()
+
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date",
+                new_callable=mock.PropertyMock)
     def test_timeout(self, mock_creation_date, mock_log_error):
         # no timeout
         mock_creation_date.return_value = date.to_string(date.get_datetime_now() - timedelta(hours=35, minutes=59))

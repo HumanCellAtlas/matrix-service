@@ -140,6 +140,14 @@ def get_matrix(request_id: str):
                             f"The resultant expression matrix is available for download at "
                             f"{matrix_location}."},
                 requests.codes.ok)
+    # Expired case
+    elif request_tracker.is_expired:
+        return ({'request_id': request_id,
+                 'status': MatrixRequestStatus.EXPIRED.value,
+                 'matrix_url': "",
+                 'eta': "",
+                 'message': request_tracker.error},
+                requests.codes.ok)
     # Timeout case
     elif request_tracker.timeout:
         return ({'request_id': request_id,
