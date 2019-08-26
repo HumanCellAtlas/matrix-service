@@ -39,7 +39,7 @@ class RequestTracker:
         Logging.set_correlation_id(logger, request_id)
 
         self.request_id = request_id
-        self._request_hash = None
+        self._request_hash = "N/A"
         self._data_version = None
         self._num_bundles = None
         self._format = None
@@ -67,13 +67,15 @@ class RequestTracker:
         If a request hash does not exist, one will be attempted to be generated.
         :return: str Request hash
         """
-        if not self._request_hash:
+        if self._request_hash == "N/A":
             self._request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
                 request_id=self.request_id
             )[RequestTableField.REQUEST_HASH.value]
 
-            if self._request_hash == "N/A":
+            # Do not generate request hash in API requests to avoid timeouts.
+            # Presence of MATRIX_VERSION indicates API deployment.
+            if self._request_hash == "N/A" and not os.getenv('MATRIX_VERSION'):
                 try:
                     self._request_hash = self.generate_request_hash()
                     self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
