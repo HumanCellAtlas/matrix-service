@@ -173,7 +173,9 @@ resource "aws_iam_role_policy" "query_runner" {
             "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}",
             "arn:aws:s3:::dcp-matrix-service-queries-${var.deployment_stage}/*",
             "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}",
-            "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*"
+            "arn:aws:s3:::dcp-matrix-service-results-${var.deployment_stage}/*",
+            "arn:aws:s3:::dcp-matrix-service-query-results-${var.deployment_stage}",
+            "arn:aws:s3:::dcp-matrix-service-query-results-${var.deployment_stage}/*"
           ]
         },
         {
