@@ -10,8 +10,8 @@ from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, Request
 from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
 from matrix.common.request.request_tracker import RequestTracker, Subtask
-from tests.unit import MatrixTestCaseUsingMockAWS
 from matrix.common.aws.cloudwatch_handler import MetricName
+from tests.unit import MatrixTestCaseUsingMockAWS
 
 
 class TestRequestTracker(MatrixTestCaseUsingMockAWS):
@@ -26,8 +26,13 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.request_tracker = RequestTracker(self.request_id)
         self.dynamo_handler = DynamoHandler()
 
+        self.create_test_data_version_table()
+        self.create_test_deployment_table()
         self.create_test_request_table()
         self.create_s3_results_bucket()
+
+        self.init_test_data_version_table()
+        self.init_test_deployment_table()
 
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        "test_format",
@@ -49,7 +54,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
             stored_request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
-                request_id=self.request_id
+                key=self.request_id
             )[RequestTableField.REQUEST_HASH.value]
 
             self.assertEqual(self.request_tracker._request_hash, "N/A")
@@ -64,7 +69,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
             stored_request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
-                request_id=self.request_id
+                key=self.request_id
             )[RequestTableField.REQUEST_HASH.value]
 
             self.assertEqual(self.request_tracker._request_hash, "test_hash")

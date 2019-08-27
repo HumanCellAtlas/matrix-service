@@ -35,6 +35,8 @@
         "dynamodb:UpdateItem"
       ],
       "Resource": [
+        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-data-version-table-${DEPLOYMENT_STAGE}",
+        "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-deployment-table-${DEPLOYMENT_STAGE}",
         "arn:aws:dynamodb:us-east-1:${account_id}:table/dcp-matrix-service-request-table-${DEPLOYMENT_STAGE}"
       ]
     },

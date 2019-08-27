@@ -6,6 +6,8 @@ export EXPORT_ENV_VARS_TO_LAMBDA=DEPLOYMENT_STAGE \
                                  LAMBDA_DRIVER_V0_FUNCTION_NAME \
                                  LAMBDA_DRIVER_V1_FUNCTION_NAME \
                                  LAMBDA_NOTIFICATION_FUNCTION_NAME \
+                                 DYNAMO_DATA_VERSION_TABLE_NAME \
+                                 DYNAMO_DEPLOYMENT_TABLE_NAME \
                                  DYNAMO_REQUEST_TABLE_NAME \
                                  MATRIX_RESULTS_BUCKET \
                                  MATRIX_QUERY_RESULTS_BUCKET \

@@ -33,6 +33,17 @@ class BundleType(Enum):
     CELLRANGER = "cellranger"
 
 
+class MetadataSchemaName(Enum):
+    PROJECT = "project"
+    LIBRARY_PREPARATION_PROTOCOL = "library_preparation_protocol"
+    ANALYSIS_PROTOCOL = "analysis_protocol"
+    SPECIMEN_FROM_ORGANISM = "specimen_from_organism"
+    DONOR_ORGANISM = "donor_organism"
+    CELL_LINE = "cell_line"
+    CELL_SUSPENSION = "cell_suspension"
+    ORGANOID = "organoid"
+
+
 DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "cell.file_uuid",
                   "cell.file_version", "cell.total_umis", "cell.emptydrops_is_cell",
                   "cell.barcode", "specimen.*", "library_preparation.*", "project.*",
@@ -48,6 +59,58 @@ MATRIX_ENV_TO_DSS_ENV = {
     'integration': "integration",
     'staging': "staging",
     'prod': "prod",
+}
+
+
+SUPPORTED_METADATA_SCHEMA_VERSIONS = {
+    MetadataSchemaName.PROJECT: {
+        'max_major': 14,
+        'max_minor': 0,
+        'min_major': 1,
+        'min_minor': 0
+    },
+    MetadataSchemaName.LIBRARY_PREPARATION_PROTOCOL: {
+        'max_major': 6,
+        'max_minor': 1,
+        'min_major': 1,
+        'min_minor': 0
+    },
+    MetadataSchemaName.ANALYSIS_PROTOCOL: {
+        'max_major': 9,
+        'max_minor': 0,
+        'min_major': 1,
+        'min_minor': 0
+    },
+    MetadataSchemaName.SPECIMEN_FROM_ORGANISM: {
+        'max_major': 10,
+        'max_minor': 2,
+        'min_major': 9,
+        'min_minor': 0
+    },
+    MetadataSchemaName.DONOR_ORGANISM: {
+        'max_major': 15,
+        'max_minor': 3,
+        'min_major': 1,
+        'min_minor': 0
+    },
+    MetadataSchemaName.CELL_LINE: {
+        'max_major': 14,
+        'max_minor': 3,
+        'min_major': 1,
+        'min_minor': 0
+    },
+    MetadataSchemaName.CELL_SUSPENSION: {
+        'max_major': 13,
+        'max_minor': 1,
+        'min_major': 1,
+        'min_minor': 0
+    },
+    MetadataSchemaName.ORGANOID: {
+        'max_major': 11,
+        'max_minor': 1,
+        'min_major': 1,
+        'min_minor': 0
+    }
 }
 
 

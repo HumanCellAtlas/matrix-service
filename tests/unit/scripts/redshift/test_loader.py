@@ -2,11 +2,12 @@ import unittest
 
 import mock
 
+from matrix.common import constants
+from matrix.common.constants import MetadataSchemaName
 from scripts.redshift.loader import (load,
                                      _build_dss_query,
                                      _generate_metadata_schema_version_clause,
                                      _verify_load,
-                                     MetadataSchemaName,
                                      DSS_SEARCH_QUERY_TEMPLATE,
                                      ALL_10X_SS2_MATCH_TERMS)
 
@@ -146,17 +147,15 @@ class TestLoader(unittest.TestCase):
             self.assertEqual(query, expected_query)
 
     def test_generate_metadata_schema_version_clause(self):
-        test_metadata_schema_versions = {
-            MetadataSchemaName.PROJECT: {
-                'max_major': 56,
-                'max_minor': 78,
-                'min_major': 12,
-                'min_minor': 34
-            }
+        project_md_schema_versions = constants.SUPPORTED_METADATA_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT]
+        constants.SUPPORTED_METADATA_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT] = {
+            'max_major': 56,
+            'max_minor': 78,
+            'min_major': 12,
+            'min_minor': 34
         }
 
-        with mock.patch('scripts.redshift.loader.SUPPORTED_METADATA_SCHEMA_VERSIONS', test_metadata_schema_versions):
-            metadata_schema_clause = _generate_metadata_schema_version_clause(MetadataSchemaName.PROJECT)
+        metadata_schema_clause = _generate_metadata_schema_version_clause(MetadataSchemaName.PROJECT)
 
         expected = {
             "bool": {
@@ -219,6 +218,7 @@ class TestLoader(unittest.TestCase):
             }
         }
         self.assertEqual(metadata_schema_clause, expected)
+        constants.SUPPORTED_METADATA_SCHEMA_VERSIONS[MetadataSchemaName.PROJECT] = project_md_schema_versions
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.common.query_constructor.format_str_list")
