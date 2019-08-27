@@ -1,6 +1,8 @@
 import argparse
 import datetime
+import itertools
 import os
+import random
 import shutil
 import unittest
 from unittest import mock
@@ -10,6 +12,7 @@ import pandas
 from matrix.common import date
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.query.cell_query_results_reader import CellQueryResultsReader
+from matrix.common.query.expression_query_results_reader import ExpressionQueryResultsReader
 from matrix.common.query.feature_query_results_reader import FeatureQueryResultsReader
 from matrix.docker.matrix_converter import main, MatrixConverter, SUPPORTED_FORMATS
 from matrix.docker.query_runner import QueryType
@@ -79,6 +82,51 @@ class TestMatrixConverter(unittest.TestCase):
             }
 
         self.assertEqual(self.matrix_converter._n_slices(), 8)
+
+    @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
+    @mock.patch("matrix.common.query.expression_query_results_reader.ExpressionQueryResultsReader.load_slice")
+    def test__generate_expression_dfs(self, mock_load_slice, mock_parse_manifest):
+
+        mock_parse_manifest.return_value = {
+            "part_urls": ["url1"],
+            "columns": ["cellkey", "featurekey", "exprvalue"],
+            "record_count": 2624879
+        }
+
+        self.matrix_converter.query_results = {
+            QueryType.CELL: CellQueryResultsReader("test_cell_manifest_key"),
+            QueryType.EXPRESSION: ExpressionQueryResultsReader("test_expression_manifest_key")
+        }
+
+        # Create some fake gene and cell values. We'll have 2027 cells each
+        # with 647 expressed genes. This makes sure the test hits some jagged
+        # edges.
+        genes = itertools.cycle(("gene_" + str(n) for n in range(647)))
+        cells = itertools.chain.from_iterable((itertools.repeat("cell_" + str(n), 647) for n in range(2027)))
+
+        full_expr_df = pandas.DataFrame(
+            columns=["cellkey", "featurekey", "exprvalue"],
+            data=[[c, f, random.randrange(1, 10000)] for c, f in zip(cells, genes)])
+        # load_slice splits on 1000000 rows
+        chunk1_df = full_expr_df[:999615]
+        chunk2_df = full_expr_df[999615:]
+
+        # Have load slice return two different chunks
+        mock_load_slice.return_value = iter([chunk1_df, chunk2_df])
+
+        # Keep track of how many unique cells we see and the sum of expression
+        # values
+        cell_counter = 0
+        expr_sum = 0
+        for cell_df in self.matrix_converter._generate_expression_dfs(50):
+            num_cells = len(set(cell_df["cellkey"]))
+            self.assertLessEqual(num_cells, 50)
+            cell_counter += num_cells
+            expr_sum += cell_df["exprvalue"].sum()
+
+        # Verify we saw every cell and all the expression values
+        self.assertEqual(cell_counter, 2027)
+        self.assertEqual(expr_sum, full_expr_df["exprvalue"].sum())
 
     def test__make_directory(self):
         self.assertEqual(os.path.isdir('test_target'), False)
