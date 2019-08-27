@@ -38,3 +38,17 @@ class S3Handler:
     def exists(self, key):
         objects = self.ls(key)
         return len(objects) > 0
+
+    def delete_objects(self, keys: list) -> list:
+        """
+        Deletes a list keys from this S3 bucket.
+        :param keys: list of S3 keys to delete
+        :return: List of successfully deleted objects
+        """
+        objects = [{'Key': key} for key in keys]
+
+        response = self.s3_bucket.delete_objects(
+            Delete={'Objects': objects}
+        )
+
+        return response['Deleted'] if 'Deleted' in response else []

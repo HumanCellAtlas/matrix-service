@@ -65,3 +65,42 @@ class TestS3Handler(MatrixTestCaseUsingMockAWS):
 
         self.s3_handler.store_content_in_s3(obj_key, test_content)
         self.assertTrue(self.s3_handler.exists(obj_key))
+
+    def test_delete_objects(self):
+        obj_key_1 = "test_key_1"
+        obj_key_2 = "test_key_2"
+        obj_key_3 = "test_key_3"
+        test_content = "test_content"
+
+        self.s3_handler.store_content_in_s3(obj_key_1, test_content)
+        self.s3_handler.store_content_in_s3(obj_key_2, test_content)
+        self.s3_handler.store_content_in_s3(obj_key_3, test_content)
+
+        expected_keys = [obj_key_1, obj_key_2, obj_key_3]
+        keys_in_s3 = [s3_obj['Key'] for s3_obj in self.s3_handler.ls("")]
+        self.assertEqual(keys_in_s3, expected_keys)
+
+        with self.subTest("Delete no objects"):
+            deleted_objects = self.s3_handler.delete_objects(keys=[])
+
+            expected_keys = [obj_key_1, obj_key_2, obj_key_3]
+            keys_in_s3 = [s3_obj['Key'] for s3_obj in self.s3_handler.ls("")]
+            self.assertEqual(keys_in_s3, expected_keys)
+            self.assertTrue(len(deleted_objects) == 0)
+
+        with self.subTest("Delete one object"):
+            deleted_objects = self.s3_handler.delete_objects(keys=[obj_key_1])
+
+            expected_keys = [obj_key_2, obj_key_3]
+            keys_in_s3 = [s3_obj['Key'] for s3_obj in self.s3_handler.ls("")]
+            self.assertEqual(keys_in_s3, expected_keys)
+            self.assertEqual(deleted_objects[0]['Key'], obj_key_1)
+
+        with self.subTest("Delete multiple objects"):
+            deleted_objects = self.s3_handler.delete_objects(keys=[obj_key_2, obj_key_3])
+
+            expected_keys = []
+            keys_in_s3 = [s3_obj['Key'] for s3_obj in self.s3_handler.ls("")]
+            self.assertEqual(keys_in_s3, expected_keys)
+            self.assertEqual(deleted_objects[0]['Key'], obj_key_2)
+            self.assertEqual(deleted_objects[1]['Key'], obj_key_3)

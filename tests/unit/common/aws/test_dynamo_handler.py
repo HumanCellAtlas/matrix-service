@@ -179,3 +179,27 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.handler.create_request_table_entry(self.request_id, self.format)
         entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         self.assertEqual(entry[RequestTableField.ROW_COUNT.value], 0)
+
+    def test_filter_table_items(self):
+        items = self.handler.filter_table_items(
+            table=DynamoTable.REQUEST_TABLE,
+            attrs={RequestTableField.REQUEST_HASH.value: "N/A"}
+        )
+        self.assertEqual(len(items), 0)
+
+        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(str(uuid.uuid4()), "test_format")
+
+        items = self.handler.filter_table_items(
+            table=DynamoTable.REQUEST_TABLE,
+            attrs={RequestTableField.REQUEST_HASH.value: "N/A"}
+        )
+        self.assertEqual(len(items), 2)
+
+        items = self.handler.filter_table_items(
+            table=DynamoTable.REQUEST_TABLE,
+            attrs={RequestTableField.REQUEST_HASH.value: "N/A",
+                   RequestTableField.FORMAT.value: self.format}
+        )
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0][RequestTableField.REQUEST_ID.value], self.request_id)
