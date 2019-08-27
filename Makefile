@@ -21,7 +21,7 @@ bump-data-version:
 	python3 scripts/redshift/bump_data_version.py
 
 set-data-version:
-	python3 scripts/redshift/set_data_version.py --version $(VERSION)
+	python3 scripts/redshift/set_data_version.py --version $(MATRIX_DATA_VERSION)
 
 unit-tests:
 	PYTHONWARNINGS=ignore:ResourceWarning coverage run --source=matrix,scripts --omit=scripts/build_missing_wheels.py,scripts/matrix-service-api.py,scripts/redshift/ec2_instance_manager.py\
