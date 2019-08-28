@@ -6,6 +6,7 @@ from enum import Enum
 import boto3
 import botocore
 import requests
+from boto3.dynamodb.conditions import Attr
 
 from matrix.common import date
 from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
@@ -195,6 +196,27 @@ class DynamoHandler:
                                   f"{key} from DynamoDb Table {table.value}.")
 
         return item
+
+    def filter_table_items(self, table: DynamoTable, attrs: dict):
+        """
+        Scans the specified DynamoDB table filtering for equality conditions on the
+        provided Attribute values, and returns list of matching items.
+        :param table: DynamoDB Table to scan
+        :param attrs: dict KVPs of attribute names and values specifying equality conditions.
+        :return: list of dynamodb items
+        """
+        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
+
+        filter_expr = None
+        for attr_key in attrs:
+            if not filter_expr:
+                filter_expr = Attr(attr_key).eq(attrs[attr_key])
+            else:
+                filter_expr = filter_expr & Attr(attr_key).eq(attrs[attr_key])
+
+        items = dynamo_table.scan(FilterExpression=filter_expr)['Items']
+
+        return items
 
     def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField, increment_size: int):
         """Increment value in dynamo table
