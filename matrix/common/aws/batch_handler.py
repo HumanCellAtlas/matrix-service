@@ -68,11 +68,10 @@ class BatchHandler:
         )
         return batch_job_id
 
-    @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
     def get_batch_job_status(self, batch_job_id):
         response = self._client.describe_jobs(jobs=[batch_job_id])
         jobs = response.get("jobs")
-        status = jobs[0]["status"]
+        status = jobs[0]["status"] if len(jobs) > 0 else None
         return status
 
     def _enqueue_batch_job(self, job_name, job_queue_arn, job_def_arn, command, environment):
