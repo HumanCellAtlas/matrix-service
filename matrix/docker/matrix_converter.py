@@ -191,7 +191,12 @@ class MatrixConverter:
            output_path: Path to the new loom file.
         """
 
-        def _timestamp():
+        def _loom_timestamp():
+            """Return a timestamp of the current time in the format specified in the loom spec.
+
+            Note that this is slightly different than that format used elsewhere in the matrix
+            service.
+            """
             return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")
 
         # Put loom on the output filename if it's not already there.
@@ -210,7 +215,7 @@ class MatrixConverter:
         loom_path = os.path.join(self.working_dir, self.local_output_filename)
         loom_file = h5py.File(loom_path, mode="w")
 
-        loom_file.attrs["CreationDate"] = _timestamp()
+        loom_file.attrs["CreationDate"] = _loom_timestamp()
         loom_file.attrs["LOOM_SPEC_VERSION"] = "2.0.1"
 
         matrix_dataset = loom_file.create_dataset(
@@ -230,32 +235,32 @@ class MatrixConverter:
             cellkeys.extend(pivoted.columns.to_list())
             matrix_dataset[:, cell_counter:cell_counter + pivoted.shape[1]] = pivoted
             cell_counter += pivoted.shape[1]
-        matrix_dataset.attrs["last_modified"] = _timestamp()
+        matrix_dataset.attrs["last_modified"] = _loom_timestamp()
 
         cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cellkeys)
         col_attrs_group = loom_file.create_group("col_attrs")
         cell_id_dset = col_attrs_group.create_dataset(
             "CellID", data=loompy.normalize_attr_values(cell_df.index.to_numpy()),
             compression='gzip', compression_opts=2, chunks=(256,))
-        cell_id_dset.attrs["last_modified"] = _timestamp()
+        cell_id_dset.attrs["last_modified"] = _loom_timestamp()
 
         for cell_metadata_field in cell_df:
             cell_metadata = cell_df[cell_metadata_field]
             dset = col_attrs_group.create_dataset(
                 cell_metadata_field, data=loompy.normalize_attr_values(cell_metadata.to_numpy()),
                 compression='gzip', compression_opts=2, chunks=(256,))
-            dset.attrs["last_modified"] = _timestamp()
-        col_attrs_group.attrs["last_modified"] = _timestamp()
+            dset.attrs["last_modified"] = _loom_timestamp()
+        col_attrs_group.attrs["last_modified"] = _loom_timestamp()
 
         row_attrs_group = loom_file.create_group("row_attrs")
         acc_dset = row_attrs_group.create_dataset(
             "Accession", data=loompy.normalize_attr_values(gene_df.index.to_numpy()),
             compression='gzip', compression_opts=2, chunks=(256,))
-        acc_dset.attrs["last_modified"] = _timestamp()
+        acc_dset.attrs["last_modified"] = _loom_timestamp()
         name_dset = row_attrs_group.create_dataset(
             "Gene", data=loompy.normalize_attr_values(gene_df["featurename"].to_numpy()),
             compression='gzip', compression_opts=2, chunks=(256,))
-        name_dset.attrs["last_modified"] = _timestamp()
+        name_dset.attrs["last_modified"] = _loom_timestamp()
 
         for gene_metadata_field in gene_df:
             if gene_metadata_field == "featurename":
@@ -264,13 +269,13 @@ class MatrixConverter:
             dset = row_attrs_group.create_dataset(
                 gene_metadata_field, data=loompy.normalize_attr_values(gene_metadata.to_numpy()),
                 compression='gzip', compression_opts=2, chunks=(256,))
-            dset.attrs["last_modified"] = _timestamp()
-        row_attrs_group.attrs["last_modified"] = _timestamp()
+            dset.attrs["last_modified"] = _loom_timestamp()
+        row_attrs_group.attrs["last_modified"] = _loom_timestamp()
 
         loom_file.create_group("layers")
         loom_file.create_group("row_graphs")
 
-        loom_file.attrs["last_modified"] = _timestamp()
+        loom_file.attrs["last_modified"] = _loom_timestamp()
 
         return loom_path
 
