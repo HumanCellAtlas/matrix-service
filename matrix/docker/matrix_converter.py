@@ -164,10 +164,16 @@ class MatrixConverter:
 
             cell_count = 0
 
+            # Iterate over groups of 50 cells in the query expression result
             for cells_df in self._generate_expression_dfs(50):
+                # Reshape the result so cells are columns and genes are rows
                 pivoted = cells_df.pivot(
                     index="featurekey", columns="cellkey", values="exprvalue").reindex(
                     index=gene_df.index).fillna(0.0)
+
+                # Convert the result to a COO sparse matrix so we can simply
+                # iterate over the non-zero values are write them to the mtx
+                # file.
                 coo = pivoted.astype(pandas.SparseDtype(float, fill_value=0.0)).sparse.to_coo()
 
                 lines = []
@@ -214,9 +220,11 @@ class MatrixConverter:
         loom_path = os.path.join(self.working_dir, self.local_output_filename)
         loom_file = h5py.File(loom_path, mode="w")
 
+        # Set some file attributes defined in the loom spec
         loom_file.attrs["CreationDate"] = self._loom_timestamp()
         loom_file.attrs["LOOM_SPEC_VERSION"] = "2.0.1"
 
+        # Create the hdf5 dataset that will hold all the expression data
         matrix_dataset = loom_file.create_dataset(
             "matrix",
             shape=(gene_count, cell_count),
@@ -227,6 +235,10 @@ class MatrixConverter:
 
         cellkeys = []
         cell_counter = 0
+
+        # Iterate through the cells. For each set of cells reshape the
+        # dataframe so genes are row and cells are columns. Stick that data
+        # into the expression dataset.
         for cells_df in self._generate_expression_dfs(50):
             pivoted = cells_df.pivot(
                 index="featurekey", columns="cellkey", values="exprvalue").reindex(
@@ -236,6 +248,8 @@ class MatrixConverter:
             cell_counter += pivoted.shape[1]
         matrix_dataset.attrs["last_modified"] = self._loom_timestamp()
 
+        # Now write the metadata into different datasets according to the loom
+        # spec.
         cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cellkeys)
         col_attrs_group = loom_file.create_group("col_attrs")
         cell_id_dset = col_attrs_group.create_dataset(
@@ -271,6 +285,8 @@ class MatrixConverter:
             dset.attrs["last_modified"] = self._loom_timestamp()
         row_attrs_group.attrs["last_modified"] = self._loom_timestamp()
 
+        # These two groups are defined in the spec, but matrix service outputs
+        # don't use them.
         loom_file.create_group("layers")
         loom_file.create_group("row_graphs")
 
@@ -295,6 +311,8 @@ class MatrixConverter:
             exp_f.write(','.join(["cellkey"] + gene_index_string_list))
             exp_f.write('\n')
 
+            # Iterate over the cells, reshaping the expression data for each
+            # group of cells to genes are columns and cells are rows.
             for cells_df in self._generate_expression_dfs(50):
                 pivoted = cells_df.pivot(
                     index="cellkey", columns="featurekey", values="exprvalue").reindex(
