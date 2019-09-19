@@ -1,12 +1,15 @@
 """Script to convert the outputs of Redshift queries into different formats."""
 
 import argparse
+import datetime
 import gzip
+import itertools
 import os
 import shutil
 import sys
 import zipfile
 
+import h5py
 import loompy
 import pandas
 import s3fs
@@ -83,8 +86,9 @@ class MatrixConverter:
         os.makedirs(results_dir)
         return results_dir
 
-    def _zip_up_matrix_output(self, results_dir, matrix_file_names):
-        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w')
+    def _zip_up_matrix_output(self, results_dir, matrix_file_names, compression=zipfile.ZIP_STORED):
+        zipf = zipfile.ZipFile(os.path.join(self.working_dir, self.local_output_filename), 'w',
+                               compression)
         for filename in matrix_file_names:
             zipf.write(os.path.join(results_dir, filename),
                        arcname=os.path.join(os.path.basename(results_dir),
@@ -113,6 +117,29 @@ class MatrixConverter:
             cell_df.to_csv(os.path.join(results_dir, output_filename), index_label="cellkey")
         return cell_df
 
+    def _generate_expression_dfs(self, num_of_cells):
+        """Create dataframes of expression data that is guaranteed to contain the complete set
+        of expression data for each cell that appears in it.
+
+        Args:
+            num_of_cells (int): Data from at most this many cells will be included in the
+                output dataframe.
+
+        Yields:
+            cells_df (pd.DataFrame): Dataframe of expression data. Columns are from the
+                expression query, so cellkey, featurekey, exprvalue.
+        """
+
+        def _grouper(iterable, n):
+            args = [iter(iterable)] * n
+            return itertools.zip_longest(*args, fillvalue=None)
+        for slice_idx in range(self._n_slices()):
+            for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
+                grouped = chunk.groupby("cellkey")
+                for cell_group in _grouper(grouped, num_of_cells):
+                    cells_df = pandas.concat((c[1] for c in cell_group if c), axis=0, copy=False)
+                    yield cells_df
+
     def _to_mtx(self):
         """Write a zip file with an mtx and two metadata tsvs from Redshift query
         manifests.
@@ -130,33 +157,45 @@ class MatrixConverter:
         n_nonzero = self.query_results[QueryType.EXPRESSION].manifest["record_count"]
 
         cellkeys = []
-
         with gzip.open(os.path.join(results_dir, "matrix.mtx.gz"), "w", compresslevel=4) as exp_f:
             # Write the mtx header
             exp_f.write("%%MatrixMarket matrix coordinate real general\n".encode())
             exp_f.write(f"{n_rows} {n_cols} {n_nonzero}\n".encode())
 
             cell_count = 0
-            for slice_idx in range(self._n_slices()):
-                for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
 
-                    grouped = chunk.groupby("cellkey")
-                    for cell_group in grouped:
-                        single_cell_df = cell_group[1]
-                        single_cell_coo = single_cell_df.pivot(
-                            index="featurekey", columns="cellkey", values="exprvalue").reindex(
-                            index=gene_df.index).to_sparse().to_coo()
+            # Iterate over groups of 50 cells in the query expression result
+            for cells_df in self._generate_expression_dfs(50):
+                # Reshape the result so cells are columns and genes are rows
+                pivoted = cells_df.pivot(
+                    index="featurekey", columns="cellkey", values="exprvalue").reindex(
+                    index=gene_df.index).fillna(0.0)
 
-                        for row, col, value in zip(single_cell_coo.row, single_cell_coo.col, single_cell_coo.data):
-                            exp_f.write(f"{row + 1} {col + cell_count + 1} {value}\n".encode())
-                        cell_count += 1
+                # Convert the result to a COO sparse matrix so we can simply
+                # iterate over the non-zero values are write them to the mtx
+                # file.
+                coo = pivoted.astype(pandas.SparseDtype(float, fill_value=0.0)).sparse.to_coo()
 
-                        cellkeys.append(cell_group[0])
+                lines = []
+                for row, col, value in zip(coo.row, coo.col, coo.data):
+                    lines.append(f"{row + 1} {col + cell_count + 1} {value}\n")
+                exp_f.write(''.join(lines).encode())
+
+                cell_count += pivoted.shape[1]
+                cellkeys.extend(pivoted.columns.to_list())
 
         self._write_out_cell_dataframe(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
         file_names = ["genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names)
         return zip_path
+
+    def _loom_timestamp(self):
+        """Return a timestamp of the current time in the format specified in the loom spec.
+
+        Note that this is slightly different than that format used elsewhere in the matrix
+        service.
+        """
+        return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")
 
     def _to_loom(self):
         """Write a loom file from Redshift query manifests.
@@ -172,85 +211,88 @@ class MatrixConverter:
         # Read the row (gene) attributes and then set some conventional names
         gene_df = self.query_results[QueryType.FEATURE].load_results()
         gene_df["featurekey"] = gene_df.index
-        row_attrs = gene_df.to_dict("series")
-        # Not expected to be unique
-        row_attrs["Gene"] = row_attrs.pop("featurename")
-        row_attrs["Accession"] = row_attrs.pop("featurekey")
-        for key, val in row_attrs.items():
-            row_attrs[key] = val.values
 
-        loom_parts = []
-        loom_part_dir = os.path.join(self.working_dir, ".loom_parts")
+        gene_count = gene_df.shape[0]
+        cell_count = self.query_results[QueryType.CELL].manifest["record_count"]
 
-        if os.path.exists(loom_part_dir):
-            shutil.rmtree(loom_part_dir)
+        os.makedirs(self.working_dir, exist_ok=True)
 
-        os.makedirs(loom_part_dir)
+        loom_path = os.path.join(self.working_dir, self.local_output_filename)
+        loom_file = h5py.File(loom_path, mode="w")
 
-        # Iterate over the "slices" produced by the redshift query
-        for slice_idx in range(self._n_slices()):
+        # Set some file attributes defined in the loom spec
+        loom_file.attrs["CreationDate"] = self._loom_timestamp()
+        loom_file.attrs["LOOM_SPEC_VERSION"] = "2.0.1"
 
-            # Get the cell metadata for all the cells in this slice
-            cell_df = self.query_results[QueryType.CELL].load_slice(slice_idx)
+        # Create the hdf5 dataset that will hold all the expression data
+        matrix_dataset = loom_file.create_dataset(
+            "matrix",
+            shape=(gene_count, cell_count),
+            dtype="float32",
+            compression="gzip",
+            compression_opts=2,
+            chunks=(gene_count, 1))
 
-            # Iterate over fixed-size chunks of expression data from this
-            # slice.
-            chunk_idx = 0
-            for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
-                print(f"Loading chunk {chunk_idx} from slice {slice_idx}")
-                sparse_cell_dfs = []
+        cellkeys = []
+        cell_counter = 0
 
-                # Group the data by cellkey and iterate over each cell
-                grouped = chunk.groupby("cellkey")
-                for cell_group in grouped:
-                    single_cell_df = cell_group[1]
+        # Iterate through the cells. For each set of cells reshape the
+        # dataframe so genes are row and cells are columns. Stick that data
+        # into the expression dataset.
+        for cells_df in self._generate_expression_dfs(50):
+            pivoted = cells_df.pivot(
+                index="featurekey", columns="cellkey", values="exprvalue").reindex(
+                    index=gene_df.index).fillna(0.0)
+            cellkeys.extend(pivoted.columns.to_list())
+            matrix_dataset[:, cell_counter:cell_counter + pivoted.shape[1]] = pivoted
+            cell_counter += pivoted.shape[1]
+        matrix_dataset.attrs["last_modified"] = self._loom_timestamp()
 
-                    # Reshape the dataframe so cellkey is a column and features
-                    # are rows. Reindex so all dataframes have the same row
-                    # order, and then sparsify because this is a very empty
-                    # dataset usually.
-                    sparse_cell_dfs.append(single_cell_df
-                                           .pivot(index="featurekey", columns="cellkey", values="exprvalue")
-                                           .reindex(index=row_attrs["Accession"]).to_sparse())
+        # Now write the metadata into different datasets according to the loom
+        # spec.
+        cell_df = self.query_results[QueryType.CELL].load_results().reindex(index=cellkeys)
+        col_attrs_group = loom_file.create_group("col_attrs")
+        cell_id_dset = col_attrs_group.create_dataset(
+            "CellID", data=loompy.normalize_attr_values(cell_df.index.to_numpy()),
+            compression='gzip', compression_opts=2, chunks=(min(256, cell_count),))
+        cell_id_dset.attrs["last_modified"] = self._loom_timestamp()
 
-                # Concatenate the cell dataframes together. This is what we'll
-                # write to disk.
-                if not sparse_cell_dfs:
-                    continue
-                sparse_expression_matrix = pandas.concat(sparse_cell_dfs, axis=1, copy=True)
+        for cell_metadata_field in cell_df:
+            cell_metadata = cell_df[cell_metadata_field]
+            dset = col_attrs_group.create_dataset(
+                cell_metadata_field, data=loompy.normalize_attr_values(cell_metadata.to_numpy()),
+                compression='gzip', compression_opts=2, chunks=(min(256, cell_count),))
+            dset.attrs["last_modified"] = self._loom_timestamp()
+        col_attrs_group.attrs["last_modified"] = self._loom_timestamp()
 
-                # Get the cell metadata dataframe for just the cell in this
-                # chunk
-                chunk_cell_df = cell_df.reindex(index=sparse_expression_matrix.columns)
-                chunk_cell_df["cellkey"] = chunk_cell_df.index
-                for col in chunk_cell_df.columns:
-                    if chunk_cell_df[col].dtype.name == "category":
-                        chunk_cell_df[col] = chunk_cell_df[col].astype("object")
-                col_attrs = chunk_cell_df.to_dict("series")
-                col_attrs["CellID"] = col_attrs.pop("cellkey")
+        row_attrs_group = loom_file.create_group("row_attrs")
+        acc_dset = row_attrs_group.create_dataset(
+            "Accession", data=loompy.normalize_attr_values(gene_df.index.to_numpy()),
+            compression='gzip', compression_opts=2, chunks=(min(256, gene_count),))
+        acc_dset.attrs["last_modified"] = self._loom_timestamp()
+        name_dset = row_attrs_group.create_dataset(
+            "Gene", data=loompy.normalize_attr_values(gene_df["featurename"].to_numpy()),
+            compression='gzip', compression_opts=2, chunks=(min(256, gene_count),))
+        name_dset.attrs["last_modified"] = self._loom_timestamp()
 
-                # Just a thing you have to do...
-                for key, val in col_attrs.items():
-                    col_attrs[key] = val.values
+        for gene_metadata_field in gene_df:
+            if gene_metadata_field == "featurename":
+                continue
+            gene_metadata = gene_df[gene_metadata_field]
+            dset = row_attrs_group.create_dataset(
+                gene_metadata_field, data=loompy.normalize_attr_values(gene_metadata.to_numpy()),
+                compression='gzip', compression_opts=2, chunks=(min(256, gene_count),))
+            dset.attrs["last_modified"] = self._loom_timestamp()
+        row_attrs_group.attrs["last_modified"] = self._loom_timestamp()
 
-                # Write the data from this chunk to its own file.
-                loom_part_path = os.path.join(loom_part_dir,
-                                              f"matrix.{slice_idx}.{chunk_idx}.loom")
-                print(f"Writing to {loom_part_path}")
-                loompy.create(
-                    loom_part_path, sparse_expression_matrix.to_coo(), row_attrs, col_attrs)
-                loom_parts.append(loom_part_path)
-                chunk_idx += 1
+        # These two groups are defined in the spec, but matrix service outputs
+        # don't use them.
+        loom_file.create_group("layers")
+        loom_file.create_group("row_graphs")
 
-        # Using the loompy method, combine all the chunks together into a
-        # single file.
-        print(f"Parts complete. Writing to {self.local_output_filename}")
-        loompy.combine(loom_parts,
-                       key="Accession",
-                       output_file=os.path.join(self.working_dir, self.local_output_filename))
-        shutil.rmtree(loom_part_dir)
+        loom_file.attrs["last_modified"] = self._loom_timestamp()
 
-        return os.path.join(self.working_dir, self.local_output_filename)
+        return loom_path
 
     def _to_csv(self):
         """Write a zip file with csvs from Redshift query manifests and readme.
@@ -261,7 +303,6 @@ class MatrixConverter:
 
         results_dir = self._make_directory()
         gene_df = self._write_out_gene_dataframe(results_dir, "genes.csv")
-        cell_df = self.query_results[QueryType.CELL].load_results()
 
         cellkeys = []
         with open(os.path.join(results_dir, "expression.csv"), "w") as exp_f:
@@ -270,20 +311,19 @@ class MatrixConverter:
             exp_f.write(','.join(["cellkey"] + gene_index_string_list))
             exp_f.write('\n')
 
-            for slice_idx in range(self._n_slices()):
-                for chunk in self.query_results[QueryType.EXPRESSION].load_slice(slice_idx):
-                    # Group the data by cellkey and iterate over each cell
-                    grouped = chunk.groupby("cellkey")
-                    for cell_group in grouped:
-                        single_cell_df = cell_group[1]
-                        single_cell_df.pivot(
-                            index="cellkey", columns="featurekey", values="exprvalue").reindex(
-                            columns=gene_df.index).to_csv(exp_f, header=False, na_rep='0')
-                        cellkeys.append(cell_group[0])
+            # Iterate over the cells, reshaping the expression data for each
+            # group of cells to genes are columns and cells are rows.
+            for cells_df in self._generate_expression_dfs(50):
+                pivoted = cells_df.pivot(
+                    index="cellkey", columns="featurekey", values="exprvalue").reindex(
+                        columns=gene_df.index)
+                pivoted.to_csv(exp_f, header=False, na_rep='0', chunksize=50)
+                cellkeys.extend(pivoted.index.to_list())
 
+        cell_df = self.query_results[QueryType.CELL].load_results()
         self._write_out_cell_dataframe(results_dir, "cells.csv", cell_df, cellkeys)
         file_names = ["genes.csv", "expression.csv", "cells.csv"]
-        zip_path = self._zip_up_matrix_output(results_dir, file_names)
+        zip_path = self._zip_up_matrix_output(results_dir, file_names, zipfile.ZIP_DEFLATED)
         return zip_path
 
     def _upload_converted_matrix(self, local_path, remote_path):
