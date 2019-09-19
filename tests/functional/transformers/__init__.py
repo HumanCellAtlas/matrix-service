@@ -47,29 +47,6 @@ ETL_TEST_BUNDLES = {
                                 "91c3a4fb-b756-4200-b1bf-87253d431f2c|2019-05-24T185543.995479Z||3859||\n",
                 TableName.EXPRESSION: "e584b404-9937-49fe-a323-5e18511f7035|ENST00000373020|TPM|92.29\n"
             },
-        },
-        BundleType.CELLRANGER: {
-            'baed2abb-bf4a-4239-a605-38c7a1129596': {
-                TableName.ANALYSIS: "0603fcfc-a3eb-4442-a6bc-ed4495f0362c|"
-                                    "baed2abb-bf4a-4239-a605-38c7a1129596.2019-01-07T214226.767214Z|"
-                                    "baed2abb-bf4a-4239-a605-38c7a1129596|2019-01-07T214226.767214Z|"
-                                    "cellranger_v1.0.2|community",
-                TableName.SPECIMEN: "f1bf7167-5948-4d55-9090-1f30a39fc564|NCBITAXON:9606|Homo sapiens|HANCESTRO:0005|"
-                                    "European|MONDO:0001932|atrophic vulva|||UBERON:0000955|brain||",
-                TableName.LIBRARY_PREPARATION: "7fa4f1e6-fa10-46eb-88e8-ebdadbf3eeab|OBI:0000869|polyA RNA extract|"
-                                               "EFO:0009310|10X v2 sequencing|full length|unstranded",
-                TableName.PROJECT: "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|Q4_DEMO-project_PRJNA248302|"
-                                   "Q4_DEMO-Single cell RNA-seq of primary human glioblastomas",
-                TableName.PUBLICATION: "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|A title of a publication goes here.|"
-                                       "10.1016/j.cell.2016.07.054",
-                TableName.CONTRIBUTOR: "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|John,D,Doe. |EMBL-EBI",
-                TableName.CELL: "f066ea23371d725f8ec3868382ca1cc1|021d111b-4941-4e33-a2d1-8c3478f0cbd7|"
-                                "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|f1bf7167-5948-4d55-9090-1f30a39fc564|"
-                                "7fa4f1e6-fa10-46eb-88e8-ebdadbf3eeab|0603fcfc-a3eb-4442-a6bc-ed4495f0362c|"
-                                "aee36f18-c90f-403a-81cb-c7af96185e1c|2019-01-07T214220.472672Z|"
-                                "TGAGCATAGTACGATA-1|148||\n",
-                TableName.EXPRESSION: "488dc8c5ce601b9833aad68b22cdae0e|ENSG00000198786|Count|2\n"
-            },
         }
     },
     'staging': {
@@ -94,8 +71,7 @@ ETL_TEST_BUNDLES = {
                                 "eaa4b7d1-dd99-4f87-bc22-6fe2337720c0|2019-05-24T192722.908661Z||3859||\n",
                 TableName.EXPRESSION: "891c905c-7219-4b55-9c1b-4a5d7044e626|ENST00000373020|TPM|92.29\n",
             },
-        },
-        BundleType.CELLRANGER: {}
+        }
     },
     'prod': {
         BundleType.SS2: {
@@ -122,7 +98,6 @@ ETL_TEST_BUNDLES = {
                                 "6ffea35a-f721-4995-bf97-7c9fa9ea30cf|2019-05-15T003246.351336Z||4020||\n",
                 TableName.EXPRESSION: "3c2180aa-0aa4-411f-98dc-73ef87b447ed|ENST00000509541|TPM|0.72\n"
             },
-        },
-        BundleType.CELLRANGER: {}
+        }
     }
 }

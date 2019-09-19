@@ -42,24 +42,6 @@ class TestCellExpressionTransformer(unittest.TestCase):
         self.assertEqual(expression_table, TableName.EXPRESSION)
         self.assertEqual(expression_rows[0], "635badd5-7d62-4db3-b509-f290a12a1336|ENST00000373020|TPM|92.29\n")
 
-    def test_parse_cellranger(self):
-        parsed = self.transformer._parse_from_metadatas(
-            bundle_dir=os.path.abspath("tests/functional/res/etl/cellranger_bundle.version"),
-            bundle_manifest_path=os.path.abspath("tests/functional/res/etl/cellranger_bundle_manifest.json")
-        )
-        cell_lines = parsed[0][1]
-        expression_lines = parsed[1][1]
-
-        self.assertEqual(len(cell_lines), 5)
-        self.assertTrue("6aa7c3ef80f5f8edfbf4e940df2aa7a9|021d111b-4941-4e33-a2d1-8c3478f0cbd7|"
-                        "9080b7a6-e1e9-45e4-a68e-353cd1438a0f|f1bf7167-5948-4d55-9090-1f30a39fc564|"
-                        "7fa4f1e6-fa10-46eb-88e8-ebdadbf3eeab|d8a9ebfa-e1be-451f-bf10-b2486647a89b|"
-                        "d9839ea6-8f1a-40f6-95a8-0b029de949ab|2019-03-25T070711.759161Z|"
-                        "AAACCTGAGCGCCTCA-1|58||\n" in cell_lines)
-
-        self.assertEqual(len(expression_lines), 299)
-        self.assertEqual(expression_lines[0], "9fb52283dff6cf6234b18d35723e4f24|ENSG00000198786|Count|2\n")
-
     def test_parse_optimus(self):
         parsed = self.transformer._parse_from_metadatas(
             bundle_dir=os.path.abspath("tests/functional/res/etl/optimus_bundle.version"),

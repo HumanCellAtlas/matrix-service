@@ -30,7 +30,6 @@ class BundleType(Enum):
     Supported bundle types
     """
     SS2 = "ss2"
-    CELLRANGER = "cellranger"
 
 
 class MetadataSchemaName(Enum):

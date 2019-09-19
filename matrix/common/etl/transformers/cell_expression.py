@@ -8,7 +8,6 @@ import pathlib
 import typing
 
 import numpy
-import scipy.io
 import zarr
 
 from . import MetadataToPsvTransformer
@@ -53,8 +52,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             cell_lines, expression_lines = self._parse_ss2_bundle(bundle_dir, bundle_manifest_path)
         elif protocol_id.startswith("optimus"):
             cell_lines, expression_lines = self._parse_optimus_bundle(bundle_dir, bundle_manifest_path)
-        elif protocol_id.startswith("cellranger"):
-            cell_lines, expression_lines = self._parse_cellranger_bundle(bundle_dir, bundle_manifest_path)
         else:
             raise MatrixException(400, f"Failed to parse cell and expression metadata. "
                                        f"Unsupported analysis protocol {protocol_id}.")
@@ -135,72 +132,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                      expr_type,
                      str(expr_values[expr_type])]) + '\n'
                 expression_lines.append(expression_line)
-
-        return cell_lines, expression_lines
-
-    def _parse_cellranger_bundle(self, bundle_dir, bundle_manifest_path):
-        """
-        Parses cellranger analysis files into PSV rows for cell and expression Redshift tables.
-        """
-        keys = self._parse_keys(bundle_dir)
-        cell_suspension_id = json.load(open(
-            os.path.join(bundle_dir, "cell_suspension_0.json")))['provenance']['document_id']
-
-        matrix = scipy.io.mmread(os.path.join(bundle_dir, "matrix.mtx"))
-        genes = [g.split("\t")[0].split(".", 1)[0] for g in
-                 open(os.path.join(bundle_dir, "genes.tsv")).readlines()]
-        barcodes = [b.strip() for b in open(os.path.join(bundle_dir, "barcodes.tsv")).readlines()]
-
-        # columns are cells, rows are genes
-        expression_lines = []
-        cell_lines = set()
-        cell_gene_counts = {}
-        cell_to_barcode = {}
-
-        for i, j, v in zip(matrix.row, matrix.col, matrix.data):
-            barcode = barcodes[j]
-            gene = genes[i]
-
-            # Just make up a cell id
-            bundle_uuid = pathlib.Path(bundle_dir).parts[-1]
-            cell_key = self._generate_10x_cell_key(bundle_uuid, barcode)
-
-            cell_to_barcode[cell_key] = barcode
-
-            if cell_key not in cell_gene_counts:
-                cell_gene_counts[cell_key] = {}
-            cell_gene_counts[cell_key][gene] = cell_gene_counts[cell_key].get(gene, 0) + v
-
-        file_uuid = [f for f in json.load(open(bundle_manifest_path))["files"]
-                     if f["name"].endswith("matrix.mtx")][0]["uuid"]
-        file_version = [f for f in json.load(open(bundle_manifest_path))["files"]
-                        if f["name"].endswith("matrix.mtx")][0]["version"]
-
-        for cell_key, gene_count_dict in cell_gene_counts.items():
-
-            for gene, count in gene_count_dict.items():
-                expression_line = '|'.join(
-                    [cell_key,
-                     gene,
-                     "Count",
-                     str(count)]) + '\n'
-                expression_lines.append(expression_line)
-
-            gene_count = len(gene_count_dict)
-            cell_line = '|'.join(
-                [cell_key,
-                 cell_suspension_id,
-                 keys["project_key"],
-                 keys["specimen_key"],
-                 keys["library_key"],
-                 keys["analysis_key"],
-                 file_uuid,
-                 file_version,
-                 cell_to_barcode[cell_key],
-                 str(gene_count),
-                 "",
-                 ""]) + '\n'
-            cell_lines.add(cell_line)
 
         return cell_lines, expression_lines
 

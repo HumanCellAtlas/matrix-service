@@ -30,8 +30,6 @@ class CellExpressionValidator(TransformerValidator):
         cell_rows = actual_rows[0][1]
         if bundle_type == BundleType.SS2:
             self.assertEqual(cell_rows[0], expected_rows[TableName.CELL])
-        elif bundle_type == BundleType.CELLRANGER:
-            self.assertTrue(expected_rows[TableName.CELL] in cell_rows)
 
         expression_rows = actual_rows[1][1]
         self.assertEqual(expression_rows[0], expected_rows[TableName.EXPRESSION])
