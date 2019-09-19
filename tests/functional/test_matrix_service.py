@@ -11,12 +11,15 @@ import zipfile
 import loompy
 import requests
 import s3fs
+from requests_http_signature import HTTPSignatureAuth
 
 from . import validation
 from .wait_for import WaitFor
+from matrix.common.config import MatrixInfraConfig
 from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus, DEFAULT_FIELDS, DEFAULT_FEATURE
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.query_constructor import format_str_list
+from scripts.dss_subscription import DSS_SUBSCRIPTION_HMAC_SECRET_ID
 
 
 INPUT_BUNDLE_IDS = {
@@ -349,6 +352,8 @@ class TestMatrixServiceV0(MatrixServiceTest):
         data = {}
         bundle_uuid = bundle_fqid.split('.', 1)[0]
         bundle_version = bundle_fqid.split('.', 1)[1]
+        url = f"{self.api_url[:-3]}/dss/notification"
+        config = MatrixInfraConfig()
 
         data["transaction_id"] = "test_transaction_id"
         data["subscription_id"] = "test_subscription_id"
@@ -357,14 +362,14 @@ class TestMatrixServiceV0(MatrixServiceTest):
         data["match"]["bundle_uuid"] = bundle_uuid
         data["match"]["bundle_version"] = bundle_version
 
-        response = self._make_request(description="POST NOTIFICATION TO MATRIX SERVICE",
-                                      verb='POST',
-                                      url=f"{self.api_url}/dss/notification",
-                                      expected_status=200,
-                                      data=json.dumps(data),
-                                      headers=self.headers)
-        data = json.loads(response)
-        return data
+        response = requests.post(url=url,
+                                 json=data,
+                                 auth=HTTPSignatureAuth(key_id=DSS_SUBSCRIPTION_HMAC_SECRET_ID,
+                                                        key=config.dss_subscription_hmac_secret_key.encode()))
+
+        print(f"POST NOTIFICATION TO MATRIX SERVICE: \nPOST {url}\n-> {response.status_code}")
+        if response.content:
+            print(response.content.decode('utf8'))
 
 
 class TestMatrixServiceV1(MatrixServiceTest):

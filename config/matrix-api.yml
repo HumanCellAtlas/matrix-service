@@ -88,26 +88,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/v0_MatrixFormat'
-  /v0/dss/notification:
-    post:
-      summary: "Handles a DSS notification event."
-      description: "Handles a DSS notification event such as bundle CREATE, DELETE and TOMBSTONE."
-      operationId: matrix.lambdas.api.v0.core.dss_notification
-      tags:
-        - internal
-      requestBody:
-        description: "DSS subscription event JSON payload"
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/v0_DssNotification'
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                type: string
   /v1/matrix:
     post:
       summary: Request an expression matrix
@@ -433,22 +413,6 @@ components:
       properties:
         message:
           type: string
-    v0_DssNotification:
-      type: object
-      properties:
-        transaction_id:
-          type: string
-        subscription_id:
-          type: string
-        event_type:
-          type: string
-        match:
-          type: object
-          properties:
-            bundle_uuid:
-              type: string
-            bundle_version:
-              type: string
     v1_ComparisonFilterOperator:
       description: 'Comparison operators allowed in matrix filters.'
       type: string

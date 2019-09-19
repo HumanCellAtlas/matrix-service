@@ -58,7 +58,7 @@ class NotificationHandler:
         content_type_patterns = ['application/json; dcp-type="metadata*"']
         filename_patterns = ["*zarr*",  # match expression data
                              "*.results",  # match SS2 results files
-                             "*.mtx", "genes.tsv", "barcodes.tsv"]  # match 10X results files
+                             "*.mtx", "genes.tsv", "barcodes.tsv", "empty_drops_result.csv"]  # match 10X results files
 
         # clean up working directory in case of Lambda container reuse
         shutil.rmtree(f"{staging_dir}/{MetadataToPsvTransformer.OUTPUT_DIRNAME}", ignore_errors=True)

@@ -3,7 +3,6 @@ import os
 import requests
 import uuid
 
-from connexion.lifecycle import ConnexionResponse
 
 from matrix.common import constants
 from matrix.common import query_constructor
@@ -13,10 +12,8 @@ from matrix.common.config import MatrixInfraConfig
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
 from matrix.common.aws.redshift_handler import RedshiftHandler, TableName
 from matrix.common.request.request_tracker import RequestTracker
-from matrix.common.aws.sqs_handler import SQSHandler
 
 lambda_handler = LambdaHandler()
-sqs_handler = SQSHandler()
 matrix_infra_config = MatrixInfraConfig()
 
 
@@ -267,22 +264,3 @@ def get_feature_detail(feature_name: str):
     else:
         return ({"message": f"Feature {feature_name} not found."},
                 requests.codes.not_found)
-
-
-def dss_notification(body):
-    bundle_uuid = body['match']['bundle_uuid']
-    bundle_version = body['match']['bundle_version']
-    subscription_id = body['subscription_id']
-    event_type = body['event_type']
-
-    payload = {
-        'bundle_uuid': bundle_uuid,
-        'bundle_version': bundle_version,
-        'event_type': event_type,
-    }
-    queue_url = matrix_infra_config.notification_q_url
-    sqs_handler.add_message_to_queue(queue_url, payload)
-
-    return ConnexionResponse(status_code=requests.codes.ok,
-                             body=f"Received notification from subscription {subscription_id}: "
-                                  f"{event_type} {bundle_uuid}.{bundle_version}")

@@ -220,28 +220,6 @@ class TestCore(unittest.TestCase):
         response = core.get_formats()
         self.assertEqual(response[0], [item.value for item in MatrixFormat])
 
-    @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.add_message_to_queue")
-    def test_dss_notification(self, mock_sqs_add):
-        core.matrix_infra_config.set({'notification_q_url': "notification_q_url"})
-        body = {
-            'subscription_id': "test_sub_id",
-            'event_type': "test_event",
-            'match': {
-                'bundle_uuid': "test_id",
-                'bundle_version': "test_version"
-            }
-        }
-        expected_payload = {
-            'bundle_uuid': "test_id",
-            'bundle_version': "test_version",
-            'event_type': 'test_event'
-        }
-
-        resp = core.dss_notification(body)
-        mock_sqs_add.assert_called_once_with("notification_q_url", expected_payload)
-
-        self.assertEqual(resp.status_code, requests.codes.ok)
-
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_expired",
                 new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")

@@ -2,7 +2,7 @@ import os
 import unittest
 
 import boto3
-from moto import mock_dynamodb2, mock_s3, mock_sqs, mock_sts
+from moto import mock_dynamodb2, mock_s3, mock_sqs, mock_sts, mock_secretsmanager
 
 os.environ['DEPLOYMENT_STAGE'] = "test_deployment_stage"
 os.environ['AWS_DEFAULT_REGION'] = "us-east-1"
@@ -44,6 +44,8 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
         self.dynamo_mock.start()
         self.s3_mock = mock_s3()
         self.s3_mock.start()
+        self.secrets_mock = mock_secretsmanager()
+        self.secrets_mock.start()
         self.sqs_mock = mock_sqs()
         self.sqs_mock.start()
         self.sts_mock = mock_sts()
