@@ -157,6 +157,7 @@ CREATE_QUERY_TEMPLATE = {
             featurestart     INTEGER,
             featureend       INTEGER,
             isgene           BOOLEAN,
+            genus_species    VARCHAR(25) NOT NULL,
             PRIMARY KEY(featurekey))
             DISTSTYLE ALL
             SORTKEY(featurekey)

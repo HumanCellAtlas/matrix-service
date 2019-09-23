@@ -13,22 +13,31 @@ from matrix.common.aws.redshift_handler import TableName
 class FeatureTransformer(MetadataToPsvTransformer):
     """Reads gencode annotation reference and writes out rows for feature table in PSV format."""
     WRITE_LOCK = Lock()
-    ANNOTATION_FTP_URL = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_27/" \
-                         "gencode.v27.chr_patch_hapl_scaff.annotation.gtf.gz"
+    ANNOTATION_FTP_URLS = {
+        "Homo sapiens": ("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_27/"
+                         "gencode.v27.primary_assembly.annotation.gtf.gz"),
+        "Mus musculus": ("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M21/"
+                         "gencode.vM21.annotation.gtf.gz")
+    }
 
     def __init__(self, staging_dir):
         super(FeatureTransformer, self).__init__(staging_dir)
 
-        self.annotation_file = os.path.join(self.staging_dir, "gencode_annotation.gtf")
-        self.annotation_file_gz = os.path.join(self.staging_dir, "gencode_annotation.gtf.gz")
+        self.annotation_files = {}
 
         self._fetch_annotations()
 
     def _fetch_annotations(self):
-        urllib.request.urlretrieve(self.ANNOTATION_FTP_URL, self.annotation_file_gz)
-        with gzip.open(self.annotation_file_gz, 'rb') as f_in:
-            with open(self.annotation_file, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+
+        for genus_species, url in self.ANNOTATION_FTP_URLS.items():
+            os.makedirs(os.path.join(self.staging_dir, genus_species), exist_ok=True)
+            annotation_file_gz = os.path.join(self.staging_dir, genus_species, "gencode_annotation.gtf.gz")
+            annotation_file = os.path.join(self.staging_dir, genus_species, "gencode_annotation.gtf")
+            urllib.request.urlretrieve(url, annotation_file_gz)
+            with gzip.open(annotation_file_gz, 'rb') as f_in:
+                with open(annotation_file, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+            self.annotation_files[genus_species] = annotation_file
 
     def _write_rows_to_psvs(self, *args: typing.Tuple):
         with FeatureTransformer.WRITE_LOCK:
@@ -37,17 +46,18 @@ class FeatureTransformer(MetadataToPsvTransformer):
     def _parse_from_metadatas(self, filename):
         features = set()
 
-        for line in open(self.annotation_file):
-            # Skip comments
-            if line.startswith("#"):
-                continue
-            parsed = self.parse_line(line)
-            if parsed:
-                features.add(parsed)
+        for genus_species, annotation_file in self.annotation_files.items():
+            for line in open(annotation_file):
+                # Skip comments
+                if line.startswith("#"):
+                    continue
+                parsed = self.parse_line(line, genus_species)
+                if parsed:
+                    features.add(parsed)
 
         return (TableName.FEATURE, features),
 
-    def parse_line(self, line):
+    def parse_line(self, line, genus_species):
         """Parse a GTF line into the fields we want."""
         p = line.strip().split("\t")
         type_ = p[2]
@@ -79,4 +89,5 @@ class FeatureTransformer(MetadataToPsvTransformer):
         if id_.endswith("_PAR_Y"):
             shortened_id += "_PAR_Y"
 
-        return self._generate_psv_row(shortened_id, name, feature_type, chrom, start, end, str(type_ == "gene"))
+        return self._generate_psv_row(shortened_id, name, feature_type, chrom, start,
+                                      end, str(type_ == "gene"), genus_species)
