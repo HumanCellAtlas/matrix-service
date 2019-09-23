@@ -519,3 +519,124 @@ class TestFormatStrList(unittest.TestCase):
         formatted_values = "('id1.version')"
 
         self.assertEqual(query_constructor.format_str_list(values), formatted_values)
+
+
+class TestHasGenusSpecies(unittest.TestCase):
+
+    def test_simple(self):
+        filter_ = \
+            {
+                "op": "=",
+                "field": "specimen_from_organism.genus_species.ontology_label",
+                "value": "Homo sapiens"
+            }
+        self.assertTrue(query_constructor.has_genus_species_term(filter_))
+
+        filter_ = \
+            {
+                "op": "!=",
+                "field": "specimen_from_organism.genus_species.ontology",
+                "value": "NCBITaxon:9606"
+            }
+        self.assertTrue(query_constructor.has_genus_species_term(filter_))
+
+        filter_ = \
+            {
+                "op": ">",
+                "field": "genes_detected",
+                "value": 100
+            }
+        self.assertFalse(query_constructor.has_genus_species_term(filter_))
+
+    def test_nested(self):
+
+        filter_ = \
+            {
+                "op": "or",
+                "value": [
+                    {
+                        "op": "and",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "num_field_1",
+                                "value": [1, 2, 3, 4]
+                            },
+                            {
+                                "op": "!=",
+                                "field": "specimen_from_organism.genus_species.ontology",
+                                "value": "NCBITaxon:9606"
+                            },
+                            {
+                                "op": "=",
+                                "field": "quuz",
+                                "value": "thud"
+                            }
+                        ]
+                    },
+                    {
+                        "op": "not",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "foo",
+                                "value": ["bar", "baz"]
+                            },
+                        ]
+                    },
+                    {
+                        "op": ">",
+                        "field": "qux",
+                        "value": 5
+                    },
+                    {
+                        "op": "=",
+                        "field": "quuz",
+                        "value": "thud"
+                    }
+                ]
+            }
+        self.assertTrue(query_constructor.has_genus_species_term(filter_))
+
+        filter_ = \
+            {
+                "op": "or",
+                "value": [
+                    {
+                        "op": "and",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "num_field_1",
+                                "value": [1, 2, 3, 4]
+                            },
+                            {
+                                "op": "=",
+                                "field": "quuz",
+                                "value": "thud"
+                            }
+                        ]
+                    },
+                    {
+                        "op": "not",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "foo",
+                                "value": ["bar", "baz"]
+                            },
+                        ]
+                    },
+                    {
+                        "op": ">",
+                        "field": "qux",
+                        "value": 5
+                    },
+                    {
+                        "op": "=",
+                        "field": "quuz",
+                        "value": "thud"
+                    }
+                ]
+            }
+        self.assertFalse(query_constructor.has_genus_species_term(filter_))
