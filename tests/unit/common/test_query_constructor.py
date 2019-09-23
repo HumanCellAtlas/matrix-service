@@ -640,3 +640,77 @@ class TestHasGenusSpecies(unittest.TestCase):
                 ]
             }
         self.assertFalse(query_constructor.has_genus_species_term(filter_))
+
+
+class TestSpeciesifyFilter(unittest.TestCase):
+
+    def test_comparison(self):
+
+        filter_ = {
+            "op": ">",
+            "field": "genes_detected",
+            "value": 1000
+        }
+
+        speciesified_filter = query_constructor.speciesify_filter(filter_, "Homo sapiens")
+        expected_filter = {
+            "op": "and",
+            "value": [
+                {
+                    "op": "=",
+                    'field': 'specimen_from_organism.genus_species.ontology_label',
+                    "value": "Homo sapiens"
+                },
+                {
+                    "op": ">",
+                    "field": "genes_detected",
+                    "value": 1000
+                }
+            ]
+        }
+        self.assertDictEqual(speciesified_filter, expected_filter)
+
+    def test_logical(self):
+        filter_ = {
+            "op": "or",
+            "value": [
+                {
+                    "op": ">",
+                    "field": "genes_detected",
+                    "value": 1000
+                },
+                {
+                    "op": "=",
+                    "field": "foo",
+                    "value": "bar"
+                }
+            ]
+        }
+
+        speciesified_filter = query_constructor.speciesify_filter(filter_, "Mus musculus")
+        expected_filter = {
+            "op": "and",
+            "value": [
+                {
+                    "op": "=",
+                    'field': 'specimen_from_organism.genus_species.ontology_label',
+                    "value": "Mus musculus"
+                },
+                {
+                    "op": "or",
+                    "value": [
+                        {
+                            "op": ">",
+                            "field": "genes_detected",
+                            "value": 1000
+                        },
+                        {
+                            "op": "=",
+                            "field": "foo",
+                            "value": "bar"
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertDictEqual(speciesified_filter, expected_filter)

@@ -276,3 +276,22 @@ def has_genus_species_term(matrix_filter: typing.Dict[str, typing.Any]) -> bool:
             return value[0] in constants.GENUS_SPECIES_FILTERS
         else:
             return any(has_genus_species_term(v) for v in value)
+
+
+def speciesify_filter(matrix_filter: typing.Dict[str, typing.Any],
+                      genus_species_label: str) -> typing.Dict[str, typing.Any]:
+    """Add a species term to a matrix filter so it only returns cells that
+    match the given genus_species_label.
+    """
+
+    return {
+        "op": "and",
+        "value": [
+            {
+                "op": "=",
+                "field": "specimen_from_organism.genus_species.ontology_label",
+                "value": genus_species_label
+            },
+            matrix_filter
+        ]
+    }
