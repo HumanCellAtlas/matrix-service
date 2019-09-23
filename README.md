@@ -10,7 +10,7 @@ The Matrix Service consumes data from the [HCA](https://prod.data.humancellatlas
 Users can select cells to include in their matrix by specifying metadata and expression value filters via the API.
 Matrices also include metadata per cell for which fields to include can be specified in the POST request. For a quick
 example to get started, try this
-[Jupytner Notebook vignette](https://github.com/HumanCellAtlas/matrix-service/blob/master/docs/HCA%20Matrix%20Service%20to%20Scanpy.ipynb).
+[Jupytner Notebook vignette](https://nbviewer.jupyter.org/github/HumanCellAtlas/matrix-service/blob/master/docs/HCA%20Matrix%20Service%20to%20Scanpy.ipynb).
 
 For information on the technical architecture of the service, please see
 [Matrix Service Technical Architecture](https://allspark.dev.data.humancellatlas.org/HumanCellAtlas/matrix-service/wikis/Technical-Architecture).
