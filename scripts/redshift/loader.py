@@ -87,8 +87,8 @@ def load(args):
                             finalizer_cb=etl.finalizer_update if is_update else etl.finalizer_reload,
                             staging_directory=staging_dir,
                             deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                            max_workers=args.max_workers,
-                            max_dispatchers=multiprocessing.cpu_count(),
+                            max_workers=int(multiprocessing.cpu_count()/2),
+                            max_dispatchers=int(multiprocessing.cpu_count()/2),
                             dispatcher_executor_class=concurrent.futures.ProcessPoolExecutor)
     elif args.state == 2:
         etl.upload_and_load(staging_dir, is_update=is_update)

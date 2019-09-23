@@ -64,49 +64,49 @@ MATRIX_ENV_TO_DSS_ENV = {
 SUPPORTED_METADATA_SCHEMA_VERSIONS = {
     MetadataSchemaName.PROJECT: {
         'max_major': 14,
-        'max_minor': 0,
+        'max_minor': 1,
         'min_major': 1,
         'min_minor': 0
     },
     MetadataSchemaName.LIBRARY_PREPARATION_PROTOCOL: {
         'max_major': 6,
-        'max_minor': 1,
+        'max_minor': 2,
         'min_major': 1,
         'min_minor': 0
     },
     MetadataSchemaName.ANALYSIS_PROTOCOL: {
         'max_major': 9,
-        'max_minor': 0,
+        'max_minor': 1,
         'min_major': 1,
         'min_minor': 0
     },
     MetadataSchemaName.SPECIMEN_FROM_ORGANISM: {
         'max_major': 10,
-        'max_minor': 2,
+        'max_minor': 4,
         'min_major': 9,
         'min_minor': 0
     },
     MetadataSchemaName.DONOR_ORGANISM: {
         'max_major': 15,
-        'max_minor': 3,
+        'max_minor': 5,
         'min_major': 1,
         'min_minor': 0
     },
     MetadataSchemaName.CELL_LINE: {
         'max_major': 14,
-        'max_minor': 3,
+        'max_minor': 5,
         'min_major': 1,
         'min_minor': 0
     },
     MetadataSchemaName.CELL_SUSPENSION: {
         'max_major': 13,
-        'max_minor': 1,
+        'max_minor': 3,
         'min_major': 1,
         'min_minor': 0
     },
     MetadataSchemaName.ORGANOID: {
         'max_major': 11,
-        'max_minor': 1,
+        'max_minor': 3,
         'min_major': 1,
         'min_minor': 0
     }
@@ -183,7 +183,7 @@ CREATE_QUERY_TEMPLATE = {
             ethnicity_ontology          VARCHAR(40),
             ethnicity_label             VARCHAR(40),
             disease_ontology            VARCHAR(40),
-            disease_label               VARCHAR(40),
+            disease_label               VARCHAR(50),
             development_stage_ontology  VARCHAR(40),
             development_stage_label     VARCHAR(40),
             organ_ontology              VARCHAR(40),
