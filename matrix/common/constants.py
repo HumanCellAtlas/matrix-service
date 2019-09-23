@@ -183,7 +183,7 @@ CREATE_QUERY_TEMPLATE = {
             ethnicity_ontology          VARCHAR(40),
             ethnicity_label             VARCHAR(40),
             disease_ontology            VARCHAR(40),
-            disease_label               VARCHAR(40),
+            disease_label               VARCHAR(50),
             development_stage_ontology  VARCHAR(40),
             development_stage_label     VARCHAR(40),
             organ_ontology              VARCHAR(40),
