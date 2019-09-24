@@ -104,10 +104,11 @@ def get_chalice_app(flask_app):
         event_type = body['event_type']
 
         config = MatrixInfraConfig()
+        hmac_secret_key = config.dss_subscription_hmac_secret_key.encode()
         HTTPSignatureAuth.verify(requests.Request(url="http://host/dss/notification",
                                                   method=app.current_request.method,
                                                   headers=app.current_request.headers),
-                                 key_resolver=lambda key_id, alg: config.dss_subscription_hmac_secret_key.encode())
+                                 key_resolver=lambda key_id, algorithm: hmac_secret_key)
 
         payload = {
             'bundle_uuid': bundle_uuid,
