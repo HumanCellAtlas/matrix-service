@@ -163,22 +163,3 @@ def get_matrix(request_id: str):
 def get_formats():
     return ([item.value for item in MatrixFormat],
             requests.codes.ok)
-
-
-def dss_notification(body):
-    bundle_uuid = body['match']['bundle_uuid']
-    bundle_version = body['match']['bundle_version']
-    subscription_id = body['subscription_id']
-    event_type = body['event_type']
-
-    payload = {
-        'bundle_uuid': bundle_uuid,
-        'bundle_version': bundle_version,
-        'event_type': event_type,
-    }
-    queue_url = matrix_infra_config.notification_q_url
-    sqs_handler.add_message_to_queue(queue_url, payload)
-
-    return (f"Received notification from subscription {subscription_id}: "
-            f"{event_type} {bundle_uuid}.{bundle_version}",
-            requests.codes.ok)
