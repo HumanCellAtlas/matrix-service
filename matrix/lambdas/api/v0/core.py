@@ -70,7 +70,7 @@ def post_matrix(body: dict):
 
     return ({'request_id': request_id,
              'status': MatrixRequestStatus.IN_PROGRESS.value,
-             'matrix_url': "",
+             'matrix_location': "",
              'eta': "",
              'message': "Job started."},
             requests.codes.accepted)
@@ -89,7 +89,7 @@ def get_matrix(request_id: str):
     in_progress_response = (
         {'request_id': request_id,
          'status': MatrixRequestStatus.IN_PROGRESS.value,
-         'matrix_url': "",
+         'matrix_location': "",
          'eta': "",
          'message': f"Request {request_id} has been accepted and is currently being "
                     f"processed. Please try again later."},
@@ -144,7 +144,7 @@ def get_matrix(request_id: str):
     elif request_tracker.is_expired:
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.EXPIRED.value,
-                 'matrix_url': "",
+                 'matrix_location': "",
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
