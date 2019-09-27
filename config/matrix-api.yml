@@ -47,7 +47,8 @@ paths:
       summary: "Retrieve the status, and result if available, of a matrix query request."
       description: "Returns the status, and URI of the result if available, of a matrix query request. The status of a
         request can be 'Complete', 'In Progress' or 'Failed'. If the request is 'Complete', the matrix_location field
-        will be populated with a URL to download the matrix. If the request 'Failed',
+        will be populated with a URL to download the matrix of human results. If the request included non-human results,
+        those will be present in non_human_matrix_locations. If the request 'Failed',
         the error message will be available in the message field."
       operationId: matrix.lambdas.api.v0.core.get_matrix
       tags:
@@ -398,6 +399,10 @@ components:
           $ref: '#/components/schemas/v0_MatrixRequestStatus'
         matrix_location:
           type: string
+        non_human_matrix_locations:
+          type: object
+          additionalProperties:
+            type: string
         eta:
           type: string
         message:
@@ -530,6 +535,10 @@ components:
         matrix_url:
           type: string
           description: 'URL where matrix can be retrieved.'
+        non_human_matrix_urls:
+          type: object
+          additionalProperties:
+            type: string
         message:
           type: string
           description: 'Additional information about the matrix request.'
