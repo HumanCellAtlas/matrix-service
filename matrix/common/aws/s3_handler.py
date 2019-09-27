@@ -39,6 +39,13 @@ class S3Handler:
         objects = self.ls(key)
         return len(objects) > 0
 
+    def size(self, key):
+        response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket.name, Prefix=key)
+        contents = response.get('Contents', [])
+        if len(contents) != 1:
+            return None
+        return contents[0]['Size']
+
     def delete_objects(self, keys: list) -> list:
         """
         Deletes a list keys from this S3 bucket.

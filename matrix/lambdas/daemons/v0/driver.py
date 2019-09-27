@@ -4,6 +4,7 @@ import typing
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
 
+from matrix.common import constants
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.aws.s3_handler import S3Handler
@@ -27,10 +28,12 @@ expression_query_template = """
     LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
     INNER JOIN cell on (expression.cellkey = cell.cellkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+    INNER JOIN specimen on (cell.specimenkey == specimen.specimenkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
-    AND analysis.bundle_fqid IN {3}$$)
-    TO 's3://{0}/{1}/expression_'
+    AND analysis.bundle_fqid IN {3}
+    AND specimen.genus_species_label = '{4}'$$)
+    TO 's3://{0}/{1}/{4}/expression_'
     IAM_ROLE '{2}'
     GZIP
     MANIFEST VERBOSE
@@ -46,8 +49,9 @@ cell_query_template = """
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-    WHERE analysis.bundle_fqid IN {3}$$)
-    TO 's3://{0}/{1}/cell_metadata_'
+    WHERE analysis.bundle_fqid IN {3}
+    AND specimen.genus_species_label = '{4}'$$)
+    TO 's3://{0}/{1}/{4}/cell_metadata_'
     IAM_ROLE '{2}'
     GZIP
     MANIFEST VERBOSE
@@ -57,8 +61,9 @@ cell_query_template = """
 feature_query_template = """
     UNLOAD ($$SELECT *
     FROM feature
-    WHERE feature.isgene$$)
-    to 's3://{0}/{1}/gene_metadata_'
+    WHERE feature.isgene
+    AND feature.genus_species = '{4}'$$)
+    to 's3://{0}/{1}/{3}gene_metadata_'
     IAM_ROLE '{2}'
     GZIP
     MANIFEST VERBOSE;
@@ -129,8 +134,9 @@ class Driver:
             self.request_tracker.log_error(error_msg)
             return
 
-        for key in s3_obj_keys:
-            self._add_request_query_to_sqs(key, s3_obj_keys[key])
+        for genus_species in s3_obj_keys:
+            for key in s3_obj_keys[genus_species]:
+                self._add_request_query_to_sqs(key, genus_species, s3_obj_keys[key])
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     @retry(reraise=True, wait=wait_fixed(5), stop=stop_after_attempt(60))
@@ -148,34 +154,50 @@ class Driver:
         return list(map(_parse_line, lines))
 
     def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list):
-        feature_query = feature_query_template.format(self.query_results_bucket,
-                                                      self.request_id,
-                                                      self.redshift_role_arn)
-        feature_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/feature", feature_query)
 
-        exp_query = expression_query_template.format(self.query_results_bucket,
-                                                     self.request_id,
-                                                     self.redshift_role_arn,
-                                                     format_str_list(resolved_bundle_fqids))
-        exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
+        cell_keys = {}
+        feature_keys = {}
+        expression_keys = {}
+        for genus_species in constants.GenusSpecies:
+            feature_query = feature_query_template.format(self.query_results_bucket,
+                                                          self.request_id,
+                                                          self.redshift_role_arn,
+                                                          genus_species.value)
 
-        cell_query = cell_query_template.format(self.query_results_bucket,
-                                                self.request_id,
-                                                self.redshift_role_arn,
-                                                format_str_list(resolved_bundle_fqids))
-        cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
+            feature_query_obj_key = self.s3_handler.store_content_in_s3(
+                f"{self.request_id}/{genus_species.value}/feature", feature_query)
+            feature_keys[genus_species] = feature_query_obj_key
+
+            exp_query = expression_query_template.format(self.query_results_bucket,
+                                                         self.request_id,
+                                                         self.redshift_role_arn,
+                                                         format_str_list(resolved_bundle_fqids),
+                                                         genus_species.value)
+            exp_query_obj_key = self.s3_handler.store_content_in_s3(
+                f"{self.request_id}/{genus_species.value}/expression", exp_query)
+            expression_keys[genus_species] = exp_query_obj_key
+
+            cell_query = cell_query_template.format(self.query_results_bucket,
+                                                    self.request_id,
+                                                    self.redshift_role_arn,
+                                                    format_str_list(resolved_bundle_fqids),
+                                                    genus_species.value)
+            cell_query_obj_key = self.s3_handler.store_content_in_s3(
+                f"{self.request_id}/{genus_species.value}/cell", cell_query)
+            cell_keys[genus_species] = cell_query_obj_key
 
         return {
-            QueryType.CELL: cell_query_obj_key,
-            QueryType.EXPRESSION: exp_query_obj_key,
-            QueryType.FEATURE: feature_query_obj_key
+            QueryType.CELL: cell_keys,
+            QueryType.EXPRESSION: expression_keys,
+            QueryType.FEATURE: feature_keys
         }
 
-    def _add_request_query_to_sqs(self, query_type: QueryType, s3_obj_key: str):
+    def _add_request_query_to_sqs(self, query_type: QueryType, genus_species: str, s3_obj_key: str):
         queue_url = self.query_job_q_url
         payload = {
             'request_id': self.request_id,
             's3_obj_key': s3_obj_key,
+            'genus_species': genus_species,
             'type': query_type.value
         }
         logger.debug(f"Adding {payload} to sqs {queue_url}")

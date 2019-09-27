@@ -4,9 +4,10 @@ import requests
 import uuid
 
 from matrix.common.exceptions import MatrixException
-from matrix.common.constants import MatrixFormat, MatrixRequestStatus
+from matrix.common.constants import GenusSpecies, MatrixFormat, MatrixRequestStatus
 from matrix.common.config import MatrixInfraConfig
 from matrix.common.aws.lambda_handler import LambdaHandler, LambdaName
+from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.request.request_tracker import RequestTracker
 from matrix.common.aws.sqs_handler import SQSHandler
 
@@ -59,7 +60,7 @@ def post_matrix(body: dict):
                     requests.codes.bad_request)
 
     request_id = str(uuid.uuid4())
-    RequestTracker(request_id).initialize_request(format)
+    RequestTracker(request_id).initialize_request(format, list(GenusSpecies))
     driver_payload = {
         'request_id': request_id,
         'bundle_fqids': bundle_fqids,
@@ -71,6 +72,7 @@ def post_matrix(body: dict):
     return ({'request_id': request_id,
              'status': MatrixRequestStatus.IN_PROGRESS.value,
              'matrix_location': "",
+             'non_human_matrix_locations': {},
              'eta': "",
              'message': "Job started."},
             requests.codes.accepted)
@@ -90,6 +92,7 @@ def get_matrix(request_id: str):
         {'request_id': request_id,
          'status': MatrixRequestStatus.IN_PROGRESS.value,
          'matrix_location': "",
+         'non_human_matrix_locations': {},
          'eta': "",
          'message': f"Request {request_id} has been accepted and is currently being "
                     f"processed. Please try again later."},
@@ -107,34 +110,49 @@ def get_matrix(request_id: str):
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
                  'matrix_location': "",
+                 'non_human_matrix_locations': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
     # Check for failed batch conversion job
-    elif request_tracker.batch_job_status and request_tracker.batch_job_status == "FAILED":
+    elif request_tracker.batch_job_failed:
         request_tracker.log_error("The matrix conversion as a part of the request has failed. \
             Please retry or contact an hca admin for help.")
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
                  'matrix_location': "",
+                 'non_human_matrix_locations': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
     # Complete case
     elif request_tracker.is_request_complete():
         matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
+        matrix_results_handler = S3Handler(matrix_results_bucket)
 
-        matrix_location = ""
-        if format == MatrixFormat.LOOM.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
-                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}"
-        elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
-                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
+        human_matrix_location = ""
+        non_human_matrix_locations = {}
+
+        for genus_species in request_tracker.genera_species:
+
+            if format == MatrixFormat.LOOM.value:
+                candidate_matrix_key = f'{request_tracker.s3_results_prefix(genus_species)}/{request_id}.{format}'
+            elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
+                candidate_matrix_key = f'{request_tracker.s3_results_prefix(genus_species)}/{request_id}.{format}.zip'
+
+            if matrix_results_handler.size(candidate_matrix_key):
+
+                matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" + candidate_matrix_key
+
+                if genus_species == GenusSpecies.HUMAN:
+                    human_matrix_location = matrix_location
+                else:
+                    non_human_matrix_locations[genus_species.value] = matrix_location
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.COMPLETE.value,
-                 'matrix_location': matrix_location,
+                 'matrix_location': human_matrix_location,
+                 "non_human_matrix_locations": non_human_matrix_locations,
                  'eta': "",
                  'message': f"Request {request_id} has successfully completed. "
                             f"The resultant expression matrix is available for download at "
@@ -145,6 +163,7 @@ def get_matrix(request_id: str):
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.EXPIRED.value,
                  'matrix_location': "",
+                 'non_human_matrix_locations': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
@@ -153,6 +172,7 @@ def get_matrix(request_id: str):
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
                  'matrix_location': "",
+                 'non_human_matrix_locations': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)

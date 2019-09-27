@@ -50,15 +50,18 @@ class Driver:
                      f"fields={fields}, feature={feature}")
 
         try:
-            matrix_request_queries = query_constructor.create_matrix_request_queries(
-                filter_, fields, feature)
+            for genus_species in self.request_tracker.genera_species:
+                matrix_request_queries = query_constructor.create_matrix_request_queries(
+                    query_constructor.speciesify_filter(filter_, genus_species),
+                    fields,
+                    feature)
+                s3_obj_keys = self._format_and_store_queries_in_s3(matrix_request_queries)
+                for key in s3_obj_keys:
+                    self._add_request_query_to_sqs(key, genus_species.value, s3_obj_keys[key])
         except (query_constructor.MalformedMatrixFilter, query_constructor.MalformedMatrixFeature) as exc:
             self.request_tracker.log_error(f"Query construction failed with error: {str(exc)}")
             raise
 
-        s3_obj_keys = self._format_and_store_queries_in_s3(matrix_request_queries)
-        for key in s3_obj_keys:
-            self._add_request_query_to_sqs(key, s3_obj_keys[key])
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     def _format_and_store_queries_in_s3(self, queries: dict):
@@ -86,11 +89,12 @@ class Driver:
             QueryType.FEATURE: feature_query_obj_key
         }
 
-    def _add_request_query_to_sqs(self, query_type: QueryType, s3_obj_key: str):
+    def _add_request_query_to_sqs(self, query_type: QueryType, genus_species: str, s3_obj_key: str):
         queue_url = self.query_job_q_url
         payload = {
             'request_id': self.request_id,
             's3_obj_key': s3_obj_key,
+            'genus_species': genus_species,
             'type': query_type.value
         }
         logger.debug(f"Adding {payload} to sqs {queue_url}")

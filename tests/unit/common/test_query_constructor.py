@@ -652,14 +652,14 @@ class TestSpeciesifyFilter(unittest.TestCase):
             "value": 1000
         }
 
-        speciesified_filter = query_constructor.speciesify_filter(filter_, "Homo sapiens")
+        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.HUMAN)
         expected_filter = {
             "op": "and",
             "value": [
                 {
                     "op": "=",
                     'field': 'specimen_from_organism.genus_species.ontology_label',
-                    "value": "Homo sapiens"
+                    "value": constants.GenusSpecies.HUMAN.value
                 },
                 {
                     "op": ">",
@@ -687,14 +687,14 @@ class TestSpeciesifyFilter(unittest.TestCase):
             ]
         }
 
-        speciesified_filter = query_constructor.speciesify_filter(filter_, "Mus musculus")
+        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.MOUSE)
         expected_filter = {
             "op": "and",
             "value": [
                 {
                     "op": "=",
                     'field': 'specimen_from_organism.genus_species.ontology_label',
-                    "value": "Mus musculus"
+                    "value": constants.GenusSpecies.MOUSE.value
                 },
                 {
                     "op": "or",
