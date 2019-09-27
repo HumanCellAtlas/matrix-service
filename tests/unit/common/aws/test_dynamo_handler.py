@@ -216,23 +216,57 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
     def test_filter_table_items(self):
         items = self.handler.filter_table_items(
             table=DynamoTable.REQUEST_TABLE,
-            attrs={RequestTableField.REQUEST_HASH.value: "N/A"}
+            attrs={RequestTableField.FEATURE.value: DEFAULT_FEATURE}
         )
         self.assertEqual(len(items), 0)
 
-        self.handler.create_request_table_entry(self.request_id, self.format)
-        self.handler.create_request_table_entry(str(uuid.uuid4()), "test_format")
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN, GenusSpecies.MOUSE])
+        # Add a lot of entries to make sure we test the pagination
+        for _ in range(250):
+            self.handler.create_request_table_entry(str(uuid.uuid4()), "test_format", [GenusSpecies.HUMAN])
+        self.handler.create_request_table_entry(str(uuid.uuid4()), self.format, [GenusSpecies.MOUSE])
 
         items = self.handler.filter_table_items(
             table=DynamoTable.REQUEST_TABLE,
-            attrs={RequestTableField.REQUEST_HASH.value: "N/A"}
+            attrs={RequestTableField.FEATURE.value: DEFAULT_FEATURE}
         )
-        self.assertEqual(len(items), 2)
+        self.assertEqual(len(items), 252)
 
         items = self.handler.filter_table_items(
             table=DynamoTable.REQUEST_TABLE,
-            attrs={RequestTableField.REQUEST_HASH.value: "N/A",
-                   RequestTableField.FORMAT.value: self.format}
+            attrs={RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "N/A"}}
+        )
+        self.assertEqual(len(items), 250)
+
+        items = self.handler.filter_table_items(
+            table=DynamoTable.REQUEST_TABLE,
+            attrs={RequestTableField.REQUEST_HASH.value: {GenusSpecies.MOUSE.value: "N/A"}}
         )
         self.assertEqual(len(items), 1)
+
+        items = self.handler.filter_table_items(
+            table=DynamoTable.REQUEST_TABLE,
+            attrs={RequestTableField.REQUEST_HASH.value: {GenusSpecies.MOUSE.value: "N/A",
+                                                          GenusSpecies.HUMAN.value: "N/A"}}
+        )
+        self.assertEqual(len(items), 1)
+
+        items = self.handler.filter_table_items(
+            table=DynamoTable.REQUEST_TABLE,
+            attrs={RequestTableField.FEATURE.value: DEFAULT_FEATURE,
+                   RequestTableField.FORMAT.value: self.format}
+        )
+        self.assertEqual(len(items), 2)
         self.assertEqual(items[0][RequestTableField.REQUEST_ID.value], self.request_id)
+
+    def test_filter_table_dict_value(self):
+
+        for _ in range(75):
+            self.handler.create_request_table_entry(str(uuid.uuid4()), "test_format", [GenusSpecies.HUMAN])
+
+        items = self.handler.filter_table_dict_value(
+            table=DynamoTable.REQUEST_TABLE,
+            field=RequestTableField.REQUEST_HASH.value,
+            value='N/A'
+        )
+        self.assertEqual(len(items), 75)

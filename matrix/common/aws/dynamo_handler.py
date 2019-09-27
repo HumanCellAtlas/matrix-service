@@ -205,18 +205,44 @@ class DynamoHandler:
         :param attrs: dict KVPs of attribute names and values specifying equality conditions.
         :return: list of dynamodb items
         """
+
+        def _passes_filter(item):
+            return all(item.get(key) == value for key, value in attrs.items())
+
+        return self._filter_table_items(table, _passes_filter)
+
+    def filter_table_dict_value(self, table: DynamoTable, field: str, value: str):
+        """
+        Scans the specified DynamoDB table for items where the value is present in the dict
+        at 'field'.
+        :param table: DynamoDB Table to scan
+        :param field: Field in the item to examine
+        :param value: Value in the dict to check for
+        """
+
+        def _passes_filter(item):
+            return value in item.get(field, {}).values()
+
+        return self._filter_table_items(table, _passes_filter)
+
+    def _filter_table_items(self, table: DynamoTable, filter_func):
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
 
-        filter_expr = None
-        for attr_key in attrs:
-            if not filter_expr:
-                filter_expr = Attr(attr_key).eq(attrs[attr_key])
+        filter_passing_items = []
+        last_evaluated_key = None
+        while True:
+            if last_evaluated_key:
+                response = dynamo_table.scan(ExclusiveStartKey=last_evaluated_key)
             else:
-                filter_expr = filter_expr & Attr(attr_key).eq(attrs[attr_key])
+                response = dynamo_table.scan()
+            last_evaluated_key = response.get("LastEvaluatedKey")
+            items = response["Items"]
 
-        items = dynamo_table.scan(FilterExpression=filter_expr)['Items']
+            filter_passing_items.extend(filter(filter_func, items))
+            if not last_evaluated_key:
+                break
 
-        return items
+        return filter_passing_items
 
     def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField,
                               increment_size: int, field_key: typing.Optional[str] = None):
