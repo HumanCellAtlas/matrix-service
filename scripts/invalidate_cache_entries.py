@@ -10,8 +10,8 @@ from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.request.request_tracker import RequestTracker
 
 
-def invalidate_cache_entries(request_ids: list = None,
-                             request_hashes: list = None):
+def invalidate_cache_entries(request_ids: list,
+                             request_hashes: list):
     """
     Invalidates a list of request IDs and/or request hashes.
     Invalidation refers to the invalidation of the request in DynamoDB
@@ -62,12 +62,12 @@ if __name__ == "__main__":  # pragma: no cover
                         help="List of request IDs to redact.",
                         nargs="*",
                         type=str,
-                        default=None)
+                        default=[])
     parser.add_argument("--request-hashes",
                         help="List of request hashes to redact.",
                         nargs="*",
                         type=str,
-                        default=None)
+                        default=[])
     args = parser.parse_args()
 
     invalidate_cache_entries(request_ids=args.request_ids,
