@@ -42,7 +42,7 @@ def launch_loader(args):
                      state=args.state,
                      s3_upload_id=args.s3_upload_id,
                      project_uuids=args.project_uuids,
-                     bundle_uuids=args.bundle_uuids)
+                     bundle_fqids=args.bundle_fqids)
 
 
 if __name__ == '__main__':  # pragma: no cover
@@ -75,13 +75,13 @@ if __name__ == '__main__':  # pragma: no cover
                         type=str)
     parser.add_argument("--project-uuids",
                         help="List of DCP Project UUIDs to load into Redshift.\n"
-                             "If both project-uuids and bundle-uuids are not supplied, a full ETL will be performed.",
+                             "If both project-uuids and bundle-fqids are not supplied, a full ETL will be performed.",
                         type=str,
                         nargs="*",
                         default="")
-    parser.add_argument("--bundle-uuids",
-                        help="List of DCP Bundle UUIDs to load into Redshift.\n"
-                             "If both project-uuids and bundle-uuids are not supplied, a full ETL will be performed.",
+    parser.add_argument("--bundle-fqids",
+                        help="List of DCP Bundle FQIDs to load into Redshift.\n"
+                             "If both project-uuids and bundle-fqids are not supplied, a full ETL will be performed.",
                         type=str,
                         nargs="*",
                         default="")

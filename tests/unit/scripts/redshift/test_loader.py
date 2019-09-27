@@ -18,7 +18,7 @@ class TestLoader(unittest.TestCase):
                                                 state=0,
                                                 s3_upload_id=None,
                                                 project_uuids=None,
-                                                bundle_uuids=None)
+                                                bundle_fqids=None)
 
     @mock.patch("scripts.redshift.loader._verify_load")
     @mock.patch("matrix.common.etl.etl_dss_bundles")
@@ -30,7 +30,7 @@ class TestLoader(unittest.TestCase):
         args = self.default_args
         load(args)
 
-        mock_build_dss_query.assert_called_once_with(project_uuids=args.project_uuids, bundle_uuids=args.bundle_uuids)
+        mock_build_dss_query.assert_called_once_with(project_uuids=args.project_uuids, bundle_fqids=args.bundle_fqids)
         mock_etl_dss_bundles.assert_called_once()
         mock_verify_load.assert_called_once_with(es_query=mock_build_dss_query.return_value)
 
@@ -47,7 +47,7 @@ class TestLoader(unittest.TestCase):
         args.state = 2
         load(args)
 
-        mock_build_dss_query.assert_called_once_with(project_uuids=args.project_uuids, bundle_uuids=args.bundle_uuids)
+        mock_build_dss_query.assert_called_once_with(project_uuids=args.project_uuids, bundle_fqids=args.bundle_fqids)
         mock_etl_dss_bundles.assert_not_called()
         mock_upload_and_load.assert_called_once_with("/mnt", is_update=False)
         mock_verify_load.assert_called_once_with(es_query=mock_build_dss_query.return_value)
@@ -68,7 +68,7 @@ class TestLoader(unittest.TestCase):
         args.project_uuids = ["test_uuid"]
         load(args)
 
-        mock_build_dss_query.assert_called_once_with(project_uuids=args.project_uuids, bundle_uuids=args.bundle_uuids)
+        mock_build_dss_query.assert_called_once_with(project_uuids=args.project_uuids, bundle_fqids=args.bundle_fqids)
         mock_etl_dss_bundles.assert_not_called()
         mock_upload_and_load.assert_not_called()
         mock_load_tables.assert_called_once_with(args.s3_upload_id, is_update=True)
@@ -123,7 +123,7 @@ class TestLoader(unittest.TestCase):
 
         with self.subTest("2 project uuids, 1 bundle uuid"):
             project_uuids = ["test_uuid_1", "test_uuid_2"]
-            bundle_uuids = ["test_bundle_uuid"]
+            bundle_fqids = ["test_bundle_uuid.test.version"]
             expected_query = DSS_SEARCH_QUERY_TEMPLATE
             expected_query['query']['bool']['must'][0]['bool']['should'].extend([
                 {
@@ -137,13 +137,24 @@ class TestLoader(unittest.TestCase):
                     }
                 },
                 {
-                    'match': {
-                        'uuid': "test_bundle_uuid"
+                    'bool': {
+                        'must': [
+                            {
+                                'match': {
+                                    'uuid': "test_bundle_uuid"
+                                }
+                            },
+                            {
+                                'match': {
+                                    'manifest.version': "test.version"
+                                }
+                            }
+                        ]
                     }
                 }
             ])
 
-            query = _build_dss_query(project_uuids, bundle_uuids)
+            query = _build_dss_query(project_uuids, bundle_fqids)
             self.assertEqual(query, expected_query)
 
     def test_generate_metadata_schema_version_clause(self):
@@ -240,12 +251,12 @@ class TestLoader(unittest.TestCase):
                      state,
                      s3_upload_id,
                      project_uuids,
-                     bundle_uuids):
+                     bundle_fqids):
             self.max_workers = max_workers
             self.state = state
             self.s3_upload_id = s3_upload_id
             self.project_uuids = project_uuids
-            self.bundle_uuids = bundle_uuids
+            self.bundle_fqids = bundle_fqids
 
     class DSSClientStub:
         def __init__(self):

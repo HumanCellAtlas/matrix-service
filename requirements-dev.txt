@@ -1,3 +1,4 @@
+aegea==2.7.2
 awscli==1.16.155
 chalice >= 1.1.1, < 1.2.0
 coverage==4.5.1
