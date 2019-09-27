@@ -8,16 +8,17 @@ from threading import Lock
 
 from . import MetadataToPsvTransformer
 from matrix.common.aws.redshift_handler import TableName
+from matrix.common.constants import GenusSpecies
 
 
 class FeatureTransformer(MetadataToPsvTransformer):
     """Reads gencode annotation reference and writes out rows for feature table in PSV format."""
     WRITE_LOCK = Lock()
     ANNOTATION_FTP_URLS = {
-        "Homo sapiens": ("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_27/"
-                         "gencode.v27.primary_assembly.annotation.gtf.gz"),
-        "Mus musculus": ("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M21/"
-                         "gencode.vM21.annotation.gtf.gz")
+        GenusSpecies.HUMAN.value: ("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_27/"
+                                   "gencode.v27.primary_assembly.annotation.gtf.gz"),
+        GenusSpecies.MOUSE.value: ("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M21/"
+                                   "gencode.vM21.annotation.gtf.gz")
     }
 
     def __init__(self, staging_dir):
