@@ -6,10 +6,9 @@ from enum import Enum
 import boto3
 import botocore
 import requests
-from boto3.dynamodb.conditions import Attr
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, GenusSpecies, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.exceptions import MatrixException
 from matrix.common.v1_api_handler import V1ApiHandler
 
@@ -136,6 +135,7 @@ class DynamoHandler:
     def create_request_table_entry(self,
                                    request_id: str,
                                    fmt: str,
+                                   genera_species: typing.List[GenusSpecies],
                                    metadata_fields: list = DEFAULT_FIELDS,
                                    feature: str = DEFAULT_FEATURE):
         """
@@ -154,7 +154,7 @@ class DynamoHandler:
         self._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE).put_item(
             Item={
                 RequestTableField.REQUEST_ID.value: request_id,
-                RequestTableField.REQUEST_HASH.value: "N/A",
+                RequestTableField.REQUEST_HASH.value: {g.value: "N/A" for g in genera_species},
                 RequestTableField.DATA_VERSION.value: data_version,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
                 RequestTableField.FORMAT.value: fmt,
@@ -164,11 +164,11 @@ class DynamoHandler:
                 RequestTableField.ROW_COUNT.value: 0,
                 RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,
                 RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value: 0,
-                RequestTableField.EXPECTED_QUERY_EXECUTIONS.value: 3,
-                RequestTableField.COMPLETED_QUERY_EXECUTIONS.value: 0,
-                RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 1,
-                RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
-                RequestTableField.BATCH_JOB_ID.value: "N/A",
+                RequestTableField.EXPECTED_QUERY_EXECUTIONS.value: {g.value: 3 for g in genera_species},
+                RequestTableField.COMPLETED_QUERY_EXECUTIONS.value: {g.value: 0 for g in genera_species},
+                RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value: {g.value: 1 for g in genera_species},
+                RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value: {g.value: 0 for g in genera_species},
+                RequestTableField.BATCH_JOB_ID.value: {g.value: "N/A" for g in genera_species},
                 RequestTableField.ERROR_MESSAGE.value: 0
             }
         )
@@ -218,20 +218,57 @@ class DynamoHandler:
 
         return items
 
-    def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField, increment_size: int):
+    def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField,
+                              increment_size: int, field_key: typing.Optional[str] = None):
         """Increment value in dynamo table
         Args:
             table: DynamoTable enum
             key: primary key in table
             field_enum: field enum to increment
             increment_size: Amount by which to increment the field.
+            field_key: If present, the key in the field to increment
         Returns:
             start_value, end_value: The values before and after incrementing
         """
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
         key_dict = {self._get_dynamo_table_primary_key_from_enum(table): key}
-        start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
+        start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum,
+                                                       increment_size, field_key)
         return start_value, end_value
+
+    def update_table_dict_field(self, table: DynamoTable, primary_key: str, field: TableField,
+                                field_key: str, new_value: typing.Union[str, int, float]):
+
+        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
+        key_dict = {self._get_dynamo_table_primary_key_from_enum(table): primary_key}
+
+        while True:
+            db_response = dynamo_table.get_item(
+                Key=key_dict,
+                ConsistentRead=True
+            )
+            item = db_response['Item']
+
+            start_dict = item[field.value]
+            new_dict = start_dict.copy()
+            new_dict[field_key] = new_value
+
+            try:
+                dynamo_table.update_item(
+                    Key=key_dict,
+                    UpdateExpression=f"SET {field.value} = :n",
+                    ConditionExpression=f"{field.value} = :s",
+                    ExpressionAttributeValues={":n": new_dict, ":s": start_dict}
+                )
+                break
+            except botocore.exceptions.ClientError as exc:
+                if exc.response['Error']['Code'] == "ConditionalCheckFailedException":
+                    pass
+                else:
+                    raise
+            time.sleep(.5)
+
+        return start_dict, new_dict
 
     def set_table_field_with_value(self,
                                    table: DynamoTable,
@@ -266,7 +303,8 @@ class DynamoHandler:
             ExpressionAttributeValues={":n": field_value}
         )
 
-    def _increment_field(self, table, key_dict: dict, field_enum: TableField, increment_size: int):
+    def _increment_field(self, table, key_dict: dict, field_enum: TableField,
+                         increment_size: int, field_key: typing.Optional[str] = None):
         """Increment a value in a dynamo table safely.
         Makes sure distributed table updates don't clobber each other. For example,
         increment_field(dynamo_table_obj, {"id": id_}, "Counts", 5)
@@ -288,7 +326,13 @@ class DynamoHandler:
             )
             item = db_response['Item']
             start_value = item[field_value]
-            new_value = start_value + increment_size
+            if field_key is not None:
+                start_field_value = start_value.get(field_key, 0)
+                new_field_value = start_field_value + increment_size
+                new_value = start_value.copy()
+                new_value[field_key] = new_field_value
+            else:
+                new_value = start_value + increment_size
 
             try:
                 table.update_item(

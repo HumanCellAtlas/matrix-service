@@ -1,10 +1,11 @@
 import hashlib
 import os
+import typing
 from datetime import timedelta
 from enum import Enum
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
+from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE, GenusSpecies
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
@@ -39,7 +40,7 @@ class RequestTracker:
         Logging.set_correlation_id(logger, request_id)
 
         self.request_id = request_id
-        self._request_hash = "N/A"
+        self._request_hash = {}
         self._data_version = None
         self._num_bundles = None
         self._format = None
@@ -60,51 +61,67 @@ class RequestTracker:
 
         return True
 
-    @property
-    def request_hash(self) -> str:
+    def request_hash(self, genus_species: GenusSpecies) -> str:
         """
         Unique hash generated using request parameters.
         If a request hash does not exist, one will be attempted to be generated.
         :return: str Request hash
         """
-        if self._request_hash == "N/A":
-            self._request_hash = self.dynamo_handler.get_table_item(
+        if self._request_hash.get(genus_species.value) in (None, "N/A"):
+            self._request_hash[genus_species.value] = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
                 key=self.request_id
-            )[RequestTableField.REQUEST_HASH.value]
+            )[RequestTableField.REQUEST_HASH.value].get(genus_species.value)
 
             # Do not generate request hash in API requests to avoid timeouts.
             # Presence of MATRIX_VERSION indicates API deployment.
-            if self._request_hash == "N/A" and not os.getenv('MATRIX_VERSION'):
+            if self._request_hash[genus_species.value] == "N/A" and not os.getenv('MATRIX_VERSION'):
                 try:
-                    self._request_hash = self.generate_request_hash()
-                    self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
-                                                                   self.request_id,
-                                                                   RequestTableField.REQUEST_HASH,
-                                                                   self._request_hash)
+                    self._request_hash[genus_species.value] = self.generate_request_hash(genus_species)
+                    self.dynamo_handler.update_table_dict_field(DynamoTable.REQUEST_TABLE,
+                                                                self.request_id,
+                                                                RequestTableField.REQUEST_HASH,
+                                                                genus_species.value,
+                                                                self._request_hash[genus_species.value])
                 except MatrixQueryResultsNotFound as e:
                     logger.warning(f"Failed to generate a request hash. {e}")
 
-        return self._request_hash
+        return self._request_hash[genus_species.value]
 
     @property
-    def s3_results_prefix(self) -> str:
+    def genera_species(self) -> typing.List[GenusSpecies]:
+
+        genera_species_values = list(
+            self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                               key=self.request_id)[RequestTableField.REQUEST_HASH.value].keys())
+        genera_species = [GenusSpecies(v) for v in genera_species_values]
+        return genera_species
+
+    def s3_results_prefix(self, genus_species: GenusSpecies) -> str:
         """
         The S3 prefix where results for this request hash are stored in the results bucket.
         :return: str S3 prefix
         """
-        return f"{self.data_version}/{self.request_hash}"
+        return f"{self.data_version}/{self.request_hash(genus_species)}/{genus_species.value}"
 
-    @property
-    def s3_results_key(self) -> str:
+    def s3_results_key(self, genus_species: GenusSpecies) -> str:
         """
         The S3 key where matrix results for this request are stored in the results bucket.
         :return: str S3 key
         """
         is_compressed = self.format == MatrixFormat.CSV.value or self.format == MatrixFormat.MTX.value
 
-        return f"{self.data_version}/{self.request_hash}/{self.request_id}.{self.format}" + \
+        return (f"{self.data_version}/{self.request_hash(genus_species)}/"
+                f"{genus_species.value}/{self.request_id}.{self.format}") + \
                (".zip" if is_compressed else "")
+
+    @property
+    def s3_results_keys(self) -> typing.List[str]:
+
+        keys = []
+        for gs in self.genera_species:
+            keys.append(self.s3_results_key(gs))
+        return keys
 
     @property
     def data_version(self) -> int:
@@ -178,29 +195,31 @@ class RequestTracker:
                                                    key=self.request_id)[RequestTableField.FEATURE.value]
         return self._feature
 
-    @property
-    def batch_job_id(self) -> str:
+    def batch_job_id(self, genus_species: GenusSpecies) -> str:
         """
         The batch job id for matrix conversion corresponding with a request.
         :return: str The batch job id
         """
         table_item = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
-        batch_job_id = table_item.get(RequestTableField.BATCH_JOB_ID.value)
+        batch_job_id = table_item[RequestTableField.BATCH_JOB_ID.value].get(genus_species.value)
         if not batch_job_id or batch_job_id == "N/A":
             return None
         else:
             return batch_job_id
 
-    @property
-    def batch_job_status(self) -> str:
+    def batch_job_status(self, genus_species: GenusSpecies) -> str:
         """
         The batch job status for matrix conversion corresponding with a request.
         :return: str The batch job status
         """
         status = None
-        if self.batch_job_id:
-            status = self.batch_handler.get_batch_job_status(self.batch_job_id)
+        if self.batch_job_id(genus_species):
+            status = self.batch_handler.get_batch_job_status(self.batch_job_id(genus_species))
         return status
+
+    @property
+    def batch_job_failed(self) -> bool:
+        return any(self.batch_job_status(gs) == 'FAILED' for gs in self.genera_species)
 
     @property
     def creation_date(self) -> str:
@@ -219,7 +238,10 @@ class RequestTracker:
         """
         s3_results_bucket_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
         is_past_expiration = date.to_datetime(self.creation_date) < date.get_datetime_now() - timedelta(days=30)
-        is_expired = not s3_results_bucket_handler.exists(self.s3_results_key) and is_past_expiration
+
+        is_expired = \
+            any(not s3_results_bucket_handler.exists(self.s3_results_key(gs)) for gs in self.genera_species) and \
+            is_past_expiration
 
         if is_expired:
             self.log_error("This request has expired after 30 days and is no longer available for download. "
@@ -247,15 +269,18 @@ class RequestTracker:
 
     def initialize_request(self,
                            fmt: str,
+                           genera_species: typing.List[GenusSpecies],
                            metadata_fields: list = DEFAULT_FIELDS,
                            feature: str = DEFAULT_FEATURE) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         :param fmt: Request output format for matrix conversion
+        :param genera_species: List of genera/species to be queried for this request
         :param metadata_fields: Metadata fields to include in expression matrix
         :param feature: Feature type to generate expression counts for (one of MatrixFeature)
         """
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        fmt,
+                                                       genera_species,
                                                        metadata_fields,
                                                        feature)
         self.cloudwatch_handler.put_metric_data(
@@ -263,13 +288,14 @@ class RequestTracker:
             metric_value=1
         )
 
-    def generate_request_hash(self) -> str:
+    def generate_request_hash(self, genus_species: GenusSpecies) -> str:
         """
         Generates a request hash uniquely identifying a request by its input parameters.
         Requires cell query results to exist, else raises MatrixQueryResultsNotFound.
         :return: str Request hash
         """
-        cell_manifest_key = f"s3://{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{self.request_id}/cell_metadata_manifest"
+        cell_manifest_key = (f"s3://{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{self.request_id}/"
+                             f"{genus_species.value}/cell_metadata_manifest")
         reader = CellQueryResultsReader(cell_manifest_key)
         cell_df = reader.load_results()
         cellkeys = cell_df.index
@@ -288,7 +314,7 @@ class RequestTracker:
 
         return request_hash
 
-    def expect_subtask_execution(self, subtask: Subtask):
+    def expect_subtask_execution(self, subtask: Subtask, task_count: int = 1, genus_species: str = None):
         """
         Expect the execution of 1 Subtask by tracking it in DynamoDB.
         A Subtask is executed either by a Lambda or AWS Batch.
@@ -296,15 +322,17 @@ class RequestTracker:
         """
         subtask_to_dynamo_field_name = {
             Subtask.DRIVER: RequestTableField.EXPECTED_DRIVER_EXECUTIONS,
+            Subtask.QUERY: RequestTableField.EXPECTED_QUERY_EXECUTIONS,
             Subtask.CONVERTER: RequestTableField.EXPECTED_CONVERTER_EXECUTIONS,
         }
 
         self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
                                                   subtask_to_dynamo_field_name[subtask],
-                                                  1)
+                                                  task_count,
+                                                  genus_species)
 
-    def complete_subtask_execution(self, subtask: Subtask):
+    def complete_subtask_execution(self, subtask: Subtask, genus_species: str = None):
         """
         Counts the completed execution of 1 Subtask in DynamoDB.
         A Subtask is executed either by a Lambda or AWS Batch.
@@ -319,30 +347,32 @@ class RequestTracker:
         self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
                                                   self.request_id,
                                                   subtask_to_dynamo_field_name[subtask],
-                                                  1)
+                                                  1,
+                                                  genus_species)
 
-    def lookup_cached_result(self) -> str:
+    def lookup_cached_result(self, genus_species: GenusSpecies) -> str:
         """
         Retrieves the S3 key of an existing matrix result that corresponds to this request's request hash.
         Returns "" if no such result exists
         :return: S3 key of cached result
         """
         results_bucket = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
-        objects = results_bucket.ls(f"{self.s3_results_prefix}/")
+        objects = results_bucket.ls(f"{self.s3_results_prefix(genus_species)}/")
 
         if len(objects) > 0:
             return objects[0]['Key']
         return ""
 
-    def is_request_ready_for_conversion(self) -> bool:
+    def is_request_ready_for_conversion(self, genus_species: GenusSpecies) -> bool:
         """
         Checks whether the request has completed all queries
         and is ready for conversion
         :return: bool True if complete, else False
         """
         request_state = self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
-        queries_complete = (request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value]
-                            == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value])
+        queries_complete = (
+            request_state[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value][genus_species.value]
+            == request_state[RequestTableField.COMPLETED_QUERY_EXECUTIONS.value].get(genus_species.value, 0))
         return queries_complete
 
     def is_request_complete(self) -> bool:
@@ -351,7 +381,7 @@ class RequestTracker:
         :return: bool True if complete, else False
         """
         results_bucket = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
-        return results_bucket.exists(self.s3_results_key)
+        return all(results_bucket.exists(self.s3_results_key(gs)) for gs in self.genera_species)
 
     def complete_request(self, duration: float):
         """

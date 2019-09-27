@@ -4,7 +4,7 @@ import mock
 
 import boto3
 
-from matrix.common.constants import DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, GenusSpecies, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField, DataVersionTableField
 from matrix.common.exceptions import MatrixException
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -89,7 +89,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
     def test_create_request_table_entry(self, mock_get_datetime_now):
         stub_date = '2019-03-18T180907.136216Z'
         mock_get_datetime_now.return_value = stub_date
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN])
         response, entry = self._get_request_table_response_and_entry()
 
         self.assertEqual(len(response['Responses'][self.request_table_name]), 1)
@@ -99,39 +99,55 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[RequestTableField.METADATA_FIELDS.value], DEFAULT_FIELDS)
         self.assertEqual(entry[RequestTableField.FEATURE.value], "gene")
         self.assertEqual(entry[RequestTableField.DATA_VERSION.value], 0)
-        self.assertEqual(entry[RequestTableField.REQUEST_HASH.value], "N/A")
+        self.assertEqual(entry[RequestTableField.REQUEST_HASH.value], {GenusSpecies.HUMAN.value: "N/A"})
         self.assertEqual(entry[RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)
-        self.assertEqual(entry[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value], 1)
+        self.assertEqual(entry[RequestTableField.EXPECTED_QUERY_EXECUTIONS.value], {GenusSpecies.HUMAN.value: 3})
+        self.assertEqual(entry[RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value], {GenusSpecies.HUMAN.value: 1})
         self.assertEqual(entry[RequestTableField.CREATION_DATE.value], stub_date)
 
     def test_increment_table_field_request_table_path(self):
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN, GenusSpecies.MOUSE])
 
         response, entry = self._get_request_table_response_and_entry()
         self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 0)
-        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
+        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value],
+                         {GenusSpecies.HUMAN.value: 0, GenusSpecies.MOUSE.value: 0})
 
         field_enum = RequestTableField.COMPLETED_DRIVER_EXECUTIONS
         self.handler.increment_table_field(DynamoTable.REQUEST_TABLE, self.request_id, field_enum, 5)
         response, entry = self._get_request_table_response_and_entry()
         self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 5)
-        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
+        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value],
+                         {GenusSpecies.HUMAN.value: 0, GenusSpecies.MOUSE.value: 0})
 
     def test_set_table_field_with_value(self):
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN])
         response, entry = self._get_request_table_response_and_entry()
-        self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value], "N/A")
+        self.assertEqual(entry[RequestTableField.FORMAT.value], self.format)
 
-        field_enum = RequestTableField.BATCH_JOB_ID
-        self.handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE, self.request_id, field_enum, "123-123")
+        field_enum = RequestTableField.FORMAT
+        self.handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE, self.request_id, field_enum, "mtx")
         response, entry = self._get_request_table_response_and_entry()
-        self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value], "123-123")
+        self.assertEqual(entry[RequestTableField.FORMAT.value], "mtx")
+
+    def test_update_table_dict_field(self):
+        self.handler.create_request_table_entry(self.request_id, self.format,
+                                                [GenusSpecies.HUMAN, GenusSpecies.MOUSE])
+        response, entry = self._get_request_table_response_and_entry()
+        self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value],
+                         {GenusSpecies.HUMAN.value: "N/A", GenusSpecies.MOUSE.value: "N/A"})
+        field = RequestTableField.BATCH_JOB_ID
+        self.handler.update_table_dict_field(DynamoTable.REQUEST_TABLE, self.request_id,
+                                             field, GenusSpecies.HUMAN.value, "abc123")
+        response, entry = self._get_request_table_response_and_entry()
+        self.assertDictEqual(entry[RequestTableField.BATCH_JOB_ID.value],
+                             {GenusSpecies.HUMAN.value: "abc123", GenusSpecies.MOUSE.value: "N/A"})
 
     def test_increment_field(self):
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN])
         response, entry = self._get_request_table_response_and_entry()
         self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 0)
-        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
+        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], {GenusSpecies.HUMAN.value: 0})
 
         key_dict = {"RequestId": self.request_id}
         field_enum = RequestTableField.COMPLETED_DRIVER_EXECUTIONS
@@ -141,12 +157,29 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
                                       15)
         response, entry = self._get_request_table_response_and_entry()
         self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 15)
-        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], 0)
+        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], {GenusSpecies.HUMAN.value: 0})
+
+    def test_increment_field_key(self):
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.MOUSE])
+        response, entry = self._get_request_table_response_and_entry()
+        self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 0)
+        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], {GenusSpecies.MOUSE.value: 0})
+
+        key_dict = {"RequestId": self.request_id}
+        field_enum = RequestTableField.COMPLETED_CONVERTER_EXECUTIONS
+        self.handler._increment_field(self.handler._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE),
+                                      key_dict,
+                                      field_enum,
+                                      5,
+                                      GenusSpecies.MOUSE.value)
+        response, entry = self._get_request_table_response_and_entry()
+        self.assertEqual(entry[RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value], 0)
+        self.assertEqual(entry[RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value], {GenusSpecies.MOUSE.value: 5})
 
     def test_set_field(self):
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN])
         response, entry = self._get_request_table_response_and_entry()
-        self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value], "N/A")
+        self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value], {GenusSpecies.HUMAN.value: "N/A"})
 
         key_dict = {"RequestId": self.request_id}
         field_enum = RequestTableField.BATCH_JOB_ID
@@ -158,7 +191,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[RequestTableField.BATCH_JOB_ID.value], "123-123")
 
     def test_get_request_table_entry(self):
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN])
         entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         self.assertEqual(entry[RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)
 
@@ -176,7 +209,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
                           DynamoTable.REQUEST_TABLE,
                           key=self.request_id)
 
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, [GenusSpecies.HUMAN])
         entry = self.handler.get_table_item(DynamoTable.REQUEST_TABLE, key=self.request_id)
         self.assertEqual(entry[RequestTableField.ROW_COUNT.value], 0)
 

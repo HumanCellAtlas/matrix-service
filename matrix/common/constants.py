@@ -32,6 +32,12 @@ class BundleType(Enum):
     SS2 = "ss2"
 
 
+class GenusSpecies(Enum):
+    """Supported genera/species"""
+    HUMAN = "Homo sapiens"
+    MOUSE = "Mus musculus"
+
+
 class MetadataSchemaName(Enum):
     PROJECT = "project"
     LIBRARY_PREPARATION_PROTOCOL = "library_preparation_protocol"
