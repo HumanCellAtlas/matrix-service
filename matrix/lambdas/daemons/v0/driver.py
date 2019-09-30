@@ -134,9 +134,10 @@ class Driver:
             self.request_tracker.log_error(error_msg)
             return
 
-        for genus_species in s3_obj_keys:
-            for key in s3_obj_keys[genus_species]:
-                self._add_request_query_to_sqs(key, genus_species, s3_obj_keys[key])
+        for query_type in s3_obj_keys:
+            for genus_species in s3_obj_keys[query_type]:
+                self._add_request_query_to_sqs(query_type, genus_species.value,
+                                               s3_obj_keys[query_type][genus_species])
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     @retry(reraise=True, wait=wait_fixed(5), stop=stop_after_attempt(60))
