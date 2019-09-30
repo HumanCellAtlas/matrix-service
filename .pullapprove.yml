@@ -1,0 +1,10 @@
+version: 3
+groups:
+  code:
+    reviews:
+      required: 2
+      author_value: 1
+    reviewers:
+      users:
+      - mckinsel
+      - calvinnhieu
