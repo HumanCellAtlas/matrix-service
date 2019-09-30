@@ -454,3 +454,33 @@ class TestMatrixConverter(unittest.TestCase):
         self.assertAlmostEqual(ds[:, -1].sum(), test_data["expr_dfs"][-1]['exprvalue'][-20:].sum(), 1)
 
         shutil.rmtree(working_dir)
+
+    @mock.patch("os.remove")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.creation_date", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_request")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
+    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._upload_converted_matrix")
+    @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
+    def test_empty_results(self, mock_parse_manifest, mock_upload_converted_matrix,
+                           mock_complete_subtask_execution, mock_complete_request, mock_creation_date,
+                           mock_remove):
+
+        mock_creation_date.return_value = date.to_string(datetime.datetime.utcnow())
+
+        self.matrix_converter.query_results = {
+            QueryType.CELL: CellQueryResultsReader("test_manifest_key"),
+            QueryType.EXPRESSION: ExpressionQueryResultsReader("test_manifest_key"),
+            QueryType.FEATURE: FeatureQueryResultsReader("test_manifest_key")
+        }
+
+        mock_parse_manifest.return_value = {"record_count": 0}
+
+        self.matrix_converter.local_output_filename = "unit_test_empty_loom.loom"
+        self.matrix_converter.run()
+
+        self.assertEqual(os.path.getsize("unit_test_empty_loom.loom"), 0)
+
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER, GenusSpecies.HUMAN)
+        mock_complete_request.assert_called_once()
+
+        os.remove("unit_test_empty_loom.loom")

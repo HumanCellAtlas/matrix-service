@@ -154,3 +154,22 @@ class TestDriver(unittest.TestCase):
             'type': "cell"
         }
         mock_add_to_queue.assert_called_once_with("query_job_q_url", payload)
+
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver.redshift_role_arn", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.store_content_in_s3")
+    def test__format_and_store_queries_in_s3(self, mock_store_in_s3, mock_redshift_role):
+
+        self._driver.query_results_bucket = "test_query_results_bucket"
+        mock_redshift_role.return_value = "test_redshift_role_arn"
+
+        bundle_fqids = ["id1.version", "id2.version"]
+
+        mock_store_in_s3.return_value = "test_key"
+
+        result = self._driver._format_and_store_queries_in_s3(bundle_fqids)
+
+        self.assertDictEqual(
+            {QueryType.CELL: {GenusSpecies.HUMAN: "test_key", GenusSpecies.MOUSE: "test_key"},
+             QueryType.FEATURE: {GenusSpecies.HUMAN: "test_key", GenusSpecies.MOUSE: "test_key"},
+             QueryType.EXPRESSION: {GenusSpecies.HUMAN: "test_key", GenusSpecies.MOUSE: "test_key"}},
+            result)
