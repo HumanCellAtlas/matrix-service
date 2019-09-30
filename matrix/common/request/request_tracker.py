@@ -439,11 +439,12 @@ class RequestTracker:
             metric_value=1
         )
 
-    def write_batch_job_id_to_db(self, batch_job_id: str):
+    def write_batch_job_id_to_db(self, batch_job_id: str, genus_species: GenusSpecies):
         """
         Logs the batch job id for matrix conversion to state table
         """
-        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
-                                                       self.request_id,
-                                                       RequestTableField.BATCH_JOB_ID,
-                                                       batch_job_id)
+        self.dynamo_handler.update_table_dict_field(DynamoTable.REQUEST_TABLE,
+                                                    self.request_id,
+                                                    RequestTableField.BATCH_JOB_ID,
+                                                    genus_species.value,
+                                                    batch_job_id)

@@ -341,10 +341,11 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertTrue(self.request_tracker.timeout)
         mock_log_error.assert_called_once()
 
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
-    def test_write_batch_job_id_to_db(self, mock_set_table_field_with_value):
-        self.request_tracker.write_batch_job_id_to_db("123-123")
-        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
-                                                                self.request_id,
-                                                                RequestTableField.BATCH_JOB_ID,
-                                                                "123-123")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.update_table_dict_field")
+    def test_write_batch_job_id_to_db(self, mock_update_table_dict):
+        self.request_tracker.write_batch_job_id_to_db("123-123", GenusSpecies.HUMAN)
+        mock_update_table_dict.assert_called_once_with(DynamoTable.REQUEST_TABLE,
+                                                       self.request_id,
+                                                       RequestTableField.BATCH_JOB_ID,
+                                                       GenusSpecies.HUMAN.value,
+                                                       "123-123")

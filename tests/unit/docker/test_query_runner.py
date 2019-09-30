@@ -94,7 +94,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
                                                          "test_format",
                                                          GenusSpecies.MOUSE,
                                                          "test_s3_results_key")
-        mock_write_batch_job_id_to_db.assert_called_once_with("123-123")
+        mock_write_batch_job_id_to_db.assert_called_once_with("123-123", GenusSpecies.MOUSE)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format")

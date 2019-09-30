@@ -84,7 +84,7 @@ class QueryRunner:
                             request_tracker.format,
                             genus_species,
                             request_tracker.s3_results_key(genus_species))
-                        request_tracker.write_batch_job_id_to_db(batch_job_id)
+                        request_tracker.write_batch_job_id_to_db(batch_job_id, genus_species)
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
                     request_tracker.log_error(str(e))
