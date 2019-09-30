@@ -55,7 +55,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
 
         mock_load_obj.assert_called_once_with("test_s3_obj_key")
         mock_transaction.assert_called()
-        mock_complete_subtask.assert_called_once_with(Subtask.QUERY, GenusSpecies.HUMAN.value)
+        mock_complete_subtask.assert_called_once_with(Subtask.QUERY, GenusSpecies.HUMAN)
         mock_schedule_conversion.assert_not_called()
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key")
@@ -92,6 +92,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
 
         mock_schedule_conversion.assert_called_once_with(request_id,
                                                          "test_format",
+                                                         GenusSpecies.MOUSE,
                                                          "test_s3_results_key")
         mock_write_batch_job_id_to_db.assert_called_once_with("123-123")
 

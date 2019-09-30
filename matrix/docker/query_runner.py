@@ -9,6 +9,7 @@ from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.config import MatrixInfraConfig
+from matrix.common.constants import GenusSpecies
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 
@@ -52,8 +53,9 @@ class QueryRunner:
                 Logging.set_correlation_id(logger, value=request_id)
                 obj_key = payload['s3_obj_key']
                 query_type = payload['type']
-                genus_species = payload['genus_species']
+                genus_species = GenusSpecies(payload['genus_species'])
                 receipt_handle = message['ReceiptHandle']
+
                 try:
                     logger.info(f"Fetching query from {obj_key}")
                     query = self.s3_handler.load_content_from_obj_key(obj_key)
@@ -80,6 +82,7 @@ class QueryRunner:
                         batch_job_id = self.batch_handler.schedule_matrix_conversion(
                             request_id,
                             request_tracker.format,
+                            genus_species,
                             request_tracker.s3_results_key(genus_species))
                         request_tracker.write_batch_job_id_to_db(batch_job_id)
                 except Exception as e:

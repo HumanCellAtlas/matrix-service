@@ -232,6 +232,15 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
                                                            1,
                                                            None)
 
+        mock_increment_table_field.reset_mock()
+        self.request_tracker.complete_subtask_execution(Subtask.CONVERTER, GenusSpecies.HUMAN)
+
+        mock_increment_table_field.assert_called_once_with(DynamoTable.REQUEST_TABLE,
+                                                           self.request_id,
+                                                           RequestTableField.COMPLETED_CONVERTER_EXECUTIONS,
+                                                           1,
+                                                           GenusSpecies.HUMAN.value)
+
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_prefix")
     def test_lookup_cached_result(self, mock_s3_results_prefix):
         mock_s3_results_prefix.return_value = "test_prefix"
@@ -262,7 +271,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertFalse(self.request_tracker.is_request_ready_for_conversion(GenusSpecies.HUMAN))
 
         for _ in range(3):
-            self.request_tracker.complete_subtask_execution(Subtask.QUERY, GenusSpecies.HUMAN.value)
+            self.request_tracker.complete_subtask_execution(Subtask.QUERY, GenusSpecies.HUMAN)
         self.assertTrue(self.request_tracker.is_request_ready_for_conversion(GenusSpecies.HUMAN))
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")

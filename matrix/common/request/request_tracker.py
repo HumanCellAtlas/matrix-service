@@ -297,8 +297,11 @@ class RequestTracker:
         cell_manifest_key = (f"s3://{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{self.request_id}/"
                              f"{genus_species.value}/cell_metadata_manifest")
         reader = CellQueryResultsReader(cell_manifest_key)
-        cell_df = reader.load_results()
-        cellkeys = cell_df.index
+        if reader.manifest["record_count"] == 0:
+            cellkeys = ['']
+        else:
+            cell_df = reader.load_results()
+            cellkeys = cell_df.index
 
         h = hashlib.md5()
         h.update(self.feature.encode())
@@ -314,7 +317,7 @@ class RequestTracker:
 
         return request_hash
 
-    def expect_subtask_execution(self, subtask: Subtask, task_count: int = 1, genus_species: str = None):
+    def expect_subtask_execution(self, subtask: Subtask, task_count: int = 1, genus_species: GenusSpecies = None):
         """
         Expect the execution of 1 Subtask by tracking it in DynamoDB.
         A Subtask is executed either by a Lambda or AWS Batch.
@@ -330,9 +333,9 @@ class RequestTracker:
                                                   self.request_id,
                                                   subtask_to_dynamo_field_name[subtask],
                                                   task_count,
-                                                  genus_species)
+                                                  genus_species.value if genus_species else None)
 
-    def complete_subtask_execution(self, subtask: Subtask, genus_species: str = None):
+    def complete_subtask_execution(self, subtask: Subtask, genus_species: GenusSpecies = None):
         """
         Counts the completed execution of 1 Subtask in DynamoDB.
         A Subtask is executed either by a Lambda or AWS Batch.
@@ -348,7 +351,7 @@ class RequestTracker:
                                                   self.request_id,
                                                   subtask_to_dynamo_field_name[subtask],
                                                   1,
-                                                  genus_species)
+                                                  genus_species.value if genus_species else None)
 
     def lookup_cached_result(self, genus_species: GenusSpecies) -> str:
         """
