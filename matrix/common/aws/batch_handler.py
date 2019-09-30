@@ -5,8 +5,8 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
-from matrix.common.logging import Logging
 from matrix.common.constants import GenusSpecies
+from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
 
