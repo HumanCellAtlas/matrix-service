@@ -71,14 +71,14 @@ ALL_10X_SS2_MATCH_TERMS = [
 
 
 def load(args):
-    dss_query = _build_dss_query(project_uuids=args.project_uuids, bundle_uuids=args.bundle_uuids)
+    dss_query = _build_dss_query(project_uuids=args.project_uuids, bundle_fqids=args.bundle_fqids)
     staging_dir = os.path.abspath('/mnt')
     content_type_patterns = ['application/json; dcp-type="metadata*"']  # match metadata
     filename_patterns = ["*zarr*",  # match expression data
                          "*.results",  # match SS2 raw count files
                          "*.mtx", "genes.tsv", "barcodes.tsv", "empty_drops_result.csv"]  # match 10X raw count files
 
-    is_update = True if args.project_uuids or args.bundle_uuids else False
+    is_update = True if args.project_uuids or args.bundle_fqids else False
     if args.state == 0 or args.state == 1:
         etl.etl_dss_bundles(query=dss_query,
                             content_type_patterns=content_type_patterns,
@@ -180,10 +180,10 @@ def _generate_metadata_schema_version_clause(schema_name: MetadataSchemaName) ->
     }
 
 
-def _build_dss_query(project_uuids=None, bundle_uuids=None):
+def _build_dss_query(project_uuids=None, bundle_fqids=None):
     q = DSS_SEARCH_QUERY_TEMPLATE
 
-    if not project_uuids and not bundle_uuids:
+    if not project_uuids and not bundle_fqids:
         q['query']['bool']['must'][0]['bool']['should'] = ALL_10X_SS2_MATCH_TERMS
 
     if project_uuids:
@@ -194,11 +194,24 @@ def _build_dss_query(project_uuids=None, bundle_uuids=None):
                 }
             })
 
-    if bundle_uuids:
-        for uuid in bundle_uuids:
+    if bundle_fqids:
+        for fqid in bundle_fqids:
+            uuid = fqid.split(".", 1)[0]
+            version = fqid.split(".", 1)[1]
             q['query']['bool']['must'][0]['bool']['should'].append({
-                "match": {
-                    "uuid": uuid
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "uuid": uuid
+                            }
+                        },
+                        {
+                            "match": {
+                                "manifest.version": version
+                            }
+                        }
+                    ]
                 }
             })
 
@@ -244,8 +257,8 @@ if __name__ == '__main__':  # pragma: no cover
                         type=str,
                         nargs="*",
                         default="")
-    parser.add_argument("--bundle-uuids",
-                        help="DCP Bundle UUIDs to perform ETL on.",
+    parser.add_argument("--bundle-fqids",
+                        help="DCP Bundle FQIDs to perform ETL on.",
                         type=str,
                         nargs="*",
                         default="")

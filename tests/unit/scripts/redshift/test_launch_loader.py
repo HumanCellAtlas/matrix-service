@@ -12,7 +12,7 @@ class TestLaunchLoader(unittest.TestCase):
                                                       state=0,
                                                       s3_upload_id=None,
                                                       project_uuids=None,
-                                                      bundle_uuids=None)
+                                                      bundle_fqids=None)
 
     @mock.patch("subprocess.call")
     @mock.patch("os.chdir")
@@ -48,7 +48,7 @@ class TestLaunchLoader(unittest.TestCase):
                                          state=args.state,
                                          s3_upload_id=args.s3_upload_id,
                                          project_uuids=args.project_uuids,
-                                         bundle_uuids=args.bundle_uuids)
+                                         bundle_fqids=args.bundle_fqids)
 
     @mock.patch("scripts.redshift.ec2_instance_manager.EC2InstanceManager.run")
     @mock.patch("scripts.redshift.ec2_instance_manager.EC2InstanceManager.provision")
@@ -79,7 +79,7 @@ class TestLaunchLoader(unittest.TestCase):
                                          state=args.state,
                                          s3_upload_id=args.s3_upload_id,
                                          project_uuids=args.project_uuids,
-                                         bundle_uuids=args.bundle_uuids)
+                                         bundle_fqids=args.bundle_fqids)
 
     @mock.patch("scripts.redshift.ec2_instance_manager.EC2InstanceManager.run")
     @mock.patch("scripts.redshift.ec2_instance_manager.EC2InstanceManager.provision")
@@ -111,7 +111,7 @@ class TestLaunchLoader(unittest.TestCase):
                                          state=args.state,
                                          s3_upload_id=args.s3_upload_id,
                                          project_uuids=args.project_uuids,
-                                         bundle_uuids=args.bundle_uuids)
+                                         bundle_fqids=args.bundle_fqids)
 
     class ArgsStub:
         def __init__(self,
@@ -121,11 +121,11 @@ class TestLaunchLoader(unittest.TestCase):
                      state,
                      s3_upload_id,
                      project_uuids,
-                     bundle_uuids):
+                     bundle_fqids):
             self.instance_name = instance_name
             self.instance_type = instance_type
             self.max_workers = max_workers
             self.state = state
             self.s3_upload_id = s3_upload_id
             self.project_uuids = project_uuids
-            self.bundle_uuids = bundle_uuids
+            self.bundle_fqids = bundle_fqids

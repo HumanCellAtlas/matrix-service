@@ -75,7 +75,7 @@ class EC2InstanceManager:
             state: int,
             s3_upload_id: str,
             project_uuids: list,
-            bundle_uuids: list):
+            bundle_fqids: list):
         print("Running loader")
         _shell("aegea",
                "ssh",
@@ -86,4 +86,4 @@ class EC2InstanceManager:
                f"nohup python3 loader.py --max-workers {max_workers} "
                f"--state {state} --s3-upload-id {s3_upload_id}"
                + (f" --project-uuids {' '.join(project_uuids)}" if project_uuids else "")
-               + (f" --bundle-uuids {' '.join(bundle_uuids)}" if bundle_uuids else "") + " &> /mnt/loader.log &")
+               + (f" --bundle-fqids {' '.join(bundle_fqids)}" if bundle_fqids else "") + " &> /mnt/loader.log &")
