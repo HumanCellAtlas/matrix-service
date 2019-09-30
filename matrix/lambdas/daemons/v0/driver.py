@@ -28,7 +28,7 @@ expression_query_template = """
     LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
     INNER JOIN cell on (expression.cellkey = cell.cellkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-    INNER JOIN specimen on (cell.specimenkey == specimen.specimenkey)
+    INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
     AND analysis.bundle_fqid IN {3}
@@ -62,8 +62,8 @@ feature_query_template = """
     UNLOAD ($$SELECT *
     FROM feature
     WHERE feature.isgene
-    AND feature.genus_species = '{4}'$$)
-    to 's3://{0}/{1}/{3}gene_metadata_'
+    AND feature.genus_species = '{3}'$$)
+    to 's3://{0}/{1}/{3}/gene_metadata_'
     IAM_ROLE '{2}'
     GZIP
     MANIFEST VERBOSE;
