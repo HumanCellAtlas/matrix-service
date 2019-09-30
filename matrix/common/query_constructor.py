@@ -24,7 +24,7 @@ FROM expression
 WHERE {feature_where_clause}
   AND expression.exprtype = 'Count'
   AND {cell_where_clause}$$)
-TO 's3://{{results_bucket}}/{{request_id}}/expression_'
+TO 's3://{{results_bucket}}/{{request_id}}/{{genus_species}}/expression_'
 IAM_ROLE '{{iam_role}}'
 GZIP
 MANIFEST VERBOSE
@@ -39,7 +39,7 @@ FROM cell
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 WHERE {cell_where_clause}$$)
-TO 's3://{{results_bucket}}/{{request_id}}/cell_metadata_'
+TO 's3://{{results_bucket}}/{{request_id}}/{{genus_species}}/cell_metadata_'
 IAM_ROLE '{{iam_role}}'
 GZIP
 MANIFEST VERBOSE
@@ -50,7 +50,7 @@ FEATURE_QUERY_TEMPLATE = """
 UNLOAD ($$SELECT *
 FROM feature
 WHERE {feature_where_clause}$$)
-to 's3://{{results_bucket}}/{{request_id}}/gene_metadata_'
+to 's3://{{results_bucket}}/{{request_id}}/{{genus_species}}/gene_metadata_'
 IAM_ROLE '{{iam_role}}'
 GZIP
 MANIFEST VERBOSE;
