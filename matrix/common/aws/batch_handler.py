@@ -5,7 +5,6 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from matrix.common.aws.dynamo_handler import DynamoTable
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
-from matrix.common.constants import GenusSpecies
 from matrix.common.logging import Logging
 
 logger = Logging.get_logger(__name__)
@@ -22,8 +21,7 @@ class BatchHandler:
         self._client = boto3.client("batch", region_name=os.environ['AWS_DEFAULT_REGION'])
 
     @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-    def schedule_matrix_conversion(self, request_id: str, format: str, genus_species: GenusSpecies,
-                                   s3_results_key: str):
+    def schedule_matrix_conversion(self, request_id: str, format: str, s3_results_key: str):
         """
         Schedule a matrix conversion job within aws batch infra
 
@@ -37,18 +35,14 @@ class BatchHandler:
                              request_id,
                              format])
 
-        source_expression_manifest = (f"s3://{self.s3_query_results_bucket}/{request_id}/"
-                                      f"{genus_species.value}/expression_manifest")
-        source_cell_manifest = (f"s3://{self.s3_query_results_bucket}/{request_id}/"
-                                f"{genus_species.value}/cell_metadata_manifest")
-        source_gene_manifest = (f"s3://{self.s3_query_results_bucket}/{request_id}/"
-                                f"{genus_species.value}/gene_metadata_manifest")
+        source_expression_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/expression_manifest"
+        source_cell_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/cell_metadata_manifest"
+        source_gene_manifest = f"s3://{self.s3_query_results_bucket}/{request_id}/gene_metadata_manifest"
         target_path = f"s3://{self.s3_results_bucket}/{s3_results_key}"
         working_dir = f"/data/{request_id}"
         command = ['python3',
                    '/matrix_converter.py',
                    request_id,
-                   genus_species.value,
                    source_expression_manifest,
                    source_cell_manifest,
                    source_gene_manifest,

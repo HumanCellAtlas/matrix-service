@@ -41,8 +41,7 @@ def post_matrix(body: dict):
         return ({'message': "The filter specification is too large. "
                             "Visit https://matrix.dev.data.humancellatlas.org for more information."},
                 requests.codes.request_entity_too_large)
-
-    request_id = str(uuid.uuid4())
+    
     if query_constructor.has_genus_species_term(body["filter"]):
         # If the user has mentioned something about species, then maybe
         # they're looking for non-human data. So we'll run queries for all
@@ -51,22 +50,30 @@ def post_matrix(body: dict):
     else:
         # Otherwise, default to human-only
         genera_species = [constants.GenusSpecies.HUMAN]
+    
+    human_request_id = ""
+    non_human_request_ids = {}
+    for genus_species in genera_species:
+        request_id = str(uuid.uuid4())
+        RequestTracker(request_id).initialize_request(format_, genera_species, fields, feature, genus_species)
 
-    RequestTracker(request_id).initialize_request(format_, genera_species, fields, feature)
+        driver_payload = {
+            'request_id': request_id,
+            'filter': body["filter"],
+            'fields': fields,
+            'feature': feature,
+            'genus_species': genus_species.value
+        }
+        lambda_handler.invoke(LambdaName.DRIVER_V1, driver_payload)
 
-    driver_payload = {
-        'request_id': request_id,
-        'filter': body["filter"],
-        'fields': fields,
-        'feature': feature
-    }
-    lambda_handler.invoke(LambdaName.DRIVER_V1, driver_payload)
+        if genus_species == GenusSpecies.HUMAN:
+            human_request_id = request_id
+        else:
+            non_human_request_ids[genus_species.value] = request_id
 
-    return ({'request_id': request_id,
+    return ({'request_id': human_request_id,
+             'nonhuman_request_ids': non_human_request_ids,
              'status': MatrixRequestStatus.IN_PROGRESS.value,
-             'matrix_url': "",
-             'non_human_matrix_urls': {},
-             'eta': "",
              'message': "Job started."},
             requests.codes.accepted)
 
@@ -85,7 +92,6 @@ def get_matrix(request_id: str):
         {'request_id': request_id,
          'status': MatrixRequestStatus.IN_PROGRESS.value,
          'matrix_url': "",
-         'non_human_matrix_urls': {},
          'eta': "",
          'message': f"Request {request_id} has been accepted and is currently being "
                     f"processed. Please try again later."},
@@ -103,18 +109,16 @@ def get_matrix(request_id: str):
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
                  'matrix_url': "",
-                 'non_human_matrix_urls': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
     # Check for failed batch conversion job
-    elif request_tracker.batch_job_failed:
+    elif request_tracker.batch_job_status and request_tracker.batch_job_status == "FAILED":
         request_tracker.log_error("The matrix conversion as a part of the request has failed. \
             Please retry or contact an hca admin for help.")
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
                  'matrix_url': "",
-                 'non_human_matrix_urls': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
@@ -124,32 +128,33 @@ def get_matrix(request_id: str):
         matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
         matrix_results_handler = S3Handler(matrix_results_bucket)
 
-        human_matrix_location = ""
-        non_human_matrix_locations = {}
-
-        for genus_species in request_tracker.genera_species:
-            if format == MatrixFormat.LOOM.value:
-                candidate_matrix_key = f'{request_tracker.s3_results_prefix(genus_species)}/{request_id}.{format}'
-            elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-                candidate_matrix_key = f'{request_tracker.s3_results_prefix(genus_species)}/{request_id}.{format}.zip'
-
-            if matrix_results_handler.size(candidate_matrix_key):
-
-                matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" + candidate_matrix_key
-
-                if genus_species == GenusSpecies.HUMAN:
-                    human_matrix_location = matrix_location
-                else:
-                    non_human_matrix_locations[genus_species.value] = matrix_location
+        matrix_location = ""
+        if format == MatrixFormat.LOOM.value:
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
+                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}"
+        elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
+            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
+                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
+        
+        is_empty = False
+        if not matrix_results_handler.size(matrix_location):
+            is_empty = True
+            matrix_location = ""
+    
+        if not is_empty:
+            message = (f"Request {request_id} has successfully completed. "
+                       f"The resultant expression matrix is available for download at "
+                       f"{matrix_location}.")
+        else:
+            message = (f"Request {request_id} has successfully completed. "
+                       f"But, there were not cells associated with this request and "
+                       f"species {request_tracker.genus_species}")
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.COMPLETE.value,
-                 'matrix_url': human_matrix_location,
-                 'non_human_matrix_urls': non_human_matrix_locations,
+                 'matrix_url': matrix_location,
                  'eta': "",
-                 'message': f"Request {request_id} has successfully completed. "
-                            f"The resultant expression matrix is available for download at "
-                            f"{matrix_location}."},
+                 'message': message},
                 requests.codes.ok)
 
     # Expired case
@@ -157,7 +162,6 @@ def get_matrix(request_id: str):
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.EXPIRED.value,
                  'matrix_url': "",
-                 'non_human_matrix_urls': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)
@@ -168,7 +172,6 @@ def get_matrix(request_id: str):
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.FAILED.value,
                  'matrix_url': "",
-                 'non_human_matrix_urls': {},
                  'eta': "",
                  'message': request_tracker.error},
                 requests.codes.ok)

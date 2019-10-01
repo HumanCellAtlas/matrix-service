@@ -31,10 +31,11 @@ def invalidate_cache_entries(request_ids: list,
     data_version = dynamo_handler.get_table_item(table=DynamoTable.DEPLOYMENT_TABLE,
                                                  key=deployment_stage)[DeploymentTableField.CURRENT_DATA_VERSION.value]
     for request_hash in request_hashes:
-        items = dynamo_handler.filter_table_dict_value(table=DynamoTable.REQUEST_TABLE,
-                                                       field=RequestTableField.REQUEST_HASH.value,
-                                                       value=request_hash)
-        items = [i for i in items if i[RequestTableField.DATA_VERSION.value] == data_version]
+        items = dynamo_handler.filter_table_items(table=DynamoTable.REQUEST_TABLE,
+                                                  attrs={
+                                                      RequestTableField.REQUEST_HASH.value: request_hash,
+                                                      RequestTableField.DATA_VERSION.value: data_version
+                                                  })
         for item in items:
             request_ids.append(item[RequestTableField.REQUEST_ID.value])
 
@@ -44,7 +45,7 @@ def invalidate_cache_entries(request_ids: list,
         request_tracker = RequestTracker(request_id=request_id)
         request_tracker.log_error("This request has been deleted and is no longer available for download. "
                                   "Please generate a new matrix at POST /v1/matrix.")
-        s3_keys_to_delete.extend(request_tracker.s3_results_keys)
+        s3_keys_to_delete.append(request_tracker.s3_results_key)
 
     print(f"Deleting matrices at the following S3 keys: {s3_keys_to_delete}")
     s3_results_bucket_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])

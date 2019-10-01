@@ -9,7 +9,6 @@ from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.aws.s3_handler import S3Handler
 from matrix.common.aws.sqs_handler import SQSHandler
 from matrix.common.config import MatrixInfraConfig
-from matrix.common.constants import GenusSpecies
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 
@@ -53,9 +52,7 @@ class QueryRunner:
                 Logging.set_correlation_id(logger, value=request_id)
                 obj_key = payload['s3_obj_key']
                 query_type = payload['type']
-                genus_species = GenusSpecies(payload['genus_species'])
                 receipt_handle = message['ReceiptHandle']
-
                 try:
                     logger.info(f"Fetching query from {obj_key}")
                     query = self.s3_handler.load_content_from_obj_key(obj_key)
@@ -68,23 +65,21 @@ class QueryRunner:
                     self.sqs_handler.delete_message_from_queue(self.query_job_q_url, receipt_handle)
 
                     if query_type == QueryType.CELL.value:
-                        cached_result_s3_key = request_tracker.lookup_cached_result(genus_species)
+                        cached_result_s3_key = request_tracker.lookup_cached_result()
                         if cached_result_s3_key:
                             s3 = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
-                            s3.copy_obj(cached_result_s3_key, request_tracker.s3_results_key(genus_species))
+                            s3.copy_obj(cached_result_s3_key, request_tracker.s3_results_key)
                             continue
 
                     logger.info("Incrementing completed queries in state table")
-                    request_tracker.complete_subtask_execution(Subtask.QUERY, genus_species)
+                    request_tracker.complete_subtask_execution(Subtask.QUERY)
 
-                    if request_tracker.is_request_ready_for_conversion(genus_species):
+                    if request_tracker.is_request_ready_for_conversion():
                         logger.info("Scheduling batch conversion job")
-                        batch_job_id = self.batch_handler.schedule_matrix_conversion(
-                            request_id,
-                            request_tracker.format,
-                            genus_species,
-                            request_tracker.s3_results_key(genus_species))
-                        request_tracker.write_batch_job_id_to_db(batch_job_id, genus_species)
+                        batch_job_id = self.batch_handler.schedule_matrix_conversion(request_id,
+                                                                                     request_tracker.format,
+                                                                                     request_tracker.s3_results_key)
+                        request_tracker.write_batch_job_id_to_db(batch_job_id)
                 except Exception as e:
                     logger.info(f"QueryRunner failed on {message} with error {e}")
                     request_tracker.log_error(str(e))

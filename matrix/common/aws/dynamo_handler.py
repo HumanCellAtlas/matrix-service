@@ -6,9 +6,10 @@ from enum import Enum
 import boto3
 import botocore
 import requests
+from boto3.dynamodb.conditions import Attr
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, GenusSpecies, SUPPORTED_METADATA_SCHEMA_VERSIONS
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.exceptions import MatrixException
 from matrix.common.v1_api_handler import V1ApiHandler
 
@@ -52,6 +53,7 @@ class RequestTableField(TableField):
     REQUEST_HASH = "RequestHash"
     DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
+    GENUS_SPECIES = "GenusSpecies"
     FORMAT = "Format"
     METADATA_FIELDS = "MetadataFields"
     FEATURE = "Feature"
@@ -135,9 +137,9 @@ class DynamoHandler:
     def create_request_table_entry(self,
                                    request_id: str,
                                    fmt: str,
-                                   genera_species: typing.List[GenusSpecies],
                                    metadata_fields: list = DEFAULT_FIELDS,
-                                   feature: str = DEFAULT_FEATURE):
+                                   feature: str = DEFAULT_FEATURE,
+                                   genus_species: GenusSpecies = GenusSpecies.HUMAN):
         """
         Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
         of a Matrix Request.
@@ -154,9 +156,10 @@ class DynamoHandler:
         self._get_dynamo_table_resource_from_enum(DynamoTable.REQUEST_TABLE).put_item(
             Item={
                 RequestTableField.REQUEST_ID.value: request_id,
-                RequestTableField.REQUEST_HASH.value: {g.value: "N/A" for g in genera_species},
+                RequestTableField.REQUEST_HASH.value: "N/A",
                 RequestTableField.DATA_VERSION.value: data_version,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
+                RequestTableField.GENUS_SPECIES.value: genus_species.value,
                 RequestTableField.FORMAT.value: fmt,
                 RequestTableField.METADATA_FIELDS.value: metadata_fields,
                 RequestTableField.FEATURE.value: feature,
@@ -164,11 +167,11 @@ class DynamoHandler:
                 RequestTableField.ROW_COUNT.value: 0,
                 RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value: 1,
                 RequestTableField.COMPLETED_DRIVER_EXECUTIONS.value: 0,
-                RequestTableField.EXPECTED_QUERY_EXECUTIONS.value: {g.value: 3 for g in genera_species},
-                RequestTableField.COMPLETED_QUERY_EXECUTIONS.value: {g.value: 0 for g in genera_species},
-                RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value: {g.value: 1 for g in genera_species},
-                RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value: {g.value: 0 for g in genera_species},
-                RequestTableField.BATCH_JOB_ID.value: {g.value: "N/A" for g in genera_species},
+                RequestTableField.EXPECTED_QUERY_EXECUTIONS.value: 3,
+                RequestTableField.COMPLETED_QUERY_EXECUTIONS.value: 0,
+                RequestTableField.EXPECTED_CONVERTER_EXECUTIONS.value: 1,
+                RequestTableField.COMPLETED_CONVERTER_EXECUTIONS.value: 0,
+                RequestTableField.BATCH_JOB_ID.value: "N/A",
                 RequestTableField.ERROR_MESSAGE.value: 0
             }
         )
@@ -205,96 +208,33 @@ class DynamoHandler:
         :param attrs: dict KVPs of attribute names and values specifying equality conditions.
         :return: list of dynamodb items
         """
-
-        def _passes_filter(item):
-            return all(item.get(key) == value for key, value in attrs.items())
-
-        return self._filter_table_items(table, _passes_filter)
-
-    def filter_table_dict_value(self, table: DynamoTable, field: str, value: str):
-        """
-        Scans the specified DynamoDB table for items where the value is present in the dict
-        at 'field'.
-        :param table: DynamoDB Table to scan
-        :param field: Field in the item to examine
-        :param value: Value in the dict to check for
-        """
-
-        def _passes_filter(item):
-            return value in item.get(field, {}).values()
-
-        return self._filter_table_items(table, _passes_filter)
-
-    def _filter_table_items(self, table: DynamoTable, filter_func):
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
 
-        filter_passing_items = []
-        last_evaluated_key = None
-        while True:
-            if last_evaluated_key:
-                response = dynamo_table.scan(ExclusiveStartKey=last_evaluated_key)
+        filter_expr = None
+        for attr_key in attrs:
+            if not filter_expr:
+                filter_expr = Attr(attr_key).eq(attrs[attr_key])
             else:
-                response = dynamo_table.scan()
-            last_evaluated_key = response.get("LastEvaluatedKey")
-            items = response["Items"]
+                filter_expr = filter_expr & Attr(attr_key).eq(attrs[attr_key])
 
-            filter_passing_items.extend(filter(filter_func, items))
-            if not last_evaluated_key:
-                break
+        items = dynamo_table.scan(FilterExpression=filter_expr)['Items']
 
-        return filter_passing_items
+        return items
 
-    def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField,
-                              increment_size: int, field_key: typing.Optional[str] = None):
+    def increment_table_field(self, table: DynamoTable, key: str, field_enum: TableField, increment_size: int):
         """Increment value in dynamo table
         Args:
             table: DynamoTable enum
             key: primary key in table
             field_enum: field enum to increment
             increment_size: Amount by which to increment the field.
-            field_key: If present, the key in the field to increment
         Returns:
             start_value, end_value: The values before and after incrementing
         """
         dynamo_table = self._get_dynamo_table_resource_from_enum(table)
         key_dict = {self._get_dynamo_table_primary_key_from_enum(table): key}
-        start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum,
-                                                       increment_size, field_key)
+        start_value, end_value = self._increment_field(dynamo_table, key_dict, field_enum, increment_size)
         return start_value, end_value
-
-    def update_table_dict_field(self, table: DynamoTable, primary_key: str, field: TableField,
-                                field_key: str, new_value: typing.Union[str, int, float]):
-
-        dynamo_table = self._get_dynamo_table_resource_from_enum(table)
-        key_dict = {self._get_dynamo_table_primary_key_from_enum(table): primary_key}
-
-        while True:
-            db_response = dynamo_table.get_item(
-                Key=key_dict,
-                ConsistentRead=True
-            )
-            item = db_response['Item']
-
-            start_dict = item[field.value]
-            new_dict = start_dict.copy()
-            new_dict[field_key] = new_value
-
-            try:
-                dynamo_table.update_item(
-                    Key=key_dict,
-                    UpdateExpression=f"SET {field.value} = :n",
-                    ConditionExpression=f"{field.value} = :s",
-                    ExpressionAttributeValues={":n": new_dict, ":s": start_dict}
-                )
-                break
-            except botocore.exceptions.ClientError as exc:
-                if exc.response['Error']['Code'] == "ConditionalCheckFailedException":
-                    pass
-                else:
-                    raise
-            time.sleep(.5)
-
-        return start_dict, new_dict
 
     def set_table_field_with_value(self,
                                    table: DynamoTable,
@@ -329,8 +269,7 @@ class DynamoHandler:
             ExpressionAttributeValues={":n": field_value}
         )
 
-    def _increment_field(self, table, key_dict: dict, field_enum: TableField,
-                         increment_size: int, field_key: typing.Optional[str] = None):
+    def _increment_field(self, table, key_dict: dict, field_enum: TableField, increment_size: int):
         """Increment a value in a dynamo table safely.
         Makes sure distributed table updates don't clobber each other. For example,
         increment_field(dynamo_table_obj, {"id": id_}, "Counts", 5)
@@ -352,13 +291,7 @@ class DynamoHandler:
             )
             item = db_response['Item']
             start_value = item[field_value]
-            if field_key is not None:
-                start_field_value = start_value.get(field_key, 0)
-                new_field_value = start_field_value + increment_size
-                new_value = start_value.copy()
-                new_value[field_key] = new_field_value
-            else:
-                new_value = start_value + increment_size
+            new_value = start_value + increment_size
 
             try:
                 table.update_item(

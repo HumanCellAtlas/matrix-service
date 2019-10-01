@@ -32,7 +32,6 @@ class MatrixConverter:
 
     def __init__(self, args):
         self.args = args
-        self.genus_species = GenusSpecies(self.args.genus_species)
         self.format = args.format
         self.request_tracker = RequestTracker(args.request_id)
         self.query_results = {}
@@ -68,7 +67,7 @@ class MatrixConverter:
 
             os.remove(local_converted_path)
 
-            self.request_tracker.complete_subtask_execution(Subtask.CONVERTER, self.genus_species)
+            self.request_tracker.complete_subtask_execution(Subtask.CONVERTER)
             self.request_tracker.complete_request(duration=(date.get_datetime_now()
                                                             - date.to_datetime(self.request_tracker.creation_date))
                                                   .total_seconds())
@@ -352,8 +351,6 @@ def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("request_id",
                         help="ID of the request associated with this conversion.")
-    parser.add_argument("genus_species",
-                        help="Genus and species of the conversion data.")
     parser.add_argument("expression_manifest_key",
                         help="S3 url to Redshift manifest for the expression table.")
     parser.add_argument("cell_metadata_manifest_key",
@@ -369,7 +366,7 @@ def main(args):
                         help="Directory to write local files.")
     args = parser.parse_args(args)
     LOGGER.debug(
-        f"Starting matrix conversion job with parameters: {args.genus_species}, "
+        f"Starting matrix conversion job with parameters: "
         f"{args.expression_manifest_key}, {args.cell_metadata_manifest_key}, "
         f"{args.gene_metadata_manifest_key}, {args.target_path}, {args.format}")
 

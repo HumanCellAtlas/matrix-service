@@ -262,7 +262,7 @@ class RequestTracker:
                            fmt: str,
                            metadata_fields: list = DEFAULT_FIELDS,
                            feature: str = DEFAULT_FEATURE,
-                           genus_species: GenusSpecies) -> None:
+                           genus_species: GenusSpecies = GenusSpecies.HUMA) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         :param fmt: Request output format for matrix conversion
         :param metadata_fields: Metadata fields to include in expression matrix
