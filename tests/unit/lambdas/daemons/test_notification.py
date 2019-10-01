@@ -1,4 +1,3 @@
-import concurrent.futures
 import os
 import unittest
 from unittest import mock
@@ -52,28 +51,20 @@ class TestNotificationHandler(unittest.TestCase):
         self.assertTrue(mock_error.called)
 
     @mock.patch("shutil.rmtree")
-    @mock.patch("matrix.common.etl.etl_dss_bundles")
-    def test_update_bundle(self, mock_etl_dss_bundles, mock_rmtree):
+    @mock.patch("matrix.common.etl.etl_dss_bundle")
+    def test_update_bundle(self, mock_etl_dss_bundle, mock_rmtree):
         handler = NotificationHandler(self.bundle_uuid, self.bundle_version, "CREATE")
         handler.update_bundle()
-        query = {
-            "query": {
-                "bool": {
-                    "must": [{"term": {"uuid": self.bundle_uuid}}]
-                }
-            }
-        }
 
         mock_rmtree.assert_called_once_with("/tmp/output", ignore_errors=True)
-        mock_etl_dss_bundles.assert_called_once_with(query=query,
-                                                     content_type_patterns=mock.ANY,
-                                                     filename_patterns=mock.ANY,
-                                                     transformer_cb=mock.ANY,
-                                                     finalizer_cb=mock.ANY,
-                                                     staging_directory="/tmp",
-                                                     deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                                                     max_workers=mock.ANY,
-                                                     dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
+        mock_etl_dss_bundle.assert_called_once_with(bundle_uuid=self.bundle_uuid,
+                                                    bundle_version=self.bundle_version,
+                                                    content_type_patterns=mock.ANY,
+                                                    filename_patterns=mock.ANY,
+                                                    transformer_cb=mock.ANY,
+                                                    finalizer_cb=mock.ANY,
+                                                    staging_directory="/tmp",
+                                                    deployment_stage=os.environ['DEPLOYMENT_STAGE'])
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     def test_remove_bundle(self, mock_transaction):

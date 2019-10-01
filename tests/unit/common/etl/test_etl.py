@@ -9,6 +9,7 @@ from dcplib.etl import DSSExtractor
 from matrix.common.aws.redshift_handler import TableName
 from matrix.common.constants import CREATE_QUERY_TEMPLATE
 from matrix.common.etl import (etl_dss_bundles,
+                               etl_dss_bundle,
                                transform_bundle,
                                finalizer_reload,
                                finalizer_update,
@@ -57,6 +58,30 @@ class TestEtl(unittest.TestCase):
                                              max_workers=8,
                                              max_dispatchers=1,
                                              dispatch_executor_class=concurrent.futures.ProcessPoolExecutor)
+
+    @mock.patch("matrix.common.etl.get_dss_client")
+    @mock.patch("dcplib.etl.DSSExtractor.extract_transform_one")
+    @mock.patch("os.makedirs")
+    def test_etl_dss_bundle(self, mock_makedirs, mock_extract, mock_get_dss_client):
+        etl_dss_bundle(bundle_uuid="test_uuid",
+                       bundle_version="test_version",
+                       content_type_patterns=[],
+                       filename_patterns=[],
+                       transformer_cb=self.stub_transformer,
+                       finalizer_cb=self.stub_finalizer,
+                       staging_directory="test_dir",
+                       deployment_stage="test_stage")
+
+        expected_makedirs_calls = [
+            mock.call("test_dir/output/cell", exist_ok=True),
+            mock.call("test_dir/output/expression", exist_ok=True)
+        ]
+
+        mock_get_dss_client.assert_called_once_with("test_stage")
+        mock_makedirs.assert_has_calls(expected_makedirs_calls)
+        mock_extract.assert_called_once_with(bundle_uuid="test_uuid",
+                                             bundle_version="test_version",
+                                             transformer=self.stub_transformer)
 
     @mock.patch("hca.dss.DSSClient.swagger_spec", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.etl._log_error")
@@ -244,5 +269,5 @@ class TestEtl(unittest.TestCase):
     def stub_transformer(self):
         pass
 
-    def stub_finalizer(self):
+    def stub_finalizer(self, extractor):
         pass

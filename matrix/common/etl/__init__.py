@@ -74,6 +74,52 @@ def etl_dss_bundles(query: dict,
     )
 
 
+def etl_dss_bundle(bundle_uuid: str,
+                   bundle_version: str,
+                   content_type_patterns: typing.List[str],
+                   filename_patterns: typing.List[str],
+                   transformer_cb,
+                   finalizer_cb,
+                   staging_directory,
+                   deployment_stage: str):
+    """
+    Extracts a single DSS bundle to local disk, transforms to PSVs, uploads to S3 and loads into Redshift.
+    :param bundle_uuid: UUID of bundle to ETL
+    :param bundle_version: Version of bundle to ETL
+    :param content_type_patterns: List of content-type patterns to match files to download
+    :param filename_patterns: List of filename patterns to match files to download
+    :param transformer_cb: Callback to run per downloaded bundle
+    :param finalizer_cb: Callback to run after all bundles downloaded
+    :param staging_directory: Local directory to stage extracted data
+    :param deployment_stage: Matrix Service deployment stage
+    """
+    logger.info(f"Loading {deployment_stage} redshift cluster via ETL")
+
+    os.makedirs(os.path.join(staging_directory,
+                             MetadataToPsvTransformer.OUTPUT_DIRNAME,
+                             TableName.CELL.value),
+                exist_ok=True)
+    os.makedirs(os.path.join(staging_directory,
+                             MetadataToPsvTransformer.OUTPUT_DIRNAME,
+                             TableName.EXPRESSION.value),
+                exist_ok=True)
+    os.makedirs(os.path.join(staging_directory,
+                             MetadataToPsvTransformer.LOG_DIRNAME),
+                exist_ok=True)
+
+    extractor = DSSExtractor(staging_directory=staging_directory,
+                             content_type_patterns=content_type_patterns,
+                             filename_patterns=filename_patterns,
+                             dss_client=get_dss_client(deployment_stage))
+
+    extractor.extract_transform_one(
+        bundle_uuid=bundle_uuid,
+        bundle_version=bundle_version,
+        transformer=transformer_cb
+    )
+    finalizer_cb(extractor=extractor)
+
+
 def transform_bundle(bundle_uuid: str,
                      bundle_version: str,
                      bundle_path: str,
@@ -84,7 +130,7 @@ def transform_bundle(bundle_uuid: str,
     Generates cell and expression table rows from a downloaded DSS bundle.
     :param bundle_uuid: Downloaded bundle UUID
     :param bundle_version: Downloaded bundle version
-    :param bundle_path: Local path to downloaded bundle dir
+    :param bundle_manifest_path: Local path to downloaded bundle dir
     :param extractor: ETL extractor object
     """
     logger.info(f"ETL: Downloaded bundle {bundle_uuid}.{bundle_version}. Transforming to PSV.")
