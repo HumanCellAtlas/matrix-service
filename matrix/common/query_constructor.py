@@ -49,7 +49,8 @@ MANIFEST VERBOSE
 FEATURE_QUERY_TEMPLATE = """
 UNLOAD ($$SELECT *
 FROM feature
-WHERE {feature_where_clause}$$)
+WHERE {feature_where_clause}
+  AND feature.genus_species = '{{genus_species}}'$$)
 to 's3://{{results_bucket}}/{{request_id}}/{{genus_species}}/gene_metadata_'
 IAM_ROLE '{{iam_role}}'
 GZIP
