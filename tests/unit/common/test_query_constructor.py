@@ -264,7 +264,8 @@ MANIFEST VERBOSE
         expected_feature_query = """
 UNLOAD ($$SELECT *
 FROM feature
-WHERE (NOT feature.isgene)$$)
+WHERE (NOT feature.isgene)
+  AND feature.genus_species = '{genus_species}'$$)
 to 's3://{results_bucket}/{request_id}/{genus_species}/gene_metadata_'
 IAM_ROLE '{iam_role}'
 GZIP
