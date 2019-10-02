@@ -16,7 +16,7 @@ import pandas
 import s3fs
 
 from matrix.common import date
-from matrix.common.constants import GenusSpecies, MatrixFormat
+from matrix.common.constants import MatrixFormat
 from matrix.common.logging import Logging
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.query.cell_query_results_reader import CellQueryResultsReader

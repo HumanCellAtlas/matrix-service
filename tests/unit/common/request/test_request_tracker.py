@@ -36,9 +36,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
 
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        "test_format",
-                                                       [GenusSpecies.HUMAN, GenusSpecies.MOUSE],
                                                        ["test_field_1", "test_field_2"],
-                                                       "test_feature")
+                                                       "test_feature",
+                                                       GenusSpecies.HUMAN)
 
     def test_is_initialized(self):
         self.assertTrue(self.request_tracker.is_initialized)
@@ -50,51 +50,50 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_request_hash(self, mock_generate_request_hash):
         with self.subTest("Test skip generation in API deployments:"):
             os.environ['MATRIX_VERSION'] = "test_version"
-            self.assertEqual(self.request_tracker.request_hash(GenusSpecies.HUMAN), "N/A")
-            self.assertEqual(self.request_tracker.request_hash(GenusSpecies.MOUSE), "N/A")
+            self.assertEqual(self.request_tracker.request_hash, "N/A")
             mock_generate_request_hash.assert_not_called()
 
             stored_request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
                 key=self.request_id
-            )[RequestTableField.REQUEST_HASH.value][GenusSpecies.HUMAN.value]
+            )[RequestTableField.REQUEST_HASH.value]
 
-            self.assertEqual(self.request_tracker._request_hash,
-                             {GenusSpecies.HUMAN.value: "N/A", GenusSpecies.MOUSE.value: "N/A"})
+            self.assertEqual(self.request_tracker._request_hash, "N/A")
             self.assertEqual(stored_request_hash, "N/A")
 
             del os.environ['MATRIX_VERSION']
 
         with self.subTest("Test generation and storage in Dynamo on first access"):
             mock_generate_request_hash.return_value = "test_hash"
-            self.assertEqual(self.request_tracker.request_hash(GenusSpecies.HUMAN), "test_hash")
+            self.assertEqual(self.request_tracker.request_hash, "test_hash")
             mock_generate_request_hash.assert_called_once()
 
             stored_request_hash = self.dynamo_handler.get_table_item(
                 DynamoTable.REQUEST_TABLE,
                 key=self.request_id
-            )[RequestTableField.REQUEST_HASH.value][GenusSpecies.HUMAN.value]
+            )[RequestTableField.REQUEST_HASH.value]
 
-            self.assertEqual(self.request_tracker._request_hash[GenusSpecies.HUMAN.value], "test_hash")
+            self.assertEqual(self.request_tracker._request_hash, "test_hash")
             self.assertEqual(stored_request_hash, "test_hash")
 
         with self.subTest("Test immediate retrieval on future accesses"):
-            self.assertEqual(self.request_tracker.request_hash(GenusSpecies.HUMAN), "test_hash")
+            self.assertEqual(self.request_tracker.request_hash, "test_hash")
             mock_generate_request_hash.assert_called_once()
 
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.request_hash")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.request_hash",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.data_version",
                 new_callable=mock.PropertyMock)
     def test_s3_results_prefix(self, mock_data_version, mock_request_hash):
         mock_data_version.return_value = "test_data_version"
         mock_request_hash.return_value = "test_request_hash"
 
-        self.assertEqual(self.request_tracker.s3_results_prefix(GenusSpecies.HUMAN),
-                         f"test_data_version/test_request_hash/{GenusSpecies.HUMAN.value}")
+        self.assertEqual(self.request_tracker.s3_results_prefix, "test_data_version/test_request_hash")
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format",
                 new_callable=mock.PropertyMock)
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.request_hash")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.request_hash",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.data_version",
                 new_callable=mock.PropertyMock)
     def test_s3_results_key(self, mock_data_version, mock_request_hash, mock_format):
@@ -102,16 +101,16 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_request_hash.return_value = "test_request_hash"
         mock_format.return_value = "loom"
 
-        self.assertEqual(self.request_tracker.s3_results_key(GenusSpecies.HUMAN),
-                         f"test_data_version/test_request_hash/{GenusSpecies.HUMAN.value}/{self.request_id}.loom")
+        self.assertEqual(self.request_tracker.s3_results_key,
+                         f"test_data_version/test_request_hash/{self.request_id}.loom")
 
         mock_format.return_value = "csv"
-        self.assertEqual(self.request_tracker.s3_results_key(GenusSpecies.MOUSE),
-                         f"test_data_version/test_request_hash/{GenusSpecies.MOUSE.value}/{self.request_id}.csv.zip")
+        self.assertEqual(self.request_tracker.s3_results_key,
+                         f"test_data_version/test_request_hash/{self.request_id}.csv.zip")
 
         mock_format.return_value = "mtx"
-        self.assertEqual(self.request_tracker.s3_results_key(GenusSpecies.HUMAN),
-                         f"test_data_version/test_request_hash/{GenusSpecies.HUMAN.value}/{self.request_id}.mtx.zip")
+        self.assertEqual(self.request_tracker.s3_results_key,
+                         f"test_data_version/test_request_hash/{self.request_id}.mtx.zip")
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     def test_data_version(self, mock_get_table_item):
@@ -128,6 +127,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
 
+    def test_genus_species(self):
+        self.assertEqual(self.request_tracker.genus_species, GenusSpecies.HUMAN)
+
     def test_metadata_fields(self):
         self.assertEqual(self.request_tracker.metadata_fields, ["test_field_1", "test_field_2"])
 
@@ -135,27 +137,25 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertEqual(self.request_tracker.feature, "test_feature")
 
     def test_batch_job_id(self):
-        self.assertEqual(self.request_tracker.batch_job_id(GenusSpecies.HUMAN), None)
+        self.assertEqual(self.request_tracker.batch_job_id, None)
 
         field_enum = RequestTableField.BATCH_JOB_ID
-        self.dynamo_handler.update_table_dict_field(DynamoTable.REQUEST_TABLE,
-                                                    self.request_id,
-                                                    field_enum,
-                                                    GenusSpecies.HUMAN.value,
-                                                    "123-123")
-        self.assertEqual(self.request_tracker.batch_job_id(GenusSpecies.HUMAN), "123-123")
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
+                                                       self.request_id,
+                                                       field_enum,
+                                                       "123-123")
+        self.assertEqual(self.request_tracker.batch_job_id, "123-123")
 
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
     def test_batch_job_status(self, mock_get_job_status):
         mock_get_job_status.return_value = "FAILED"
         field_enum = RequestTableField.BATCH_JOB_ID
-        self.dynamo_handler.update_table_dict_field(DynamoTable.REQUEST_TABLE,
-                                                    self.request_id,
-                                                    field_enum,
-                                                    GenusSpecies.HUMAN.value,
-                                                    "123-123")
+        self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
+                                                       self.request_id,
+                                                       field_enum,
+                                                       "123-123")
 
-        self.assertEqual(self.request_tracker.batch_job_status(GenusSpecies.HUMAN), "FAILED")
+        self.assertEqual(self.request_tracker.batch_job_status, "FAILED")
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.num_bundles",
                 new_callable=mock.PropertyMock)
@@ -186,13 +186,13 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     def test_initialize_request(self, mock_create_request_table_entry, mock_create_cw_metric):
-        self.request_tracker.initialize_request("test_format", [GenusSpecies.HUMAN])
+        self.request_tracker.initialize_request("test_format")
 
         mock_create_request_table_entry.assert_called_once_with(self.request_id,
                                                                 "test_format",
-                                                                [GenusSpecies.HUMAN],
                                                                 DEFAULT_FIELDS,
-                                                                DEFAULT_FEATURE)
+                                                                DEFAULT_FEATURE,
+                                                                GenusSpecies.HUMAN)
         mock_create_cw_metric.assert_called_once()
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.metadata_fields", new_callable=mock.PropertyMock)
@@ -210,7 +210,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         h.update("test_cell_key_1".encode())
         h.update("test_cell_key_2".encode())
 
-        self.assertEqual(self.request_tracker.generate_request_hash(GenusSpecies.HUMAN), h.hexdigest())
+        self.assertEqual(self.request_tracker.generate_request_hash(), h.hexdigest())
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_expect_subtask_execution(self, mock_increment_table_field):
@@ -219,8 +219,7 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_increment_table_field.assert_called_once_with(DynamoTable.REQUEST_TABLE,
                                                            self.request_id,
                                                            RequestTableField.EXPECTED_DRIVER_EXECUTIONS,
-                                                           1,
-                                                           None)
+                                                           1)
 
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.increment_table_field")
     def test_complete_subtask_execution(self, mock_increment_table_field):
@@ -229,50 +228,40 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_increment_table_field.assert_called_once_with(DynamoTable.REQUEST_TABLE,
                                                            self.request_id,
                                                            RequestTableField.COMPLETED_DRIVER_EXECUTIONS,
-                                                           1,
-                                                           None)
+                                                           1)
 
-        mock_increment_table_field.reset_mock()
-        self.request_tracker.complete_subtask_execution(Subtask.CONVERTER, GenusSpecies.HUMAN)
-
-        mock_increment_table_field.assert_called_once_with(DynamoTable.REQUEST_TABLE,
-                                                           self.request_id,
-                                                           RequestTableField.COMPLETED_CONVERTER_EXECUTIONS,
-                                                           1,
-                                                           GenusSpecies.HUMAN.value)
-
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_prefix")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_prefix",
+                new_callable=mock.PropertyMock)
     def test_lookup_cached_result(self, mock_s3_results_prefix):
         mock_s3_results_prefix.return_value = "test_prefix"
         s3_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
 
         with self.subTest("Do not match in S3 'directories'"):
             s3_handler.store_content_in_s3("test_prefix", "test_content")
-            self.assertEqual(self.request_tracker.lookup_cached_result(GenusSpecies.HUMAN), "")
+            self.assertEqual(self.request_tracker.lookup_cached_result(), "")
 
         with self.subTest("Successfully retrieve a result key"):
             s3_handler.store_content_in_s3("test_prefix/test_result_1", "test_content")
             s3_handler.store_content_in_s3("test_prefix/test_result_2", "test_content")
-            self.assertEqual(self.request_tracker.lookup_cached_result(GenusSpecies.HUMAN),
-                             "test_prefix/test_result_1")
+            self.assertEqual(self.request_tracker.lookup_cached_result(), "test_prefix/test_result_1")
 
     def test_is_request_complete(self):
         self.assertFalse(self.request_tracker.is_request_complete())
 
         s3_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
 
-        for gs in self.request_tracker.genera_species:
-            s3_handler.store_content_in_s3(
-                f"{self.request_tracker.s3_results_key(gs)}/{self.request_id}.{self.request_tracker.format}", "")
+        s3_handler.store_content_in_s3(
+            f"{self.request_tracker.s3_results_key}/{self.request_id}.{self.request_tracker.format}", "")
 
         self.assertTrue(self.request_tracker.is_request_complete())
 
     def test_is_request_ready_for_conversion(self):
-        self.assertFalse(self.request_tracker.is_request_ready_for_conversion(GenusSpecies.HUMAN))
-
-        for _ in range(3):
-            self.request_tracker.complete_subtask_execution(Subtask.QUERY, GenusSpecies.HUMAN)
-        self.assertTrue(self.request_tracker.is_request_ready_for_conversion(GenusSpecies.HUMAN))
+        self.assertFalse(self.request_tracker.is_request_ready_for_conversion())
+        self.dynamo_handler.increment_table_field(DynamoTable.REQUEST_TABLE,
+                                                  self.request_id,
+                                                  RequestTableField.COMPLETED_QUERY_EXECUTIONS,
+                                                  3)
+        self.assertTrue(self.request_tracker.is_request_ready_for_conversion())
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     def test_complete_request(self, mock_cw_put):
@@ -341,11 +330,10 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.assertTrue(self.request_tracker.timeout)
         mock_log_error.assert_called_once()
 
-    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.update_table_dict_field")
-    def test_write_batch_job_id_to_db(self, mock_update_table_dict):
-        self.request_tracker.write_batch_job_id_to_db("123-123", GenusSpecies.HUMAN)
-        mock_update_table_dict.assert_called_once_with(DynamoTable.REQUEST_TABLE,
-                                                       self.request_id,
-                                                       RequestTableField.BATCH_JOB_ID,
-                                                       GenusSpecies.HUMAN.value,
-                                                       "123-123")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.set_table_field_with_value")
+    def test_write_batch_job_id_to_db(self, mock_set_table_field_with_value):
+        self.request_tracker.write_batch_job_id_to_db("123-123")
+        mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
+                                                                self.request_id,
+                                                                RequestTableField.BATCH_JOB_ID,
+                                                                "123-123")

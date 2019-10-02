@@ -9,7 +9,7 @@ import requests
 from boto3.dynamodb.conditions import Attr
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, GenusSpecies, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.exceptions import MatrixException
 from matrix.common.v1_api_handler import V1ApiHandler
 

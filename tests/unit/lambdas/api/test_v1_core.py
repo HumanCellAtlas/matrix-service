@@ -32,11 +32,12 @@ class TestCore(unittest.TestCase):
         body.update({'request_id': mock.ANY})
         body.update({'fields': constants.DEFAULT_FIELDS})
         body.update({'feature': constants.DEFAULT_FEATURE})
+        body.update({"genus_species": GenusSpecies.HUMAN.value})
         body.pop('format')
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V1, body)
-        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_, [GenusSpecies.HUMAN],
-                                                           constants.DEFAULT_FIELDS, "gene")
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY, format_, constants.DEFAULT_FIELDS,
+                                                           "gene", GenusSpecies.HUMAN)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
@@ -58,14 +59,15 @@ class TestCore(unittest.TestCase):
 
         response = core.post_matrix(body)
         body.update({'request_id': mock.ANY})
+        body.update({"genus_species": GenusSpecies.HUMAN.value})
         body.pop('format')
 
         mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V1, body)
         mock_dynamo_create_request.assert_called_once_with(mock.ANY,
                                                            format_,
-                                                           [GenusSpecies.HUMAN],
                                                            ["test.field1", "test.field2"],
-                                                           "transcript")
+                                                           "transcript",
+                                                           GenusSpecies.HUMAN)
         mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
         self.assertEqual(type(response[0]['request_id']), str)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
@@ -142,14 +144,9 @@ class TestCore(unittest.TestCase):
         mock_initialized.return_value = True
         mock_is_request_complete.return_value = False
         mock_is_expired.return_value = False
-        mock_get_table_item.return_value = {
-            RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.FORMAT.value: "test_format",
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "N/A",
-                                                   GenusSpecies.MOUSE.value: "N/A"},
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "N/A",
-                                                   GenusSpecies.MOUSE.value: "N/A"},
-            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "test_format",
+                                            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
 
         response = core.get_matrix(request_id)
 
@@ -173,100 +170,63 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response[0]['message'], "test error")
 
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.size")
-    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_loom_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
-                                      mock_batch_job_status, mock_s3_size):
+                                      mock_size):
         request_id = str(uuid.uuid4())
+        mock_size.return_value = 1234
         mock_is_request_complete.return_value = True
-        mock_s3_size.return_value = 123
-        mock_batch_job_status.return_value = "SUCCEEDED"
-        mock_get_table_item.return_value = {
-            RequestTableField.DATA_VERSION.value: 0,
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash"},
-            RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.FORMAT.value: "loom",
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch"}}
+        mock_get_table_item.return_value = {RequestTableField.DATA_VERSION.value: 0,
+                                            RequestTableField.REQUEST_HASH.value: "hash",
+                                            RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "loom"}
 
         response = core.get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
-        self.assertEqual(
-            response[0]['matrix_url'],
-            (f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/"
-             f"human_hash/{GenusSpecies.HUMAN.value}/{request_id}.loom"))
-
-        self.assertDictEqual(
-            response[0]['non_human_matrix_urls'],
-            {})
+        self.assertEqual(response[0]['matrix_url'],
+                         f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/hash/{request_id}.loom")
 
         self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.size")
-    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_csv_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
-                                     mock_batch_job_status, mock_s3_size):
+                                     mock_size):
         request_id = str(uuid.uuid4())
+        mock_size.return_value = 1234
         mock_is_request_complete.return_value = True
-        mock_s3_size.return_value = 123
-        mock_batch_job_status.return_value = "SUCCEEDED"
-        mock_get_table_item.return_value = {
-            RequestTableField.DATA_VERSION.value: 0,
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
-            RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.FORMAT.value: "csv",
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"}}
+        mock_get_table_item.return_value = {RequestTableField.DATA_VERSION.value: 0,
+                                            RequestTableField.REQUEST_HASH.value: "hash",
+                                            RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "csv"}
 
         response = core.get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
-        self.assertEqual(
-            response[0]['matrix_url'],
-            (f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/"
-             f"human_hash/{GenusSpecies.HUMAN.value}/{request_id}.csv.zip"))
-
-        self.assertDictEqual(
-            response[0]['non_human_matrix_urls'],
-            {GenusSpecies.MOUSE.value:
-                (f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/"
-                 f"mouse_hash/{GenusSpecies.MOUSE.value}/{request_id}.csv.zip")})
+        self.assertEqual(response[0]['matrix_url'],
+                         f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/hash/{request_id}.csv.zip")
 
         self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.size")
-    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
     def test_get_mtx_matrix_complete(self, mock_is_request_complete, mock_get_table_item,
-                                     mock_batch_job_status, mock_s3_size):
+                                     mock_size):
         request_id = str(uuid.uuid4())
+        mock_size.return_value = 1234
         mock_is_request_complete.return_value = True
-        mock_s3_size.return_value = 123
-        mock_batch_job_status.return_value = "SUCCEEDED"
-        mock_get_table_item.return_value = {
-            RequestTableField.DATA_VERSION.value: 0,
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
-            RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.FORMAT.value: "mtx",
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"}}
+        mock_get_table_item.return_value = {RequestTableField.DATA_VERSION.value: 0,
+                                            RequestTableField.REQUEST_HASH.value: "hash",
+                                            RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "mtx"}
 
         response = core.get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
-        self.assertEqual(
-            response[0]['matrix_url'],
-            (f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/"
-             f"human_hash/{GenusSpecies.HUMAN.value}/{request_id}.mtx.zip"))
+        self.assertEqual(response[0]['matrix_url'],
+                         f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/hash/{request_id}.mtx.zip")
 
-        self.assertDictEqual(
-            response[0]['non_human_matrix_urls'],
-            {GenusSpecies.MOUSE.value:
-                (f"https://s3.amazonaws.com/{os.environ['MATRIX_RESULTS_BUCKET']}/0/"
-                 f"mouse_hash/{GenusSpecies.MOUSE.value}/{request_id}.mtx.zip")})
         self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
 
     def test_get_formats(self):
@@ -327,17 +287,13 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response[0]['status'], MatrixRequestStatus.FAILED.value)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.batch_job_status")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.batch_job_status",
+                new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     def test_get_matrix_batch_failure(self, mock_get_table_item, mock_batch_job_status, mock_log_error):
         request_id = str(uuid.uuid4())
-        mock_get_table_item.return_value = {
-            RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"},
-            RequestTableField.FORMAT.value: "test_format"}
+        mock_get_table_item.return_value = {RequestTableField.ERROR_MESSAGE.value: "",
+                                            RequestTableField.FORMAT.value: "test_format"}
         mock_batch_job_status.return_value = "FAILED"
 
         response = core.get_matrix(request_id)

@@ -27,7 +27,6 @@ import loompy
 import s3fs
 import scipy
 
-from matrix.common.constants import GenusSpecies
 from matrix.docker.matrix_converter import MatrixConverter
 
 # This is the 2544 pancreas data in a public bucket.
@@ -125,7 +124,6 @@ class TestConversions(unittest.TestCase):
 
         args = argparse.Namespace(
             request_id="test_id",
-            genus_species=GenusSpecies.HUMAN.value,
             expression_manifest_key=EXPRESSION_MANIFEST,
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
@@ -190,7 +188,6 @@ class TestConversions(unittest.TestCase):
 
         args = argparse.Namespace(
             request_id="test_id",
-            genus_species=GenusSpecies.HUMAN.value,
             expression_manifest_key=EXPRESSION_MANIFEST,
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,
@@ -259,7 +256,6 @@ class TestConversions(unittest.TestCase):
 
         args = argparse.Namespace(
             request_id="test_id",
-            genus_species=GenusSpecies.HUMAN.value,
             expression_manifest_key=EXPRESSION_MANIFEST,
             cell_metadata_manifest_key=CELL_MANIFEST,
             gene_metadata_manifest_key=GENE_MANIFEST,

@@ -153,7 +153,7 @@ class RequestTracker:
             self._genus_species = \
                 self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
                                                    key=self.request_id)[RequestTableField.GENUS_SPECIES.value]
-        return self._genus_species
+        return GenusSpecies(self._genus_species)
 
     @property
     def format(self) -> str:
@@ -262,7 +262,7 @@ class RequestTracker:
                            fmt: str,
                            metadata_fields: list = DEFAULT_FIELDS,
                            feature: str = DEFAULT_FEATURE,
-                           genus_species: GenusSpecies = GenusSpecies.HUMA) -> None:
+                           genus_species: GenusSpecies = GenusSpecies.HUMAN) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         :param fmt: Request output format for matrix conversion
         :param metadata_fields: Metadata fields to include in expression matrix

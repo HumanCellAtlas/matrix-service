@@ -7,7 +7,6 @@ from botocore.stub import Stubber
 
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.cloudwatch_handler import MetricName
-from matrix.common.constants import GenusSpecies
 
 
 class TestBatchHandler(unittest.TestCase):
@@ -24,7 +23,7 @@ class TestBatchHandler(unittest.TestCase):
         format = "test_format"
         job_name = f"conversion-{os.environ['DEPLOYMENT_STAGE']}-{self.request_id}-{format}"
 
-        self.batch_handler.schedule_matrix_conversion(self.request_id, format, GenusSpecies.MOUSE, "test_s3_key")
+        self.batch_handler.schedule_matrix_conversion(self.request_id, format, "test_s3_key")
         mock_enqueue_batch_job.assert_called_once_with(job_name=job_name,
                                                        job_queue_arn=os.environ['BATCH_CONVERTER_JOB_QUEUE_ARN'],
                                                        job_def_arn=os.environ['BATCH_CONVERTER_JOB_DEFINITION_ARN'],

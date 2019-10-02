@@ -58,12 +58,12 @@ def post_matrix(body: dict):
                                 "Please supply non empty `bundle_fqids`. "
                                 "Visit https://matrix.data.humancellatlas.org for more information."},
                     requests.codes.bad_request)
-    
+
     human_request_id = ""
     non_human_request_ids = {}
     for genus_species in list(GenusSpecies):
         request_id = str(uuid.uuid4())
-        RequestTracker(request_id).initialize_request(format, list(GenusSpecies))
+        RequestTracker(request_id).initialize_request(format, genus_species=genus_species)
         driver_payload = {
             'request_id': request_id,
             'bundle_fqids': bundle_fqids,
@@ -78,7 +78,7 @@ def post_matrix(body: dict):
         else:
             non_human_request_ids[genus_species.value] = request_id
 
-    return ({'request_id': request_id,
+    return ({'request_id': human_request_id,
              'non_human_request_ids': non_human_request_ids,
              'status': MatrixRequestStatus.IN_PROGRESS.value,
              'message': "Job started."},
@@ -120,7 +120,7 @@ def get_matrix(request_id: str):
                  'message': request_tracker.error},
                 requests.codes.ok)
     # Check for failed batch conversion job
-    elif request_tracker.batch_job_status and request_tracker.batch_job_status == "FAILED"
+    elif request_tracker.batch_job_status and request_tracker.batch_job_status == "FAILED":
         request_tracker.log_error("The matrix conversion as a part of the request has failed. \
             Please retry or contact an hca admin for help.")
         return ({'request_id': request_id,
@@ -133,7 +133,7 @@ def get_matrix(request_id: str):
     elif request_tracker.is_request_complete():
         matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
         matrix_results_handler = S3Handler(matrix_results_bucket)
-        
+
         matrix_location = ""
         if format == MatrixFormat.LOOM.value:
             matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
@@ -141,12 +141,12 @@ def get_matrix(request_id: str):
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
             matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
                               f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
-        
+
         is_empty = False
         if not matrix_results_handler.size(matrix_location):
             is_empty = True
             matrix_location = ""
-    
+
         if not is_empty:
             message = (f"Request {request_id} has successfully completed. "
                        f"The resultant expression matrix is available for download at "

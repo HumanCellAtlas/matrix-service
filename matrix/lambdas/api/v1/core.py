@@ -41,7 +41,7 @@ def post_matrix(body: dict):
         return ({'message': "The filter specification is too large. "
                             "Visit https://matrix.dev.data.humancellatlas.org for more information."},
                 requests.codes.request_entity_too_large)
-    
+
     if query_constructor.has_genus_species_term(body["filter"]):
         # If the user has mentioned something about species, then maybe
         # they're looking for non-human data. So we'll run queries for all
@@ -50,12 +50,12 @@ def post_matrix(body: dict):
     else:
         # Otherwise, default to human-only
         genera_species = [constants.GenusSpecies.HUMAN]
-    
+
     human_request_id = ""
     non_human_request_ids = {}
     for genus_species in genera_species:
         request_id = str(uuid.uuid4())
-        RequestTracker(request_id).initialize_request(format_, genera_species, fields, feature, genus_species)
+        RequestTracker(request_id).initialize_request(format_, fields, feature, genus_species)
 
         driver_payload = {
             'request_id': request_id,
@@ -135,12 +135,12 @@ def get_matrix(request_id: str):
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
             matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
                               f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
-        
+
         is_empty = False
         if not matrix_results_handler.size(matrix_location):
             is_empty = True
             matrix_location = ""
-    
+
         if not is_empty:
             message = (f"Request {request_id} has successfully completed. "
                        f"The resultant expression matrix is available for download at "

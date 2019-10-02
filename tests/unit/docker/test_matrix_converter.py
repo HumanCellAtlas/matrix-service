@@ -14,7 +14,6 @@ from unittest import mock
 import pandas
 
 from matrix.common import date
-from matrix.common.constants import GenusSpecies
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.query.cell_query_results_reader import CellQueryResultsReader
 from matrix.common.query.expression_query_results_reader import ExpressionQueryResultsReader
@@ -32,11 +31,10 @@ class TestMatrixConverter(unittest.TestCase):
             "record_count": 5
         }
 
-        args = ["test_id", "Homo sapiens", "test_exp_manifest", "test_cell_manifest",
+        args = ["test_id", "test_exp_manifest", "test_cell_manifest",
                 "test_gene_manifest", "test_target", "loom", "."]
         parser = argparse.ArgumentParser()
         parser.add_argument("request_id")
-        parser.add_argument("genus_species")
         parser.add_argument("expression_manifest_key")
         parser.add_argument("cell_metadata_manifest_key")
         parser.add_argument("gene_metadata_manifest_key")
@@ -74,7 +72,7 @@ class TestMatrixConverter(unittest.TestCase):
         ]
         mock_parse_manifest.assert_has_calls(mock_manifest_calls)
         mock_to_loom.assert_called_once()
-        mock_subtask_exec.assert_called_once_with(Subtask.CONVERTER, GenusSpecies.HUMAN)
+        mock_subtask_exec.assert_called_once_with(Subtask.CONVERTER)
         mock_complete_request.assert_called_once()
         mock_upload_converted_matrix.assert_called_once_with("local_matrix_path", "test_target")
 
@@ -269,7 +267,7 @@ class TestMatrixConverter(unittest.TestCase):
         mock_s3_map.return_value = None
         mock_creation_date.return_value = date.to_string(datetime.datetime.utcnow())
 
-        main(["test_id", "Mus musculus", "test_exp_manifest", "test_cell_manifest",
+        main(["test_id", "test_exp_manifest", "test_cell_manifest",
               "test_gene_manifest", "test_target", file_format, "."])
 
         if file_format == "loom":
@@ -280,12 +278,12 @@ class TestMatrixConverter(unittest.TestCase):
             mock_to_mtx.assert_called_once()
 
         mock_s3_put.assert_called_once()
-        mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER, GenusSpecies.MOUSE)
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER)
         mock_complete_request.assert_called_once_with(duration=mock.ANY)
 
     def _test_unsupported_format(self):
         with self.assertRaises(SystemExit):
-            main(["test_hash", "Homo sapiens", "test_source_path", "target_path", "bad_format"])
+            main(["test_hash", "test_source_path", "target_path", "bad_format"])
 
     def _create_test_data(self):
         """Create test data for the _to_xxx tests."""
@@ -480,7 +478,7 @@ class TestMatrixConverter(unittest.TestCase):
 
         self.assertEqual(os.path.getsize("unit_test_empty_loom.loom"), 0)
 
-        mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER, GenusSpecies.HUMAN)
+        mock_complete_subtask_execution.assert_called_once_with(Subtask.CONVERTER)
         mock_complete_request.assert_called_once()
 
         os.remove("unit_test_empty_loom.loom")

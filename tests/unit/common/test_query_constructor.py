@@ -253,7 +253,7 @@ FROM expression
 WHERE (NOT feature.isgene)
   AND expression.exprtype = 'Count'
   AND foo IN ('bar', 'baz')$$)
-TO 's3://{results_bucket}/{request_id}/{genus_species}/expression_'
+TO 's3://{results_bucket}/{request_id}/expression_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE
@@ -266,7 +266,7 @@ UNLOAD ($$SELECT *
 FROM feature
 WHERE (NOT feature.isgene)
   AND feature.genus_species = '{genus_species}'$$)
-to 's3://{results_bucket}/{request_id}/{genus_species}/gene_metadata_'
+to 's3://{results_bucket}/{request_id}/gene_metadata_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE;
@@ -333,7 +333,7 @@ FROM cell
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 WHERE ((((num_field_1 IN (1, 2, 3, 4)) AND (num_field_2 > 50) AND (quuz = 'thud'))) OR (NOT (foo IN ('bar', 'baz'))) OR (qux > 5) OR (quuz = 'thud'))$$)"""  # noqa: E501
 """
-TO 's3://{results_bucket}/{request_id}/{genus_species}/cell_metadata_'
+TO 's3://{results_bucket}/{request_id}/cell_metadata_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE
@@ -354,7 +354,7 @@ WHERE feature.isgene
   AND expression.exprtype = 'Count'
   AND ((((num_field_1 IN (1, 2, 3, 4)) AND (num_field_2 > 50) AND (quuz = 'thud'))) OR (NOT (foo IN ('bar', 'baz'))) OR (qux > 5) OR (quuz = 'thud'))$$)"""  # noqa: E501
 """
-TO 's3://{results_bucket}/{request_id}/{genus_species}/expression_'
+TO 's3://{results_bucket}/{request_id}/expression_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE
@@ -388,7 +388,7 @@ FROM cell
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 WHERE NOT (foo IN ('bar', 'baz'))$$)
-TO 's3://{results_bucket}/{request_id}/{genus_species}/cell_metadata_'
+TO 's3://{results_bucket}/{request_id}/cell_metadata_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE
@@ -427,7 +427,7 @@ FROM cell
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 WHERE ((project.short_name = 'project1') AND (cell.genes_detected > 1000))$$)
-TO 's3://{results_bucket}/{request_id}/{genus_species}/cell_metadata_'
+TO 's3://{results_bucket}/{request_id}/cell_metadata_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE
@@ -447,7 +447,7 @@ FROM expression
 WHERE (NOT feature.isgene)
   AND expression.exprtype = 'Count'
   AND ((project.short_name = 'project1') AND (cell.genes_detected > 1000))$$)
-TO 's3://{results_bucket}/{request_id}/{genus_species}/expression_'
+TO 's3://{results_bucket}/{request_id}/expression_'
 IAM_ROLE '{iam_role}'
 GZIP
 MANIFEST VERBOSE
@@ -653,7 +653,7 @@ class TestSpeciesifyFilter(unittest.TestCase):
             "value": 1000
         }
 
-        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.HUMAN)
+        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.HUMAN.value)
         expected_filter = {
             "op": "and",
             "value": [
@@ -688,7 +688,7 @@ class TestSpeciesifyFilter(unittest.TestCase):
             ]
         }
 
-        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.MOUSE)
+        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.MOUSE.value)
         expected_filter = {
             "op": "and",
             "value": [

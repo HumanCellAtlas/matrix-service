@@ -70,7 +70,7 @@ class Driver:
                                                           genus_species=genus_species,
                                                           iam_role=self.redshift_role_arn)
         feature_query_obj_key = self.s3_handler.store_content_in_s3(
-            f"{self.request_id}/QueryType.FEATURE.value}",
+            f"{self.request_id}/{QueryType.FEATURE.value}",
             feature_query)
 
         exp_query = queries[QueryType.EXPRESSION].format(results_bucket=self.query_results_bucket,

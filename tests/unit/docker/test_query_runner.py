@@ -5,7 +5,6 @@ import requests
 
 from matrix.docker.query_runner import QueryRunner
 from matrix.common.aws.sqs_handler import SQSHandler
-from matrix.common.constants import GenusSpecies
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.exceptions import MatrixException
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -45,7 +44,6 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         payload = {
             'request_id': request_id,
             's3_obj_key': "test_s3_obj_key",
-            'genus_species': GenusSpecies.HUMAN.value,
             'type': "test_type"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
@@ -55,10 +53,10 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
 
         mock_load_obj.assert_called_once_with("test_s3_obj_key")
         mock_transaction.assert_called()
-        mock_complete_subtask.assert_called_once_with(Subtask.QUERY, GenusSpecies.HUMAN)
+        mock_complete_subtask.assert_called_once_with(Subtask.QUERY)
         mock_schedule_conversion.assert_not_called()
 
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.write_batch_job_id_to_db")
     @mock.patch("matrix.common.aws.batch_handler.BatchHandler.schedule_matrix_conversion")
@@ -79,7 +77,6 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         payload = {
             'request_id': request_id,
             's3_obj_key': "test_s3_obj_key",
-            'genus_species': GenusSpecies.MOUSE.value,
             'type': "test_type"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
@@ -92,9 +89,8 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
 
         mock_schedule_conversion.assert_called_once_with(request_id,
                                                          "test_format",
-                                                         GenusSpecies.MOUSE,
                                                          "test_s3_results_key")
-        mock_write_batch_job_id_to_db.assert_called_once_with("123-123", GenusSpecies.MOUSE)
+        mock_write_batch_job_id_to_db.assert_called_once_with("123-123")
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format")
@@ -111,7 +107,6 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         payload = {
             'request_id': request_id,
             's3_obj_key': "test_s3_obj_key",
-            'genus_species': GenusSpecies.MOUSE.value,
             'type': "test_type"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
@@ -132,7 +127,7 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_ready_for_conversion")
     @mock.patch("matrix.common.aws.s3_handler.S3Handler.copy_obj")
     @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.delete_message_from_queue")
-    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.s3_results_key", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.format", new_callable=mock.PropertyMock)
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.write_batch_job_id_to_db")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.lookup_cached_result")
@@ -153,7 +148,6 @@ class TestQueryRunner(MatrixTestCaseUsingMockAWS):
         payload = {
             'request_id': request_id,
             's3_obj_key': "test_s3_obj_key",
-            'genus_species': GenusSpecies.HUMAN.value,
             'type': "cell"
         }
         self.sqs_handler.add_message_to_queue("test_query_job_q_name", payload)
