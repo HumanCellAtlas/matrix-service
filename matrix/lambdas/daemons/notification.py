@@ -1,4 +1,3 @@
-import concurrent.futures
 import os
 import shutil
 
@@ -47,13 +46,6 @@ class NotificationHandler:
         logger.info(f"Done processing DSS notification for {self.bundle_uuid}.{self.bundle_version}.")
 
     def update_bundle(self):
-        query = {
-            "query": {
-                "bool": {
-                    "must": [{"term": {"uuid": self.bundle_uuid}}]
-                }
-            }
-        }
         staging_dir = "/tmp"
         content_type_patterns = ['application/json; dcp-type="metadata*"']
         filename_patterns = ["*zarr*",  # match expression data
@@ -62,15 +54,14 @@ class NotificationHandler:
 
         # clean up working directory in case of Lambda container reuse
         shutil.rmtree(f"{staging_dir}/{MetadataToPsvTransformer.OUTPUT_DIRNAME}", ignore_errors=True)
-        etl.etl_dss_bundles(query=query,
-                            content_type_patterns=content_type_patterns,
-                            filename_patterns=filename_patterns,
-                            transformer_cb=etl.transform_bundle,
-                            finalizer_cb=etl.finalizer_notification,
-                            staging_directory=os.path.abspath(staging_dir),
-                            deployment_stage=os.environ['DEPLOYMENT_STAGE'],
-                            max_workers=16,
-                            dispatcher_executor_class=concurrent.futures.ThreadPoolExecutor)
+        etl.etl_dss_bundle(bundle_uuid=self.bundle_uuid,
+                           bundle_version=self.bundle_version,
+                           content_type_patterns=content_type_patterns,
+                           filename_patterns=filename_patterns,
+                           transformer_cb=etl.transform_bundle,
+                           finalizer_cb=etl.finalizer_notification,
+                           staging_directory=os.path.abspath(staging_dir),
+                           deployment_stage=os.environ['DEPLOYMENT_STAGE'])
 
     def remove_bundle(self):
         self.redshift.transaction([
