@@ -272,13 +272,9 @@ class TestCore(unittest.TestCase):
         mock_is_request_complete.return_value = False
         mock_get_table_item.return_value = {
             RequestTableField.DATA_VERSION.value: 0,
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
             RequestTableField.ERROR_MESSAGE.value: "",
             RequestTableField.FORMAT.value: "test_format",
-            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True),
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"}}
+            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
         mock_batch_job_status.return_value = "SUCCEEDED"
         mock_is_expired.return_value = True
 
@@ -303,12 +299,8 @@ class TestCore(unittest.TestCase):
         mock_batch_job_status.return_value = "SUCCEEDED"
         mock_get_table_item.return_value = {
             RequestTableField.DATA_VERSION.value: 0,
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
             RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.FORMAT.value: "test_format",
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"}}
+            RequestTableField.FORMAT.value: "test_format"}
         mock_is_expired.return_value = False
         mock_timeout.return_value = True
 
@@ -329,3 +321,26 @@ class TestCore(unittest.TestCase):
         response = get_matrix(request_id)
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.FAILED.value)
+
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.size")
+    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
+    def test_get_matrix_no_cells(self, mock_is_request_complete, mock_get_table_item,
+                                 mock_batch_job_status, mock_s3_size):
+
+        request_id = str(uuid.uuid4())
+        mock_get_table_item.return_value = {
+            RequestTableField.DATA_VERSION.value: 0,
+            RequestTableField.ERROR_MESSAGE.value: "",
+            RequestTableField.FORMAT.value: "test_format",
+            RequestTableField.GENUS_SPECIES.value: GenusSpecies.HUMAN.value,
+            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
+        mock_batch_job_status.return_value = "SUCCEEDED"
+        mock_is_request_complete.return_value = True
+        mock_s3_size.return_value = 0
+
+        response = get_matrix(request_id)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
+        self.assertEqual(response[0]['matrix_location'], "")

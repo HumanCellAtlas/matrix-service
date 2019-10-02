@@ -46,6 +46,50 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_post_matrix_with_species(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
+        filter_ = {"op": "=",
+                   "field": "specimen_from_organism.genus_species.ontology_label",
+                   "value": "monkey whatever"}
+        format_ = MatrixFormat.LOOM.value
+
+        body = {
+            'filter': filter_,
+            'format': format_
+        }
+
+        response = core.post_matrix(body)
+
+        body.update({'request_id': mock.ANY})
+        body.update({'fields': constants.DEFAULT_FIELDS})
+        body.update({'feature': constants.DEFAULT_FEATURE})
+        body.pop('format')
+
+        genera_species = list(GenusSpecies)
+        self.assertEqual(mock_lambda_invoke.call_count, len(genera_species))
+        self.assertEqual(mock_dynamo_create_request.call_count, len(genera_species))
+        self.assertEqual(mock_cw_put.call_count, len(genera_species))
+
+        for gs in genera_species:
+            gs_body = body.copy()
+            gs_body["genus_species"] = gs.value
+            mock_lambda_invoke.assert_any_call(LambdaName.DRIVER_V1, gs_body)
+
+            mock_dynamo_create_request.assert_any_call(
+                mock.ANY,
+                format_,
+                constants.DEFAULT_FIELDS,
+                constants.DEFAULT_FEATURE,
+                gs)
+
+        self.assertEqual(type(response[0]['request_id']), str)
+        self.assertEqual(type(response[0]['non_human_request_ids']), dict)
+        self.assertIn("Mus musculus", response[0]["non_human_request_ids"])
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response[1], requests.codes.accepted)
+
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     def test_post_matrix_with_fields_and_feature_ok(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
         filter_ = {"op": ">", "field": "foo", "value": 42}
         format_ = MatrixFormat.LOOM.value
@@ -153,6 +197,29 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response[1], requests.codes.ok)
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
 
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.size")
+    @mock.patch("matrix.common.aws.batch_handler.BatchHandler.get_batch_job_status")
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
+    @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
+    def test_get_matrix_no_cells(self, mock_is_request_complete, mock_get_table_item,
+                                 mock_batch_job_status, mock_s3_size):
+
+        request_id = str(uuid.uuid4())
+        mock_get_table_item.return_value = {
+            RequestTableField.DATA_VERSION.value: 0,
+            RequestTableField.ERROR_MESSAGE.value: "",
+            RequestTableField.FORMAT.value: "test_format",
+            RequestTableField.GENUS_SPECIES.value: GenusSpecies.HUMAN.value,
+            RequestTableField.CREATION_DATE.value: get_datetime_now(as_string=True)}
+        mock_batch_job_status.return_value = "SUCCEEDED"
+        mock_is_request_complete.return_value = True
+        mock_s3_size.return_value = 0
+
+        response = core.get_matrix(request_id)
+        self.assertEqual(response[1], requests.codes.ok)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.COMPLETE.value)
+        self.assertEqual(response[0]['matrix_url'], "")
+
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_initialized")
     @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.get_table_item")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.is_request_complete")
@@ -244,10 +311,6 @@ class TestCore(unittest.TestCase):
         mock_is_request_complete.return_value = False
         mock_get_table_item.return_value = {
             RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"},
             RequestTableField.FORMAT.value: "test_format"}
         mock_batch_job_status.return_value = "SUCCEEDED"
         mock_is_expired.return_value = True
@@ -274,12 +337,8 @@ class TestCore(unittest.TestCase):
         mock_is_expired.return_value = False
         mock_get_table_item.return_value = {
             RequestTableField.DATA_VERSION.value: 0,
-            RequestTableField.REQUEST_HASH.value: {GenusSpecies.HUMAN.value: "human_hash",
-                                                   GenusSpecies.MOUSE.value: "mouse_hash"},
             RequestTableField.ERROR_MESSAGE.value: "",
-            RequestTableField.FORMAT.value: "test_format",
-            RequestTableField.BATCH_JOB_ID.value: {GenusSpecies.HUMAN.value: "human_batch",
-                                                   GenusSpecies.MOUSE.value: "mouse_batch"}}
+            RequestTableField.FORMAT.value: "test_format"}
         mock_timeout.return_value = True
 
         response = core.get_matrix(request_id)

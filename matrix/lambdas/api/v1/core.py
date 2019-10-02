@@ -72,7 +72,7 @@ def post_matrix(body: dict):
             non_human_request_ids[genus_species.value] = request_id
 
     return ({'request_id': human_request_id,
-             'nonhuman_request_ids': non_human_request_ids,
+             'non_human_request_ids': non_human_request_ids,
              'status': MatrixRequestStatus.IN_PROGRESS.value,
              'message': "Job started."},
             requests.codes.accepted)
