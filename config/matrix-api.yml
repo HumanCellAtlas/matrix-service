@@ -388,7 +388,7 @@ components:
         - loom
         - csv
         - mtx
-    v0_MatrixPostReponse:
+    v0_MatrixPostResponse:
       type: object
       properties:
         request_id:
