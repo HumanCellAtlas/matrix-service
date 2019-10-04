@@ -52,7 +52,7 @@ class MatrixConverter:
                 QueryType.FEATURE: FeatureQueryResultsReader(self.args.gene_metadata_manifest_key)
             }
 
-            if self.query_results[QueryType.CELL].manifest["record_count"] == 0:
+            if self.query_results[QueryType.CELL].is_empty:
                 LOGGER.debug(f"Short-circuiting conversion because there are no cells.")
                 pathlib.Path(self.local_output_filename).touch()
                 local_converted_path = self.local_output_filename

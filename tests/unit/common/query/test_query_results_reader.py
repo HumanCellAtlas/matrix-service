@@ -47,3 +47,14 @@ class TestQueryResultsReader(unittest.TestCase):
         test_table_columns = ["test_column", "bundle_fqid"]
         metadata_fields = query_results_reader._map_columns(test_table_columns)
         self.assertEqual(metadata_fields, ["test_column", "dss_bundle_fqid"])
+
+    @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
+    def test_is_empty(self, mock_parse_manifest):
+
+        mock_parse_manifest.return_value = {"record_count": 0}
+        query_results_reader = QueryResultsReader("test_manifest_key")
+        self.assertTrue(query_results_reader.is_empty)
+
+        mock_parse_manifest.return_value = {"record_count": 123}
+        query_results_reader = QueryResultsReader("test_manifest_key")
+        self.assertFalse(query_results_reader.is_empty)

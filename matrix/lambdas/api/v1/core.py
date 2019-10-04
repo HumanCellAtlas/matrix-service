@@ -128,16 +128,16 @@ def get_matrix(request_id: str):
         matrix_results_bucket = os.environ['MATRIX_RESULTS_BUCKET']
         matrix_results_handler = S3Handler(matrix_results_bucket)
 
-        matrix_location = ""
+        matrix_key = ""
         if format == MatrixFormat.LOOM.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
-                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}"
+            matrix_key = f"{request_tracker.s3_results_prefix}/{request_id}.{format}"
         elif format == MatrixFormat.CSV.value or format == MatrixFormat.MTX.value:
-            matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/" \
-                              f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
+            matrix_key = f"{request_tracker.s3_results_prefix}/{request_id}.{format}.zip"
+
+        matrix_location = f"https://s3.amazonaws.com/{matrix_results_bucket}/{matrix_key}"
 
         is_empty = False
-        if not matrix_results_handler.size(matrix_location):
+        if not matrix_results_handler.size(matrix_key):
             is_empty = True
             matrix_location = ""
 
@@ -147,8 +147,8 @@ def get_matrix(request_id: str):
                        f"{matrix_location}.")
         else:
             message = (f"Request {request_id} has successfully completed. "
-                       f"But, there were not cells associated with this request and "
-                       f"species {request_tracker.genus_species}")
+                       f"But, there were no cells associated with this request and "
+                       f"species {request_tracker.genus_species.value}")
 
         return ({'request_id': request_id,
                  'status': MatrixRequestStatus.COMPLETE.value,
