@@ -295,6 +295,7 @@ class MatrixConverter:
         # don't use them.
         loom_file.create_group("layers")
         loom_file.create_group("row_graphs")
+        loom_file.create_group("col_graphs")
 
         loom_file.attrs["last_modified"] = self._loom_timestamp()
 
