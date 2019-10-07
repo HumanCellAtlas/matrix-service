@@ -65,6 +65,17 @@ NOTIFICATION_TEST_DATA = {
     }
 }
 
+MOUSE_BUNDLE_IDS = {
+    "integration": [
+        "e20d94ad-e061-40b8-a600-b299dd2b9f27.2019-08-01T005511.532305Z"
+    ],
+    "staging": [
+    ],
+    "prod": [
+        "e20d94ad-e061-40b8-a600-b299dd2b9f27.2019-10-04T094331.797559Z"
+    ]
+}
+
 INPUT_BUNDLE_URL = \
     "https://s3.amazonaws.com/dcp-matrix-test-data/{dss_env}_test_bundles.tsv"
 
@@ -97,6 +108,10 @@ class MatrixServiceTest(unittest.TestCase):
         data = json.loads(response)
         status = data["status"]
         return status
+
+    def _poll_all_requests_in_status(self, request_ids, target_status):
+        return all(self._poll_get_matrix_service_request(req) == target_status
+                   for req in request_ids.values())
 
     def _analyze_loom_matrix_results(self, request_id, input_bundles):
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
@@ -131,7 +146,11 @@ class MatrixServiceTest(unittest.TestCase):
             s3_key = matrix_location[matrix_location.find(results_bucket):]
             s3_file_system.rm(s3_key)
 
-        self.request_id = None
+    def _cleanup_all_matrix_results(self, request_ids):
+        for request_id in request_ids.values():
+            self._cleanup_matrix_result(request_id)
+
+        self.request_ids = None
 
     def _compare_metrics(self, metrics_1, metrics_2):
         for metric in metrics_1:
@@ -168,79 +187,89 @@ class TestMatrixServiceV0(MatrixServiceTest):
         self.redshift_handler = RedshiftHandler()
 
     def tearDown(self):
-        if hasattr(self, 'request_id') and self.request_id:
-            self._cleanup_matrix_result(self.request_id)
+        if hasattr(self, 'request_ids') and self.request_ids:
+            self._cleanup_all_matrix_results(self.request_ids)
 
     def test_single_bundle_request(self):
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids=[INPUT_BUNDLE_IDS[self.dss_env][0]], format="loom")
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_id, [INPUT_BUNDLE_IDS[self.dss_env][0]])
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], [INPUT_BUNDLE_IDS[self.dss_env][0]])
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def test_loom_output_matrix_service(self):
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def test_csv_output_matrix_service(self):
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="csv")
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_csv_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_csv_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def test_mtx_output_matrix_service(self):
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="mtx")
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_mtx_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_mtx_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def test_cache_hit_matrix_service(self):
-        request_id_1 = self._post_matrix_service_request(
+        request_ids_1 = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, request_id_1) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(request_id_1, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, request_ids_1, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_loom_matrix_results(request_ids_1["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
 
-        request_id_2 = self._post_matrix_service_request(
+        request_ids_2 = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
         # timeout seconds is reduced to 300 as cache hits do not run conversion in batch.
-        WaitFor(self._poll_get_matrix_service_request, request_id_2) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_loom_matrix_results(request_id_2, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, request_ids_2, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_loom_matrix_results(request_ids_2["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
 
-        matrix_location_1 = self._retrieve_matrix_location(request_id_1)
-        matrix_location_2 = self._retrieve_matrix_location(request_id_2)
+        matrix_location_1 = self._retrieve_matrix_location(request_ids_1["Homo sapiens"])
+        matrix_location_2 = self._retrieve_matrix_location(request_ids_2["Homo sapiens"])
 
         loom_metrics_1 = validation.calculate_ss2_metrics_loom(matrix_location_1)
         loom_metrics_2 = validation.calculate_ss2_metrics_loom(matrix_location_2)
 
         self._compare_metrics(loom_metrics_1, loom_metrics_2)
 
-        self._cleanup_matrix_result(request_id_1)
-        self._cleanup_matrix_result(request_id_2)
+        self._cleanup_all_matrix_results(request_ids_1)
+        self._cleanup_all_matrix_results(request_ids_2)
 
     def test_matrix_service_without_specified_output(self):
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env])
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-        self._analyze_loom_matrix_results(self.request_id, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=300)
+        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def test_matrix_service_with_unexpected_bundles(self):
         input_bundles = ['non-existent-bundle1', 'non-existent-bundle2']
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids=input_bundles)
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.FAILED.value, timeout_seconds=300)
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.FAILED.value)\
+            .to_return_value(True, timeout_seconds=300)
 
     @unittest.skipUnless(os.getenv('DEPLOYMENT_STAGE') != "prod",
                          "Do not want to process fake notifications in production.")
@@ -292,17 +321,53 @@ class TestMatrixServiceV0(MatrixServiceTest):
         timeout = int(os.getenv("MATRIX_TEST_TIMEOUT", 300))
         bundle_fqids_url = INPUT_BUNDLE_URL.format(dss_env=self.dss_env)
 
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             bundle_fqids_url=bundle_fqids_url,
             format="loom")
 
         # wait for request to complete
-        WaitFor(self._poll_get_matrix_service_request, self.request_id)\
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=timeout)
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=timeout)
         bundle_fqids = ['.'.join(el.split('\t')) for el in
                         requests.get(bundle_fqids_url).text.strip().split('\n')[1:]]
 
-        self._analyze_loom_matrix_results(self.request_id, bundle_fqids)
+        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], bundle_fqids)
+
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+
+    def test_mixed_species(self):
+
+        # Mouse bundles are not available in all environments
+        if not MOUSE_BUNDLE_IDS.get(self.dss_env):
+            return
+
+        human_bundle = INPUT_BUNDLE_IDS[self.dss_env][0]
+        mouse_bundle = MOUSE_BUNDLE_IDS[self.dss_env][0]
+        self.request_ids = self._post_matrix_service_request(
+            bundle_fqids=[human_bundle, mouse_bundle], format="loom")
+
+        # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], [human_bundle])
+        self.assertIn("Mus musculus", self.request_ids)
+        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+
+    def test_mouse_only(self):
+
+        # Mouse bundles are not available in all environments
+        if not MOUSE_BUNDLE_IDS.get(self.dss_env):
+            return
+        mouse_bundle = MOUSE_BUNDLE_IDS[self.dss_env][0]
+        self.request_ids = self._post_matrix_service_request(
+            bundle_fqids=[mouse_bundle], format="loom")
+
+        # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Homo sapiens"]), "")
+        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def _poll_db_get_row_counts_for_fqid(self, bundle_fqid, cellkeys):
         """
@@ -346,7 +411,9 @@ class TestMatrixServiceV0(MatrixServiceTest):
                                       data=json.dumps(data),
                                       headers=self.headers)
         data = json.loads(response)
-        return data["request_id"]
+        request_ids = {"Homo sapiens": data["request_id"]}
+        request_ids.update(data["non_human_request_ids"])
+        return request_ids
 
     def _post_notification(self, bundle_fqid, event_type):
         data = {}
@@ -381,8 +448,8 @@ class TestMatrixServiceV1(MatrixServiceTest):
         self.s3_file_system = s3fs.S3FileSystem(anon=False)
 
     def tearDown(self):
-        if hasattr(self, 'request_id') and self.request_id:
-            self._cleanup_matrix_result(self.request_id)
+        if hasattr(self, 'request_ids') and self.request_ids:
+            self._cleanup_all_matrix_results(self.request_ids)
 
     def _post_matrix_service_request(self, filter_, fields=None, feature=None, format_=None):
         data = {"filter": filter_}
@@ -401,23 +468,26 @@ class TestMatrixServiceV1(MatrixServiceTest):
                                       headers=self.headers)
 
         data = json.loads(response)
-        return data["request_id"]
+        request_ids = {"Homo sapiens": data["request_id"]}
+        request_ids.update(data["non_human_request_ids"])
+        return request_ids
 
     def test_mtx_output_matrix_service(self):
 
-        request_id_1 = self._post_matrix_service_request(
+        request_ids_1 = self._post_matrix_service_request(
             filter_={"op": "in",
                      "field": "dss_bundle_fqid",
                      "value": INPUT_BUNDLE_IDS[self.dss_env]},
             format_="mtx")
 
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
-        WaitFor(self._poll_get_matrix_service_request, request_id_1) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        self._analyze_mtx_matrix_results(request_id_1, INPUT_BUNDLE_IDS[self.dss_env])
+        WaitFor(self._poll_all_requests_in_status, request_ids_1, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self._analyze_mtx_matrix_results(request_ids_1["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertEqual(len(request_ids_1), 1)
 
         with self.subTest("Testing cache hit path with explicit parameters"):
-            request_id_2 = self._post_matrix_service_request(
+            request_ids_2 = self._post_matrix_service_request(
                 filter_={"op": "in",
                          "field": "dss_bundle_fqid",
                          "value": INPUT_BUNDLE_IDS[self.dss_env]},
@@ -425,36 +495,36 @@ class TestMatrixServiceV1(MatrixServiceTest):
                 fields=DEFAULT_FIELDS,
                 feature=DEFAULT_FEATURE)
             # timeout seconds is reduced to 300 as cache hits do not run conversion in batch.
-            WaitFor(self._poll_get_matrix_service_request, request_id_2) \
-                .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=300)
-            self._analyze_mtx_matrix_results(request_id_2, INPUT_BUNDLE_IDS[self.dss_env])
+            WaitFor(self._poll_all_requests_in_status, request_ids_2, MatrixRequestStatus.COMPLETE.value)\
+                .to_return_value(True, timeout_seconds=300)
+            self._analyze_mtx_matrix_results(request_ids_2["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
 
-            matrix_location_1 = self._retrieve_matrix_location(request_id_1)
-            matrix_location_2 = self._retrieve_matrix_location(request_id_2)
+            matrix_location_1 = self._retrieve_matrix_location(request_ids_1["Homo sapiens"])
+            matrix_location_2 = self._retrieve_matrix_location(request_ids_2["Homo sapiens"])
 
             mtx_metrics_1 = validation.calculate_ss2_metrics_mtx(matrix_location_1)
             mtx_metrics_2 = validation.calculate_ss2_metrics_mtx(matrix_location_2)
 
             self._compare_metrics(mtx_metrics_1, mtx_metrics_2)
 
-            self._cleanup_matrix_result(request_id_1)
-            self._cleanup_matrix_result(request_id_2)
+            self._cleanup_all_matrix_results(request_ids_1)
+            self._cleanup_all_matrix_results(request_ids_2)
 
     def test_request_fields(self):
 
         fields = ["derived_organ_label", "dss_bundle_fqid", "genes_detected",
                   "library_preparation_protocol.library_construction_method.ontology"]
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             filter_={"op": "in",
                      "field": "dss_bundle_fqid",
                      "value": INPUT_BUNDLE_IDS[self.dss_env]},
             format_="csv",
             fields=fields)
 
-        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
 
-        matrix_location = self._retrieve_matrix_location(self.request_id)
+        matrix_location = self._retrieve_matrix_location(self.request_ids["Homo sapiens"])
 
         temp_dir = tempfile.mkdtemp(suffix="csv_fields_test")
         local_csv_zip_path = os.path.join(temp_dir, os.path.basename(matrix_location))
@@ -476,7 +546,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
     def test_ops(self):
 
         # Filter should return four of the five test bundles
-        self.request_id = self._post_matrix_service_request(
+        self.request_ids = self._post_matrix_service_request(
             filter_={"op": "and",
                      "value": [
                          {"op": "=",
@@ -490,9 +560,9 @@ class TestMatrixServiceV1(MatrixServiceTest):
                           "value": INPUT_BUNDLE_IDS[self.dss_env]}]},
             format_="loom")
 
-        WaitFor(self._poll_get_matrix_service_request, self.request_id) \
-            .to_return_value(MatrixRequestStatus.COMPLETE.value, timeout_seconds=1200)
-        matrix_location = self._retrieve_matrix_location(self.request_id)
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        matrix_location = self._retrieve_matrix_location(self.request_ids["Homo sapiens"])
 
         temp_dir = tempfile.mkdtemp(suffix="loom_ops_test")
         local_loom_path = os.path.join(temp_dir, os.path.basename(matrix_location))
@@ -503,6 +573,35 @@ class TestMatrixServiceV1(MatrixServiceTest):
         ds = loompy.connect(local_loom_path)
 
         self.assertEqual(ds.shape[1], 4)
+
+    def test_mouse_only(self):
+
+        # Mouse bundles are not yet available in every environment
+        if not MOUSE_BUNDLE_IDS[self.dss_env]:
+            return
+        mouse_bundle_uuid = MOUSE_BUNDLE_IDS[self.dss_env][0].split('.', 1)[0]
+
+        filter_ = {
+            "op": "and",
+            "value": [
+                {
+                    "op": "=",
+                    "field": "specimen_from_organism.genus_species.ontology_label",
+                    "value": "Mus musculus"
+                },
+                {
+                    "op": "=",
+                    "field": "bundle_uuid",
+                    "value": mouse_bundle_uuid
+                }
+            ]
+        }
+        self.request_ids = self._post_matrix_service_request(filter_, format_="loom")
+
+        WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
+            .to_return_value(True, timeout_seconds=1200)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Homo sapiens"]), "")
+        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
 
     def test_filter_detail(self):
 
