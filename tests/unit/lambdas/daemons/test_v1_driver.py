@@ -2,6 +2,7 @@ import unittest
 import uuid
 from unittest import mock
 
+from matrix.common.constants import GenusSpecies
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
 from matrix.lambdas.daemons.v1.driver import Driver
@@ -29,7 +30,7 @@ class TestDriver(unittest.TestCase):
         mock_store_content_in_s3.return_value = "s3_key"
         mock_redshift_role.return_value = "redshift_role"
 
-        self._driver.run(filter_, fields, feature)
+        self._driver.run(filter_, fields, feature, GenusSpecies.HUMAN.value)
 
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
         self.assertEqual(mock_store_content_in_s3.call_count, 3)

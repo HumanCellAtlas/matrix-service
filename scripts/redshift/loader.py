@@ -20,8 +20,20 @@ DSS_SEARCH_QUERY_TEMPLATE = {
                     }
                 },
                 {
-                    "match": {
-                        "files.donor_organism_json.biomaterial_core.ncbi_taxon_id": 9606
+                    "bool": {
+                        "should": [
+                            {
+                                "match": {
+                                    "files.donor_organism_json.biomaterial_core.ncbi_taxon_id": 9606
+                                }
+                            },
+                            {
+                                "match": {
+                                    "files.donor_organism_json.biomaterial_core.ncbi_taxon_id": 10090
+                                }
+                            }
+                        ],
+                        "minimum_number_should_match": 1
                     }
                 },
                 {

@@ -6,4 +6,4 @@ def driver_handler(event, context):
             and 'bundle_fqids_url' in event)
     assert bool(event["bundle_fqids"]) != bool(event["bundle_fqids_url"])  # xor these
     driver = Driver(event['request_id'])
-    driver.run(event['bundle_fqids'], event["bundle_fqids_url"], event['format'])
+    driver.run(event['bundle_fqids'], event["bundle_fqids_url"], event['format'], event['genus_species'])

@@ -37,7 +37,7 @@ class Driver:
     def redshift_role_arn(self):
         return self.redshift_config.redshift_role_arn
 
-    def run(self, filter_: typing.Dict[str, typing.Any], fields: typing.List[str], feature: str):
+    def run(self, filter_: typing.Dict[str, typing.Any], fields: typing.List[str], feature: str, genus_species: str):
         """
         Initialize a matrix service request and spawn redshift queries.
 
@@ -51,34 +51,43 @@ class Driver:
 
         try:
             matrix_request_queries = query_constructor.create_matrix_request_queries(
-                filter_, fields, feature)
+                query_constructor.speciesify_filter(filter_, genus_species),
+                fields,
+                feature)
         except (query_constructor.MalformedMatrixFilter, query_constructor.MalformedMatrixFeature) as exc:
             self.request_tracker.log_error(f"Query construction failed with error: {str(exc)}")
             raise
 
-        s3_obj_keys = self._format_and_store_queries_in_s3(matrix_request_queries)
+        s3_obj_keys = self._format_and_store_queries_in_s3(matrix_request_queries, genus_species)
         for key in s3_obj_keys:
             self._add_request_query_to_sqs(key, s3_obj_keys[key])
+
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
-    def _format_and_store_queries_in_s3(self, queries: dict):
+    def _format_and_store_queries_in_s3(self, queries: dict, genus_species: str):
         feature_query = queries[QueryType.FEATURE].format(results_bucket=self.query_results_bucket,
                                                           request_id=self.request_id,
+                                                          genus_species=genus_species,
                                                           iam_role=self.redshift_role_arn)
-        feature_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/{QueryType.FEATURE.value}",
-                                                                    feature_query)
+        feature_query_obj_key = self.s3_handler.store_content_in_s3(
+            f"{self.request_id}/{QueryType.FEATURE.value}",
+            feature_query)
 
         exp_query = queries[QueryType.EXPRESSION].format(results_bucket=self.query_results_bucket,
                                                          request_id=self.request_id,
+                                                         genus_species=genus_species,
                                                          iam_role=self.redshift_role_arn)
-        exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/{QueryType.EXPRESSION.value}",
-                                                                exp_query)
+        exp_query_obj_key = self.s3_handler.store_content_in_s3(
+            f"{self.request_id}/{QueryType.EXPRESSION.value}",
+            exp_query)
 
         cell_query = queries[QueryType.CELL].format(results_bucket=self.query_results_bucket,
                                                     request_id=self.request_id,
+                                                    genus_species=genus_species,
                                                     iam_role=self.redshift_role_arn)
-        cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/{QueryType.CELL.value}",
-                                                                 cell_query)
+        cell_query_obj_key = self.s3_handler.store_content_in_s3(
+            f"{self.request_id}/{QueryType.CELL.value}",
+            cell_query)
 
         return {
             QueryType.CELL: cell_query_obj_key,

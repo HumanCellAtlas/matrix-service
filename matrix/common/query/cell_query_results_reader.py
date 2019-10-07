@@ -5,6 +5,10 @@ from matrix.common.query.query_results_reader import QueryResultsReader
 
 class CellQueryResultsReader(QueryResultsReader):
     def load_results(self):
+
+        if self.is_empty:
+            return pandas.DataFrame()
+
         return pandas.concat([self.load_slice(s) for s in range(len(self.manifest['part_urls']))], copy=False)
 
     def load_slice(self, slice_idx):

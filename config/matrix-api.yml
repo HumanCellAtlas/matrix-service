@@ -34,7 +34,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/v0_MatrixResponse'
+                $ref: '#/components/schemas/v0_MatrixPostResponse'
         "400":
           description: "Bad request"
           content:
@@ -65,7 +65,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/v0_MatrixResponse'
+                $ref: '#/components/schemas/v0_MatrixGetResponse'
         "404":
           description: "Request not found"
           content:
@@ -152,7 +152,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/v1_MatrixResponse'
+                $ref: '#/components/schemas/v1_MatrixPostResponse'
         '400':
           description: 'Bad request.'
           content:
@@ -184,7 +184,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/v1_MatrixResponse'
+                $ref: '#/components/schemas/v1_MatrixGetResponse'
         '404':
           description: "Matrix request id not found."
           content:
@@ -388,7 +388,21 @@ components:
         - loom
         - csv
         - mtx
-    v0_MatrixResponse:
+    v0_MatrixPostResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        non_human_request_ids:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/v0_MatrixRequestStatus'
+        message:
+          type: string
+    v0_MatrixGetResponse:
       type: object
       properties:
         request_id:
@@ -520,7 +534,20 @@ components:
       description: 'UUID identifying a matrix request.'
       type: string
       format: uuid
-    v1_MatrixResponse:
+    v1_MatrixPostResponse:
+      type: object
+      properties:
+        request_id:
+          $ref: '#/components/schemas/v1_RequestId'
+        non_human_request_ids:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/v1_MatrixStatus'
+        message:
+          type: string
+    v1_MatrixGetResponse:
       type: object
       properties:
         request_id:

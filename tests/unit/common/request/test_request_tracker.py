@@ -8,7 +8,7 @@ from datetime import timedelta
 from matrix.common import date
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
 from matrix.common.aws.s3_handler import S3Handler
-from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
+from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE, GenusSpecies
 from matrix.common.request.request_tracker import RequestTracker, Subtask
 from matrix.common.aws.cloudwatch_handler import MetricName
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -37,7 +37,8 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        "test_format",
                                                        ["test_field_1", "test_field_2"],
-                                                       "test_feature")
+                                                       "test_feature",
+                                                       GenusSpecies.HUMAN)
 
     def test_is_initialized(self):
         self.assertTrue(self.request_tracker.is_initialized)
@@ -126,6 +127,9 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
     def test_format(self):
         self.assertEqual(self.request_tracker.format, "test_format")
 
+    def test_genus_species(self):
+        self.assertEqual(self.request_tracker.genus_species, GenusSpecies.HUMAN)
+
     def test_metadata_fields(self):
         self.assertEqual(self.request_tracker.metadata_fields, ["test_field_1", "test_field_2"])
 
@@ -187,7 +191,8 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_create_request_table_entry.assert_called_once_with(self.request_id,
                                                                 "test_format",
                                                                 DEFAULT_FIELDS,
-                                                                DEFAULT_FEATURE)
+                                                                DEFAULT_FEATURE,
+                                                                GenusSpecies.HUMAN)
         mock_create_cw_metric.assert_called_once()
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.metadata_fields", new_callable=mock.PropertyMock)

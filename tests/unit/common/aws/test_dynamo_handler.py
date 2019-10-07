@@ -4,7 +4,7 @@ import mock
 
 import boto3
 
-from matrix.common.constants import DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
+from matrix.common.constants import DEFAULT_FIELDS, GenusSpecies, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField, DataVersionTableField
 from matrix.common.exceptions import MatrixException
 from tests.unit import MatrixTestCaseUsingMockAWS
@@ -89,7 +89,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
     def test_create_request_table_entry(self, mock_get_datetime_now):
         stub_date = '2019-03-18T180907.136216Z'
         mock_get_datetime_now.return_value = stub_date
-        self.handler.create_request_table_entry(self.request_id, self.format)
+        self.handler.create_request_table_entry(self.request_id, self.format, genus_species=GenusSpecies.HUMAN)
         response, entry = self._get_request_table_response_and_entry()
 
         self.assertEqual(len(response['Responses'][self.request_table_name]), 1)
@@ -98,6 +98,7 @@ class TestDynamoHandler(MatrixTestCaseUsingMockAWS):
         self.assertEqual(entry[RequestTableField.FORMAT.value], self.format)
         self.assertEqual(entry[RequestTableField.METADATA_FIELDS.value], DEFAULT_FIELDS)
         self.assertEqual(entry[RequestTableField.FEATURE.value], "gene")
+        self.assertEqual(entry[RequestTableField.GENUS_SPECIES.value], GenusSpecies.HUMAN.value)
         self.assertEqual(entry[RequestTableField.DATA_VERSION.value], 0)
         self.assertEqual(entry[RequestTableField.REQUEST_HASH.value], "N/A")
         self.assertEqual(entry[RequestTableField.EXPECTED_DRIVER_EXECUTIONS.value], 1)

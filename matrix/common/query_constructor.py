@@ -49,7 +49,8 @@ MANIFEST VERBOSE
 FEATURE_QUERY_TEMPLATE = """
 UNLOAD ($$SELECT *
 FROM feature
-WHERE {feature_where_clause}$$)
+WHERE {feature_where_clause}
+  AND feature.genus_species = '{{genus_species}}'$$)
 to 's3://{{results_bucket}}/{{request_id}}/gene_metadata_'
 IAM_ROLE '{{iam_role}}'
 GZIP
@@ -255,3 +256,43 @@ def format_str_list(values: typing.Iterable[str]) -> str:
     :return: stringified list
     """
     return '(' + ', '.join("'" + str(v) + "'" for v in values) + ')'
+
+
+def has_genus_species_term(matrix_filter: typing.Dict[str, typing.Any]) -> bool:
+    """Determine if a matrix filter has a genus_species specified. This is needed
+    so the default behavior of human-only results can be overridden when the user
+    specifies species.
+    """
+
+    op = matrix_filter["op"]
+    value = matrix_filter["value"]
+
+    if op in COMPARISON_OPERATORS:
+        field = matrix_filter["field"]
+        return field in constants.GENUS_SPECIES_FILTERS
+
+    elif op in LOGICAL_OPERATORS:
+
+        if op == 'not':
+            return value[0] in constants.GENUS_SPECIES_FILTERS
+        else:
+            return any(has_genus_species_term(v) for v in value)
+
+
+def speciesify_filter(matrix_filter: typing.Dict[str, typing.Any],
+                      genus_species: str) -> typing.Dict[str, typing.Any]:
+    """Add a species term to a matrix filter so it only returns cells that
+    match the given genus_species_label.
+    """
+
+    return {
+        "op": "and",
+        "value": [
+            {
+                "op": "=",
+                "field": "specimen_from_organism.genus_species.ontology_label",
+                "value": genus_species
+            },
+            matrix_filter
+        ]
+    }

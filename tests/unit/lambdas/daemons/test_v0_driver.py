@@ -3,6 +3,7 @@ import uuid
 from unittest import mock
 
 from matrix.common.aws.dynamo_handler import DynamoTable, RequestTableField
+from matrix.common.constants import GenusSpecies
 from matrix.common.request.request_tracker import Subtask
 from matrix.common.config import MatrixInfraConfig
 from matrix.lambdas.daemons.v0.driver import Driver
@@ -29,7 +30,7 @@ class TestDriver(unittest.TestCase):
         mock_store_queries_in_s3.return_value = []
         mock_redshift_transaction.return_value = [[2]]
 
-        self._driver.run(bundle_fqids, None, format)
+        self._driver.run(bundle_fqids, None, format, GenusSpecies.MOUSE.value)
 
         mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
                                                                 mock.ANY,
@@ -57,7 +58,7 @@ class TestDriver(unittest.TestCase):
         mock_redshift_transaction.return_value = [[2]]
 
         mock_parse_download_manifest.return_value = bundle_fqids
-        self._driver.run(None, bundle_fqids_url, format)
+        self._driver.run(None, bundle_fqids_url, format, GenusSpecies.HUMAN.value)
 
         mock_parse_download_manifest.assert_called_once()
         mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
@@ -88,7 +89,7 @@ class TestDriver(unittest.TestCase):
         mock_redshift_transaction.return_value = [[3]]
 
         mock_parse_download_manifest.return_value = bundle_fqids
-        self._driver.run(None, bundle_fqids_url, format)
+        self._driver.run(None, bundle_fqids_url, format, GenusSpecies.MOUSE.value)
 
         mock_parse_download_manifest.assert_called_once()
         mock_set_table_field_with_value.assert_called_once_with(DynamoTable.REQUEST_TABLE,
@@ -120,7 +121,7 @@ class TestDriver(unittest.TestCase):
         mock_redshift_transaction.return_value = [[3]]
 
         mock_parse_download_manifest.return_value = bundle_fqids
-        self._driver.run(None, bundle_fqids_url, format)
+        self._driver.run(None, bundle_fqids_url, format, GenusSpecies.HUMAN.value)
 
         mock_parse_download_manifest.assert_called_once()
         error_msg = "no bundles found in the supplied bundle manifest"
@@ -152,3 +153,22 @@ class TestDriver(unittest.TestCase):
             'type': "cell"
         }
         mock_add_to_queue.assert_called_once_with("query_job_q_url", payload)
+
+    @mock.patch("matrix.lambdas.daemons.v0.driver.Driver.redshift_role_arn", new_callable=mock.PropertyMock)
+    @mock.patch("matrix.common.aws.s3_handler.S3Handler.store_content_in_s3")
+    def test__format_and_store_queries_in_s3(self, mock_store_in_s3, mock_redshift_role):
+
+        self._driver.query_results_bucket = "test_query_results_bucket"
+        mock_redshift_role.return_value = "test_redshift_role_arn"
+
+        bundle_fqids = ["id1.version", "id2.version"]
+
+        mock_store_in_s3.return_value = "test_key"
+
+        result = self._driver._format_and_store_queries_in_s3(bundle_fqids, GenusSpecies.HUMAN)
+
+        self.assertDictEqual(
+            {QueryType.CELL: "test_key",
+             QueryType.FEATURE: "test_key",
+             QueryType.EXPRESSION: "test_key"},
+            result)

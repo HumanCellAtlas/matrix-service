@@ -4,7 +4,7 @@ from datetime import timedelta
 from enum import Enum
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE
+from matrix.common.constants import DEFAULT_FIELDS, DEFAULT_FEATURE, GenusSpecies
 from matrix.common.aws.batch_handler import BatchHandler
 from matrix.common.aws.cloudwatch_handler import CloudwatchHandler, MetricName
 from matrix.common.aws.dynamo_handler import DynamoHandler, DynamoTable, RequestTableField
@@ -45,6 +45,7 @@ class RequestTracker:
         self._format = None
         self._metadata_fields = None
         self._feature = None
+        self._genus_species = None
 
         self.dynamo_handler = DynamoHandler()
         self.cloudwatch_handler = CloudwatchHandler()
@@ -141,6 +142,18 @@ class RequestTracker:
 
         index = int(self.num_bundles / interval_size)
         return f"{index * interval_size}-{(index * interval_size) + interval_size - 1}"
+
+    @property
+    def genus_species(self) -> GenusSpecies:
+        """
+        The request's genus/species combination.
+        :return: GenusSpecies The genus/species for this request
+        """
+        if not self._genus_species:
+            self._genus_species = \
+                self.dynamo_handler.get_table_item(DynamoTable.REQUEST_TABLE,
+                                                   key=self.request_id)[RequestTableField.GENUS_SPECIES.value]
+        return GenusSpecies(self._genus_species)
 
     @property
     def format(self) -> str:
@@ -248,7 +261,8 @@ class RequestTracker:
     def initialize_request(self,
                            fmt: str,
                            metadata_fields: list = DEFAULT_FIELDS,
-                           feature: str = DEFAULT_FEATURE) -> None:
+                           feature: str = DEFAULT_FEATURE,
+                           genus_species: GenusSpecies = GenusSpecies.HUMAN) -> None:
         """Initialize the request id in the request state table. Put request metric to cloudwatch.
         :param fmt: Request output format for matrix conversion
         :param metadata_fields: Metadata fields to include in expression matrix
@@ -257,7 +271,8 @@ class RequestTracker:
         self.dynamo_handler.create_request_table_entry(self.request_id,
                                                        fmt,
                                                        metadata_fields,
-                                                       feature)
+                                                       feature,
+                                                       genus_species)
         self.cloudwatch_handler.put_metric_data(
             metric_name=MetricName.REQUEST,
             metric_value=1

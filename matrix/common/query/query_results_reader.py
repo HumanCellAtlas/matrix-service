@@ -24,6 +24,10 @@ class QueryResultsReader:
         self.s3_manifest_key = s3_manifest_key
         self.manifest = self._parse_manifest(s3_manifest_key)
 
+    @property
+    def is_empty(self):
+        return self.manifest["record_count"] == 0
+
     def load_results(self):
         """
         Loads all query results of the provided manifest into memory.

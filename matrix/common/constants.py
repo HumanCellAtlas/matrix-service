@@ -32,6 +32,12 @@ class BundleType(Enum):
     SS2 = "ss2"
 
 
+class GenusSpecies(Enum):
+    """Supported genera/species"""
+    HUMAN = "Homo sapiens"
+    MOUSE = "Mus musculus"
+
+
 class MetadataSchemaName(Enum):
     PROJECT = "project"
     LIBRARY_PREPARATION_PROTOCOL = "library_preparation_protocol"
@@ -157,6 +163,7 @@ CREATE_QUERY_TEMPLATE = {
             featurestart     INTEGER,
             featureend       INTEGER,
             isgene           BOOLEAN,
+            genus_species    VARCHAR(25) NOT NULL,
             PRIMARY KEY(featurekey))
             DISTSTYLE ALL
             SORTKEY(featurekey)
@@ -326,6 +333,12 @@ TABLE_COLUMN_TO_TABLE = {
     'protocol': 'analysis',
     'awg_disposition': 'analysis'
 }
+
+# Filters that specify the genus and species of the cells.
+GENUS_SPECIES_FILTERS = [
+    'specimen_from_organism.genus_species.ontology',
+    'specimen_from_organism.genus_species.ontology_label'
+]
 
 FORMAT_DETAIL = {
     MatrixFormat.LOOM.value: """

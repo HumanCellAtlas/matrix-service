@@ -57,6 +57,18 @@ class TestS3Handler(MatrixTestCaseUsingMockAWS):
         results = self.s3_handler.ls(obj_key)
         self.assertEqual(len(results), 1)
 
+    def test_size(self):
+        obj_key = "test_key"
+        test_content = "test_content"
+
+        self.s3_handler.store_content_in_s3(obj_key, test_content)
+        result = self.s3_handler.size(obj_key)
+
+        self.assertEqual(len(test_content), result)
+
+        result = self.s3_handler.size("fake_key")
+        self.assertIsNone(result)
+
     def test_exists(self):
         obj_key = "test_key"
         test_content = "test_content"

@@ -264,7 +264,8 @@ MANIFEST VERBOSE
         expected_feature_query = """
 UNLOAD ($$SELECT *
 FROM feature
-WHERE (NOT feature.isgene)$$)
+WHERE (NOT feature.isgene)
+  AND feature.genus_species = '{genus_species}'$$)
 to 's3://{results_bucket}/{request_id}/gene_metadata_'
 IAM_ROLE '{iam_role}'
 GZIP
@@ -519,3 +520,198 @@ class TestFormatStrList(unittest.TestCase):
         formatted_values = "('id1.version')"
 
         self.assertEqual(query_constructor.format_str_list(values), formatted_values)
+
+
+class TestHasGenusSpecies(unittest.TestCase):
+
+    def test_simple(self):
+        filter_ = \
+            {
+                "op": "=",
+                "field": "specimen_from_organism.genus_species.ontology_label",
+                "value": "Homo sapiens"
+            }
+        self.assertTrue(query_constructor.has_genus_species_term(filter_))
+
+        filter_ = \
+            {
+                "op": "!=",
+                "field": "specimen_from_organism.genus_species.ontology",
+                "value": "NCBITaxon:9606"
+            }
+        self.assertTrue(query_constructor.has_genus_species_term(filter_))
+
+        filter_ = \
+            {
+                "op": ">",
+                "field": "genes_detected",
+                "value": 100
+            }
+        self.assertFalse(query_constructor.has_genus_species_term(filter_))
+
+    def test_nested(self):
+
+        filter_ = \
+            {
+                "op": "or",
+                "value": [
+                    {
+                        "op": "and",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "num_field_1",
+                                "value": [1, 2, 3, 4]
+                            },
+                            {
+                                "op": "!=",
+                                "field": "specimen_from_organism.genus_species.ontology",
+                                "value": "NCBITaxon:9606"
+                            },
+                            {
+                                "op": "=",
+                                "field": "quuz",
+                                "value": "thud"
+                            }
+                        ]
+                    },
+                    {
+                        "op": "not",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "foo",
+                                "value": ["bar", "baz"]
+                            },
+                        ]
+                    },
+                    {
+                        "op": ">",
+                        "field": "qux",
+                        "value": 5
+                    },
+                    {
+                        "op": "=",
+                        "field": "quuz",
+                        "value": "thud"
+                    }
+                ]
+            }
+        self.assertTrue(query_constructor.has_genus_species_term(filter_))
+
+        filter_ = \
+            {
+                "op": "or",
+                "value": [
+                    {
+                        "op": "and",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "num_field_1",
+                                "value": [1, 2, 3, 4]
+                            },
+                            {
+                                "op": "=",
+                                "field": "quuz",
+                                "value": "thud"
+                            }
+                        ]
+                    },
+                    {
+                        "op": "not",
+                        "value": [
+                            {
+                                "op": "in",
+                                "field": "foo",
+                                "value": ["bar", "baz"]
+                            },
+                        ]
+                    },
+                    {
+                        "op": ">",
+                        "field": "qux",
+                        "value": 5
+                    },
+                    {
+                        "op": "=",
+                        "field": "quuz",
+                        "value": "thud"
+                    }
+                ]
+            }
+        self.assertFalse(query_constructor.has_genus_species_term(filter_))
+
+
+class TestSpeciesifyFilter(unittest.TestCase):
+
+    def test_comparison(self):
+
+        filter_ = {
+            "op": ">",
+            "field": "genes_detected",
+            "value": 1000
+        }
+
+        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.HUMAN.value)
+        expected_filter = {
+            "op": "and",
+            "value": [
+                {
+                    "op": "=",
+                    'field': 'specimen_from_organism.genus_species.ontology_label',
+                    "value": constants.GenusSpecies.HUMAN.value
+                },
+                {
+                    "op": ">",
+                    "field": "genes_detected",
+                    "value": 1000
+                }
+            ]
+        }
+        self.assertDictEqual(speciesified_filter, expected_filter)
+
+    def test_logical(self):
+        filter_ = {
+            "op": "or",
+            "value": [
+                {
+                    "op": ">",
+                    "field": "genes_detected",
+                    "value": 1000
+                },
+                {
+                    "op": "=",
+                    "field": "foo",
+                    "value": "bar"
+                }
+            ]
+        }
+
+        speciesified_filter = query_constructor.speciesify_filter(filter_, constants.GenusSpecies.MOUSE.value)
+        expected_filter = {
+            "op": "and",
+            "value": [
+                {
+                    "op": "=",
+                    'field': 'specimen_from_organism.genus_species.ontology_label',
+                    "value": constants.GenusSpecies.MOUSE.value
+                },
+                {
+                    "op": "or",
+                    "value": [
+                        {
+                            "op": ">",
+                            "field": "genes_detected",
+                            "value": 1000
+                        },
+                        {
+                            "op": "=",
+                            "field": "foo",
+                            "value": "bar"
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertDictEqual(speciesified_filter, expected_filter)

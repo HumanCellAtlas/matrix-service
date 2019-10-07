@@ -27,9 +27,11 @@ expression_query_template = """
     LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
     INNER JOIN cell on (expression.cellkey = cell.cellkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
+    INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
-    AND analysis.bundle_fqid IN {3}$$)
+    AND analysis.bundle_fqid IN {3}
+    AND specimen.genus_species_label = '{4}'$$)
     TO 's3://{0}/{1}/expression_'
     IAM_ROLE '{2}'
     GZIP
@@ -46,7 +48,8 @@ cell_query_template = """
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-    WHERE analysis.bundle_fqid IN {3}$$)
+    WHERE analysis.bundle_fqid IN {3}
+    AND specimen.genus_species_label = '{4}'$$)
     TO 's3://{0}/{1}/cell_metadata_'
     IAM_ROLE '{2}'
     GZIP
@@ -57,7 +60,8 @@ cell_query_template = """
 feature_query_template = """
     UNLOAD ($$SELECT *
     FROM feature
-    WHERE feature.isgene$$)
+    WHERE feature.isgene
+    AND feature.genus_species = '{3}'$$)
     to 's3://{0}/{1}/gene_metadata_'
     IAM_ROLE '{2}'
     GZIP
@@ -92,16 +96,18 @@ class Driver:
     def redshift_role_arn(self):
         return self.redshift_config.redshift_role_arn
 
-    def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str):
+    def run(self, bundle_fqids: typing.List[str], bundle_fqids_url: str, format: str, genus_species: str):
         """
         Initialize a matrix service request and spawn redshift queries.
 
         :param bundle_fqids: List of bundle fqids to be queried on
         :param bundle_fqids_url: URL from which bundle_fqids can be retrieved
         :param format: MatrixFormat file format of output expression matrix
+        :param genus_species: Genus/species of the request
         """
         logger.debug(f"Driver running with parameters: bundle_fqids={bundle_fqids}, "
                      f"bundle_fqids_url={bundle_fqids_url}, format={format}, "
+                     f"genus_species={genus_species}, "
                      f"bundles_per_worker={self.bundles_per_worker}")
 
         if bundle_fqids_url:
@@ -120,7 +126,7 @@ class Driver:
                                                        self.request_id,
                                                        RequestTableField.NUM_BUNDLES,
                                                        len(resolved_bundle_fqids))
-        s3_obj_keys = self._format_and_store_queries_in_s3(resolved_bundle_fqids)
+        s3_obj_keys = self._format_and_store_queries_in_s3(resolved_bundle_fqids, genus_species)
 
         analysis_table_bundle_count = self._fetch_bundle_count_from_analysis_table(resolved_bundle_fqids)
         if analysis_table_bundle_count != len(resolved_bundle_fqids):
@@ -131,6 +137,7 @@ class Driver:
 
         for key in s3_obj_keys:
             self._add_request_query_to_sqs(key, s3_obj_keys[key])
+
         self.request_tracker.complete_subtask_execution(Subtask.DRIVER)
 
     @retry(reraise=True, wait=wait_fixed(5), stop=stop_after_attempt(60))
@@ -147,22 +154,25 @@ class Driver:
         lines = data.splitlines()[1:]
         return list(map(_parse_line, lines))
 
-    def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list):
+    def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list, genus_species: str):
         feature_query = feature_query_template.format(self.query_results_bucket,
                                                       self.request_id,
-                                                      self.redshift_role_arn)
+                                                      self.redshift_role_arn,
+                                                      genus_species)
         feature_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/feature", feature_query)
 
         exp_query = expression_query_template.format(self.query_results_bucket,
                                                      self.request_id,
                                                      self.redshift_role_arn,
-                                                     format_str_list(resolved_bundle_fqids))
+                                                     format_str_list(resolved_bundle_fqids),
+                                                     genus_species)
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
         cell_query = cell_query_template.format(self.query_results_bucket,
                                                 self.request_id,
                                                 self.redshift_role_arn,
-                                                format_str_list(resolved_bundle_fqids))
+                                                format_str_list(resolved_bundle_fqids),
+                                                genus_species)
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
 
         return {

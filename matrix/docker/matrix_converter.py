@@ -5,6 +5,7 @@ import datetime
 import gzip
 import itertools
 import os
+import pathlib
 import shutil
 import sys
 import zipfile
@@ -51,9 +52,14 @@ class MatrixConverter:
                 QueryType.FEATURE: FeatureQueryResultsReader(self.args.gene_metadata_manifest_key)
             }
 
-            LOGGER.debug(f"Beginning conversion to {self.format}")
-            local_converted_path = getattr(self, f"_to_{self.format}")()
-            LOGGER.debug(f"Conversion to {self.format} completed")
+            if self.query_results[QueryType.CELL].is_empty:
+                LOGGER.debug(f"Short-circuiting conversion because there are no cells.")
+                pathlib.Path(self.local_output_filename).touch()
+                local_converted_path = self.local_output_filename
+            else:
+                LOGGER.debug(f"Beginning conversion to {self.format}")
+                local_converted_path = getattr(self, f"_to_{self.format}")()
+                LOGGER.debug(f"Conversion to {self.format} completed")
 
             LOGGER.debug(f"Beginning upload to S3")
             self._upload_converted_matrix(local_converted_path, self.target_path)

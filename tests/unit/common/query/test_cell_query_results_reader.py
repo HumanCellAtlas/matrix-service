@@ -38,3 +38,12 @@ class TestCellQueryResultsReader(unittest.TestCase):
 
         self.assertIn("project.project_core.project_short_name", pandas_kwargs["names"])
         self.assertTrue(pandas_args[0].startswith("s3://"))
+
+    @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
+    def test_load_empty_results(self, mock_parse_manifest):
+
+        mock_parse_manifest.return_value = {"record_count": 0}
+        cell_query_results_reader = CellQueryResultsReader("test_manifest_key")
+
+        results = cell_query_results_reader.load_results()
+        self.assertEqual(results.shape, (0, 0))

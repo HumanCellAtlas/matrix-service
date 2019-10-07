@@ -9,7 +9,7 @@ import requests
 from boto3.dynamodb.conditions import Attr
 
 from matrix.common import date
-from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, SUPPORTED_METADATA_SCHEMA_VERSIONS
+from matrix.common.constants import DEFAULT_FEATURE, DEFAULT_FIELDS, GenusSpecies, SUPPORTED_METADATA_SCHEMA_VERSIONS
 from matrix.common.exceptions import MatrixException
 from matrix.common.v1_api_handler import V1ApiHandler
 
@@ -53,6 +53,7 @@ class RequestTableField(TableField):
     REQUEST_HASH = "RequestHash"
     DATA_VERSION = "DataVersion"
     CREATION_DATE = "CreationDate"
+    GENUS_SPECIES = "GenusSpecies"
     FORMAT = "Format"
     METADATA_FIELDS = "MetadataFields"
     FEATURE = "Feature"
@@ -137,7 +138,8 @@ class DynamoHandler:
                                    request_id: str,
                                    fmt: str,
                                    metadata_fields: list = DEFAULT_FIELDS,
-                                   feature: str = DEFAULT_FEATURE):
+                                   feature: str = DEFAULT_FEATURE,
+                                   genus_species: GenusSpecies = GenusSpecies.HUMAN):
         """
         Put a new item in the Request table responsible for tracking the inputs, task execution progress and errors
         of a Matrix Request.
@@ -157,6 +159,7 @@ class DynamoHandler:
                 RequestTableField.REQUEST_HASH.value: "N/A",
                 RequestTableField.DATA_VERSION.value: data_version,
                 RequestTableField.CREATION_DATE.value: date.get_datetime_now(as_string=True),
+                RequestTableField.GENUS_SPECIES.value: genus_species.value,
                 RequestTableField.FORMAT.value: fmt,
                 RequestTableField.METADATA_FIELDS.value: metadata_fields,
                 RequestTableField.FEATURE.value: feature,
