@@ -16,7 +16,8 @@ from requests_http_signature import HTTPSignatureAuth
 from . import validation
 from .wait_for import WaitFor
 from matrix.common.config import MatrixInfraConfig
-from matrix.common.constants import MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus, DEFAULT_FIELDS, DEFAULT_FEATURE
+from matrix.common.constants import (GenusSpecies, MATRIX_ENV_TO_DSS_ENV, MatrixRequestStatus,
+                                     DEFAULT_FIELDS, DEFAULT_FEATURE)
 from matrix.common.aws.redshift_handler import RedshiftHandler
 from matrix.common.query_constructor import format_str_list
 from scripts.dss_subscription import DSS_SUBSCRIPTION_HMAC_SECRET_ID
@@ -195,9 +196,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
             bundle_fqids=[INPUT_BUNDLE_IDS[self.dss_env][0]], format="loom")
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], [INPUT_BUNDLE_IDS[self.dss_env][0]])
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self._analyze_loom_matrix_results(self.request_ids[GenusSpecies.HUMAN.value],
+                                          [INPUT_BUNDLE_IDS[self.dss_env][0]])
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_loom_output_matrix_service(self):
         self.request_ids = self._post_matrix_service_request(
@@ -205,9 +207,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self._analyze_loom_matrix_results(self.request_ids[GenusSpecies.HUMAN.value],
+                                          INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_csv_output_matrix_service(self):
         self.request_ids = self._post_matrix_service_request(
@@ -215,9 +218,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_csv_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self._analyze_csv_matrix_results(self.request_ids[GenusSpecies.HUMAN.value],
+                                         INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_mtx_output_matrix_service(self):
         self.request_ids = self._post_matrix_service_request(
@@ -225,9 +229,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_mtx_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self._analyze_mtx_matrix_results(self.request_ids[GenusSpecies.HUMAN.value],
+                                         INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_cache_hit_matrix_service(self):
         request_ids_1 = self._post_matrix_service_request(
@@ -235,17 +240,19 @@ class TestMatrixServiceV0(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, request_ids_1, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(request_ids_1["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self._analyze_loom_matrix_results(request_ids_1[GenusSpecies.HUMAN.value],
+                                          INPUT_BUNDLE_IDS[self.dss_env])
 
         request_ids_2 = self._post_matrix_service_request(
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env], format="loom")
         # timeout seconds is reduced to 300 as cache hits do not run conversion in batch.
         WaitFor(self._poll_all_requests_in_status, request_ids_2, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(request_ids_2["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self._analyze_loom_matrix_results(request_ids_2[GenusSpecies.HUMAN.value],
+                                          INPUT_BUNDLE_IDS[self.dss_env])
 
-        matrix_location_1 = self._retrieve_matrix_location(request_ids_1["Homo sapiens"])
-        matrix_location_2 = self._retrieve_matrix_location(request_ids_2["Homo sapiens"])
+        matrix_location_1 = self._retrieve_matrix_location(request_ids_1[GenusSpecies.HUMAN.value])
+        matrix_location_2 = self._retrieve_matrix_location(request_ids_2[GenusSpecies.HUMAN.value])
 
         loom_metrics_1 = validation.calculate_ss2_metrics_loom(matrix_location_1)
         loom_metrics_2 = validation.calculate_ss2_metrics_loom(matrix_location_2)
@@ -260,9 +267,9 @@ class TestMatrixServiceV0(MatrixServiceTest):
             bundle_fqids=INPUT_BUNDLE_IDS[self.dss_env])
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=300)
-        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self._analyze_loom_matrix_results(self.request_ids[GenusSpecies.HUMAN.value], INPUT_BUNDLE_IDS[self.dss_env])
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_matrix_service_with_unexpected_bundles(self):
         input_bundles = ['non-existent-bundle1', 'non-existent-bundle2']
@@ -331,10 +338,10 @@ class TestMatrixServiceV0(MatrixServiceTest):
         bundle_fqids = ['.'.join(el.split('\t')) for el in
                         requests.get(bundle_fqids_url).text.strip().split('\n')[1:]]
 
-        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], bundle_fqids)
+        self._analyze_loom_matrix_results(self.request_ids[GenusSpecies.HUMAN.value], bundle_fqids)
 
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_mixed_species(self):
 
@@ -350,9 +357,9 @@ class TestMatrixServiceV0(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_loom_matrix_results(self.request_ids["Homo sapiens"], [human_bundle])
-        self.assertIn("Mus musculus", self.request_ids)
-        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self._analyze_loom_matrix_results(self.request_ids[GenusSpecies.HUMAN.value], [human_bundle])
+        self.assertIn(GenusSpecies.MOUSE.value, self.request_ids)
+        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_mouse_only(self):
 
@@ -366,8 +373,8 @@ class TestMatrixServiceV0(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Homo sapiens"]), "")
-        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.HUMAN.value]), "")
+        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def _poll_db_get_row_counts_for_fqid(self, bundle_fqid, cellkeys):
         """
@@ -411,7 +418,7 @@ class TestMatrixServiceV0(MatrixServiceTest):
                                       data=json.dumps(data),
                                       headers=self.headers)
         data = json.loads(response)
-        request_ids = {"Homo sapiens": data["request_id"]}
+        request_ids = {GenusSpecies.HUMAN.value: data["request_id"]}
         request_ids.update(data["non_human_request_ids"])
         return request_ids
 
@@ -468,7 +475,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
                                       headers=self.headers)
 
         data = json.loads(response)
-        request_ids = {"Homo sapiens": data["request_id"]}
+        request_ids = {GenusSpecies.HUMAN.value: data["request_id"]}
         request_ids.update(data["non_human_request_ids"])
         return request_ids
 
@@ -483,7 +490,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
         # timeout seconds is increased to 1200 as batch may take time to spin up spot instances for conversion.
         WaitFor(self._poll_all_requests_in_status, request_ids_1, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self._analyze_mtx_matrix_results(request_ids_1["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+        self._analyze_mtx_matrix_results(request_ids_1[GenusSpecies.HUMAN.value], INPUT_BUNDLE_IDS[self.dss_env])
         self.assertEqual(len(request_ids_1), 1)
 
         with self.subTest("Testing cache hit path with explicit parameters"):
@@ -497,10 +504,10 @@ class TestMatrixServiceV1(MatrixServiceTest):
             # timeout seconds is reduced to 300 as cache hits do not run conversion in batch.
             WaitFor(self._poll_all_requests_in_status, request_ids_2, MatrixRequestStatus.COMPLETE.value)\
                 .to_return_value(True, timeout_seconds=300)
-            self._analyze_mtx_matrix_results(request_ids_2["Homo sapiens"], INPUT_BUNDLE_IDS[self.dss_env])
+            self._analyze_mtx_matrix_results(request_ids_2[GenusSpecies.HUMAN.value], INPUT_BUNDLE_IDS[self.dss_env])
 
-            matrix_location_1 = self._retrieve_matrix_location(request_ids_1["Homo sapiens"])
-            matrix_location_2 = self._retrieve_matrix_location(request_ids_2["Homo sapiens"])
+            matrix_location_1 = self._retrieve_matrix_location(request_ids_1[GenusSpecies.HUMAN.value])
+            matrix_location_2 = self._retrieve_matrix_location(request_ids_2[GenusSpecies.HUMAN.value])
 
             mtx_metrics_1 = validation.calculate_ss2_metrics_mtx(matrix_location_1)
             mtx_metrics_2 = validation.calculate_ss2_metrics_mtx(matrix_location_2)
@@ -524,7 +531,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
 
-        matrix_location = self._retrieve_matrix_location(self.request_ids["Homo sapiens"])
+        matrix_location = self._retrieve_matrix_location(self.request_ids[GenusSpecies.HUMAN.value])
 
         temp_dir = tempfile.mkdtemp(suffix="csv_fields_test")
         local_csv_zip_path = os.path.join(temp_dir, os.path.basename(matrix_location))
@@ -562,7 +569,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
 
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        matrix_location = self._retrieve_matrix_location(self.request_ids["Homo sapiens"])
+        matrix_location = self._retrieve_matrix_location(self.request_ids[GenusSpecies.HUMAN.value])
 
         temp_dir = tempfile.mkdtemp(suffix="loom_ops_test")
         local_loom_path = os.path.join(temp_dir, os.path.basename(matrix_location))
@@ -587,7 +594,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
                 {
                     "op": "=",
                     "field": "specimen_from_organism.genus_species.ontology_label",
-                    "value": "Mus musculus"
+                    "value": GenusSpecies.MOUSE.value
                 },
                 {
                     "op": "=",
@@ -600,8 +607,8 @@ class TestMatrixServiceV1(MatrixServiceTest):
 
         WaitFor(self._poll_all_requests_in_status, self.request_ids, MatrixRequestStatus.COMPLETE.value)\
             .to_return_value(True, timeout_seconds=1200)
-        self.assertEqual(self._retrieve_matrix_location(self.request_ids["Homo sapiens"]), "")
-        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids["Mus musculus"]), "")
+        self.assertEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.HUMAN.value]), "")
+        self.assertNotEqual(self._retrieve_matrix_location(self.request_ids[GenusSpecies.MOUSE.value]), "")
 
     def test_filter_detail(self):
 
