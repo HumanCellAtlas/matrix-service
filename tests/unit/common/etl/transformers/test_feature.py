@@ -21,7 +21,8 @@ class TestFeatureTransformer(unittest.TestCase):
         feature_table = parsed[0][0]
         feature_rows = parsed[0][1]
         self.assertEqual(feature_table, TableName.FEATURE)
-        self.assertTrue("ENST00000619216|MIR6859-1-201|miRNA|chr1|17369|17436|False|Homo sapiens" in feature_rows)
+        self.assertTrue("ENST00000619216|MIR6859-1-201|Gene Expression|miRNA|chr1|17369|17436|False|Homo sapiens"
+                        in feature_rows)
 
     @mock.patch("urllib.request.urlretrieve")
     def test_fetch_annotations(self, mock_urlretrieve):

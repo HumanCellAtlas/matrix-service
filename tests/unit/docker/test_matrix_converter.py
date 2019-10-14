@@ -172,6 +172,7 @@ class TestMatrixConverter(unittest.TestCase):
         mock_load_results.assert_called_once()
         mock_to_csv.assert_called_once_with('./test_target/genes.csv.gz',
                                             compression='gzip',
+                                            header=True,
                                             index_label='featurekey',
                                             sep='\t')
         shutil.rmtree(results_dir)
@@ -225,6 +226,23 @@ class TestMatrixConverter(unittest.TestCase):
         self.assertEqual(type(results).__name__, 'DataFrame')
         mock_reindex.assert_called_once()
         mock_to_csv.assert_called_once_with('./test_target/cells.csv', index_label='cellkey')
+
+    @mock.patch("pandas.DataFrame.reindex")
+    @mock.patch("pandas.DataFrame.to_csv")
+    def test__write_out_barcode_dataframe(self, mock_to_csv, mock_reindex):
+        test_data = self._create_test_data()
+        mock_reindex.return_value = test_data['cells_df']
+        results_dir = './test_target'
+        results = self.matrix_converter._write_out_barcode_dataframe(results_dir,
+                                                                     'barcodes.tsv',
+                                                                     test_data['cells_df'],
+                                                                     [])
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        mock_reindex.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/barcodes.tsv',
+                                            header=False,
+                                            sep='\t')
 
     def test_converter_with_file_formats(self):
         for file_format in SUPPORTED_FORMATS:
@@ -294,8 +312,8 @@ class TestMatrixConverter(unittest.TestCase):
         ).set_index("featurekey")
 
         cell_df = pandas.DataFrame(
-            columns=["cellkey", "genes_detected", "organ_label"],
-            data=[[str(i).zfill(8), random.randrange(10, 10000), "spleen"] for i in range(1000)]
+            columns=["cellkey", "genes_detected", "organ_label", "barcode"],
+            data=[[str(i).zfill(8), random.randrange(10, 10000), "spleen", "AAAAAAAAAAAAAA"] for i in range(1000)]
         ).set_index("cellkey")
 
         genes = itertools.cycle(('ENSG' + str(i).zfill(10) for i in range(0, 100, 5)))
@@ -339,7 +357,7 @@ class TestMatrixConverter(unittest.TestCase):
             QueryType.EXPRESSION: ExpressionQueryResultsReader("test_manifest_key")
         }
 
-        test_data["genes_df"].to_csv(os.path.join(results_dir, "genes.tsv.gz"),
+        test_data["genes_df"].to_csv(os.path.join(results_dir, "features.tsv.gz"),
                                      index_label="featurekey",
                                      sep="\t", compression="gzip")
         self.matrix_converter.local_output_filename = "unit_test__to_mtx.zip"
