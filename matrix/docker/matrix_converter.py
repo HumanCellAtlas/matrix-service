@@ -118,9 +118,9 @@ class MatrixConverter:
 
         # append 10x featuretype column according to 10x specifications
         # https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices
-        gene_df['featuretype_10x'] = ["Gene Expression" * gene_df.shape[0]]
+        gene_df['featuretype_10x'] = ["Gene Expression" for i in range(gene_df.shape[0])]
         cols = gene_df.columns.tolist()
-        cols = cols[:2] + cols[-1:] + cols[2:-1]
+        cols = cols[:1] + cols[-1:] + cols[1:-1]
         gene_df = gene_df[cols]
 
         gene_df.to_csv(os.path.join(results_dir, output_filename),
@@ -141,10 +141,13 @@ class MatrixConverter:
 
     def _write_out_barcode_dataframe(self, results_dir, output_filename, cell_df, cellkeys):
         cell_df = cell_df.reindex(index=cellkeys)
-        barcode_df = cell_df[['barcode']]
+        barcode_df = pandas.DataFrame(columns=["barcode"],
+                                      data=list(cell_df['barcode']))
         barcode_df.to_csv(os.path.join(results_dir, output_filename),
                           header=False,
-                          sep='\t')
+                          index=False,
+                          sep='\t',
+                          compression="gzip")
 
         return barcode_df
 
@@ -216,8 +219,8 @@ class MatrixConverter:
                 cellkeys.extend(pivoted.columns.to_list())
 
         self._write_out_cell_dataframe(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
-        self._write_out_barcode_dataframe(results_dir, "barcodes.tsv", cell_df, cellkeys)
-        file_names = ["features.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz", "barcodes.tsv"]
+        self._write_out_barcode_dataframe(results_dir, "barcodes.tsv.gz", cell_df, cellkeys)
+        file_names = ["features.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz", "barcodes.tsv.gz"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names)
         return zip_path
 

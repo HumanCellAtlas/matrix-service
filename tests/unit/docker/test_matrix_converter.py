@@ -201,13 +201,12 @@ class TestMatrixConverter(unittest.TestCase):
             QueryType.FEATURE: FeatureQueryResultsReader("test_manifest_key")
         }
         results_dir = self.matrix_converter._make_directory()
-        mock_load_results.return_value = pandas.DataFrame(columns=['a', 'b', 'c'],
-                                                          data=[['1', '2', '3']])
+        mock_load_results.return_value = self._create_test_data()['genes_df']
 
         results = self.matrix_converter._write_out_gene_dataframe_10x(results_dir, 'genes.csv.gz')
 
         self.assertEqual(type(results).__name__, 'DataFrame')
-        self.assertEqual(results.columns.tolist()[2], 'featuretype_10x')
+        self.assertEqual(results.columns.tolist()[1], 'featuretype_10x')
         mock_load_results.assert_called_once()
         mock_to_csv.assert_called_once_with('./test_target/genes.csv.gz',
                                             compression='gzip',
@@ -256,15 +255,17 @@ class TestMatrixConverter(unittest.TestCase):
         mock_reindex.return_value = test_data['cells_df']
         results_dir = './test_target'
         results = self.matrix_converter._write_out_barcode_dataframe(results_dir,
-                                                                     'barcodes.tsv',
+                                                                     'barcodes.tsv.gz',
                                                                      test_data['cells_df'],
                                                                      [])
 
         self.assertEqual(type(results).__name__, 'DataFrame')
         mock_reindex.assert_called_once()
-        mock_to_csv.assert_called_once_with('./test_target/barcodes.tsv',
+        mock_to_csv.assert_called_once_with('./test_target/barcodes.tsv.gz',
                                             header=False,
-                                            sep='\t')
+                                            sep='\t',
+                                            compression="gzip",
+                                            index=False)
 
     def test_converter_with_file_formats(self):
         for file_format in SUPPORTED_FORMATS:

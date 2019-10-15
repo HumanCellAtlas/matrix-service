@@ -12,7 +12,6 @@ import numpy
 import pandas
 import requests
 import s3fs
-import scanpy
 import scipy
 import zarr
 
@@ -109,7 +108,6 @@ def calculate_ss2_metrics_mtx(mtx_zip_url):
         shutil.copyfileobj(response.raw, local_mtx_zip_file)
 
     mtx_zip = zipfile.ZipFile(local_mtx_zip_path)
-    scanpy.read_10x_mtx(local_mtx_zip_path)
     mtx_name = [n for n in mtx_zip.namelist() if n.endswith("matrix.mtx.gz")][0]
 
     matrix = scipy.io.mmread(gzip.GzipFile(fileobj=io.BytesIO(mtx_zip.read(mtx_name))))
