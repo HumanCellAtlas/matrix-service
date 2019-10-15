@@ -116,7 +116,7 @@ class MatrixConverter:
     def _write_out_gene_dataframe_10x(self, results_dir, output_filename):
         gene_df = self.query_results[QueryType.FEATURE].load_results()
 
-        # append 10x featuretype column according to 10x specifications
+        # Insert 10x featuretype column according to 10x specifications
         # https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices
         gene_df['featuretype_10x'] = ["Gene Expression" for i in range(gene_df.shape[0])]
         cols = gene_df.columns.tolist()
