@@ -103,15 +103,30 @@ class MatrixConverter:
         shutil.rmtree(results_dir)
         return os.path.join(self.working_dir, self.local_output_filename)
 
-    def _write_out_gene_dataframe(self, results_dir, output_filename, compression=False, include_headers=True):
+    def _write_out_gene_dataframe(self, results_dir, output_filename, compression=False):
         gene_df = self.query_results[QueryType.FEATURE].load_results()
         if compression:
             gene_df.to_csv(os.path.join(results_dir, output_filename),
                            index_label="featurekey",
-                           header=include_headers,
                            sep="\t", compression="gzip")
         else:
             gene_df.to_csv(os.path.join(results_dir, output_filename), index_label="featurekey")
+        return gene_df
+
+    def _write_out_gene_dataframe_10x(self, results_dir, output_filename):
+        gene_df = self.query_results[QueryType.FEATURE].load_results()
+
+        # append 10x featuretype column according to 10x specifications
+        # https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices
+        gene_df['featuretype_10x'] = ["Gene Expression" * gene_df.shape[0]]
+        cols = gene_df.columns.tolist()
+        cols = cols[:2] + cols[-1:] + cols[2:-1]
+        gene_df = gene_df[cols]
+
+        gene_df.to_csv(os.path.join(results_dir, output_filename),
+                       index_label="featurekey",
+                       header=False,
+                       sep="\t", compression="gzip")
         return gene_df
 
     def _write_out_cell_dataframe(self, results_dir, output_filename, cell_df, cellkeys, compression=False):
@@ -164,10 +179,7 @@ class MatrixConverter:
            output_path: Path to the zip file.
         """
         results_dir = self._make_directory()
-        gene_df = self._write_out_gene_dataframe(results_dir,
-                                                 "features.tsv.gz",
-                                                 compression=True,
-                                                 include_headers=False)
+        gene_df = self._write_out_gene_dataframe_10x(results_dir, "features.tsv.gz")
         cell_df = self.query_results[QueryType.CELL].load_results()
 
         # To follow 10x conventions, features are rows and cells are columns

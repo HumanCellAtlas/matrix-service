@@ -90,5 +90,5 @@ class FeatureTransformer(MetadataToPsvTransformer):
         if id_.endswith("_PAR_Y"):
             shortened_id += "_PAR_Y"
 
-        return self._generate_psv_row(shortened_id, name, "Gene Expression", feature_type, chrom, start,
+        return self._generate_psv_row(shortened_id, name, feature_type, chrom, start,
                                       end, str(type_ == "gene"), genus_species)

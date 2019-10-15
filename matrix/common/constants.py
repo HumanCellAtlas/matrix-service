@@ -158,7 +158,6 @@ CREATE_QUERY_TEMPLATE = {
         CREATE {0}TABLE IF NOT EXISTS {2} (
             featurekey       VARCHAR(25) NOT NULL,
             featurename      VARCHAR(40) NOT NULL,
-            featuretype_10x  VARCHAR(20),
             featuretype      VARCHAR(40),
             chromosome       VARCHAR(40),
             featurestart     INTEGER,
