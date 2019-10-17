@@ -22,6 +22,13 @@ class TestInvalidateCacheEntries(MatrixTestCaseUsingMockAWS):
 
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     def test_invalidate_cache_entries(self, mock_put_metric_data):
+        """
+        Setup:
+        - Create four request ids mapping to two request hashes
+        - Invalidate hash 1 (ids 1, 2) and id 3
+        - Verify ids 1, 2 and 3 have been invalidated
+        - Verify id 4 has not been invalidated
+        """
         request_hash_1 = "test_hash_1"
         request_hash_2 = "test_hash_2"
         request_id_1 = "test_id_1"
