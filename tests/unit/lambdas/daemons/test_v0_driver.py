@@ -25,7 +25,7 @@ class TestDriver(unittest.TestCase):
                           mock_complete_subtask_execution,
                           mock_store_queries_in_s3,
                           mock_redshift_transaction):
-        bundle_fqids = ["id1.version", "id2.version"]
+        bundle_fqids = ["id1.test.version", "id2.test.version"]
         format = "test_format"
         mock_store_queries_in_s3.return_value = []
         mock_redshift_transaction.return_value = [[2]]
@@ -37,6 +37,7 @@ class TestDriver(unittest.TestCase):
                                                                 RequestTableField.NUM_BUNDLES,
                                                                 len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
+        mock_store_queries_in_s3.assert_called_once_with(["id1", "id2"], GenusSpecies.MOUSE.value)
 
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
     @mock.patch("matrix.lambdas.daemons.v0.driver.Driver._format_and_store_queries_in_s3")
@@ -52,12 +53,12 @@ class TestDriver(unittest.TestCase):
                           mock_store_queries_in_s3,
                           mock_redshift_transaction):
         bundle_fqids_url = "test_url"
-        bundle_fqids = ["id1.version", "id2.version"]
+        bundle_fqids = ["id1.test.version", "id2.test.version"]
         format = "test_format"
         mock_store_queries_in_s3.return_value = []
         mock_redshift_transaction.return_value = [[2]]
 
-        mock_parse_download_manifest.return_value = bundle_fqids
+        mock_parse_download_manifest.return_value = ["id1", "id2"]
         self._driver.run(None, bundle_fqids_url, format, GenusSpecies.HUMAN.value)
 
         mock_parse_download_manifest.assert_called_once()
@@ -66,6 +67,7 @@ class TestDriver(unittest.TestCase):
                                                                 RequestTableField.NUM_BUNDLES,
                                                                 len(bundle_fqids))
         mock_complete_subtask_execution.assert_called_once_with(Subtask.DRIVER)
+        mock_store_queries_in_s3.assert_called_once_with(["id1", "id2"], GenusSpecies.HUMAN.value)
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.log_error")
     @mock.patch("matrix.common.aws.redshift_handler.RedshiftHandler.transaction")
@@ -88,7 +90,7 @@ class TestDriver(unittest.TestCase):
         mock_store_queries_in_s3.return_value = []
         mock_redshift_transaction.return_value = [[3]]
 
-        mock_parse_download_manifest.return_value = bundle_fqids
+        mock_parse_download_manifest.return_value = ["id1", "id2"]
         self._driver.run(None, bundle_fqids_url, format, GenusSpecies.MOUSE.value)
 
         mock_parse_download_manifest.assert_called_once()
@@ -115,12 +117,11 @@ class TestDriver(unittest.TestCase):
                                              mock_redshift_transaction,
                                              mock_log_error):
         bundle_fqids_url = "test_url"
-        bundle_fqids = []
         format = "test_format"
         mock_store_queries_in_s3.return_value = []
         mock_redshift_transaction.return_value = [[3]]
 
-        mock_parse_download_manifest.return_value = bundle_fqids
+        mock_parse_download_manifest.return_value = []
         self._driver.run(None, bundle_fqids_url, format, GenusSpecies.HUMAN.value)
 
         mock_parse_download_manifest.assert_called_once()
@@ -131,7 +132,7 @@ class TestDriver(unittest.TestCase):
         test_download_manifest = "UUID\tVERSION\nbundle_id_1\tbundle_version_1\nbundle_id_2\tbundle_version_2"
 
         parsed = self._driver._parse_download_manifest(test_download_manifest)
-        self.assertTrue(parsed, ["bundle_id_1.bundle_version_1", "bundle_id_2.bundle_version_2"])
+        self.assertTrue(parsed, ["bundle_id_1", "bundle_id_2"])
 
     @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.add_message_to_queue")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")

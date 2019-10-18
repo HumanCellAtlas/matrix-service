@@ -18,7 +18,7 @@ logger = Logging.get_logger(__name__)
 analysis_bundle_count_query_template = """
     SELECT count(*)
     FROM analysis
-    WHERE bundle_fqid IN {0};
+    WHERE bundle_uuid IN {0};
 """
 
 expression_query_template = """
@@ -30,7 +30,7 @@ expression_query_template = """
     INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
-    AND analysis.bundle_fqid IN {3}
+    AND analysis.bundle_uuid IN {3}
     AND specimen.genus_species_label = '{4}'$$)
     TO 's3://{0}/{1}/expression_'
     IAM_ROLE '{2}'
@@ -48,7 +48,7 @@ cell_query_template = """
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-    WHERE analysis.bundle_fqid IN {3}
+    WHERE analysis.bundle_uuid IN {3}
     AND specimen.genus_species_label = '{4}'$$)
     TO 's3://{0}/{1}/cell_metadata_'
     IAM_ROLE '{2}'
@@ -110,26 +110,29 @@ class Driver:
                      f"genus_species={genus_species}, "
                      f"bundles_per_worker={self.bundles_per_worker}")
 
+        # 10/17/19: Bundle UUIDs will be used in favor of FQIDs in v0 in order to loosen
+        # the data parity restriction with Data Browser, enabling project availability
+        # while DCP components respond to simple updates at different frequencies.
         if bundle_fqids_url:
             response = self._get_bundle_manifest(bundle_fqids_url)
-            resolved_bundle_fqids = self._parse_download_manifest(response.text)
-            if len(resolved_bundle_fqids) == 0:
+            resolved_bundle_uuids = self._parse_download_manifest(response.text)
+            if len(resolved_bundle_uuids) == 0:
                 error_msg = "no bundles found in the supplied bundle manifest"
                 logger.info(error_msg)
                 self.request_tracker.log_error(error_msg)
                 return
         else:
-            resolved_bundle_fqids = bundle_fqids
-        logger.debug(f"resolved bundles: {resolved_bundle_fqids}")
+            resolved_bundle_uuids = [fqid.split(".", 1)[0] for fqid in bundle_fqids]
+        logger.debug(f"resolved bundle uuids: {resolved_bundle_uuids}")
 
         self.dynamo_handler.set_table_field_with_value(DynamoTable.REQUEST_TABLE,
                                                        self.request_id,
                                                        RequestTableField.NUM_BUNDLES,
-                                                       len(resolved_bundle_fqids))
-        s3_obj_keys = self._format_and_store_queries_in_s3(resolved_bundle_fqids, genus_species)
+                                                       len(resolved_bundle_uuids))
+        s3_obj_keys = self._format_and_store_queries_in_s3(resolved_bundle_uuids, genus_species)
 
-        analysis_table_bundle_count = self._fetch_bundle_count_from_analysis_table(resolved_bundle_fqids)
-        if analysis_table_bundle_count != len(resolved_bundle_fqids):
+        analysis_table_bundle_count = self._fetch_bundle_count_from_analysis_table(resolved_bundle_uuids)
+        if analysis_table_bundle_count != len(resolved_bundle_uuids):
             error_msg = "resolved bundles in request do not match bundles available in matrix service"
             logger.info(error_msg)
             self.request_tracker.log_error(error_msg)
@@ -149,12 +152,12 @@ class Driver:
     def _parse_download_manifest(data: str) -> typing.List[str]:
         def _parse_line(line: str) -> str:
             tokens = line.split("\t")
-            return f"{tokens[0]}.{tokens[1]}"
+            return tokens[0]
 
         lines = data.splitlines()[1:]
         return list(map(_parse_line, lines))
 
-    def _format_and_store_queries_in_s3(self, resolved_bundle_fqids: list, genus_species: str):
+    def _format_and_store_queries_in_s3(self, resolved_bundle_uuids: list, genus_species: str):
         feature_query = feature_query_template.format(self.query_results_bucket,
                                                       self.request_id,
                                                       self.redshift_role_arn,
@@ -164,14 +167,14 @@ class Driver:
         exp_query = expression_query_template.format(self.query_results_bucket,
                                                      self.request_id,
                                                      self.redshift_role_arn,
-                                                     format_str_list(resolved_bundle_fqids),
+                                                     format_str_list(resolved_bundle_uuids),
                                                      genus_species)
         exp_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/expression", exp_query)
 
         cell_query = cell_query_template.format(self.query_results_bucket,
                                                 self.request_id,
                                                 self.redshift_role_arn,
-                                                format_str_list(resolved_bundle_fqids),
+                                                format_str_list(resolved_bundle_uuids),
                                                 genus_species)
         cell_query_obj_key = self.s3_handler.store_content_in_s3(f"{self.request_id}/cell", cell_query)
 
