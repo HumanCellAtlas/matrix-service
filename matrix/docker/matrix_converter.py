@@ -119,6 +119,7 @@ class MatrixConverter:
         # Insert 10x featuretype column according to 10x specifications
         # https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices
         gene_df['featuretype_10x'] = ["Gene Expression" for i in range(gene_df.shape[0])]
+        # Set featuretype_10x as 3rd column (including index) per spec
         cols = gene_df.columns.tolist()
         cols = cols[:1] + cols[-1:] + cols[1:-1]
         gene_df = gene_df[cols]
