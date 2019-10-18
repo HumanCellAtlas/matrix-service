@@ -28,13 +28,15 @@ def invalidate_cache_entries(request_ids: list,
     print(f"Invalidating request hashes: {request_hashes}")
     deployment_stage = os.environ['DEPLOYMENT_STAGE']
     dynamo_handler = DynamoHandler()
+    s3_results_bucket_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
     data_version = dynamo_handler.get_table_item(table=DynamoTable.DEPLOYMENT_TABLE,
                                                  key=deployment_stage)[DeploymentTableField.CURRENT_DATA_VERSION.value]
     for request_hash in request_hashes:
         items = dynamo_handler.filter_table_items(table=DynamoTable.REQUEST_TABLE,
                                                   attrs={
                                                       RequestTableField.REQUEST_HASH.value: request_hash,
-                                                      RequestTableField.DATA_VERSION.value: data_version
+                                                      RequestTableField.DATA_VERSION.value: data_version,
+                                                      RequestTableField.ERROR_MESSAGE.value: 0
                                                   })
         for item in items:
             request_ids.append(item[RequestTableField.REQUEST_ID.value])
@@ -48,12 +50,13 @@ def invalidate_cache_entries(request_ids: list,
         s3_keys_to_delete.append(request_tracker.s3_results_key)
 
     print(f"Deleting matrices at the following S3 keys: {s3_keys_to_delete}")
-    s3_results_bucket_handler = S3Handler(os.environ['MATRIX_RESULTS_BUCKET'])
-    deleted_objects = s3_results_bucket_handler.delete_objects(s3_keys_to_delete)
+    if s3_keys_to_delete:
+        deleted_objects = s3_results_bucket_handler.delete_objects(s3_keys_to_delete)
 
-    deleted_keys = [deleted_object['Key'] for deleted_object in deleted_objects]
+        deleted_keys = [deleted_object['Key'] for deleted_object in deleted_objects]
 
-    print(f"Successfully deleted the following matrices {deleted_keys}. ({len(deleted_keys)}/{len(s3_keys_to_delete)})")
+        print(f"Successfully deleted the following matrices {deleted_keys}."
+              f"({len(deleted_keys)}/{len(s3_keys_to_delete)})")
 
 
 if __name__ == "__main__":  # pragma: no cover

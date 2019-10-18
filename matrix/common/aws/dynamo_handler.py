@@ -217,7 +217,12 @@ class DynamoHandler:
             else:
                 filter_expr = filter_expr & Attr(attr_key).eq(attrs[attr_key])
 
-        items = dynamo_table.scan(FilterExpression=filter_expr)['Items']
+        resp = dynamo_table.scan(FilterExpression=filter_expr)
+        items = resp['Items']
+        while 'LastEvaluatedKey' in resp:
+            resp = dynamo_table.scan(FilterExpression=filter_expr,
+                                     ExclusiveStartKey=resp['LastEvaluatedKey'])
+            items.extend(resp['Items'])
 
         return items
 
