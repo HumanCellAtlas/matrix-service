@@ -355,17 +355,19 @@ class TestMatrixConverter(unittest.TestCase):
 
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._generate_expression_dfs")
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._make_directory")
+    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._write_out_gene_dataframe")
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._write_out_gene_dataframe_10x")
     @mock.patch("matrix.common.query.cell_query_results_reader.CellQueryResultsReader.load_results")
     @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
     def test__to_mtx(self, mock_parse_manifest, mock_load_cell_results, mock_write_gene_dataframe_10x,
-                     mock_make_directory, mock_generate_dfs):
+                     mock_write_gene_dataframe, mock_make_directory, mock_generate_dfs):
 
         results_dir = "unit_test__to_mtx"
         os.makedirs(results_dir)
         mock_make_directory.return_value = results_dir
 
         test_data = self._create_test_data()
+        mock_write_gene_dataframe.return_value = test_data["genes_df"]
         mock_write_gene_dataframe_10x.return_value = test_data["genes_df"]
 
         mock_load_cell_results.return_value = test_data["cells_df"]
@@ -381,6 +383,9 @@ class TestMatrixConverter(unittest.TestCase):
         }
 
         test_data["genes_df"].to_csv(os.path.join(results_dir, "features.tsv.gz"),
+                                     index_label="featurekey",
+                                     sep="\t", compression="gzip")
+        test_data["genes_df"].to_csv(os.path.join(results_dir, "genes.tsv.gz"),
                                      index_label="featurekey",
                                      sep="\t", compression="gzip")
         self.matrix_converter.local_output_filename = "unit_test__to_mtx.zip"
