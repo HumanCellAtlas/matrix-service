@@ -52,7 +52,7 @@ def post_matrix(body: dict):
         genera_species = [constants.GenusSpecies.HUMAN]
 
     # Cell barcode is required in .mtx matrices by 10x specifications
-    if format_ == MatrixFormat.MTX.value and "cell.barcode" not in fields:
+    if format_ == MatrixFormat.MTX.value and "cell.barcode" not in fields and "barcode" not in fields:
         fields.append("cell.barcode")
 
     human_request_id = ""
