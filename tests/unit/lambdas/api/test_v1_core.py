@@ -117,6 +117,36 @@ class TestCore(unittest.TestCase):
         self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
         self.assertEqual(response[1], requests.codes.accepted)
 
+    @mock.patch("matrix.common.aws.dynamo_handler.DynamoHandler.create_request_table_entry")
+    @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
+    @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
+    def test_post_matrix_with_fields_and_feature_mtx(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
+        filter_ = {"op": ">", "field": "foo", "value": 42}
+        format_ = MatrixFormat.MTX.value
+
+        body = {
+            'filter': filter_,
+            'format': format_,
+            'fields': ["test.field1", "test.field2"],
+            'feature': "transcript"
+        }
+
+        response = core.post_matrix(body)
+        body.update({'request_id': mock.ANY})
+        body.update({"genus_species": GenusSpecies.HUMAN.value})
+        body.pop('format')
+
+        mock_lambda_invoke.assert_called_once_with(LambdaName.DRIVER_V1, body)
+        mock_dynamo_create_request.assert_called_once_with(mock.ANY,
+                                                           format_,
+                                                           ["test.field1", "test.field2", "cell.barcode"],
+                                                           "transcript",
+                                                           GenusSpecies.HUMAN)
+        mock_cw_put.assert_called_once_with(metric_name=MetricName.REQUEST, metric_value=1)
+        self.assertEqual(type(response[0]['request_id']), str)
+        self.assertEqual(response[0]['status'], MatrixRequestStatus.IN_PROGRESS.value)
+        self.assertEqual(response[1], requests.codes.accepted)
+
     @mock.patch("matrix.common.aws.lambda_handler.LambdaHandler.invoke")
     def test_post_matrix_with_ids_ok_and_unexpected_format(self, mock_lambda_invoke):
         bundle_fqids = ["id1", "id2"]

@@ -113,6 +113,23 @@ class MatrixConverter:
             gene_df.to_csv(os.path.join(results_dir, output_filename), index_label="featurekey")
         return gene_df
 
+    def _write_out_gene_dataframe_10x(self, results_dir, output_filename):
+        gene_df = self.query_results[QueryType.FEATURE].load_results()
+
+        # Insert 10x featuretype column according to 10x specifications
+        # https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices
+        gene_df['featuretype_10x'] = ["Gene Expression" for i in range(gene_df.shape[0])]
+        # Set featuretype_10x as 3rd column (including index) per spec
+        cols = gene_df.columns.tolist()
+        cols = cols[:1] + cols[-1:] + cols[1:-1]
+        gene_df = gene_df[cols]
+
+        gene_df.to_csv(os.path.join(results_dir, output_filename),
+                       index_label="featurekey",
+                       header=False,
+                       sep="\t", compression="gzip")
+        return gene_df
+
     def _write_out_cell_dataframe(self, results_dir, output_filename, cell_df, cellkeys, compression=False):
         cell_df = cell_df.reindex(index=cellkeys)
         if compression:
@@ -122,6 +139,18 @@ class MatrixConverter:
         else:
             cell_df.to_csv(os.path.join(results_dir, output_filename), index_label="cellkey")
         return cell_df
+
+    def _write_out_barcode_dataframe(self, results_dir, output_filename, cell_df, cellkeys):
+        cell_df = cell_df.reindex(index=cellkeys)
+        barcode_df = pandas.DataFrame(columns=["barcode"],
+                                      data=list(cell_df['barcode']))
+        barcode_df.to_csv(os.path.join(results_dir, output_filename),
+                          header=False,
+                          index=False,
+                          sep='\t',
+                          compression="gzip")
+
+        return barcode_df
 
     def _generate_expression_dfs(self, num_of_cells):
         """Create dataframes of expression data that is guaranteed to contain the complete set
@@ -154,7 +183,7 @@ class MatrixConverter:
            output_path: Path to the zip file.
         """
         results_dir = self._make_directory()
-        gene_df = self._write_out_gene_dataframe(results_dir, "genes.tsv.gz", compression=True)
+        gene_df = self._write_out_gene_dataframe_10x(results_dir, "features.tsv.gz")
         cell_df = self.query_results[QueryType.CELL].load_results()
 
         # To follow 10x conventions, features are rows and cells are columns
@@ -190,8 +219,11 @@ class MatrixConverter:
                 cell_count += pivoted.shape[1]
                 cellkeys.extend(pivoted.columns.to_list())
 
+        self._write_out_gene_dataframe(results_dir, "genes.tsv.gz", compression=True)
         self._write_out_cell_dataframe(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
-        file_names = ["genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz"]
+        self._write_out_barcode_dataframe(results_dir, "barcodes.tsv.gz", cell_df, cellkeys)
+
+        file_names = ["features.tsv.gz", "genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz", "barcodes.tsv.gz"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names)
         return zip_path
 

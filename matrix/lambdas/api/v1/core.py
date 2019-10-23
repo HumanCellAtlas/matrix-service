@@ -51,6 +51,10 @@ def post_matrix(body: dict):
         # Otherwise, default to human-only
         genera_species = [constants.GenusSpecies.HUMAN]
 
+    # Cell barcode is required in .mtx matrices by 10x specifications
+    if format_ == MatrixFormat.MTX.value and "cell.barcode" not in fields and "barcode" not in fields:
+        fields.append("cell.barcode")
+
     human_request_id = ""
     non_human_request_ids = {}
     for genus_species in genera_species:

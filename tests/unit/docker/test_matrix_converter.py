@@ -193,6 +193,28 @@ class TestMatrixConverter(unittest.TestCase):
         mock_to_csv.assert_called_once_with('./test_target/genes.csv', index_label='featurekey')
         shutil.rmtree(results_dir)
 
+    @mock.patch("pandas.DataFrame.to_csv")
+    @mock.patch("matrix.common.query.feature_query_results_reader.FeatureQueryResultsReader.load_results")
+    @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
+    def test__write_out_gene_dataframe_10x(self, mock_parse_manifest, mock_load_results, mock_to_csv):
+        self.matrix_converter.query_results = {
+            QueryType.FEATURE: FeatureQueryResultsReader("test_manifest_key")
+        }
+        results_dir = self.matrix_converter._make_directory()
+        mock_load_results.return_value = self._create_test_data()['genes_df']
+
+        results = self.matrix_converter._write_out_gene_dataframe_10x(results_dir, 'genes.csv.gz')
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        self.assertEqual(results.columns.tolist()[1], 'featuretype_10x')
+        mock_load_results.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/genes.csv.gz',
+                                            compression='gzip',
+                                            index_label='featurekey',
+                                            header=False,
+                                            sep='\t')
+        shutil.rmtree(results_dir)
+
     @mock.patch("pandas.DataFrame.reindex")
     @mock.patch("pandas.DataFrame.to_csv")
     def test__write_out_cell_dataframe__with_compression(self, mock_to_csv, mock_reindex):
@@ -225,6 +247,25 @@ class TestMatrixConverter(unittest.TestCase):
         self.assertEqual(type(results).__name__, 'DataFrame')
         mock_reindex.assert_called_once()
         mock_to_csv.assert_called_once_with('./test_target/cells.csv', index_label='cellkey')
+
+    @mock.patch("pandas.DataFrame.reindex")
+    @mock.patch("pandas.DataFrame.to_csv")
+    def test__write_out_barcode_dataframe(self, mock_to_csv, mock_reindex):
+        test_data = self._create_test_data()
+        mock_reindex.return_value = test_data['cells_df']
+        results_dir = './test_target'
+        results = self.matrix_converter._write_out_barcode_dataframe(results_dir,
+                                                                     'barcodes.tsv.gz',
+                                                                     test_data['cells_df'],
+                                                                     [])
+
+        self.assertEqual(type(results).__name__, 'DataFrame')
+        mock_reindex.assert_called_once()
+        mock_to_csv.assert_called_once_with('./test_target/barcodes.tsv.gz',
+                                            header=False,
+                                            sep='\t',
+                                            compression="gzip",
+                                            index=False)
 
     def test_converter_with_file_formats(self):
         for file_format in SUPPORTED_FORMATS:
@@ -294,8 +335,8 @@ class TestMatrixConverter(unittest.TestCase):
         ).set_index("featurekey")
 
         cell_df = pandas.DataFrame(
-            columns=["cellkey", "genes_detected", "organ_label"],
-            data=[[str(i).zfill(8), random.randrange(10, 10000), "spleen"] for i in range(1000)]
+            columns=["cellkey", "genes_detected", "organ_label", "barcode"],
+            data=[[str(i).zfill(8), random.randrange(10, 10000), "spleen", "AAAAAAAAAAAAAA"] for i in range(1000)]
         ).set_index("cellkey")
 
         genes = itertools.cycle(('ENSG' + str(i).zfill(10) for i in range(0, 100, 5)))
@@ -315,10 +356,11 @@ class TestMatrixConverter(unittest.TestCase):
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._generate_expression_dfs")
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._make_directory")
     @mock.patch("matrix.docker.matrix_converter.MatrixConverter._write_out_gene_dataframe")
+    @mock.patch("matrix.docker.matrix_converter.MatrixConverter._write_out_gene_dataframe_10x")
     @mock.patch("matrix.common.query.cell_query_results_reader.CellQueryResultsReader.load_results")
     @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
-    def test__to_mtx(self, mock_parse_manifest, mock_load_cell_results, mock_write_gene_dataframe,
-                     mock_make_directory, mock_generate_dfs):
+    def test__to_mtx(self, mock_parse_manifest, mock_load_cell_results, mock_write_gene_dataframe_10x,
+                     mock_write_gene_dataframe, mock_make_directory, mock_generate_dfs):
 
         results_dir = "unit_test__to_mtx"
         os.makedirs(results_dir)
@@ -326,6 +368,7 @@ class TestMatrixConverter(unittest.TestCase):
 
         test_data = self._create_test_data()
         mock_write_gene_dataframe.return_value = test_data["genes_df"]
+        mock_write_gene_dataframe_10x.return_value = test_data["genes_df"]
 
         mock_load_cell_results.return_value = test_data["cells_df"]
 
@@ -339,6 +382,9 @@ class TestMatrixConverter(unittest.TestCase):
             QueryType.EXPRESSION: ExpressionQueryResultsReader("test_manifest_key")
         }
 
+        test_data["genes_df"].to_csv(os.path.join(results_dir, "features.tsv.gz"),
+                                     index_label="featurekey",
+                                     sep="\t", compression="gzip")
         test_data["genes_df"].to_csv(os.path.join(results_dir, "genes.tsv.gz"),
                                      index_label="featurekey",
                                      sep="\t", compression="gzip")
