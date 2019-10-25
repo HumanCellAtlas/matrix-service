@@ -127,21 +127,8 @@ class MatrixServiceTest(unittest.TestCase):
 
         matrix_location = self._retrieve_matrix_location(request_id)
         self.assertEqual(matrix_location.endswith("mtx.zip"), True)
-        mtx_metrics, mtx_path = validation.calculate_ss2_metrics_mtx(matrix_location)
-        self._validate_mtx_contents(mtx_path)
+        mtx_metrics = validation.calculate_ss2_metrics_mtx(matrix_location)
         self._compare_metrics(direct_metrics, mtx_metrics)
-
-    def _validate_mtx_contents(self, mtx_zip_path):
-        """Validate file contents of mtx output"""
-        mtx_zip = zipfile.ZipFile(mtx_zip_path)
-        expected_files = ["features.tsv.gz",
-                          "genes.tsv.gz",
-                          "barcodes.tsv.gz",
-                          "matrix.mtx.gz",
-                          "cells.tsv.gz"]
-        self.assertTrue(all(any(name.endswith(expected_file)
-                                for expected_file in expected_files)
-                            for name in mtx_zip.namelist()))
 
     def _analyze_csv_matrix_results(self, request_id, input_bundles):
         direct_metrics = validation.calculate_ss2_metrics_direct(input_bundles)
@@ -522,8 +509,8 @@ class TestMatrixServiceV1(MatrixServiceTest):
             matrix_location_1 = self._retrieve_matrix_location(request_ids_1[GenusSpecies.HUMAN.value])
             matrix_location_2 = self._retrieve_matrix_location(request_ids_2[GenusSpecies.HUMAN.value])
 
-            mtx_metrics_1 = validation.calculate_ss2_metrics_mtx(matrix_location_1)[0]
-            mtx_metrics_2 = validation.calculate_ss2_metrics_mtx(matrix_location_2)[0]
+            mtx_metrics_1 = validation.calculate_ss2_metrics_mtx(matrix_location_1)
+            mtx_metrics_2 = validation.calculate_ss2_metrics_mtx(matrix_location_2)
 
             self._compare_metrics(mtx_metrics_1, mtx_metrics_2)
 
