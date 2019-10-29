@@ -1,0 +1,92 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.0.2/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "Human Hematopoietic Profiling",
+        "project_title": "Profiling of CD34+ cells from human bone marrow to understand hematopoiesis",
+        "project_description": "Differentiation is among the most fundamental processes in cell biology. Single cell RNA-seq studies have demonstrated that differentiation is a continuous process and in particular cell states are observed to reside on largely continuous spaces. We have developed Palantir, a graph based algorithm to model continuities in cell state transitions and cell fate choices. Modeling differentiation as a Markov chain, Palantir determines probabilities of reaching terminal states from cells in each intermediate state. The entropy of these probabilities represent the differentiation potential of the cell in the corresponding state. Applied to single cell RNA-seq dataset of CD34+ hematopoietic cells from human bone marrows, Palantir accurately identified key events leading up to cell fate commitment. Integration with ATAC-seq data from bulk sorted populations helped identify key regulators that correlate with cell fate specification and commitment."
+    },
+    "publications": [
+        {
+            "authors": [
+                "Setty Manu",
+                "Kieseliovas Vaidotas",
+                "Levine Jacob",
+                "Gayoso Adam",
+                "Mazutis Linas",
+                "Pe'er Dana"
+            ],
+            "title": "Palantir characterizes cell fate continuities in human hematopoiesis",
+            "doi": "10.1101/385328",
+            "url": "https://www.biorxiv.org/content/biorxiv/early/2018/08/05/385328.full.pdf"
+        }
+    ],
+    "funders": [
+        {
+            "grant_id": "DP1-HD084071",
+            "organization": "National Institutes of Health"
+        },
+        {
+            "grant_id": "NIH R01CA164729",
+            "organization": "National Institutes of Health"
+        },
+        {
+            "grant_id": "P30 CA008748",
+            "organization": "Gerry Center for Metastasis and Tumor Ecosystems"
+        }
+    ],
+    "contributors": [
+        {
+            "name": "Manu,, Setty",
+            "email": "manu.talanki@gmail.com",
+            "phone": "9175451407",
+            "institution": "Sloan Kettering Institute",
+            "laboratory": "Pe'er",
+            "address": "Memorial Sloan Kettering Cancer Center, 1275 York Avenue, New York, NY 10065",
+            "country": "USA",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Vaidotas,, Kiseliovas",
+            "email": "vaidotaskiseliovas@yahoo.com",
+            "phone": "6463480473",
+            "institution": "Sloan Kettering Institute",
+            "laboratory": "Pe'er",
+            "address": "Memorial Sloan Kettering Cancer Center, 1275 York Avenue, New York, NY 10065",
+            "country": "USA"
+        },
+        {
+            "name": "Dana,, Pe'er",
+            "email": "peerster@gmail.com",
+            "phone": "646-888-2619",
+            "institution": "Sloan Kettering Institute",
+            "laboratory": "Pe'er",
+            "address": "Memorial Sloan Kettering Cancer Center, 1275 York Avenue, New York, NY 10065",
+            "country": "USA",
+            "project_role": {
+                "ontology": "EFO:0009736",
+                "ontology_label": "principal investigator",
+                "text": "principal investigator"
+            },
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Parisa,, Nejad",
+            "email": "pnejad@ucsc.edu",
+            "institution": "University of California, Santa Cruz",
+            "laboratory": "Human Cell Atlas Data Coordination Platform",
+            "country": "USA",
+            "project_role": {
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator",
+                "text": "Human Cell Atlas wrangler"
+            },
+            "corresponding_contributor": false
+        }
+    ],
+    "provenance": {
+        "document_id": "091cf39b-01bc-42e5-9437-f419a66c8a45",
+        "submission_date": "2019-07-18T21:12:39.717Z",
+        "update_date": "2019-07-18T21:12:44.350Z"
+    }
+}

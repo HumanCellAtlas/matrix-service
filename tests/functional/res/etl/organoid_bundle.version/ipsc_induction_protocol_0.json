@@ -1,0 +1,22 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/3.1.0/ipsc_induction_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "ipsc_induction_protocol_1",
+        "protocol_name": "iPSC induction by Sendai virus",
+        "protocol_description": "Fibroblasts are thawed, transduced using Cytotune 2.0 Sendai virus (containing the Yamanaka genes encoding transcription factors Oct4, Sox2, cMyc and Klf4) and maintained until iPSC colony formation. Colonies are then picked and cultured to obtain a sizable yield of IPS cells, which are banked to a commercial grade standard. These banks then undergo quality checks to ensure the banks pass resuscitation tests and are free of mycoplasma.",
+        "document": "hipsci-ipsc-pipeline.pdf"
+    },
+    "method": "sendai virus",
+    "pluripotency_vector_removed": "yes",
+    "ipsc_induction_kit": {
+        "retail_name": "Cytotune 1.0",
+        "manufacturer": "Thermofisher"
+    },
+    "pluripotency_test": "HipSci Pluri test",
+    "provenance": {
+        "document_id": "bf490fc5-78b0-4829-baa1-8df5decf3f1a",
+        "submission_date": "2019-05-15T09:36:02.805Z",
+        "update_date": "2019-05-15T09:36:07.593Z"
+    }
+}

@@ -1,0 +1,40 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "HS_BM_P1_cells_1",
+        "biomaterial_name": "CD34+ sorted cells from human bone marrow",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "cell_morphology": {
+        "cell_morphology": "Cells in suspension are generally spherical in shape",
+        "percent_cell_viability": 97.0,
+        "cell_viability_method": "Countess II trypan blue assay",
+        "cell_viability_result": "pass"
+    },
+    "growth_conditions": {
+        "passage_number": 0,
+        "growth_medium": "IMDM+10%FBS"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606"
+        }
+    ],
+    "selected_cell_types": [
+        {
+            "ontology_label": "CD34-positive, CD38-negative hematopoietic stem cell",
+            "text": "CD34-positive, CD38-negative hematopoietic stem cell",
+            "ontology": "CL:0001024"
+        }
+    ],
+    "estimated_cell_count": 250000,
+    "provenance": {
+        "document_id": "91cbade9-dece-49f8-b922-c34a82694e69",
+        "submission_date": "2019-07-18T21:12:39.782Z",
+        "update_date": "2019-07-18T21:12:44.496Z"
+    }
+}

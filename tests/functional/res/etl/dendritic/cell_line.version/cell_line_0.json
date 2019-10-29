@@ -1,0 +1,46 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/14.5.0/cell_line",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "Cell_line_1",
+        "biomaterial_name": "CD45+ d3 iDCs",
+        "biomaterial_description": "Induced Dendritic cells at reprogramming day 3",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "type": "primary",
+    "model_organ": {
+        "text": "immune system",
+        "ontology": "UBERON:0002405",
+        "ontology_label": "immune system"
+    },
+    "growth_conditions": {
+        "growth_medium": "Dulbecco\u2019s modified Eagle\u2019s medium supplemented with 10% (v/v) FBS, 2 mM l-glutamine, and antibiotics (penicillin and streptomycin, 10 \uf06dg/ml)",
+        "culture_environment": "Adherent cell culture"
+    },
+    "cell_type": {
+        "text": "dendritic cell",
+        "ontology": "CL:0000451",
+        "ontology_label": "dendritic cell"
+    },
+    "disease": {
+        "text": "normal",
+        "ontology": "PATO:0000461",
+        "ontology_label": "normal"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "provenance": {
+        "document_id": "6a28bd71-9910-47e3-b01c-f9e6fd720341",
+        "submission_date": "2019-09-20T13:43:45.337Z",
+        "update_date": "2019-09-20T13:43:52.581Z",
+        "schema_major_version": 14,
+        "schema_minor_version": 5
+    }
+}

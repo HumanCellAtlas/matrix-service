@@ -1,0 +1,33 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.3.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "cellsuspension1",
+        "biomaterial_name": "Human embryonic Fibroblasts",
+        "biomaterial_description": "Fibroblasts  isolated from human embryo",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "selected_cell_types": [
+        {
+            "text": "Human Embryonic fibroblast",
+            "ontology": "CL:2000042",
+            "ontology_label": "embryonic fibroblast"
+        }
+    ],
+    "provenance": {
+        "document_id": "0e44628a-552b-4377-a262-26ef6cdfe104",
+        "submission_date": "2019-09-20T13:43:45.351Z",
+        "update_date": "2019-09-20T13:43:52.469Z",
+        "schema_major_version": 13,
+        "schema_minor_version": 3
+    }
+}

@@ -1,0 +1,44 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "HPSI0214i-kucg_skin",
+        "biomaterial_name": "Skin cells from HPSI0214i-kucg_skin",
+        "biomaterial_description": "Skin cells from HPSI0214i-kucg_skin",
+        "biosamples_accession": "SAMEA2398627",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "organ": {
+        "text": "skin of body",
+        "ontology": "UBERON:0002097",
+        "ontology_label": "skin of body"
+    },
+    "organ_parts": [
+        {
+            "text": "skin epidermis",
+            "ontology": "UBERON:0001003",
+            "ontology_label": "skin epidermis"
+        }
+    ],
+    "diseases": [
+        {
+            "text": "normal",
+            "ontology": "PATO:0000461",
+            "ontology_label": "normal"
+        }
+    ],
+    "provenance": {
+        "document_id": "d0dd6a08-76b0-4a14-9432-cffcda5505fe",
+        "submission_date": "2019-05-15T09:36:02.679Z",
+        "update_date": "2019-05-15T09:36:09.074Z"
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/11.1.0/organoid",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "Org_HPSI0214i-wibj_2_1",
+        "biomaterial_name": "human cerebral organoid wibj_2",
+        "biomaterial_description": "human cerebral organoid wibj_2, 62d",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "biosamples_accession": "SAMEA5643382"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "model_organ": {
+        "text": "Brain",
+        "ontology": "UBERON:0000955",
+        "ontology_label": "brain"
+    },
+    "age": 62.0,
+    "age_unit": {
+        "text": "day",
+        "ontology": "UO:0000033",
+        "ontology_label": "day"
+    },
+    "embedded_in_matrigel": true,
+    "growth_environment": "suspension",
+    "provenance": {
+        "document_id": "6d7d51b3-2be2-4afa-8ce3-41e7547d3184",
+        "submission_date": "2019-05-15T09:36:02.721Z",
+        "update_date": "2019-05-15T09:36:10.386Z"
+    }
+}

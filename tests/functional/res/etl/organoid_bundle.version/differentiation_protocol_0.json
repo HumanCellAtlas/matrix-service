@@ -1,0 +1,24 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/2.1.0/differentiation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "Org_Lanc_2014",
+        "protocol_name": "Differentiation of cerebral organoids",
+        "protocol_description": "Generation of cerebral organoids from human pluripotent stem cells",
+        "publication_doi": "10.1038/nprot.2014.158"
+    },
+    "method": "embryoid bodies",
+    "target_pathway": "RHO, ROCK",
+    "validation_method": "immunostaining",
+    "reagents": [
+        {
+            "retail_name": "ROCK inhibitor Y27632"
+        }
+    ],
+    "small_molecules": "Vitamin A (retinoic acid)",
+    "provenance": {
+        "document_id": "1271e3fe-eee1-4275-93d0-4920fdd46778",
+        "submission_date": "2019-05-15T09:36:02.819Z",
+        "update_date": "2019-05-15T09:36:07.644Z"
+    }
+}

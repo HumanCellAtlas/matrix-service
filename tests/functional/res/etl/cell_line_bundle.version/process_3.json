@@ -1,0 +1,13 @@
+{
+    "process_core": {
+        "location": "AllCells, LLC",
+        "process_id": "HS_BM_P2_Run1"
+    },
+    "schema_type": "process",
+    "describedBy": "https://schema.humancellatlas.org/type/process/9.1.1/process",
+    "provenance": {
+        "document_id": "afc1c977-5305-4a5f-ace2-b35aa21d6561",
+        "submission_date": "2019-07-18T21:12:40.108Z",
+        "update_date": "2019-07-18T21:12:44.277Z"
+    }
+}

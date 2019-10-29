@@ -1,0 +1,15 @@
+{
+    "start_time": "2019.01.21",
+    "process_core": {
+        "process_id": "HEF"
+    },
+    "schema_type": "process",
+    "describedBy": "https://schema.humancellatlas.org/type/process/9.2.0/process",
+    "provenance": {
+        "document_id": "80e7fc78-c7d8-4cc8-89cf-bf398862cce3",
+        "submission_date": "2019-09-20T13:43:45.755Z",
+        "update_date": "2019-09-20T13:43:52.642Z",
+        "schema_major_version": 9,
+        "schema_minor_version": 2
+    }
+}

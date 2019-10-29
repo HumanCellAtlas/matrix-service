@@ -123,9 +123,8 @@ CREATE_QUERY_TEMPLATE = {
     'cell': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
             cellkey            VARCHAR(60) NOT NULL,
-            cell_suspension_id VARCHAR(60) NOT NULL,
+            cellsuspensionkey  VARCHAR(40) NOT NULL,
             projectkey         VARCHAR(60) NOT NULL,
-            specimenkey        VARCHAR(60) NOT NULL,
             librarykey         VARCHAR(60) NOT NULL,
             analysiskey        VARCHAR(60) NOT NULL,
             file_uuid          VARCHAR(60) NOT NULL,
@@ -182,24 +181,50 @@ CREATE_QUERY_TEMPLATE = {
             SORTKEY(analysiskey)
         ;
     """,
-    'specimen': """
+    'donor': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
-            specimenkey                 VARCHAR(40) NOT NULL,
-            genus_species_ontology      VARCHAR(40),
-            genus_species_label         VARCHAR(40),
+            donorkey                    VARCHAR(40) NOT NULL,
             ethnicity_ontology          VARCHAR(40),
             ethnicity_label             VARCHAR(40),
-            disease_ontology            VARCHAR(40),
-            disease_label               VARCHAR(50),
+            diseases_ontology           VARCHAR(40),
+            diseases_label              VARCHAR(50),
             development_stage_ontology  VARCHAR(40),
             development_stage_label     VARCHAR(40),
-            organ_ontology              VARCHAR(40),
-            organ_label                 VARCHAR(100),
-            organ_parts_ontology        VARCHAR(40),
-            organ_parts_label           VARCHAR(100),
+            sex                         VARCHAR(8),
+            is_living                   VARCHAR(8),
+            PRIMARY KEY(donorkey))
+            DISTSTYLE ALL
+            SORTKEY(donorkey)
+        ;
+    """,
+    'specimen': """
+        CREATE {0}TABLE IF NOT EXISTS {2} (
+            specimenkey               VARCHAR(40) NOT NULL,
+            organ_ontology            VARCHAR(40),
+            organ_label               VARCHAR(100),
+            organ_parts_ontology      VARCHAR(40),
+            organ_parts_label         VARCHAR(100),
+            diseases_ontology         VARCHAR(40),
+            diseases_label            VARCHAR(50),
             PRIMARY KEY(specimenkey))
             DISTSTYLE ALL
             SORTKEY(specimenkey)
+        ;
+    """,
+    'cell_suspension': """
+        CREATE {0}TABLE IF NOT EXISTS {2} (
+            cellsuspensionkey              VARCHAR(40) NOT NULL,
+            specimenkey                    VARCHAR(40) NOT NULL,
+            donorkey                       VARCHAR(40) NOT NULL,
+            derived_organ_ontology         VARCHAR(40),
+            derived_organ_label            VARCHAR(100),
+            derived_organ_parts_ontology   VARCHAR(40),
+            derived_organ_parts_label      VARCHAR(100),
+            genus_species_ontology         VARCHAR(40),
+            genus_species_label            VARCHAR(40),
+            PRIMARY KEY(cellsuspensionkey))
+            DISTSTYLE ALL
+            SORTKEY(cellsuspensionkey)
         ;
     """,
     'library_preparation': """

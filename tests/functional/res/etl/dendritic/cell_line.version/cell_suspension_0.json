@@ -1,0 +1,33 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.3.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "cellsuspension2",
+        "biomaterial_name": "CD45+ d3 iDCs",
+        "biomaterial_description": "Induced Dendritic cells at reprogramming day 3",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "selected_cell_types": [
+        {
+            "text": "Reprogrammed dendritic cell",
+            "ontology": "CL:0000451",
+            "ontology_label": "dendritic cell"
+        }
+    ],
+    "provenance": {
+        "document_id": "a3352e34-e7ae-4ed0-b580-a10c2f7a3451",
+        "submission_date": "2019-09-20T13:43:45.358Z",
+        "update_date": "2019-09-20T13:43:52.633Z",
+        "schema_major_version": 13,
+        "schema_minor_version": 3
+    }
+}

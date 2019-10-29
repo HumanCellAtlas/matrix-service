@@ -15,7 +15,7 @@
         "ontology_label": "polyA RNA"
     },
     "nucleic_acid_source": "single cell",
-    "library_construction_approach": {
+    "library_construction_method": {
         "text": "Smart-seq2",
         "ontology": "EFO:0008931",
         "ontology_label": "Smart-seq2"

@@ -1,0 +1,15 @@
+{
+    "start_time": "2018.07.31",
+    "process_core": {
+        "process_id": "IDC3"
+    },
+    "schema_type": "process",
+    "describedBy": "https://schema.humancellatlas.org/type/process/9.2.0/process",
+    "provenance": {
+        "document_id": "7801fd50-62dc-487b-8397-91daaa5503c5",
+        "submission_date": "2019-09-20T13:43:45.762Z",
+        "update_date": "2019-09-20T13:43:52.433Z",
+        "schema_major_version": 9,
+        "schema_minor_version": 2
+    }
+}
