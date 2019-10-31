@@ -291,8 +291,8 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'genus_species_label': 'cell_suspension.genus_species.ontology_label',
     'ethnicity_ontology': 'donor_organism.human_specific.ethnicity.ontology',
     'ethnicity_label': 'donor_organism.human_specific.ethnicity.ontology_label',
-    'disease_ontology': 'donor_organism.diseases.ontology',
-    'disease_label': 'donor_organism.diseases.ontology_label',
+    'diseases_ontology': 'donor_organism.diseases.ontology',
+    'diseases_label': 'donor_organism.diseases.ontology_label',
     'development_stage_ontology': 'donor_organism.development_stage.ontology',
     'development_stage_label': 'donor_organism.development_stage.ontology_label',
     'sex': 'donor_organism.sex',
@@ -525,7 +525,7 @@ FIELD_DETAIL = {
         ("An ontology term identifier in the form prefix:accession for the species to which the cell(s) "
          "in the cell suspension belong."),
     "cell_suspension.genus_species.ontology_label":
-        "The preferred label for the cell_suspension.genus_species.ontology ontology term",
+        "The preferred label for the cell_suspension.genus_species.ontology term",
     "donor_organism.provenance.document_id":
         "Unique identifier for the donor from which a specimen was collected.",
     "donor_organism.human_specific.ethnicity.ontology":
