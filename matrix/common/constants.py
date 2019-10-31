@@ -135,7 +135,7 @@ CREATE_QUERY_TEMPLATE = {
             emptydrops_is_cell BOOLEAN,
             PRIMARY KEY(cellkey),
             FOREIGN KEY(projectkey) REFERENCES project{1}(projectkey),
-            FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),
+            FOREIGN KEY(cellsuspensionkey) REFERENCES cell_suspension{1}(cellsuspensionkey),
             FOREIGN KEY(librarykey) REFERENCES library_preparation{1}(librarykey),
             FOREIGN KEY(analysiskey) REFERENCES analysis{1}(analysiskey))
             DISTKEY(cellkey)
@@ -222,7 +222,9 @@ CREATE_QUERY_TEMPLATE = {
             derived_organ_parts_label      VARCHAR(100),
             genus_species_ontology         VARCHAR(40),
             genus_species_label            VARCHAR(40),
-            PRIMARY KEY(cellsuspensionkey))
+            PRIMARY KEY(cellsuspensionkey),
+            FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),
+            FOREIGN KEY(donorkey) REFERENCES donor{1}(donorkey))
             DISTSTYLE ALL
             SORTKEY(cellsuspensionkey)
         ;
