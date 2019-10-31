@@ -27,7 +27,9 @@ expression_query_template = """
     LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
     INNER JOIN cell on (expression.cellkey = cell.cellkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-    INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+    INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+    INNER JOIN specimen on (specimen.specimenkey = cell_suspension.specimenkey)
+    INNER JOIN donor on (donor.donorkey = cell_suspension.donorkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
     AND analysis.bundle_uuid IN {3}
@@ -40,11 +42,14 @@ expression_query_template = """
 """
 
 cell_query_template = """
-    UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid,
-    cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, specimen.*,
-    library_preparation.*, analysis.bundle_uuid, analysis.bundle_version, project.short_name
+    UNLOAD($$SELECT cell.cellkey, cell.cellsuspensionkey, cell.genes_detected, cell.file_uuid,
+    cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, cell_suspension.*,
+    specimen.*, donor.*, library_preparation.*, analysis.bundle_uuid, analysis.bundle_version,
+    project.short_name
     FROM cell
-    LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+    LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+    LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+    LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)

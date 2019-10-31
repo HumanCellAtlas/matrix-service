@@ -33,7 +33,7 @@ class TestCellExpressionTransformer(unittest.TestCase):
         self.assertEqual(cell_table, TableName.CELL)
         self.assertEqual(cell_rows[0],
                          "635badd5-7d62-4db3-b509-f290a12a1336|635badd5-7d62-4db3-b509-f290a12a1336|"
-                         "c3ba122b-9158-4447-b379-6f5983a2416d|80bd863b-d92c-4c5f-98b6-4c32d7b2e806|"
+                         "c3ba122b-9158-4447-b379-6f5983a2416d|"
                          "265ab074-6db1-4038-836c-fba3cc2d09cb|f6ff0075-f93e-478a-8ba3-8c798e7f5021|"
                          "436cd3a5-e510-41db-937d-6c5f4f1b6df7|2019-01-28T133934.450115Z||3859||\n")
 
@@ -52,7 +52,7 @@ class TestCellExpressionTransformer(unittest.TestCase):
 
         self.assertEqual(len(cell_lines), 5)
         self.assertTrue("5469c35c54d5b403cb00da7d9ea16879|493a6adc-54b5-4388-ba11-c37686562127|"
-                        "dbb40797-8eba-44f8-81d8-6f0c2e2ed0b5|88bc1e69-624e-4e12-b0a2-e1b64832ec3f|"
+                        "dbb40797-8eba-44f8-81d8-6f0c2e2ed0b5|"
                         "ffb71426-42a4-42c0-89cc-f12b4a806554|17987139-5441-4335-8a36-2ec986eee282|"
                         "ae725a64-6cb4-4216-942f-37880ed52ed3|2019-05-08T155712.599791Z|"
                         "AGTGGGAGTACAGACG|12|142|f\n" in cell_lines)

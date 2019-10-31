@@ -247,7 +247,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)
@@ -327,7 +329,9 @@ MANIFEST VERBOSE;
         expected_cell_query = ("""
 UNLOAD($$SELECT cell.cellkey, test.field1, test.field2
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -347,7 +351,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE feature.isgene
@@ -383,7 +389,9 @@ class TestNameConversion(unittest.TestCase):
         expected_cell_query = ("""
 UNLOAD($$SELECT cell.cellkey, analysis.bundle_fqid, cell.genes_detected, library_preparation.strand
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -419,10 +427,12 @@ MANIFEST VERBOSE
             filter_, constants.DEFAULT_FIELDS, feature)
 
         expected_cell_query = ("""
-UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid, cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, specimen.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501
+UNLOAD($$SELECT cell.cellkey, cell.cellsuspensionkey, cell.genes_detected, cell.file_uuid, cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, cell_suspension.*, specimen.*, donor.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501
 """
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -441,7 +451,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)
@@ -475,15 +487,15 @@ FROM cell
     def test_cell_categorical(self):
 
         query = query_constructor.create_field_detail_query(
-            "cell.cell_suspension_id",
+            "cell.cellsuspensionkey",
             "cell",
             "cellkey",
             "categorical")
 
         expected_sql = """
-SELECT cell.cell_suspension_id, COUNT(cell.cellkey)
+SELECT cell.cellsuspensionkey, COUNT(cell.cellkey)
 FROM cell 
-GROUP BY cell.cell_suspension_id
+GROUP BY cell.cellsuspensionkey
 ;
 """  # noqa: W291
         self.assertEqual(query, expected_sql)

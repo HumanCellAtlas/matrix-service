@@ -49,10 +49,10 @@ class MetadataSchemaName(Enum):
     ORGANOID = "organoid"
 
 
-DEFAULT_FIELDS = ["cell.cell_suspension_id", "cell.genes_detected", "cell.file_uuid",
+DEFAULT_FIELDS = ["cell.cellsuspensionkey", "cell.genes_detected", "cell.file_uuid",
                   "cell.file_version", "cell.total_umis", "cell.emptydrops_is_cell",
-                  "cell.barcode", "specimen.*", "library_preparation.*", "project.*",
-                  "analysis.*"]
+                  "cell.barcode", "cell_suspension.*", "specimen.*", "donor.*",
+                  "library_preparation.*", "project.*", "analysis.*"]
 
 
 DEFAULT_FEATURE = MatrixFeature.GENE.value
@@ -276,7 +276,7 @@ CREATE_QUERY_TEMPLATE = {
 # Map from internal matrix service column names to the names used in the
 # project tsv and hence the API surface.
 TABLE_COLUMN_TO_METADATA_FIELD = {
-    'cell_suspension_id': 'cell_suspension.provenance.document_id',
+    'cellsuspensionkey': 'cell_suspension.provenance.document_id',
     'genes_detected': 'genes_detected',
     'file_uuid': 'file_uuid',
     'file_version': 'file_version',
@@ -284,18 +284,25 @@ TABLE_COLUMN_TO_METADATA_FIELD = {
     'total_umis': 'total_umis',
     'emptydrops_is_cell': 'emptydrops_is_cell',
     'specimenkey': 'specimen_from_organism.provenance.document_id',
-    'genus_species_ontology': 'specimen_from_organism.genus_species.ontology',
-    'genus_species_label': 'specimen_from_organism.genus_species.ontology_label',
+    'donorkey': 'donor_organism.provenance.document_id',
+    'genus_species_ontology': 'cell_suspension.genus_species.ontology',
+    'genus_species_label': 'cell_suspension.genus_species.ontology_label',
     'ethnicity_ontology': 'donor_organism.human_specific.ethnicity.ontology',
     'ethnicity_label': 'donor_organism.human_specific.ethnicity.ontology_label',
     'disease_ontology': 'donor_organism.diseases.ontology',
     'disease_label': 'donor_organism.diseases.ontology_label',
     'development_stage_ontology': 'donor_organism.development_stage.ontology',
     'development_stage_label': 'donor_organism.development_stage.ontology_label',
-    'organ_ontology': 'derived_organ_ontology',
-    'organ_label': 'derived_organ_label',
-    'organ_parts_ontology': 'derived_organ_parts_ontology',
-    'organ_parts_label': 'derived_organ_parts_label',
+    'sex': 'donor_organism.sex',
+    'is_living': 'donor_organism.is_living',
+    'organ_ontology': 'specimen_from_organism.organ.ontology',
+    'organ_label': 'specimen_from_organism.organ.ontology_label',
+    'organ_parts_ontology': 'specimen_from_organism.organ_parts.ontology',
+    'organ_parts_label': 'specimen_from_organism.organ_parts.ontology_label',
+    'derived_organ_ontology': 'derived_organ_ontology',
+    'derived_organ_label': 'derived_organ_label',
+    'derived_organ_parts_ontology': 'derived_organ_parts_ontology',
+    'derived_organ_parts_label': 'derived_organ_parts_label',
     'librarykey': 'library_preparation_protocol.provenance.document_id',
     'input_nucleic_acid_ontology': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology',
     'input_nucleic_acid_label': 'library_preparation_protocol.input_nucleic_acid_molecule.ontology_label',
@@ -321,7 +328,7 @@ METADATA_FIELD_TO_TYPE["genes_detected"] = "numeric"
 METADATA_FIELD_TO_TYPE["total_umis"] = "numeric"
 
 TABLE_COLUMN_TO_TABLE = {
-    'cell_suspension_id': 'cell',
+    'cellsuspensionkey': 'cell_suspension',
     'genes_detected': 'cell',
     'file_uuid': 'cell',
     'file_version': 'cell',
@@ -329,18 +336,25 @@ TABLE_COLUMN_TO_TABLE = {
     'barcode': 'cell',
     'emptydrops_is_cell': 'cell',
     'specimenkey': 'specimen',
-    'genus_species_ontology': 'specimen',
-    'genus_species_label': 'specimen',
-    'ethnicity_ontology': 'specimen',
-    'ethnicity_label': 'specimen',
-    'disease_ontology': 'specimen',
-    'disease_label': 'specimen',
-    'development_stage_ontology': 'specimen',
-    'development_stage_label': 'specimen',
+    'genus_species_ontology': 'cell_suspension',
+    'genus_species_label': 'cell_suspension',
+    'donorkey': 'donor',
+    'ethnicity_ontology': 'donor',
+    'ethnicity_label': 'donor',
+    'sex': 'donor',
+    'is_living': 'donor',
+    'diseases_ontology': 'donor',
+    'diseases_label': 'donor',
+    'development_stage_ontology': 'donor',
+    'development_stage_label': 'donor',
     'organ_ontology': 'specimen',
     'organ_label': 'specimen',
     'organ_parts_ontology': 'specimen',
     'organ_parts_label': 'specimen',
+    'derived_organ_ontology': 'cell_suspension',
+    'derived_organ_label': 'cell_suspension',
+    'derived_organ_parts_ontology': 'cell_suspension',
+    'derived_organ_parts_label': 'cell_suspension',
     'librarykey': 'library_preparation',
     'input_nucleic_acid_ontology': 'library_preparation',
     'input_nucleic_acid_label': 'library_preparation',
@@ -505,10 +519,13 @@ FIELD_DETAIL = {
         "Cell call from emptyDrops run with default parameters (for droplet-based assays).",
     "specimen_from_organism.provenance.document_id":
         "Unique identified for the specimen that was collected from the donor organism.",
-    "specimen_from_organism.genus_species.ontology":
-        "An ontology term identifier in the form prefix:accession for the species to which the donor organism belongs.",
-    "specimen_from_organism.genus_species.ontology_label":
-        "The preferred label for the specimen_from_organism.genus_species.ontoloty ontology term",
+    "cell_suspension.genus_species.ontology":
+        ("An ontology term identifier in the form prefix:accession for the species to which the cell(s) "
+         "in the cell suspension belong."),
+    "cell_suspension.genus_species.ontology_label":
+        "The preferred label for the cell_suspension.genus_species.ontology ontology term",
+    "donor_organism.provenance.document_id":
+        "Unique identifier for the donor from which a specimen was collected.",
     "donor_organism.human_specific.ethnicity.ontology":
         "An ontology term identifier in the form prefix:accession for the ethnicity of a human donor.",
     "donor_organism.human_specific.ethnicity.ontology_label":
@@ -521,6 +538,11 @@ FIELD_DETAIL = {
         "An ontology term identifier in the form prefix:accession for the development stage of the donor organism.",
     "donor_organism.development_stage.ontology_label":
         "The preferred label for the donor_organism.development_stage.ontology term",
+    "donor_organism.sex":
+        'The biological sex of the organism. Should be one of: "female", "male", "mixed" or "unknown".',
+    "donor_organism.is_living":
+        ('Whether organism was alive at time of biomaterial collection. Should be one of: "yes", "no", "unknown" '
+         'or "not applicable".'),
     "derived_organ_ontology":
         ("An ontology term identifier in the form prefix:accession for the organ that the biomaterial came from. For "
          "cell lines and organoids, the term is for the organ model."),
@@ -531,6 +553,17 @@ FIELD_DETAIL = {
          "that the biomaterial came from. For cell lines and organoids, the term refers to the organ model."),
     "derived_organ_parts_label":
         "The preferred label for the derived_organ_parts_ontology term.",
+    "specimen_from_organism.organ.ontology":
+        ("An ontology term identifier in the form prefix:accession for the organ that the specimen came from. For "
+         "cell lines and organoids, this may differ significantly from the model organ."),
+    "specimen_from_organism.organ.ontology_label":
+        "The preferred label for the specimen_from_organism.organ.ontology term.",
+    "specimen_from_organism.organ_parts.ontology":
+        ("An ontology term identifier in the form of prefix:accession for the specific part of the organ "
+         "that the specimen came from. For cell lines and organoids, the term may differ signficantly from the "
+         "model organ."),
+    "specimen_from_organism.organ_parts.ontology_label":
+        "The preferred label for the specimen_from_organism.organ_parts.ontology term.",
     "library_preparation_protocol.provenance.document_id":
         "Unique identifier for how a sequencing library was prepared.",
     "library_preparation_protocol.input_nucleic_acid_molecule.ontology":
