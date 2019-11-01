@@ -29,7 +29,7 @@ expression_query_template = """
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
     INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
     INNER JOIN specimen on (specimen.specimenkey = cell_suspension.specimenkey)
-    INNER JOIN donor on (donor.donorkey = cell_suspension.donorkey)
+    INNER JOIN donor on (specimen.donorkey = cell_suspension.donorkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
     AND analysis.bundle_uuid IN {3}
@@ -49,7 +49,7 @@ cell_query_template = """
     FROM cell
     LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
     LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-    LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+    LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
     LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)

@@ -68,10 +68,10 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             specimen_info = self.parse_all_entity_jsons(
                 bundle_path, "specimen_from_organism_*.json", self.parse_specimen_json)
             specimen_info["specimenkey"] = specimenkey
+            specimen_info["donorkey"] = donorkey
 
             cs_info = self.parse_all_entity_jsons(
                 bundle_path, "cell_suspension_*.json", self.parse_cs_json)
-            cs_info["donorkey"] = donorkey
             cs_info["specimenkey"] = specimenkey
             cs_info["cellsuspensionkey"] = cskey
 
@@ -124,6 +124,7 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             specimen_data.append(
                 self._generate_psv_row(
                     specimen_info["specimenkey"],
+                    specimen_info["donorkey"],
                     specimen_info["organ_ontology"],
                     organ_label,
                     self._join(specimen_info["organ_parts_ontologies"]),
@@ -140,7 +141,6 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
                 self._generate_psv_row(
                     cs_info["cellsuspensionkey"],
                     cs_info["specimenkey"],
-                    cs_info["donorkey"],
                     cs_info["organ_ontology"],
                     organ_label,
                     self._join(cs_info["organ_parts_ontologies"]),

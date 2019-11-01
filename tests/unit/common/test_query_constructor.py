@@ -249,7 +249,7 @@ FROM expression
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
   INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
   INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-  INNER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)
@@ -331,7 +331,7 @@ UNLOAD($$SELECT cell.cellkey, test.field1, test.field2
 FROM cell
   LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
   LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-  LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -353,7 +353,7 @@ FROM expression
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
   INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
   INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-  INNER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE feature.isgene
@@ -391,7 +391,7 @@ UNLOAD($$SELECT cell.cellkey, analysis.bundle_fqid, cell.genes_detected, library
 FROM cell
   LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
   LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-  LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -432,7 +432,7 @@ UNLOAD($$SELECT cell.cellkey, cell.cellsuspensionkey, cell.genes_detected, cell.
 FROM cell
   LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
   LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-  LEFT OUTER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -453,7 +453,7 @@ FROM expression
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
   INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
   INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
-  INNER JOIN donor on (cell_suspension.donorkey = donor.donorkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)

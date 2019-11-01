@@ -200,13 +200,15 @@ CREATE_QUERY_TEMPLATE = {
     'specimen': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
             specimenkey               VARCHAR(40) NOT NULL,
+            donorkey                  VARCHAR(40) NOT NULL,
             organ_ontology            VARCHAR(40),
             organ_label               VARCHAR(100),
             organ_parts_ontology      VARCHAR(40),
             organ_parts_label         VARCHAR(100),
             diseases_ontology         VARCHAR(40),
             diseases_label            VARCHAR(50),
-            PRIMARY KEY(specimenkey))
+            PRIMARY KEY(specimenkey),
+            FOREIGN KEY(donorkey) REFERENCES donor{1}(donorkey))
             DISTSTYLE ALL
             SORTKEY(specimenkey)
         ;
@@ -215,7 +217,6 @@ CREATE_QUERY_TEMPLATE = {
         CREATE {0}TABLE IF NOT EXISTS {2} (
             cellsuspensionkey              VARCHAR(40) NOT NULL,
             specimenkey                    VARCHAR(40) NOT NULL,
-            donorkey                       VARCHAR(40) NOT NULL,
             derived_organ_ontology         VARCHAR(40),
             derived_organ_label            VARCHAR(100),
             derived_organ_parts_ontology   VARCHAR(40),
@@ -223,8 +224,7 @@ CREATE_QUERY_TEMPLATE = {
             genus_species_ontology         VARCHAR(40),
             genus_species_label            VARCHAR(40),
             PRIMARY KEY(cellsuspensionkey),
-            FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey),
-            FOREIGN KEY(donorkey) REFERENCES donor{1}(donorkey))
+            FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey))
             DISTSTYLE ALL
             SORTKEY(cellsuspensionkey)
         ;
