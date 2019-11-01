@@ -49,7 +49,7 @@ class MetadataSchemaName(Enum):
     ORGANOID = "organoid"
 
 
-DEFAULT_FIELDS = ["cell.cellsuspensionkey", "cell.genes_detected", "cell.file_uuid",
+DEFAULT_FIELDS = ["cell.genes_detected", "cell.file_uuid",
                   "cell.file_version", "cell.total_umis", "cell.emptydrops_is_cell",
                   "cell.barcode", "cell_suspension.*", "specimen.*", "donor.*",
                   "library_preparation.*", "project.*", "analysis.*"]
