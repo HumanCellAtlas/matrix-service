@@ -41,7 +41,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         self.assertEqual(cs_table, TableName.CELL_SUSPENSION)
         self.assertTrue("635badd5-7d62-4db3-b509-f290a12a1336|80bd863b-d92c-4c5f-98b6-4c32d7b2e806|"
                         "UBERON:0002113|EXAMPLE_ONTOLOGY|UBERON:0014451|EXAMPLE_ONTOLOGY|"
-                        "NCBITAXON:9606|EXAMPLE_ONTOLOGY"
+                        "NCBITaxon:9606|EXAMPLE_ONTOLOGY"
                         in cs_rows)
 
     @mock.patch("requests.get")
@@ -68,7 +68,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         donor_rows = parsed[2][1]
         self.assertEqual(donor_table, TableName.DONOR)
         self.assertTrue("1399aa16-3fb0-4a04-a8d2-3af7e079ebf3|||"
-                        "PATO:0000461|EXAMPLE_ONTOLOGY|HSAPDV:0000087|EXAMPLE_ONTOLOGY||yes"
+                        "PATO:0000461|EXAMPLE_ONTOLOGY|HsapDv:0000087|EXAMPLE_ONTOLOGY||yes"
                         in donor_rows)
 
         cs_table = parsed[3][0]
@@ -76,7 +76,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         self.assertEqual(cs_table, TableName.CELL_SUSPENSION)
         self.assertTrue("a286da91-6e9f-42dd-ae7b-9ee37fba9529|b952a25e-6a70-4956-abf3-c195bae4c1b6|"
                         "UBERON:0000955 (organoid)|EXAMPLE_ONTOLOGY (organoid)|"
-                        "||NCBITAXON:9606|EXAMPLE_ONTOLOGY"
+                        "||NCBITaxon:9606|EXAMPLE_ONTOLOGY"
                         in cs_rows)
 
     @mock.patch("requests.get")
@@ -103,7 +103,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         donor_rows = parsed[2][1]
         self.assertEqual(donor_table, TableName.DONOR)
         self.assertTrue("e24f10c2-e21d-44c4-9450-46029c443941|HANCESTRO:0005|EXAMPLE_ONTOLOGY|"
-                        "PATO:0000461|EXAMPLE_ONTOLOGY|HSAPDV:0000087|EXAMPLE_ONTOLOGY|female|yes"
+                        "PATO:0000461|EXAMPLE_ONTOLOGY|HsapDv:0000087|EXAMPLE_ONTOLOGY|female|yes"
                         in donor_rows)
 
         cs_table = parsed[3][0]
@@ -111,7 +111,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         self.assertEqual(cs_table, TableName.CELL_SUSPENSION)
         self.assertTrue("907ccd95-51af-4a95-b641-9f364730c127|20156407-a6f8-447e-a21e-dbbf66a58043|"
                         "UBERON:0002390 (cell line)|EXAMPLE_ONTOLOGY (cell line)|"
-                        "||NCBITAXON:9606|EXAMPLE_ONTOLOGY"
+                        "||NCBITaxon:9606|EXAMPLE_ONTOLOGY"
                         in cs_rows)
 
     @mock.patch("requests.get")
@@ -126,7 +126,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         self.assertEqual(donor_table, TableName.DONOR)
         self.assertTrue("219098db-6a8d-4e5c-9cd9-8cfcac665a4c|HANCESTRO:0568;HANCESTRO:0014|"
                         "EXAMPLE_ONTOLOGY;EXAMPLE_ONTOLOGY|"
-                        "PATO:0000461|EXAMPLE_ONTOLOGY|HSAPDV:0000087|EXAMPLE_ONTOLOGY|male|yes"
+                        "PATO:0000461|EXAMPLE_ONTOLOGY|HsapDv:0000087|EXAMPLE_ONTOLOGY|male|yes"
                         in donor_rows)
 
     @mock.patch("requests.get")
@@ -156,7 +156,7 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         self.assertEqual(donor_table, TableName.DONOR)
         self.assertEqual(len(donor_rows), 1)
         self.assertTrue("2b7adb0a-82a4-4319-80d1-4a73d879dec1|||"
-                        "PATO:0000461|EXAMPLE_ONTOLOGY|HSAPDV:0000025|EXAMPLE_ONTOLOGY|unknown|no"
+                        "PATO:0000461|EXAMPLE_ONTOLOGY|HsapDv:0000025|EXAMPLE_ONTOLOGY|unknown|no"
                         in donor_rows)
 
         cs_table = parsed[3][0]
@@ -164,9 +164,9 @@ class TestSpecimenLibraryTransformer(unittest.TestCase):
         self.assertEqual(cs_table, TableName.CELL_SUSPENSION)
         self.assertTrue("a3352e34-e7ae-4ed0-b580-a10c2f7a3451|d6a518a8-0c5d-4cb0-aed5-68f3455c2bda|"
                         "UBERON:0002405 (cell line)|EXAMPLE_ONTOLOGY (cell line)|"
-                        "||NCBITAXON:9606|EXAMPLE_ONTOLOGY"
+                        "||NCBITaxon:9606|EXAMPLE_ONTOLOGY"
                         in cs_rows)
         self.assertTrue("0e44628a-552b-4377-a262-26ef6cdfe104|d6a518a8-0c5d-4cb0-aed5-68f3455c2bda|"
                         "UBERON:0000922|EXAMPLE_ONTOLOGY|"
-                        "UBERON:0001003|EXAMPLE_ONTOLOGY|NCBITAXON:9606|EXAMPLE_ONTOLOGY"
+                        "UBERON:0001003|EXAMPLE_ONTOLOGY|NCBITaxon:9606|EXAMPLE_ONTOLOGY"
                         in cs_rows)

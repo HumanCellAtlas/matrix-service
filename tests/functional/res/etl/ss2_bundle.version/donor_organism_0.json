@@ -20,7 +20,7 @@
         "ethnicity": [
             {
                 "text": "African American/Afro-Caribbean",
-                "ontology": "hancestro:0016",
+                "ontology": "HANCESTRO:0016",
                 "ontology_label": "African American or Afro-Caribbean"
             }
         ]
