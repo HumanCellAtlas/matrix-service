@@ -165,11 +165,6 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
     def resolve_ontology_ols(self, term):
         """Get the ontology label for a term using the OLS API."""
 
-        special_case = {
-            "NCBITAXON": "NCBITaxon",
-            "HSAPDV": "HsapDv"
-        }
-
         uri_templates = [
             ("http://www.ebi.ac.uk/ols/api/ontologies/{lontology}/terms/"
              "http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252F{ontology}_{term_id}"),
@@ -185,8 +180,6 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             except ValueError:
                 print(f"Term is malformed: {term}!", file=sys.stderr)
                 return None
-
-        ontology = special_case.get(ontology, ontology)
 
         # Match a trailing comment like "... (organoid)" or "... (cell line)". If there
         # is a match, strip it off and hold on to it.
@@ -257,12 +250,12 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         donor_dict = json.load(open(donor_json_path))
 
         ethnicity_list = donor_dict.get("human_specific", {}).get("ethnicity", [])
-        ethnicity_ontologies = [e.get("ontology").upper() for e in ethnicity_list]
+        ethnicity_ontologies = [e.get("ontology") for e in ethnicity_list]
 
         disease_list = donor_dict.get("diseases", [])
-        diseases_ontologies = [e.get("ontology").upper() for e in disease_list]
+        diseases_ontologies = [e.get("ontology") for e in disease_list]
 
-        dev_stage = donor_dict.get("development_stage", {}).get("ontology", "").upper()
+        dev_stage = donor_dict.get("development_stage", {}).get("ontology", "")
 
         sex = donor_dict.get("sex", "")
 
@@ -282,15 +275,15 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         specimen_dict = json.load(open(specimen_json_path))
 
         genus_species_list = specimen_dict.get("genus_species", [])
-        genus_species_ontologies = [e.get("ontology").upper() for e in genus_species_list]
+        genus_species_ontologies = [e.get("ontology") for e in genus_species_list]
 
         organ = specimen_dict.get("organ", {}).get("ontology", "")
 
         organ_parts_list = specimen_dict.get("organ_parts", [])
-        organ_parts_ontologies = [e.get("ontology").upper() for e in organ_parts_list]
+        organ_parts_ontologies = [e.get("ontology") for e in organ_parts_list]
 
         diseases_list = specimen_dict.get("diseases", [])
-        diseases_ontologies = [e.get("ontology").upper() for e in diseases_list]
+        diseases_ontologies = [e.get("ontology") for e in diseases_list]
 
         return {
             "genus_species_ontologies": tuple(genus_species_ontologies),
@@ -306,7 +299,7 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
 
         cs_dict = json.load(open(cs_json_path))
         genus_species_list = cs_dict.get("genus_species", [])
-        genus_species_ontologies = [e.get("ontology").upper() for e in genus_species_list]
+        genus_species_ontologies = [e.get("ontology") for e in genus_species_list]
 
         return {
             "genus_species_ontologies": tuple(genus_species_ontologies)
@@ -351,8 +344,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             for organoid_json_path in organoid_json_paths:
                 organoid_json = json.load(open(organoid_json_path))
 
-                model_organ_ontology = organoid_json.get("model_organ", {})["ontology"].upper()
-                model_organ_part_ontology = organoid_json.get("model_organ_part", {}).get("ontology", "").upper()
+                model_organ_ontology = organoid_json.get("model_organ", {})["ontology"]
+                model_organ_part_ontology = organoid_json.get("model_organ_part", {}).get("ontology", "")
 
                 model_organ_ontologies.add(model_organ_ontology)
                 if model_organ_part_ontology:
@@ -376,8 +369,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
             for cell_line_json_path in cell_line_json_paths:
                 cell_line_json = json.load(open(cell_line_json_path))
 
-                model_organ_ontology = cell_line_json.get("model_organ", {})["ontology"].upper()
-                model_organ_part_ontology = cell_line_json.get("tissue", {}).get("ontology", "").upper()
+                model_organ_ontology = cell_line_json.get("model_organ", {})["ontology"]
+                model_organ_part_ontology = cell_line_json.get("tissue", {}).get("ontology", "")
 
                 model_organ_ontologies.add(model_organ_ontology)
                 if model_organ_part_ontology:
@@ -397,8 +390,8 @@ class SpecimenLibraryTransformer(MetadataToPsvTransformer):
         """Parse a library_preparation_protocol json file."""
         library_dict = json.load(open(library_json_path))
 
-        input_nucleic_acid = library_dict["input_nucleic_acid_molecule"]["ontology"].upper()
-        construction_method = library_dict["library_construction_method"]["ontology"].upper()
+        input_nucleic_acid = library_dict["input_nucleic_acid_molecule"]["ontology"]
+        construction_method = library_dict["library_construction_method"]["ontology"]
         end_bias = library_dict.get("end_bias", "")
         strand = library_dict.get("strand", "")
 
