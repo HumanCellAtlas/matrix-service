@@ -377,8 +377,8 @@ TABLE_COLUMN_TO_TABLE = {
 
 # Filters that specify the genus and species of the cells.
 GENUS_SPECIES_FILTERS = [
-    'specimen_from_organism.genus_species.ontology',
-    'specimen_from_organism.genus_species.ontology_label'
+    'cell_suspension.genus_species.ontology',
+    'cell_suspension.genus_species.ontology_label'
 ]
 
 FORMAT_DETAIL = {
