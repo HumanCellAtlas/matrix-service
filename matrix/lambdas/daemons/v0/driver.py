@@ -29,11 +29,11 @@ expression_query_template = """
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
     INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
     INNER JOIN specimen on (specimen.specimenkey = cell_suspension.specimenkey)
-    INNER JOIN donor on (specimen.donorkey = cell_suspension.donorkey)
+    INNER JOIN donor on (specimen.donorkey = donor.donorkey)
     WHERE feature.isgene
     AND expression.exprtype = 'Count'
     AND analysis.bundle_uuid IN {3}
-    AND specimen.genus_species_label = '{4}'$$)
+    AND cell_suspension.genus_species_label = '{4}'$$)
     TO 's3://{0}/{1}/expression_'
     IAM_ROLE '{2}'
     GZIP
@@ -42,9 +42,10 @@ expression_query_template = """
 """
 
 cell_query_template = """
-    UNLOAD($$SELECT cell.cellkey, cell.cellsuspensionkey, cell.genes_detected, cell.file_uuid,
+    UNLOAD($$SELECT cell.cellkey, cell.genes_detected, cell.file_uuid,
     cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, cell_suspension.*,
-    specimen.*, donor.*, library_preparation.*, analysis.bundle_uuid, analysis.bundle_version,
+    specimen.organ_ontology, specimen.organ_label, specimen.organ_parts_ontology, specimen.organ_parts_label,
+    donor.*, library_preparation.*, analysis.bundle_uuid, analysis.bundle_version,
     project.short_name
     FROM cell
     LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
@@ -54,7 +55,7 @@ cell_query_template = """
     LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
     INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
     WHERE analysis.bundle_uuid IN {3}
-    AND specimen.genus_species_label = '{4}'$$)
+    AND cell_suspension.genus_species_label = '{4}'$$)
     TO 's3://{0}/{1}/cell_metadata_'
     IAM_ROLE '{2}'
     GZIP
