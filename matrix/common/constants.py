@@ -184,14 +184,14 @@ CREATE_QUERY_TEMPLATE = {
     'donor': """
         CREATE {0}TABLE IF NOT EXISTS {2} (
             donorkey                    VARCHAR(40) NOT NULL,
-            ethnicity_ontology          VARCHAR(40),
-            ethnicity_label             VARCHAR(40),
-            diseases_ontology           VARCHAR(40),
-            diseases_label              VARCHAR(50),
+            ethnicity_ontology          VARCHAR(50),
+            ethnicity_label             VARCHAR(80),
+            diseases_ontology           VARCHAR(50),
+            diseases_label              VARCHAR(80),
             development_stage_ontology  VARCHAR(40),
             development_stage_label     VARCHAR(40),
             sex                         VARCHAR(8),
-            is_living                   VARCHAR(8),
+            is_living                   VARCHAR(15),
             PRIMARY KEY(donorkey))
             DISTSTYLE ALL
             SORTKEY(donorkey)
@@ -201,12 +201,12 @@ CREATE_QUERY_TEMPLATE = {
         CREATE {0}TABLE IF NOT EXISTS {2} (
             specimenkey               VARCHAR(40) NOT NULL,
             donorkey                  VARCHAR(40) NOT NULL,
-            organ_ontology            VARCHAR(40),
-            organ_label               VARCHAR(100),
-            organ_parts_ontology      VARCHAR(40),
-            organ_parts_label         VARCHAR(100),
-            diseases_ontology         VARCHAR(40),
-            diseases_label            VARCHAR(50),
+            organ_ontology            VARCHAR(50),
+            organ_label               VARCHAR(120),
+            organ_parts_ontology      VARCHAR(50),
+            organ_parts_label         VARCHAR(120),
+            diseases_ontology         VARCHAR(50),
+            diseases_label            VARCHAR(80),
             PRIMARY KEY(specimenkey),
             FOREIGN KEY(donorkey) REFERENCES donor{1}(donorkey))
             DISTSTYLE ALL
@@ -217,12 +217,12 @@ CREATE_QUERY_TEMPLATE = {
         CREATE {0}TABLE IF NOT EXISTS {2} (
             cellsuspensionkey              VARCHAR(40) NOT NULL,
             specimenkey                    VARCHAR(40) NOT NULL,
-            derived_organ_ontology         VARCHAR(40),
-            derived_organ_label            VARCHAR(100),
-            derived_organ_parts_ontology   VARCHAR(40),
-            derived_organ_parts_label      VARCHAR(100),
-            genus_species_ontology         VARCHAR(40),
-            genus_species_label            VARCHAR(40),
+            derived_organ_ontology         VARCHAR(50),
+            derived_organ_label            VARCHAR(120),
+            derived_organ_parts_ontology   VARCHAR(50),
+            derived_organ_parts_label      VARCHAR(120),
+            genus_species_ontology         VARCHAR(50),
+            genus_species_label            VARCHAR(80),
             PRIMARY KEY(cellsuspensionkey),
             FOREIGN KEY(specimenkey) REFERENCES specimen{1}(specimenkey))
             DISTSTYLE ALL
