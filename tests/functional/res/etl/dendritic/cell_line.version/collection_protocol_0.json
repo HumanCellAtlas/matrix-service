@@ -1,0 +1,21 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/9.2.0/collection_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "HEF_collection",
+        "protocol_name": "Isolation of human embryonic fibroblasts",
+        "protocol_description": "After removal of the central nervous system, spinal ganglia and internal organs, residual embryonic tissue was transferred several times to a clean petri dish containing sterile cold hibernation medium to remove contaminant cells. The epidermis was then carefully removed by tearing the tissue with sterile forceps (at this point another set of sterile forceps was employed to avoid cell-contaminants from other organs). Sub-dissected epidermis was washed several times with hibernation medium prior seeding to a 0.1% gelatin-coated flask in HEF medium (DMEM-GlutaMAX, 5% FBS, 1% Sodium Puryvate, 1% Non-essential amino acids) supplemented with 50 ug/ml Gentamicin."
+    },
+    "method": {
+        "text": "Dissection",
+        "ontology": "EFO:0003856",
+        "ontology_label": "dissection"
+    },
+    "provenance": {
+        "document_id": "8612862e-beb1-416b-a807-0a83fae8d168",
+        "submission_date": "2019-09-20T13:43:45.371Z",
+        "update_date": "2019-09-20T13:43:52.146Z",
+        "schema_major_version": 9,
+        "schema_minor_version": 2
+    }
+}

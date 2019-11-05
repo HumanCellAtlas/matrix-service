@@ -1,0 +1,324 @@
+{
+    "analysis_run_type": "run",
+    "describedBy": "https://schema.humancellatlas.org/type/process/analysis/11.0.1/analysis_process",
+    "input_bundles": [
+        "cb97a8e3-8593-45df-bc63-caaa9200d3c4"
+    ],
+    "inputs": [
+        {
+            "parameter_name": "r1_fastq",
+            "parameter_value": "gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L001_R1.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L002_R1.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L003_R1.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L004_R1.fastq.gz"
+        },
+        {
+            "parameter_name": "r2_fastq",
+            "parameter_value": "gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L001_R2.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L002_R2.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L003_R2.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L004_R2.fastq.gz"
+        },
+        {
+            "parameter_name": "i1_fastq",
+            "parameter_value": "gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L001_I1.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L002_I1.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L003_I1.fastq.gz, gs://org-hca-dss-checkout-prod/bundles/cb97a8e3-8593-45df-bc63-caaa9200d3c4.2019-09-24T093431.333569Z/IDC3_L004_I1.fastq.gz"
+        },
+        {
+            "parameter_name": "whitelist",
+            "parameter_value": "gs://hca-dcp-sc-pipelines-test-data/whitelists/737K-august-2016.txt"
+        },
+        {
+            "parameter_name": "sample_id",
+            "parameter_value": "a3352e34-e7ae-4ed0-b580-a10c2f7a3451"
+        },
+        {
+            "parameter_name": "tar_star_reference",
+            "parameter_value": "gs://hca-dcp-sc-pipelines-test-data/alignmentReferences/optimusGencodeV27/buildReference/output_bucket/star_primary_gencode_v27.tar"
+        },
+        {
+            "parameter_name": "annotations_gtf",
+            "parameter_value": "gs://hca-dcp-sc-pipelines-test-data/alignmentReferences/optimusGencodeV27/gencode.v27.primary_assembly.annotation.gtf.gz"
+        },
+        {
+            "parameter_name": "ref_genome_fasta",
+            "parameter_value": "gs://hca-dcp-sc-pipelines-test-data/alignmentReferences/optimusGencodeV27/GRCh38.primary_assembly.genome.fa"
+        }
+    ],
+    "process_core": {
+        "process_id": "16b69941-ae06-40c4-988c-75ba8dc230e4"
+    },
+    "reference_bundle": "00000000-0000-0000-0000-000000000000",
+    "schema_type": "process",
+    "tasks": [
+        {
+            "cpus": 2,
+            "disk_size": "local-disk 7 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.2",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-AttachBarcodes/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-AttachBarcodes/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-25T20:44:31.928Z",
+            "stop_time": "2019-09-25T21:47:30.213Z",
+            "task_name": "AttachBarcodes",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 3 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.3",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CalculateCellMetrics/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CalculateCellMetrics/shard-0/stdout",
+            "memory": "43.9453125 GB",
+            "start_time": "2019-09-26T00:40:22.699Z",
+            "stop_time": "2019-09-26T01:03:03.213Z",
+            "task_name": "CalculateCellMetrics",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 4 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.3",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CalculateGeneMetrics/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CalculateGeneMetrics/shard-0/stdout",
+            "memory": "21.484375 GB",
+            "start_time": "2019-09-26T00:35:16.689Z",
+            "stop_time": "2019-09-26T00:59:51.210Z",
+            "task_name": "CalculateGeneMetrics",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 2,
+            "disk_size": "local-disk 7 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.2",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CellSortBam/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CellSortBam/shard-0/stdout",
+            "memory": "97.65625 GB",
+            "start_time": "2019-09-26T00:20:34.238Z",
+            "stop_time": "2019-09-26T00:40:21.211Z",
+            "task_name": "CellSortBam",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 55 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-umitools:0.0.1",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CorrectUMItools/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CorrectUMItools/shard-0/stdout",
+            "memory": "15.625 GB",
+            "start_time": "2019-09-26T00:03:07.619Z",
+            "stop_time": "2019-09-26T00:04:36.206Z",
+            "task_name": "CorrectUMItools",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 22 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.2",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CreateSparseCountMatrix/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-CreateSparseCountMatrix/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-26T00:34:34.869Z",
+            "stop_time": "2019-09-26T00:43:06.208Z",
+            "task_name": "CreateSparseCountMatrix",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 5 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-picard:v0.2.2-2.10.10",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-FastqToUBam/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-FastqToUBam/shard-0/stdout",
+            "memory": "3.759765625 GB",
+            "start_time": "2019-09-25T20:30:57.949Z",
+            "stop_time": "2019-09-25T20:44:30.208Z",
+            "task_name": "FastqToUBam",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 2,
+            "disk_size": "local-disk 4 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.2",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-GeneSortBam/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-GeneSortBam/shard-0/stdout",
+            "memory": "97.65625 GB",
+            "start_time": "2019-09-26T00:20:34.239Z",
+            "stop_time": "2019-09-26T00:35:15.232Z",
+            "task_name": "GeneSortBam",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 20 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.3",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeCellMetrics/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeCellMetrics/stdout",
+            "memory": "3.759765625 GB",
+            "start_time": "2019-09-26T01:41:15.000Z",
+            "stop_time": "2019-09-26T01:45:30.211Z",
+            "task_name": "MergeCellMetrics",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 20 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.2",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeCountFiles/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeCountFiles/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-26T01:02:05.379Z",
+            "stop_time": "2019-09-26T01:05:09.210Z",
+            "task_name": "MergeCountFiles",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 20 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.3",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeGeneMetrics/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeGeneMetrics/stdout",
+            "memory": "3.759765625 GB",
+            "start_time": "2019-09-26T01:22:17.539Z",
+            "stop_time": "2019-09-26T01:30:12.207Z",
+            "task_name": "MergeGeneMetrics",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 500 HDD",
+            "docker_image": "us.gcr.io/broad-gotc-prod/genomes-in-the-cloud:2.3.3-1513176735",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeSorted/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-MergeSorted/stdout",
+            "memory": "17.724609375 GB",
+            "start_time": "2019-09-26T00:53:17.969Z",
+            "stop_time": "2019-09-26T01:35:06.208Z",
+            "task_name": "MergeSorted",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 6 HDD",
+            "docker_image": "quay.io/humancellatlas/modify-gtf:0.1.0",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-ModifyGtf/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-ModifyGtf/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-25T22:54:27.399Z",
+            "stop_time": "2019-09-25T22:54:54.226Z",
+            "task_name": "ModifyGtf",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 4,
+            "disk_size": "local-disk 100 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-python3-scientific:0.1.10",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-OptimusZarrConversion/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-OptimusZarrConversion/stdout",
+            "memory": "18 GB",
+            "start_time": "2019-09-26T01:45:32.059Z",
+            "stop_time": "2019-09-26T01:50:12.233Z",
+            "task_name": "OptimusZarrConversion",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 56 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-picard:v0.2.2-2.10.10",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-PreCountSort/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-PreCountSort/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-26T00:20:34.239Z",
+            "stop_time": "2019-09-26T00:34:33.211Z",
+            "task_name": "PreCountSort",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 56 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-picard:v0.2.2-2.10.10",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-PreMergeSort/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-PreMergeSort/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-26T00:20:34.239Z",
+            "stop_time": "2019-09-26T00:33:33.210Z",
+            "task_name": "PreMergeSort",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 58 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-picard:v0.2.2-2.10.10",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-PreUMISort/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-PreUMISort/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-25T23:49:28.539Z",
+            "stop_time": "2019-09-26T00:03:06.209Z",
+            "task_name": "PreUMISort",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 20 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-dropletutils:0.1.1",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-RunEmptyDrops/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-RunEmptyDrops/stdout",
+            "memory": "9.765625 GB",
+            "start_time": "2019-09-26T01:05:11.019Z",
+            "stop_time": "2019-09-26T01:16:21.210Z",
+            "task_name": "RunEmptyDrops",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 2,
+            "disk_size": "local-disk 8 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-picard:2.20.4",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-ScatterBamFiles/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-ScatterBamFiles/shard-0/stdout",
+            "memory": "7.5 GB",
+            "start_time": "2019-09-25T21:53:22.088Z",
+            "stop_time": "2019-09-25T22:25:57.212Z",
+            "task_name": "ScatterBamFiles",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 16,
+            "disk_size": "local-disk 500 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-sctools:v0.3.5",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-SplitBamByCellBarcode/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-SplitBamByCellBarcode/stdout",
+            "memory": "3.759765625 GB",
+            "start_time": "2019-09-25T22:30:28.858Z",
+            "stop_time": "2019-09-25T22:54:24.209Z",
+            "task_name": "SplitBamByCellBarcode",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 16,
+            "disk_size": "local-disk 72 SSD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-star:v0.2.2-2.5.3a-40ead6e",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-StarAlign/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-StarAlign/shard-0/stdout",
+            "memory": "36.5234375 GB",
+            "start_time": "2019-09-25T22:54:27.399Z",
+            "stop_time": "2019-09-25T23:36:36.208Z",
+            "task_name": "StarAlign",
+            "zone": "us-central1-b"
+        },
+        {
+            "cpus": 1,
+            "disk_size": "local-disk 28 HDD",
+            "docker_image": "quay.io/humancellatlas/secondary-analysis-dropseqtools:v0.2.2-1.13",
+            "log_err": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-TagGenes/shard-0/stderr",
+            "log_out": "gs://hca-dcp-pipelines-prod-cromwell-execution/caas-cromwell-executions/AdapterOptimus/ebb4f836-d10f-42a8-9ae6-763f16739a46/call-analysis/Optimus.Optimus/16b69941-ae06-40c4-988c-75ba8dc230e4/call-TagGenes/shard-0/stdout",
+            "memory": "8.056640625 GB",
+            "start_time": "2019-09-25T23:36:37.389Z",
+            "stop_time": "2019-09-25T23:49:27.208Z",
+            "task_name": "TagGenes",
+            "zone": "us-central1-b"
+        }
+    ],
+    "timestamp_start_utc": "2019-09-25T20:30:52.848Z",
+    "timestamp_stop_utc": "2019-09-26T01:50:14.860Z",
+    "type": {
+        "text": "analysis"
+    },
+    "provenance": {
+        "document_id": "6e5253ab-be80-46bc-a763-a53e9e9bc231",
+        "submission_date": "2019-09-26T01:55:13.647Z",
+        "update_date": "2019-09-26T01:55:17.502Z",
+        "schema_major_version": 11,
+        "schema_minor_version": 0
+    }
+}

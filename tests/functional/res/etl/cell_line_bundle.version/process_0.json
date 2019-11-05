@@ -1,0 +1,17 @@
+{
+    "start_time": "2017-01-20T00:00:00Z",
+    "process_core": {
+        "operators": [
+            "Vaidotas Kiseliovas"
+        ],
+        "location": "Memorial Sloan Kettering Cancer Center",
+        "process_id": "lib_prep_5"
+    },
+    "schema_type": "process",
+    "describedBy": "https://schema.humancellatlas.org/type/process/9.1.1/process",
+    "provenance": {
+        "document_id": "dd101e2f-39d2-4dff-97df-f539f8f43bbc",
+        "submission_date": "2019-07-18T21:12:40.230Z",
+        "update_date": "2019-07-18T21:12:44.401Z"
+    }
+}

@@ -1,0 +1,52 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/6.1.1/library_preparation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "HS_BM_P1_LibPrep1",
+        "protocol_name": "10X Chromium Single Cell 3' Solution v2 Chemistry",
+        "document": "CG00052_SingleCell3_ReagentKitv2UserGuide_RevD.pdf"
+    },
+    "cell_barcode": {
+        "barcode_read": "Read 1",
+        "barcode_offset": 0,
+        "barcode_length": 16,
+        "white_list_file": "737K-august-2016.txt"
+    },
+    "nucleic_acid_source": "single cell",
+    "input_nucleic_acid_molecule": {
+        "text": "mRNA",
+        "ontology": "CHEBI:33699"
+    },
+    "library_construction_method": {
+        "text": "10X v2 sequencing",
+        "ontology": "EFO:0009310",
+        "ontology_label": "10X v2 sequencing"
+    },
+    "library_construction_kit": {
+        "retail_name": "10X Chromium Single Cell 3' Solution v2 Chemistry",
+        "catalog_number": "120237",
+        "manufacturer": "10X Genomics",
+        "lot_number": "151634",
+        "expiry_date": "2018-07-13"
+    },
+    "nucleic_acid_conversion_kit": {
+        "retail_name": "10X Chromium Single Cell 3' Solution v2 Chemistry",
+        "catalog_number": "151634",
+        "manufacturer": "10X Genomics",
+        "lot_number": "151634",
+        "expiry_date": "2018-07-13"
+    },
+    "end_bias": "3 prime tag",
+    "primer": "poly-dT",
+    "strand": "first",
+    "umi_barcode": {
+        "barcode_read": "Read 1",
+        "barcode_offset": 16,
+        "barcode_length": 10
+    },
+    "provenance": {
+        "document_id": "dc19bb22-ae7b-431b-9b8b-7b49799a8fcd",
+        "submission_date": "2019-07-18T21:12:39.848Z",
+        "update_date": "2019-07-18T21:12:44.269Z"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/9.1.1/collection_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "collection_protocol",
+        "protocol_name": "bone marrow aspiration",
+        "protocol_description": "AllCells, LLC Bone Marrow Aspiration Protocol"
+    },
+    "method": {
+        "text": "bone marrow aspiration",
+        "ontology": "EFO:0009292"
+    },
+    "provenance": {
+        "document_id": "79f7c6ac-ada8-4c17-86ec-e73e87b94374",
+        "submission_date": "2019-07-18T21:12:39.836Z",
+        "update_date": "2019-07-18T21:12:44.265Z"
+    }
+}

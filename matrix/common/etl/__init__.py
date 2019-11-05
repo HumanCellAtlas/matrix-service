@@ -280,6 +280,8 @@ def load_tables(job_id: str, is_update: bool = False):
         if (is_update and table == TableName.FEATURE) or table == TableName.WRITE_LOCK:
             continue
         s3_prefix = f"s3://{os.environ['MATRIX_PRELOAD_BUCKET']}/{job_id}/{table.value}"
+        if table == TableName.CELL:
+            s3_prefix += '/'
         iam = os.environ['MATRIX_REDSHIFT_IAM_ROLE_ARN']
 
         table_name = table.value if not is_update else f"{table.value}_temp"

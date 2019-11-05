@@ -1,0 +1,27 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/6.1.0/dissociation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "Cerebral_organoid_dissociation",
+        "protocol_name": "cerebral organoid dissociation",
+        "protocol_description": "cerebral organoid dissociation",
+        "document": "Dissociation_protocol_130-092-628.pdf"
+    },
+    "method": {
+        "text": "Papain-based enzymatic dissociation",
+        "ontology": "EFO:0009128",
+        "ontology_label": "enzymatic dissociation"
+    },
+    "reagents": [
+        {
+            "retail_name": "Neural Tissue Dissociation Kit",
+            "catalog_number": "130-092-628",
+            "manufacturer": "Miltenyi Biotec"
+        }
+    ],
+    "provenance": {
+        "document_id": "ff04887e-8ba2-40ba-8164-eca5a78433f8",
+        "submission_date": "2019-05-15T09:36:02.826Z",
+        "update_date": "2019-05-15T09:36:07.674Z"
+    }
+}

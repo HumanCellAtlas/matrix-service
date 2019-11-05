@@ -1,0 +1,84 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.0.0/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "HPSI human cerebral organoids",
+        "project_title": "Assessing the relevance of organoids to model inter-individual variation",
+        "project_description": "The purpose of this project is to assess the relevance of pluripotent stem cell-derived cerebral and liver organoids to recapitulate the variation in cell-type specific gene expression programs between individuals. Towards this aim, we will generate reference atlases of the developing cortex and liver from multiple individuals, derive iPSC lines from these same individuals, and determine if inter-individual gene expression variation is recapitulated in cerebral and liver organoids from the same individual from which we have reference maps. In parallel we will assess the genetic contribution to variablity between organoids from different iPSCs of multiple human individuals that are available in existing iPSC resources (e.g. HipSci)."
+    },
+    "insdc_project_accessions": [
+        "ERP114427"
+    ],
+    "insdc_study_accessions": [
+        "PRJEB31821"
+    ],
+    "biostudies_accessions": [
+        "S-SUBS2"
+    ],
+    "contributors": [
+        {
+            "name": "Barbara,,Treutlein",
+            "email": "barbara_treutlein@eva.mpg.de",
+            "institution": "Max Planck Institute for Evolutionary Anthropology",
+            "address": "Deutscher Pl. 6, 04103 Leipzig",
+            "country": "Germany",
+            "project_role": {
+                "text": "principal investigator",
+                "ontology": "EFO:0009736",
+                "ontology_label": "principal investigator"
+            },
+            "orcid_id": "0000-0002-3299-5597",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "J,Gray,Camp",
+            "email": "gray_camp@eva.mpg.de",
+            "institution": "Max Planck Institute for Evolutionary Anthropology",
+            "address": "Deutscher Pl. 6, 04103 Leipzig",
+            "country": "Germany",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Zhisong,,He",
+            "email": "zhisong_he@eva.mpg.de",
+            "institution": "Max Planck Institute for Evolutionary Anthropology",
+            "address": "Deutscher Pl. 6, 04103 Leipzig",
+            "country": "Germany",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Sabina,,Kanton",
+            "email": "sabina_kanton@eva.mpg.de",
+            "institution": "Max Planck Institute for Evolutionary Anthropology",
+            "address": "Deutscher Pl. 6, 04103 Leipzig",
+            "country": "Germany",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Mallory,Ann,Freeberg",
+            "email": "mfreeberg@ebi.ac.uk",
+            "institution": "EMBL-EBI",
+            "laboratory": "Human Cell Atlas Data Coordination Platform",
+            "address": "Wellcome Trust Genome Campus, Cambridge UK",
+            "country": "UK",
+            "project_role": {
+                "text": "Human Cell Atlas wrangler",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
+            },
+            "orcid_id": "0000-0003-2949-3921",
+            "corresponding_contributor": false
+        }
+    ],
+    "funders": [
+        {
+            "grant_id": "not provided",
+            "organization": "not provided"
+        }
+    ],
+    "provenance": {
+        "document_id": "005d611a-14d5-4fbf-846e-571a1f874f70",
+        "submission_date": "2019-05-15T09:36:02.441Z",
+        "update_date": "2019-05-15T09:36:08.875Z"
+    }
+}

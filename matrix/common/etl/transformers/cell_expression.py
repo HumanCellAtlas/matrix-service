@@ -64,8 +64,7 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         """
         # Get the keys associated with this cell, except for cellkey
         keys = self._parse_keys(bundle_dir)
-        cell_key = json.load(open(
-            os.path.join(bundle_dir, "cell_suspension_0.json")))['provenance']['document_id']
+        cell_key = keys["cell_suspension_key"]
 
         # Read in isoform and gene expression values
         isoforms_path = glob.glob(os.path.join(bundle_dir, "*.isoforms.results"))[0]
@@ -101,7 +100,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             cell_key,
             cell_key,
             keys["project_key"],
-            keys["specimen_key"],
             keys["library_key"],
             keys["analysis_key"],
             file_uuid,
@@ -217,7 +215,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
                 [cell_key,
                  keys["cell_suspension_key"],
                  keys["project_key"],
-                 keys["specimen_key"],
                  keys["library_key"],
                  keys["analysis_key"],
                  file_uuid,
@@ -268,10 +265,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         ap_path = p.joinpath("analysis_protocol_0.json")
         ap_key = json.load(open(ap_path))["provenance"]["document_id"]
 
-        specimen_paths = list(p.glob("specimen_from_organism_*.json"))
-        specimen_keys = [json.load(open(p))['provenance']['document_id'] for p in specimen_paths]
-        specimen_key = sorted(specimen_keys)[0]
-
         library_paths = list(p.glob("library_preparation_protocol_*.json"))
         library_keys = [json.load(open(p))['provenance']['document_id'] for p in library_paths]
         library_key = sorted(library_keys)[0]
@@ -280,7 +273,6 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
             "bundle_uuid": bundle_uuid,
             "cell_suspension_key": cs_key,
             "project_key": project_key,
-            "specimen_key": specimen_key,
             "library_key": library_key,
             "analysis_key": ap_key
         }

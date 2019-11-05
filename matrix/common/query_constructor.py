@@ -18,7 +18,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE {feature_where_clause}
@@ -34,7 +36,9 @@ MANIFEST VERBOSE
 CELL_QUERY_TEMPLATE = """
 UNLOAD($$SELECT cell.cellkey, {fields}
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -290,7 +294,7 @@ def speciesify_filter(matrix_filter: typing.Dict[str, typing.Any],
         "value": [
             {
                 "op": "=",
-                "field": "specimen_from_organism.genus_species.ontology_label",
+                "field": "cell_suspension.genus_species.ontology_label",
                 "value": genus_species
             },
             matrix_filter

@@ -1,0 +1,580 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/system/1.1.5/links",
+    "schema_type": "link_bundle",
+    "schema_version": "1.1.5",
+    "links": [
+        {
+            "process": "d72696f9-de1a-4e54-ad44-935a1556442f",
+            "inputs": [
+                "35219225-8e86-42aa-b791-22f1416fc916",
+                "8f95894e-a2d4-435f-9412-049c42339469",
+                "e9a2a8e7-0bf1-4974-add3-5e925839e36a",
+                "bb3a21a5-b46a-483e-ac61-9ada1a088723",
+                "d37d56b6-02de-4a28-8f5a-f5c8b8b135d0",
+                "38fb6b07-240a-4e79-8a54-bac69ec1e622"
+            ],
+            "input_type": "file",
+            "outputs": [
+                "d271b99c-e287-4c08-906a-b202cd49d7d0",
+                "16820f0d-5be0-47ff-bf79-80c0dc28ad3b",
+                "9bbc4e9a-e8da-4823-bffc-d9c15b79d657",
+                "d6e4c971-f72c-4663-a6d4-20db6d49051e",
+                "b17d4f09-a088-4dca-822c-784fabd24758",
+                "a0456306-4f7a-44ad-ab40-024f274e7c01",
+                "f95e12de-d1d5-48f5-8f81-c2bcc0ffae33",
+                "a9c9d1b8-ae3a-4840-a55b-dcde753f5ee0",
+                "0b06d6eb-9bdd-4647-bd17-5b077eb11e34",
+                "9d202050-4193-4975-9be9-b231571e107c",
+                "ca51ed3b-8bf4-4d03-9b22-7c95d610150e",
+                "c208e18d-20c6-4f99-bafc-4c50208972a9",
+                "ccc9a8b0-4a89-44c7-a788-a90b22707045",
+                "bce406fd-d1fd-4f36-83ca-1e7f53906ebd",
+                "e6918d34-7ec5-4ba6-88d8-0e9147a4b690",
+                "9babc195-d576-4eab-bbdd-7993ad6af64e",
+                "19d1ee33-7776-4c11-8d47-532b8b4a9c17",
+                "b00e5e3c-732b-4b04-b6d1-057588e6896b",
+                "755feb7c-cfdf-48be-b243-2da67d39c9c0",
+                "e256fcc2-0cbf-425d-8c07-c2a0af0357b4",
+                "0f7fde7f-68c9-4af9-a010-e301a2b44478",
+                "e49edf0e-c11e-49be-b6da-6223253e7cc3",
+                "a0623c91-5b6c-44e6-b0df-7fc4fa01d1db",
+                "171c7d6c-60e8-4ac0-8fca-91fe610da873",
+                "7feaf5c4-1a3f-43f9-af98-dcb06f88b740",
+                "d19ccf55-b7fc-439b-8e05-e50d202768ef",
+                "181068fd-1051-4b25-ba96-1a90f609d025",
+                "d871988e-c1e3-4609-8466-80d4ebe5b61c",
+                "093df6ba-ad39-453b-8909-f4012ceb79d6",
+                "5ccaa06d-cc3c-44a4-8b8c-568c51db9805",
+                "9f332b22-9b51-4a03-a22f-e10bfc9755d5",
+                "54067b5c-87e6-49ee-a541-8ff7eff81e44",
+                "3c6b4e6f-e6b0-4d94-ac47-3dadd2a91ace",
+                "d877f700-715b-4158-92a1-5a141e70b9d8",
+                "fecf0d45-5640-4cdb-bcfc-6513a01febba",
+                "cf8b6c33-8683-424f-badc-7a034c856804",
+                "9c12cf9c-f028-4ef3-9e3a-7ed0d2cb1379",
+                "e95a79bc-9ed3-42e7-8b90-450ab4357330",
+                "76e42fdf-fff6-428d-abc2-aaa3a98e0620",
+                "5ab61ec2-4b73-4ed6-a21f-aca80a80bc81",
+                "746f9827-4131-48ea-a1bc-470cdf3ab0ea",
+                "d5fbb555-5179-4531-bf63-0f477d2b82ec",
+                "9262e932-8221-4ae0-b055-1022821cd06a",
+                "84d00b84-136c-4a15-aa59-c2310918f1d7",
+                "1047a4b9-79ee-4d71-8089-bc61bced8335",
+                "225e92db-60e0-4e09-8219-4632a24e37f3",
+                "731ee8cf-85e2-4a2d-a13a-3074e8b47832",
+                "bbe5013b-a3c7-4fc7-bd0e-726a6e63d0d5",
+                "d39ba97f-d53a-4477-bbec-21a591a27d1e",
+                "ca713e4b-db31-4c5b-af37-269371893573",
+                "75967949-54f9-4c57-94b6-ff9985575d9e",
+                "bf7cb777-2008-46f6-8062-302199dae4c7",
+                "cd7d8c70-309a-4f87-b423-7436a736bfe8",
+                "04da05e7-053d-4b0e-ad69-1739f843d947",
+                "788af599-229e-44c0-ac51-6e4c54997655",
+                "a0e14071-8d81-4a0e-adb6-fecc8aab9a00",
+                "6365e061-aa5f-46a6-9084-91ff41b6feb2",
+                "6e054a9b-eb38-4187-b472-e9142bbc8bbe",
+                "d5706dd2-2194-4c90-993e-95f80f6b343f",
+                "f1f8a12e-2a45-46e9-af08-daefb48b1d83",
+                "501c5a19-0d4b-45d3-82a0-c6048fb3098c",
+                "1755e52d-f15c-4b8a-8141-a16fc7427f1b",
+                "0f4040c6-45d2-47a9-a127-f3da6a4ffd00",
+                "154a1d83-98e3-412f-8e26-05171630b693",
+                "765f8f73-b2b9-462a-afa5-9a770cb1477b",
+                "aa454a1d-ab34-4512-981a-57bda91e4f69",
+                "04f052d4-4ffd-4709-aac6-3c2d9de888d9",
+                "ab7c9750-bcb3-43cf-8fd5-0f8aeb4e9203",
+                "4a877a1c-c77a-4613-a462-a2e1ce2b6ae3",
+                "95e238a8-1b76-4f6c-8bce-a195bea0a0fc",
+                "e2070e00-58f8-4a47-9880-922efb06290e",
+                "049b68a0-d8bc-44a0-a168-718fbcfb101b",
+                "6a808ab9-a751-418a-841b-08dfa74f1201",
+                "6af0380c-fab5-41b1-a114-99f8ad6ba205",
+                "566d1f2a-4bf0-4ead-868c-fc28f8790fce",
+                "dd72976e-feb6-4e2f-8594-271beeb5e8d1",
+                "e7d1e71e-425a-4328-aced-72c90ec9dbbf",
+                "612e3326-12a8-4785-9010-364a0c505ccc",
+                "8d4f0548-38b2-4637-b316-88f125f5cba7",
+                "2e17d9a9-18fa-4953-81b7-5a1cd34c7e60",
+                "50058a94-44f6-44d2-9f3a-47e60f49b66a",
+                "883d5c99-b2a5-4ecd-8eee-a9f60ec868e0",
+                "ec332033-eb77-4ddb-9caf-34e7201ec046",
+                "da8cab24-7c02-4ba7-8883-d211f923ee57",
+                "7b7949cc-e946-476a-9946-a32dd548d25e",
+                "cdb794d9-c618-41e0-84d0-e723ab952c98",
+                "bd103a40-7f13-4c34-9522-2bc3ef6422a2",
+                "20bdcb17-1c3f-49db-903f-9b9ace719fdf",
+                "c3915c19-b5da-4284-b528-e25ec628e71e",
+                "f22b87e6-51db-4aae-b54c-6796b989ad33",
+                "d17662d2-b085-474d-9998-4c0b2191ded6",
+                "5461ddf2-a04b-4f24-871d-bcaa5b6df1b6",
+                "57cb883f-b0d6-4d93-a37f-8f7cb4dfdda1",
+                "b8722a33-25df-4ee0-bece-64252df555ec",
+                "7d2a667d-b1b5-48c9-b0ae-1ceed1f0f95f",
+                "0281c045-34ef-40d7-873f-12a2e0d094a7",
+                "48adb22c-1cfa-4f70-bc3d-e3dffac5dcf1",
+                "af8f389b-0669-4048-957e-4d7e5d097295",
+                "e55aa929-af74-4ca5-93c6-ddc1421380c8",
+                "2d6600dd-f37d-4a98-9bc6-b8f17bc60a7f",
+                "5744d0ab-ced9-4b51-990a-5af1aaceabd9",
+                "62565cbe-3ea1-4fd4-88ba-6ddbc42f1418",
+                "cd0e2204-2893-45d4-8c8d-68203582c95f",
+                "fe002c06-6f72-4e44-8c2f-7998c3e9c7e4",
+                "733da004-eed1-46bd-9942-33a231627776",
+                "8eb7b5af-bb50-4ddb-a54a-ebaad65bf321",
+                "5098a64b-456a-4ae0-b2e7-741b64549a01",
+                "c7a8fb56-802d-4ef6-8038-40d22be355d0",
+                "71407eb1-e53d-429f-b2b9-4c2335abd4e4",
+                "3020f8b1-594f-4712-b2df-30743227804a",
+                "61c87dde-cbfa-4173-8a6d-9f9736fd5941",
+                "9a572912-7e98-43e7-9402-b4d83c40c714",
+                "d35ae4ef-a3f5-40e3-8cfa-71d4ca6d5214",
+                "e89935b9-3900-4275-b4cc-2d9f184c4b5d",
+                "4f47f0dd-0e24-4d54-a0bc-c649bef8b843",
+                "a12ad6f4-4b78-4cdd-a058-ded2cd4c7096",
+                "44824c79-aa9f-40d0-a60f-41acddf8f2db",
+                "e5062a92-c023-40bb-9b21-6a3f8a546731",
+                "085a8122-4932-4cdc-a98f-d4900191416e",
+                "f58ae569-3ed5-42fe-8da0-c386ad2c6a42",
+                "fe64f0ff-7576-4f64-ac90-30111a335b51",
+                "c4392f21-261e-4549-becc-226342ab8d0e",
+                "dc1481e3-2232-4383-960b-504762810e2c",
+                "9f4d5510-f6b5-48c6-a157-8621d386996e",
+                "0e0d17b7-dcb5-4a29-8730-19bd067f153a",
+                "a0ac11c6-768e-4e46-8676-85e8ff67a550",
+                "24d4907d-0ced-48c2-8daa-b8364f081855",
+                "e07446ab-628d-4936-93b0-60b5e0a14479",
+                "68169126-8f93-476b-82d1-7a9383289405",
+                "0e221a2a-3dfb-4583-a1d6-647290f2f06b",
+                "559ecc65-9786-4892-ad1e-3fb20cdc7b04",
+                "c1c460d5-1d99-4fe0-b89e-904dfea3973a",
+                "35165976-2bbc-408f-a28f-cc64c58caf7a",
+                "e4dc23ab-e89c-444e-b557-75ad67d648df",
+                "4151d6c5-139f-413d-8954-bfa4760589d9",
+                "d9283f90-c9ea-4a47-8b48-4dc12576cee9",
+                "1149a4da-b993-4294-87b2-010ea0c82274",
+                "f495d1f8-711e-45a9-a00f-d95b2fa114a4",
+                "159b7dc5-19cc-442c-ab13-8dd2250cde2f",
+                "09d0e48c-f51b-416e-873f-09dc9e49624f",
+                "16243588-e3e2-4dc9-ba54-5bbbcf39c590",
+                "d730ea67-557d-490b-bedd-a5ac43d36e1f",
+                "44226f40-1794-40b6-9e50-03f2577ced54",
+                "dd32cd39-1d2e-45cb-97e0-5dffacefbbfe",
+                "7edc0359-bdcf-436b-a41e-ef02513c30f6",
+                "3e101ac8-efe7-4ea0-a352-98768b8aca9e",
+                "ba74fe8b-30c7-4a04-8165-8e727527b624",
+                "87bbc767-92bc-4016-ac1c-34e2b2619b65",
+                "c6c1115e-799b-4278-b3ef-35285c428338",
+                "389d7a64-03da-4647-8195-ed495eeb4837",
+                "ba15379a-9a62-4f64-a63a-b7b5581378d3",
+                "57befc1e-c9e8-4dda-8ec8-c85fa7722793",
+                "853e3c4c-69a6-46c3-879b-bfa9a377aef7",
+                "9e047434-f718-4ccd-bd7e-1d32c9bee8de",
+                "f137bda2-9c2a-4d30-b65f-7f4b085fa099",
+                "a3484440-19ee-4459-9cb7-cd907d431872",
+                "44e2a9b4-ea4c-465d-8149-719c27026579",
+                "e9ea3837-d3a5-4f0f-b981-4b7289ecc9a3",
+                "1da90e4b-db57-46d5-98b0-81bc0b1f900f",
+                "15164361-e260-4f13-93fb-d3268e093008",
+                "e638a1e3-f8bb-4342-a902-a265e85d3fe8",
+                "354f0c1e-934d-4d94-a869-21209fe65699",
+                "b16d6764-d993-4f68-a830-e633162dcfdb",
+                "36d783f2-d9a9-48be-9dfc-d7c4ae5a1a44",
+                "f610fb53-8dc5-4057-b4e1-7d913fa7eeff",
+                "168aba2d-72f4-489a-a893-36ba256bbd2b",
+                "06c39a21-823d-43ed-953d-b7b09e837056",
+                "c3658d9f-cdc9-41e8-8950-020b47cf097c",
+                "980426bc-8139-4b40-aabf-c883055beed4",
+                "5ee43e59-01e5-4228-b3c4-3d6a90257df3",
+                "6c1ab082-beff-4387-82e9-21a0745970f8",
+                "e3859289-e538-4908-b849-8bf1ddf68133",
+                "4c745ecc-2243-481d-8288-3d582e79882f",
+                "4956cf56-de5b-41fd-9e89-73902ba3e3fd",
+                "bc030898-b678-4506-8aa6-080e74bcaf09",
+                "7327ca83-7676-4d8e-83f3-03c2ccbbcce7",
+                "611a55af-3025-4b9e-9b3d-6a42c4f9ee92",
+                "40907853-43d2-46c1-97f4-5da4d12215ad",
+                "7ad08b6a-5bc0-4c88-b783-f0ca9800a274",
+                "6e8043af-21d8-4d57-933f-d5ff14e5e209",
+                "317819f7-0e23-4109-8aeb-05824d5a0e7c",
+                "962a35d0-9649-4706-afa9-8f98db63cd0d",
+                "9e155b83-1192-4e3a-bc1d-16d158117779",
+                "88fdb115-294e-4073-929e-ae2fc8cc830d",
+                "112b3ab2-7db3-499f-b0dc-721ccc1ab6d1",
+                "f6861acf-ecfc-44f3-8bb4-92db7502317d",
+                "348e0331-38cc-423b-9d7c-8d188665a79d",
+                "503004ea-b3dc-4965-a718-a55d44c887f6",
+                "52d49dcc-a79b-4fae-badb-6a473b2092cb",
+                "059bcc1c-e1c1-4ca7-92ff-4dffd83c5853",
+                "d5f6d7a2-64eb-4de2-8ca7-fb8cdfc5ba2e",
+                "8a9fd742-d292-47e1-b843-8820fa6dc601",
+                "295bec47-ecc1-4892-b4dd-e4d15c12fe3d",
+                "c76485a9-af3a-4e8b-a795-6f838762f580",
+                "c418e67f-27f0-437d-9210-b542c6df8f92",
+                "01ab32e1-a4a8-48c3-b319-f12b1278f922",
+                "624f4752-de79-4f0d-9e9d-d85ea4bd5918",
+                "c7f1ecf9-dd5e-47ff-bbf1-de4f470a61c7",
+                "13a5b863-568c-4039-89ea-e927cec57879",
+                "3a13f43e-4c34-4ea5-911e-8e4d1b663325",
+                "7ec18d2f-2e56-4bea-bef6-c0933ab87502",
+                "9bda4b22-1fc4-490e-bf73-510b104921e8",
+                "f4ab50a7-7c00-4d54-bad1-fb25eeb5394d",
+                "d4515dd5-7395-46d2-8a80-62b5a5870669",
+                "47c36e2e-890d-4652-b743-3b9a0c74f35f",
+                "71430fe7-dfb9-4b4b-a09a-3daf49a911fa",
+                "b92c3fb1-9431-45e2-aa17-0661c64002c1",
+                "0ae230d2-6e29-4687-aa22-ec45130dc3ca",
+                "fde9c53f-d152-4a2d-ad59-83b80b659814",
+                "b6c4b1c2-e842-421e-8f6a-cc189d973be8",
+                "496d3e1d-d8c7-4bd7-87ac-cdd37e4d5b22",
+                "b0cd235e-3a85-448c-b0ca-0cffd10b207d",
+                "40c73307-348e-41e4-830e-6c16158edbe2",
+                "acca0ecc-db02-408a-adb4-59e88d650de0",
+                "68b65f63-1183-422f-baa3-698e0e105bc9",
+                "7b170365-2c9a-4a2b-9095-25169bc1de94",
+                "83ac94a6-d385-4829-8367-b3920c6496b9",
+                "4f641e38-e2f7-4e49-9ef5-5f8e142ed0e1",
+                "0ad79333-dbf2-4260-a938-2c7a222955d3",
+                "bb82d165-9478-4903-b3af-879921fed6eb",
+                "4075350d-2a3a-4bf4-8256-18b27cf4bd7a",
+                "1555f6fe-1b9b-419e-88f4-68670fe5ee30",
+                "6fd6fc88-6a1d-4f06-b5bc-4897b405bd35",
+                "21372b87-e077-48f8-8100-8d1c644c3444",
+                "dbe1cbf0-da0b-4c3d-a5a2-60b41e2f14f0",
+                "aae57a07-cc6a-41aa-ad91-cc758295d513",
+                "85462a18-bf33-484a-a251-2e8a6932bce7",
+                "db0f411c-501b-494a-9ce3-1322af30af8e",
+                "63bcd1e9-ccb2-4080-a451-80b29dfd7b87",
+                "feec85d4-997d-4baa-a304-8fd510897e25",
+                "db8f14bd-fbde-4e40-a1a2-7bccf79807cb",
+                "dc04fdac-a295-4ad3-abbb-c01693bafe04",
+                "0a428a61-f6a6-49eb-9e3f-4ffebe5227b6",
+                "dea39b3f-096e-40c1-87d1-16db7520c247",
+                "4a5b3f64-bc8e-41a2-94ef-0abb43d4c283",
+                "b7f61342-b3fb-4a2a-921c-4eaef28a2c16",
+                "b76a5b37-c53a-48b6-a8ff-32c032e24d94",
+                "77f31a55-5af3-4091-a093-08cbf7843589",
+                "c4cb1cfc-b0f1-4bcf-b752-a6b3f0edd7f3",
+                "afb86bb3-09ca-4a7f-99ec-a950839a8415",
+                "f49393c1-5dc0-4bb0-870a-40c71623097c",
+                "7f06bd7f-a7c0-4467-84a8-1be0c5cbd114",
+                "6e6e5c86-9407-4bed-9aaf-71dc4720ff55",
+                "dd9e44a6-84b2-4b65-8d66-0563aae64958",
+                "b3a8b582-3623-4c18-acaf-ef0b508ddc38",
+                "5c33bbd0-7ab0-4585-ab88-550be18a4026",
+                "fdb8d5ad-89bf-4ddd-8510-eaf5bae2ce02",
+                "62591828-9834-48ef-a17d-32d1cbf4f208",
+                "037a4787-cd93-4cc6-8003-7b0c2d61626a",
+                "72f9d71f-a7f2-41a6-9b74-28bf3ae0e3cb",
+                "c06bc9ed-16d9-4385-b052-8aa1377647e4",
+                "4b202f79-db0b-4b51-a974-e88a4f97ac5a",
+                "0a150529-428a-43c6-9302-65c99b735a6f",
+                "377b21ca-e50e-4f54-bc2c-22d6d0522eb7",
+                "25488748-ac47-4502-818c-e33420f99552",
+                "bb17c1a4-ff32-48c7-9faa-5fe5284dba61",
+                "b41bb0e5-df6b-46c7-9557-f6d25ee02ae5",
+                "c7a9b22a-4fd3-4c2a-a907-edaf2b5740f7",
+                "5be558b6-fd46-4040-81cc-15b7091c5590",
+                "89a69693-8a07-4ac5-860a-12d7c5aa9603",
+                "40bf4748-f11d-46d0-827d-2cfded2185a7",
+                "1a6d3f7b-b35c-44bd-ae92-842d5d8975bb",
+                "6cb2c5c8-1fce-420f-9575-36ef0b3cc474",
+                "a1dc2a40-e455-4e01-af21-8b29e6c13892",
+                "ae087c56-807f-4038-a9ae-4b3e25cc866d",
+                "364c0bee-0b33-40b8-b07d-acc43ef51d37",
+                "3bed99d9-66bd-480c-a35d-8b1b01588e56",
+                "6a5289da-1d5d-4dd1-90c0-3b341787fbb0",
+                "535c1ead-909b-490c-b20d-5af4598c7e26",
+                "7614fc08-8446-4669-8706-28e980d5f3b4",
+                "93a7c951-776a-4209-acc8-114fac81477e",
+                "60907d0d-13b4-4825-a189-8bbecced5377",
+                "62813c01-32b8-4b70-b344-0a1e438e0e19",
+                "f784b39b-a2fa-46fb-84d3-327c953c1e3a",
+                "73ae316e-7438-40f8-b8e4-d59d0f3d9aec",
+                "46b61b05-8e4a-4e74-a1cc-c0ce42502bb8",
+                "6e68ba15-ba3f-489e-bb51-5008417afcf4",
+                "ac729d26-3f9d-4f57-90d2-91ed6b5099f0",
+                "72655643-12f6-4425-bcf3-104aba312e3c",
+                "9adb5917-75f5-4fb4-8fbe-0b0c7549ce91",
+                "94682c1d-1a9e-467e-919b-923932fcb5bb",
+                "a967ad2d-4a5b-48b7-8070-fa3ab3ba519d",
+                "cbdc2cb6-6003-4ea4-9bb9-d0a784b385f9",
+                "bc067dc1-2a35-48d4-b6ba-9241513fc1ff",
+                "9ef9ef00-ddef-47c5-90d5-7b33d1bbd12d",
+                "246a0c7c-9f82-4b9c-bc46-6107ff28384c",
+                "16d23046-5d83-4860-bc27-ed93096c8402",
+                "05e4e178-fd0d-4bc3-82db-f28d10783840",
+                "625a0c69-f379-47a7-9be7-46306af170ff",
+                "d453fed3-ead6-4012-8a94-a54075d39a49",
+                "1058c60c-83ec-4090-8c40-94957a1f9e3e",
+                "5eb6b93a-a9fa-4849-9bb5-041239980f72",
+                "7c438d65-c213-477f-b172-083c1be6b3ae",
+                "9f643082-a224-4168-a13e-ad3ea73930c1",
+                "8f559eb6-7a2d-4655-9494-1d346fd998a7",
+                "877a8bd0-0e12-44cf-a3b2-b0515d96aa9d",
+                "a5234fb4-95d8-4d99-8760-57fe57bd6e18",
+                "867173e4-f9ea-4a45-bbd4-a8c4b668ce83",
+                "52f1441e-424e-493e-9919-ddb2fdf0b5bf",
+                "8e60ac2d-f6a7-4f14-aadf-03defee2110d",
+                "d3d7e8a5-9d4f-4963-ad02-5672d4f8b84a",
+                "c912cdfd-8795-4624-bb02-75dea08e28cd",
+                "aee9839f-f7ce-43a7-958d-5d6876b07269",
+                "fece78aa-fe30-4ec0-9e2d-430b74a1f92b",
+                "af1c321e-1a01-4e06-b827-901d85ef9b47",
+                "4a5abdbc-87ec-4f0d-bb48-acfb4d21888c",
+                "aed35ae7-4bba-4814-8ad6-cd15bcf7cb04",
+                "c689bbbe-51be-44f1-bc2c-8b02d9910442",
+                "40544055-8325-4f9b-a2fd-981415e31ac2",
+                "0172b41c-f1ab-45bf-b4c5-0f7024e2e7de",
+                "c9916ad5-c491-4179-b0f2-172b2fed4145",
+                "19f054e2-c031-4643-adad-74b33a65b55e",
+                "8b7a71a8-077d-487e-a2ae-bd95662367e5",
+                "0abc2299-66c5-48f8-995e-2e666aee9e8b",
+                "1296b663-b9c2-4e78-84cb-d108b29d4add",
+                "1a9f1541-c7bd-4bb6-8e5b-73e35a13f6f1",
+                "bbafe2ee-24aa-460d-9413-b5e5b8ea5e04",
+                "4251a611-ed11-4965-bcaf-289da680433b",
+                "c5c3edc2-2b37-4da8-9ddb-df5d1b0f892a",
+                "fd095c2f-7be6-4987-a099-8beeb371fce1",
+                "c38ee9d2-7d93-4844-861f-d4b9ba466c82",
+                "bd409200-7a29-46c5-9e9c-81c94b4ab627",
+                "e62305ef-e329-4010-b297-38a9cae90332",
+                "159426d9-3ff2-42cb-9d93-f38e57717be6",
+                "2855a0d4-bcef-400c-991f-25e4e4f2ffba"
+            ],
+            "output_type": "file",
+            "protocols": [
+                {
+                    "protocol_type": "analysis_protocol",
+                    "protocol_id": "83af655a-7104-4860-9d7e-f9a34fe7deee"
+                }
+            ]
+        },
+        {
+            "process": "0350171f-5ca4-4149-99f6-25959f908db8",
+            "inputs": [
+                "a286da91-6e9f-42dd-ae7b-9ee37fba9529"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "bb3a21a5-b46a-483e-ac61-9ada1a088723",
+                "d37d56b6-02de-4a28-8f5a-f5c8b8b135d0",
+                "38fb6b07-240a-4e79-8a54-bac69ec1e622"
+            ],
+            "output_type": "file",
+            "protocols": [
+                {
+                    "protocol_type": "library_preparation_protocol",
+                    "protocol_id": "910266c3-64b1-4a3d-a4fe-844be494ffd1"
+                },
+                {
+                    "protocol_type": "sequencing_protocol",
+                    "protocol_id": "22046228-edac-41ed-a340-ac46f7119eb6"
+                }
+            ]
+        },
+        {
+            "process": "fa76f8a2-723a-409d-b592-7467f1c3eb5e",
+            "inputs": [
+                "6d7d51b3-2be2-4afa-8ce3-41e7547d3184",
+                "29995ac9-961c-4226-8ea1-110e66023d59",
+                "8ba6f6f0-6a65-4b99-8e92-7084883114e7",
+                "77e200df-532e-438c-852f-6737beb347af"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "a286da91-6e9f-42dd-ae7b-9ee37fba9529"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "dissociation_protocol",
+                    "protocol_id": "ff04887e-8ba2-40ba-8164-eca5a78433f8"
+                }
+            ]
+        },
+        {
+            "process": "feb13d68-824d-4158-b967-62a4837d77b2",
+            "inputs": [
+                "e7e0f358-a681-4412-8888-318234f90ca9"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "6d7d51b3-2be2-4afa-8ce3-41e7547d3184"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "differentiation_protocol",
+                    "protocol_id": "1271e3fe-eee1-4275-93d0-4920fdd46778"
+                }
+            ]
+        },
+        {
+            "process": "72bc672d-5389-4d92-91af-982c9e1980e6",
+            "inputs": [
+                "cb46841a-5939-44f1-b33a-280f44b0a8ce"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "e7e0f358-a681-4412-8888-318234f90ca9"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "ipsc_induction_protocol",
+                    "protocol_id": "bf490fc5-78b0-4829-baa1-8df5decf3f1a"
+                }
+            ]
+        },
+        {
+            "process": "7764a9d0-0003-4273-91a2-f8979c2b1da5",
+            "inputs": [
+                "ae5d5c9f-3bea-4b7b-9ef3-4c41c0f3a885"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "cb46841a-5939-44f1-b33a-280f44b0a8ce"
+            ],
+            "output_type": "biomaterial",
+            "protocols": []
+        },
+        {
+            "process": "9d2590e3-2ba0-4237-831c-f7c16f44eeba",
+            "inputs": [
+                "d522d3fa-89f6-4938-8d81-e43e3d776c07"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "29995ac9-961c-4226-8ea1-110e66023d59"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "differentiation_protocol",
+                    "protocol_id": "1271e3fe-eee1-4275-93d0-4920fdd46778"
+                }
+            ]
+        },
+        {
+            "process": "eb9fb1e8-0e26-427c-9d1b-59123ae65071",
+            "inputs": [
+                "d0dd6a08-76b0-4a14-9432-cffcda5505fe"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "d522d3fa-89f6-4938-8d81-e43e3d776c07"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "ipsc_induction_protocol",
+                    "protocol_id": "bf490fc5-78b0-4829-baa1-8df5decf3f1a"
+                }
+            ]
+        },
+        {
+            "process": "f99baea3-df9c-489f-bf3f-de5bc5e92e73",
+            "inputs": [
+                "bf10c244-6fa0-44e0-ad09-ccad63981e6f"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "d0dd6a08-76b0-4a14-9432-cffcda5505fe"
+            ],
+            "output_type": "biomaterial",
+            "protocols": []
+        },
+        {
+            "process": "b0111292-307d-48eb-809e-6d381fe79d27",
+            "inputs": [
+                "6a86dcf2-f1c4-4611-a015-47326837a953"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "8ba6f6f0-6a65-4b99-8e92-7084883114e7"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "differentiation_protocol",
+                    "protocol_id": "1271e3fe-eee1-4275-93d0-4920fdd46778"
+                }
+            ]
+        },
+        {
+            "process": "e3192134-8f9c-46c3-8596-63d3a19dde4d",
+            "inputs": [
+                "b952a25e-6a70-4956-abf3-c195bae4c1b6"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "6a86dcf2-f1c4-4611-a015-47326837a953"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "ipsc_induction_protocol",
+                    "protocol_id": "bf490fc5-78b0-4829-baa1-8df5decf3f1a"
+                }
+            ]
+        },
+        {
+            "process": "923a2734-a98f-48b4-a977-f74da5b35ea0",
+            "inputs": [
+                "1399aa16-3fb0-4a04-a8d2-3af7e079ebf3"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "b952a25e-6a70-4956-abf3-c195bae4c1b6"
+            ],
+            "output_type": "biomaterial",
+            "protocols": []
+        },
+        {
+            "process": "bbdccb21-7d36-4498-8349-38defbaae780",
+            "inputs": [
+                "ebae097e-247b-452c-a667-8f18984c71ca"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "77e200df-532e-438c-852f-6737beb347af"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "differentiation_protocol",
+                    "protocol_id": "1271e3fe-eee1-4275-93d0-4920fdd46778"
+                }
+            ]
+        },
+        {
+            "process": "caa1f2e5-70e0-42a7-9efc-ef0c22fe2f46",
+            "inputs": [
+                "d629e823-3fa3-4867-9afb-4228c70e6373"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "ebae097e-247b-452c-a667-8f18984c71ca"
+            ],
+            "output_type": "biomaterial",
+            "protocols": [
+                {
+                    "protocol_type": "ipsc_induction_protocol",
+                    "protocol_id": "bf490fc5-78b0-4829-baa1-8df5decf3f1a"
+                }
+            ]
+        },
+        {
+            "process": "da4e6044-5d51-45cd-bd72-b2b16f87cc67",
+            "inputs": [
+                "7d79afbe-aa69-4346-bffa-5cf2c45a5753"
+            ],
+            "input_type": "biomaterial",
+            "outputs": [
+                "d629e823-3fa3-4867-9afb-4228c70e6373"
+            ],
+            "output_type": "biomaterial",
+            "protocols": []
+        }
+    ]
+}

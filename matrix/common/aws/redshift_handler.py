@@ -11,7 +11,9 @@ class TableName(Enum):
     """
     FEATURE = "feature"
     ANALYSIS = "analysis"
+    DONOR = "donor"
     SPECIMEN = "specimen"
+    CELL_SUSPENSION = "cell_suspension"
     LIBRARY_PREPARATION = "library_preparation"
     PROJECT = "project"
     PUBLICATION = "publication"
@@ -29,6 +31,8 @@ class RedshiftHandler:
         TableName.FEATURE: "featurekey",
         TableName.ANALYSIS: "analysiskey",
         TableName.SPECIMEN: "specimenkey",
+        TableName.DONOR: "donorkey",
+        TableName.CELL_SUSPENSION: "cellsuspensionkey",
         TableName.LIBRARY_PREPARATION: "librarykey",
         TableName.PROJECT: "projectkey",
         TableName.PUBLICATION: "projectkey",

@@ -1,0 +1,33 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/10.1.0/sequencing_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "Illumina_NextSeq",
+        "protocol_name": "Illumina NextSeq sequencing",
+        "protocol_description": "10x-Genomics v2 libraries were sequence on na Ilumina NextSeq according to manufacturer\u2019s instructions."
+    },
+    "instrument_manufacturer_model": {
+        "text": "Illumina NextSeq 500",
+        "ontology": "EFO:0009173",
+        "ontology_label": "Illumina NextSeq 500"
+    },
+    "local_machine_name": "NB502004",
+    "paired_end": false,
+    "method": {
+        "text": "tag based single cell RNA sequencing",
+        "ontology": "EFO:0008440",
+        "ontology_label": "tag based single cell RNA sequencing"
+    },
+    "10x": {
+        "fastq_method": "Cellranger mkfastq",
+        "fastq_method_version": "Cellranger 2.2.0",
+        "pooled_channels": 4.0
+    },
+    "provenance": {
+        "document_id": "08b09d15-ef99-4278-9b88-65127adb51b9",
+        "submission_date": "2019-09-20T13:43:45.404Z",
+        "update_date": "2019-09-20T13:43:51.921Z",
+        "schema_major_version": 10,
+        "schema_minor_version": 1
+    }
+}

@@ -247,7 +247,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)
@@ -327,7 +329,9 @@ MANIFEST VERBOSE;
         expected_cell_query = ("""
 UNLOAD($$SELECT cell.cellkey, test.field1, test.field2
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -347,7 +351,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE feature.isgene
@@ -383,7 +389,9 @@ class TestNameConversion(unittest.TestCase):
         expected_cell_query = ("""
 UNLOAD($$SELECT cell.cellkey, analysis.bundle_fqid, cell.genes_detected, library_preparation.strand
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
@@ -418,17 +426,19 @@ MANIFEST VERBOSE
         queries = query_constructor.create_matrix_request_queries(
             filter_, constants.DEFAULT_FIELDS, feature)
 
-        expected_cell_query = ("""
-UNLOAD($$SELECT cell.cellkey, cell.cell_suspension_id, cell.genes_detected, cell.file_uuid, cell.file_version, cell.total_umis, cell.emptydrops_is_cell, cell.barcode, specimen.*, library_preparation.*, project.*, analysis.*"""  # noqa: E501
-"""
+        expected_fields = ["cell.cellkey"] + constants.DEFAULT_FIELDS
+        expected_cell_query = (f"""
+UNLOAD($$SELECT {', '.join(expected_fields)}
 FROM cell
-  LEFT OUTER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  LEFT OUTER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  LEFT OUTER JOIN donor on (specimen.donorkey = donor.donorkey)
   LEFT OUTER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   LEFT OUTER JOIN project on (cell.projectkey = project.projectkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
 WHERE ((project.short_name = 'project1') AND (cell.genes_detected > 1000))$$)
-TO 's3://{results_bucket}/{request_id}/cell_metadata_'
-IAM_ROLE '{iam_role}'
+TO 's3://{{results_bucket}}/{{request_id}}/cell_metadata_'
+IAM_ROLE '{{iam_role}}'
 GZIP
 MANIFEST VERBOSE
 ;
@@ -441,7 +451,9 @@ FROM expression
   LEFT OUTER JOIN feature on (expression.featurekey = feature.featurekey)
   INNER JOIN cell on (expression.cellkey = cell.cellkey)
   INNER JOIN analysis on (cell.analysiskey = analysis.analysiskey)
-  INNER JOIN specimen on (cell.specimenkey = specimen.specimenkey)
+  INNER JOIN cell_suspension on (cell.cellsuspensionkey = cell_suspension.cellsuspensionkey)
+  INNER JOIN specimen on (cell_suspension.specimenkey = specimen.specimenkey)
+  INNER JOIN donor on (specimen.donorkey = donor.donorkey)
   INNER JOIN library_preparation on (cell.librarykey = library_preparation.librarykey)
   INNER JOIN project on (cell.projectkey = project.projectkey)
 WHERE (NOT feature.isgene)
@@ -475,15 +487,15 @@ FROM cell
     def test_cell_categorical(self):
 
         query = query_constructor.create_field_detail_query(
-            "cell.cell_suspension_id",
+            "cell.cellsuspensionkey",
             "cell",
             "cellkey",
             "categorical")
 
         expected_sql = """
-SELECT cell.cell_suspension_id, COUNT(cell.cellkey)
+SELECT cell.cellsuspensionkey, COUNT(cell.cellkey)
 FROM cell 
-GROUP BY cell.cell_suspension_id
+GROUP BY cell.cellsuspensionkey
 ;
 """  # noqa: W291
         self.assertEqual(query, expected_sql)
@@ -528,7 +540,7 @@ class TestHasGenusSpecies(unittest.TestCase):
         filter_ = \
             {
                 "op": "=",
-                "field": "specimen_from_organism.genus_species.ontology_label",
+                "field": "cell_suspension.genus_species.ontology_label",
                 "value": "Homo sapiens"
             }
         self.assertTrue(query_constructor.has_genus_species_term(filter_))
@@ -536,7 +548,7 @@ class TestHasGenusSpecies(unittest.TestCase):
         filter_ = \
             {
                 "op": "!=",
-                "field": "specimen_from_organism.genus_species.ontology",
+                "field": "cell_suspension.genus_species.ontology",
                 "value": "NCBITaxon:9606"
             }
         self.assertTrue(query_constructor.has_genus_species_term(filter_))
@@ -565,7 +577,7 @@ class TestHasGenusSpecies(unittest.TestCase):
                             },
                             {
                                 "op": "!=",
-                                "field": "specimen_from_organism.genus_species.ontology",
+                                "field": "cell_suspension.genus_species.ontology",
                                 "value": "NCBITaxon:9606"
                             },
                             {
@@ -659,7 +671,7 @@ class TestSpeciesifyFilter(unittest.TestCase):
             "value": [
                 {
                     "op": "=",
-                    'field': 'specimen_from_organism.genus_species.ontology_label',
+                    'field': 'cell_suspension.genus_species.ontology_label',
                     "value": constants.GenusSpecies.HUMAN.value
                 },
                 {
@@ -694,7 +706,7 @@ class TestSpeciesifyFilter(unittest.TestCase):
             "value": [
                 {
                     "op": "=",
-                    'field': 'specimen_from_organism.genus_species.ontology_label',
+                    'field': 'cell_suspension.genus_species.ontology_label',
                     "value": constants.GenusSpecies.MOUSE.value
                 },
                 {

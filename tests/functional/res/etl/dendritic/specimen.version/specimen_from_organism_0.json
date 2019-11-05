@@ -1,0 +1,46 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/10.4.0/specimen_from_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "Specimen1",
+        "biomaterial_name": "Fibroblasts",
+        "biomaterial_description": "Human Embryonic Fibroblasts",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "organ": {
+        "text": "embryo",
+        "ontology": "UBERON:0000922",
+        "ontology_label": "embryo"
+    },
+    "organ_parts": [
+        {
+            "text": "skin epidermis",
+            "ontology": "UBERON:0001003",
+            "ontology_label": "skin epidermis"
+        }
+    ],
+    "diseases": [
+        {
+            "text": "Normal",
+            "ontology": "PATO:0000461",
+            "ontology_label": "normal"
+        }
+    ],
+    "collection_time": "2018-06-19",
+    "provenance": {
+        "document_id": "d6a518a8-0c5d-4cb0-aed5-68f3455c2bda",
+        "submission_date": "2019-09-20T13:43:45.329Z",
+        "update_date": "2019-09-20T13:43:52.654Z",
+        "schema_major_version": 10,
+        "schema_minor_version": 4
+    }
+}

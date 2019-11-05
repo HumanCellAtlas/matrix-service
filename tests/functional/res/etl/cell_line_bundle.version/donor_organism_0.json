@@ -1,0 +1,65 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/15.3.2/donor_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "HS_BM_2",
+        "biomaterial_name": "BM_donor_2",
+        "biomaterial_description": "AllCells Female 28 YO Bone Marrow Donor",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "human_specific": {
+        "ethnicity": [
+            {
+                "text": "European",
+                "ontology_label": "European",
+                "ontology": "HANCESTRO:0005"
+            }
+        ]
+    },
+    "medical_history": {
+        "medication": "None",
+        "smoking_history": "No",
+        "test_results": "HIV, HBV, HCV: Negative"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606"
+        }
+    ],
+    "organism_age": "28",
+    "organism_age_unit": {
+        "text": "year",
+        "ontology": "UO:0000036"
+    },
+    "development_stage": {
+        "text": "adult",
+        "ontology_label": "human adult stage",
+        "ontology": "HsapDv:0000087"
+    },
+    "diseases": [
+        {
+            "text": "normal",
+            "ontology": "PATO:0000461"
+        }
+    ],
+    "height": "1.72",
+    "height_unit": {
+        "text": "meter",
+        "ontology": "UO:0000008"
+    },
+    "is_living": "yes",
+    "sex": "female",
+    "weight": "73",
+    "weight_unit": {
+        "text": "kilogram",
+        "ontology": "UO:0000009"
+    },
+    "provenance": {
+        "document_id": "e24f10c2-e21d-44c4-9450-46029c443941",
+        "submission_date": "2019-07-18T21:12:39.730Z",
+        "update_date": "2019-07-18T21:12:44.496Z"
+    }
+}

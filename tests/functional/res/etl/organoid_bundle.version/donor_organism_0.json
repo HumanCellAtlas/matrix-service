@@ -1,0 +1,54 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "HPSI0214i-wibj",
+        "biomaterial_name": "donor HPSI0214i-wibj",
+        "biomaterial_description": "donor HPSI0214i-wibj_2, iPSC, cell line, skin",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "biosamples_accession": "SAMEA2398911"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "sex": "female",
+    "organism_age": "55-59",
+    "organism_age_unit": {
+        "text": "year",
+        "ontology": "UO:0000036",
+        "ontology_label": "year"
+    },
+    "human_specific": {
+        "ethnicity": [
+            {
+                "text": "European, White, British",
+                "ontology": "HANCESTRO:0462",
+                "ontology_label": "British"
+            }
+        ]
+    },
+    "diseases": [
+        {
+            "text": "normal",
+            "ontology": "PATO:0000461",
+            "ontology_label": "normal"
+        }
+    ],
+    "is_living": "yes",
+    "development_stage": {
+        "text": "adult",
+        "ontology": "HsapDv:0000087",
+        "ontology_label": "human adult stage"
+    },
+    "provenance": {
+        "document_id": "ae5d5c9f-3bea-4b7b-9ef3-4c41c0f3a885",
+        "submission_date": "2019-05-15T09:36:02.647Z",
+        "update_date": "2019-05-15T09:36:12.777Z"
+    }
+}

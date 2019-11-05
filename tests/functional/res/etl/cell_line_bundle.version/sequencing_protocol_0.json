@@ -1,0 +1,24 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/10.0.2/sequencing_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "HS_BM_P1_Seq1",
+        "protocol_name": "10X Chromium Single Cell 3' Solution v2 Chemistry",
+        "document": "CG00052_SingleCell3_ReagentKitv2UserGuide_RevD.pdf"
+    },
+    "instrument_manufacturer_model": {
+        "text": "Illumina HiSeq 2500",
+        "ontology": "EFO:0008565"
+    },
+    "paired_end": false,
+    "method": {
+        "text": "tag-based single cell RNA sequencing",
+        "ontology": "EFO:0008440",
+        "ontology_label": "tag based single cell RNA sequencing"
+    },
+    "provenance": {
+        "document_id": "461851b8-55a5-4ae6-a52a-5bca71a00beb",
+        "submission_date": "2019-07-18T21:12:39.854Z",
+        "update_date": "2019-07-18T21:12:44.253Z"
+    }
+}

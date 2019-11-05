@@ -1,0 +1,50 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/15.5.0/donor_organism",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "Donor1",
+        "biomaterial_name": "Donor 1",
+        "biomaterial_description": "Human embryo  donor",
+        "ncbi_taxon_id": [
+            9606
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "sex": "unknown",
+    "is_living": "no",
+    "diseases": [
+        {
+            "text": "normal",
+            "ontology": "PATO:0000461",
+            "ontology_label": "normal"
+        }
+    ],
+    "gestational_age": "8.5",
+    "gestational_age_unit": {
+        "text": "week",
+        "ontology": "UO:0000034",
+        "ontology_label": "week"
+    },
+    "development_stage": {
+        "text": "6.5 week-old human embryo",
+        "ontology": "HsapDv:0000025",
+        "ontology_label": "Carnegie stage 18"
+    },
+    "death": {
+        "cause_of_death": "Unkown",
+        "cold_perfused": false
+    },
+    "provenance": {
+        "document_id": "2b7adb0a-82a4-4319-80d1-4a73d879dec1",
+        "submission_date": "2019-09-20T13:43:45.321Z",
+        "update_date": "2019-09-20T13:43:52.612Z",
+        "schema_major_version": 15,
+        "schema_minor_version": 5
+    }
+}

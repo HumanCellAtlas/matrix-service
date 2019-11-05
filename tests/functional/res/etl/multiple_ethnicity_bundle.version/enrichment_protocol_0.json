@@ -1,0 +1,20 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/3.0.1/enrichment_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "HS_BM_Enrichment_Protocol",
+        "protocol_name": "Enrichment for CD34+ CD38- cells",
+        "protocol_description": "FACS sorting for CD34+  CD38- cells"
+    },
+    "method": {
+        "ontology_label": "fluorescence-activated cell sorting",
+        "text": "fluorescence-activated cell sorting",
+        "ontology": "EFO:0009108"
+    },
+    "markers": "CD34+ CD38-",
+    "provenance": {
+        "document_id": "5d9fc5a2-5516-4205-9d6e-8d0d674f146f",
+        "submission_date": "2019-07-18T21:12:39.843Z",
+        "update_date": "2019-07-18T21:12:44.344Z"
+    }
+}

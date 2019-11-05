@@ -1,0 +1,22 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/3.1.0/enrichment_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "iDC_d3_Enrichment",
+        "protocol_name": "Enrichment of reprogrammed dendritic cells at day 3",
+        "protocol_description": "PU.1, IRF8 and BATF3 (PIB)-transduced human embryonic fibroblasts were FACS sorted and collected at day 3 (CD45+ cells) for single cell profilling."
+    },
+    "method": {
+        "text": "FACS sorting",
+        "ontology": "EFO:0009108",
+        "ontology_label": "fluorescence-activated cell sorting"
+    },
+    "markers": "CD45+",
+    "provenance": {
+        "document_id": "baa27e44-cc45-4e68-a8b2-3cefa071ee3c",
+        "submission_date": "2019-09-20T13:43:45.387Z",
+        "update_date": "2019-09-20T13:43:52.357Z",
+        "schema_major_version": 3,
+        "schema_minor_version": 1
+    }
+}

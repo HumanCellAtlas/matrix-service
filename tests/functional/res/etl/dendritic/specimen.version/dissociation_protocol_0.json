@@ -1,0 +1,21 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/protocol/biomaterial_collection/6.2.0/dissociation_protocol",
+    "schema_type": "protocol",
+    "protocol_core": {
+        "protocol_id": "HEF_Dissociation",
+        "protocol_name": "Dissociation of human embryonic fibroblasts",
+        "protocol_description": "Fibroblasts were dissociated using trypsin to generate a single cell suspension."
+    },
+    "method": {
+        "text": "Enzymatic dissociation",
+        "ontology": "EFO:0009128",
+        "ontology_label": "enzymatic dissociation"
+    },
+    "provenance": {
+        "document_id": "eaf15851-97e3-4e4b-b81b-0e625098f4d5",
+        "submission_date": "2019-09-20T13:43:45.376Z",
+        "update_date": "2019-09-20T13:43:52.077Z",
+        "schema_major_version": 6,
+        "schema_minor_version": 2
+    }
+}
