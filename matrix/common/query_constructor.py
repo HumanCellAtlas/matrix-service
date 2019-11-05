@@ -294,7 +294,7 @@ def speciesify_filter(matrix_filter: typing.Dict[str, typing.Any],
         "value": [
             {
                 "op": "=",
-                "field": "specimen_from_organism.genus_species.ontology_label",
+                "field": "cell_suspension.genus_species.ontology_label",
                 "value": genus_species
             },
             matrix_filter

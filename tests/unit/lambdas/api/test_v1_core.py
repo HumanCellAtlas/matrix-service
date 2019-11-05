@@ -48,7 +48,7 @@ class TestCore(unittest.TestCase):
     @mock.patch("matrix.common.aws.cloudwatch_handler.CloudwatchHandler.put_metric_data")
     def test_post_matrix_with_species(self, mock_cw_put, mock_lambda_invoke, mock_dynamo_create_request):
         filter_ = {"op": "=",
-                   "field": "specimen_from_organism.genus_species.ontology_label",
+                   "field": "cell_suspension.genus_species.ontology_label",
                    "value": "monkey whatever"}
         format_ = MatrixFormat.LOOM.value
 

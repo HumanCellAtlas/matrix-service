@@ -51,8 +51,10 @@ class MetadataSchemaName(Enum):
 
 DEFAULT_FIELDS = ["cell.genes_detected", "cell.file_uuid",
                   "cell.file_version", "cell.total_umis", "cell.emptydrops_is_cell",
-                  "cell.barcode", "cell_suspension.*", "specimen.*", "donor.*",
-                  "library_preparation.*", "project.*", "analysis.*"]
+                  "cell.barcode", "cell_suspension.*", "donor.*", "specimen.organ_ontology",
+                  "specimen.organ_label", "specimen.organ_parts_ontology",
+                  "specimen.organ_parts_label", "library_preparation.*", "project.*",
+                  "analysis.*"]
 
 
 DEFAULT_FEATURE = MatrixFeature.GENE.value

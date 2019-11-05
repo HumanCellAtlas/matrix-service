@@ -593,7 +593,7 @@ class TestMatrixServiceV1(MatrixServiceTest):
             "value": [
                 {
                     "op": "=",
-                    "field": "specimen_from_organism.genus_species.ontology_label",
+                    "field": "cell_suspension.genus_species.ontology_label",
                     "value": GenusSpecies.MOUSE.value
                 },
                 {
