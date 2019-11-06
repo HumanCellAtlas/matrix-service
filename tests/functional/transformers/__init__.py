@@ -5,10 +5,10 @@ from matrix.common.constants import BundleType
 ETL_TEST_BUNDLES = {
     'integration': {
         BundleType.SS2: {
-            '5cb665f4-97bb-4176-8ec2-1b83b95c1bc0': {
+            'ce51949d-ca8f-4194-8f96-e470dd749dfa': {
                 TableName.ANALYSIS: "5f7dee36-68e8-41c8-9e5f-50f3c772176a|"
-                                    "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z|"
-                                    "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0|2019-02-11T171739.925160Z|"
+                                    "ce51949d-ca8f-4194-8f96-e470dd749dfa.2019-11-06T143122.339686Z|"
+                                    "ce51949d-ca8f-4194-8f96-e470dd749dfa|2019-11-06T143122.339686Z|"
                                     "smartseq2_v2.2.0|blessed",
                 TableName.DONOR: "304ba6cd-54dc-489b-a1c8-1dff86e27bdb|hancestro:0016||"
                                  "MONDO:0011273|H syndrome|EFO:0001272|adult|unknown|unknown",
@@ -28,7 +28,7 @@ ETL_TEST_BUNDLES = {
                 TableName.CELL: "2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|"
                                 "1f6aecb3-09a0-432b-bece-d2790da570d6|"
                                 "84dd5dd7-cad0-4874-a36e-d2ca7e9d1489|5f7dee36-68e8-41c8-9e5f-50f3c772176a|"
-                                "e11a1b8b-c83a-419b-bbb7-dc5d214770d0|2019-02-11T171726.073959Z||3859||\n",
+                                "ce00e945-dfc5-495f-ae4b-f0b71aec3d53|2019-11-06T143122.339686Z||3859||\n",
                 TableName.EXPRESSION: "2c748259-d3a5-4a1a-9b1a-c2e0dca6fccc|ENST00000373020|TPM|92.29\n"
             },
             '343dbc5f-bfe8-4f51-b493-a508d017125c': {
@@ -38,8 +38,8 @@ ETL_TEST_BUNDLES = {
                                     "smartseq2_v2.3.0|blessed",
                 TableName.DONOR: "d8ff48d4-7e5a-4b88-a690-3532378d9046|hancestro:0016||"
                                  "MONDO:0011273|H syndrome|EFO:0001272|adult|unknown|unknown",
-                TableName.SPECIMEN: "942ed1bf-d638-4d6c-9953-97deb555604b|d8ff48d4-7e5a-4b88-a690-3532378d9046"
-                                    "UBERON:0002113|kidney|UBERON:0014451|tongue taste bud"
+                TableName.SPECIMEN: "942ed1bf-d638-4d6c-9953-97deb555604b|d8ff48d4-7e5a-4b88-a690-3532378d9046|"
+                                    "UBERON:0002113|kidney|UBERON:0014451|tongue taste bud|"
                                     "MONDO:0011273|H syndrome",
                 TableName.CELL_SUSPENSION: "e584b404-9937-49fe-a323-5e18511f7035|942ed1bf-d638-4d6c-9953-97deb555604b|"
                                            "UBERON:0002113|kidney|UBERON:0014451|tongue taste bud|"
