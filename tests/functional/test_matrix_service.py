@@ -25,11 +25,11 @@ from scripts.dss_subscription import DSS_SUBSCRIPTION_HMAC_SECRET_ID
 
 INPUT_BUNDLE_IDS = {
     "integration": [
-        "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
-        "ff7ef351-f46f-4c39-b4c3-c8b33423a4c9.2019-02-11T124842.494942Z",
-        "aa8262c2-7a0e-49fd-bac1-d41a4019bd87.2019-02-10T234926.510991Z",
-        "0ef88e4a-a779-4588-8677-953d65ca6d9a.2019-02-10T124405.139571Z",
-        "c881020e-9f53-4f7e-9c49-d9dbd9e8f280.2019-02-09T124912.755814Z",
+        "93cb1d90-10f3-4b76-aa6a-a85450a83968.2019-11-06T140752.790454Z",
+        "626d3e17-6a62-4fe7-838a-323f2cec450a.2019-11-06T140922.234528Z",
+        "4602ed62-8dc1-4b67-a50d-35c3ab34b787.2019-11-06T141032.303970Z",
+        "ce51949d-ca8f-4194-8f96-e470dd749dfa.2019-11-06T143122.339686Z",
+        "635b4815-0cba-4285-b66d-e88b97bf3f20.2019-11-06T141546.990073Z"
     ],
     "staging": [
         "d30147bb-5fa2-4444-ad62-398308e4f8d3.2019-07-18T051541.009170Z",
@@ -49,7 +49,7 @@ INPUT_BUNDLE_IDS = {
 
 NOTIFICATION_TEST_DATA = {
     "integration": {
-        'bundle_fqid': "5cb665f4-97bb-4176-8ec2-1b83b95c1bc0.2019-02-11T171739.925160Z",
+        'bundle_fqid': "ce51949d-ca8f-4194-8f96-e470dd749dfa.2019-11-06T143122.339686Z",
         'cell_count': 1,
         'exp_count': 21876
     },
