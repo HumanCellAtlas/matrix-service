@@ -19,7 +19,7 @@ resource "aws_dynamodb_table" "data_version_table" {
 
   attribute {
     name = "DataVersion"
-    type = "S"
+    type = "N"
   }
 }
 

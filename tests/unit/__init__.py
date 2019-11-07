@@ -76,7 +76,7 @@ class MatrixTestCaseUsingMockAWS(unittest.TestCase):
             AttributeDefinitions=[
                 {
                     'AttributeName': "DataVersion",
-                    'AttributeType': "S",
+                    'AttributeType': "N",
                 }
             ],
             ProvisionedThroughput={

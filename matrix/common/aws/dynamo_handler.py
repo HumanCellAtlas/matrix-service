@@ -176,12 +176,12 @@ class DynamoHandler:
             }
         )
 
-    def get_table_item(self, table: DynamoTable, key: str = ""):
+    def get_table_item(self, table: DynamoTable, key: typing.Union[str, int] = ""):
         """Retrieves dynamobdb item corresponding with primary key in the specified table.
 
         Input:
             table: (DynamoTable) enum
-            key: (str) primary key in table
+            key: (str, int) primary key in table
         Output:
             item: dynamodb item
         """
