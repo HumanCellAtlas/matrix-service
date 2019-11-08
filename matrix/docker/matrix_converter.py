@@ -176,7 +176,7 @@ class MatrixConverter:
                     yield cells_df
 
     def _to_mtx(self):
-        """Write a zip file with an mtx and two metadata tsvs from Redshift query
+        """Write a zip file with an mtx and three metadata tsvs from Redshift query
         manifests.
 
         Returns:
@@ -219,11 +219,10 @@ class MatrixConverter:
                 cell_count += pivoted.shape[1]
                 cellkeys.extend(pivoted.columns.to_list())
 
-        self._write_out_gene_dataframe(results_dir, "genes.tsv.gz", compression=True)
         self._write_out_cell_dataframe(results_dir, "cells.tsv.gz", cell_df, cellkeys, compression=True)
         self._write_out_barcode_dataframe(results_dir, "barcodes.tsv.gz", cell_df, cellkeys)
 
-        file_names = ["features.tsv.gz", "genes.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz", "barcodes.tsv.gz"]
+        file_names = ["features.tsv.gz", "matrix.mtx.gz", "cells.tsv.gz", "barcodes.tsv.gz"]
         zip_path = self._zip_up_matrix_output(results_dir, file_names)
         return zip_path
 

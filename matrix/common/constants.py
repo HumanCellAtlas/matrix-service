@@ -459,7 +459,7 @@ unique.</p>
     MatrixFormat.MTX.value: """
 <h2>HCA Matrix Service MTX Output</h2>
 <p>The mtx-formatted output from the matrix service is a zip archive that contains
-three files:</p>
+four files:</p>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -477,11 +477,18 @@ three files:</p>
 <td>Cell metadata</td>
 </tr>
 <tr>
-<td>&lt;directory_name&gt;/genes.tsv.gz</td>
+<td>&lt;directory_name&gt;/features.tsv.gz</td>
 <td>Gene (or transcript) metadata</td>
+</tr>
+<tr>
+<td>&lt;directory_name&gt;/barcodes.tsv.gz</td>
+<td>Cell barcodes</td>
 </tr>
 </tbody>
 </table>
+<p>For 10x experiments, this format adheres to the Cell Ranger
+<a href="https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/matrices">
+feature-barcode matrix</a> specification.</p>
 
 <h3><code>matrix.mtx.gz</code></h3>
 <p>This file contains expression values in the
@@ -494,8 +501,8 @@ respectively.</p>
 <p>The expression values are meant to be a "raw" count, so for SmartSeq2 experiments, this
 is the <code>expected_count</code> field from
 <a href="http://deweylab.biostat.wisc.edu/rsem/rsem-calculate-expression.html#output">RSEM
-output</a>. For 10x experiments analyzed with Cell Ranger, this is read from the
-<code>matrix.mtx</code> file that Cell Ranger produces as its filtered feature-barcode matrix.</p>
+output</a>. For 10x experiments analyzed with Optimus, this is read from the
+<a href="https://zarr.readthedocs.io/en/stable">zarr</a> array produced by the pipeline.</p>
 
 <h3><code>cells.tsv.gz</code></h3>
 <p>Each row of the cell metadata table represents a cell, and each column is a different metadata
@@ -504,10 +511,14 @@ field. Descriptions of some of the metadata fields can be found at the
 fields, <code>genes_detected</code> for example, are calculated during secondary analysis.
 Full descriptions of those fields are forthcoming.</p>
 
-<h3><code>genes.tsv.gz</code></h3>
+<h3><code>features.tsv.gz</code></h3>
 <p>The gene metadata contains basic information about the genes in the count matrix.
 Each row is a gene, and each row corresponds to the same row in the expression mtx file.
 Note that <code>featurename</code> is not unique.</p>
+
+<h3><code>barcodes.tsv.gz</code></h3>
+<p>A list of cell barcodes corresponding to the columns found in matrix.mtx.gz.
+Note that barcodes may not be unique.</p>
 """
 }
 

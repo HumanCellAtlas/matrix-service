@@ -209,11 +209,10 @@ class TestConversions(unittest.TestCase):
             # Check the components of the zip file
             members = mtx_output.namelist()
             self.assertIn("test.mtx/matrix.mtx.gz", members)
-            self.assertIn("test.mtx/genes.tsv.gz", members)
             self.assertIn("test.mtx/cells.tsv.gz", members)
             self.assertIn("test.mtx/features.tsv.gz", members)
             self.assertIn("test.mtx/barcodes.tsv.gz", members)
-            self.assertEqual(len(members), 5)
+            self.assertEqual(len(members), 4)
 
             # Read in the cell and gene tables. We need both for mtx files
             # since the mtx itself is just numbers and indices.
@@ -224,7 +223,7 @@ class TestConversions(unittest.TestCase):
 
             mtx_genes = collections.OrderedDict()
             for row in csv.DictReader(io.StringIO(gzip.GzipFile(fileobj=io.BytesIO(
-                    mtx_output.read("test.mtx/genes.tsv.gz"))).read().decode()), delimiter='\t'):
+                    mtx_output.read("test.mtx/features.tsv.gz"))).read().decode()), delimiter='\t'):
                 mtx_genes[row["featurekey"]] = row
 
             # Read the expression values. This is supposed to be aligned with

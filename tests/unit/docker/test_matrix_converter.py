@@ -385,9 +385,6 @@ class TestMatrixConverter(unittest.TestCase):
         test_data["genes_df"].to_csv(os.path.join(results_dir, "features.tsv.gz"),
                                      index_label="featurekey",
                                      sep="\t", compression="gzip")
-        test_data["genes_df"].to_csv(os.path.join(results_dir, "genes.tsv.gz"),
-                                     index_label="featurekey",
-                                     sep="\t", compression="gzip")
         self.matrix_converter.local_output_filename = "unit_test__to_mtx.zip"
         zip_path = self.matrix_converter._to_mtx()
 
