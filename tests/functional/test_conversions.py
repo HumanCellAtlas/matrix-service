@@ -222,8 +222,19 @@ class TestConversions(unittest.TestCase):
                 mtx_cells[row["cellkey"]] = row
 
             mtx_genes = collections.OrderedDict()
-            for row in csv.DictReader(io.StringIO(gzip.GzipFile(fileobj=io.BytesIO(
-                    mtx_output.read("test.mtx/features.tsv.gz"))).read().decode()), delimiter='\t'):
+            for row in csv.DictReader(
+                    io.StringIO(gzip.GzipFile(fileobj=io.BytesIO(
+                    mtx_output.read("test.mtx/features.tsv.gz"))).read().decode()),
+                    delimiter='\t',
+                    fieldnames=["featurekey",
+                                "featurename",
+                                "featuretype",
+                                "featuretype_10x",
+                                "chromosome",
+                                "featurestart",
+                                "featureend",
+                                "isgene",
+                                "genus_species"]):
                 mtx_genes[row["featurekey"]] = row
 
             # Read the expression values. This is supposed to be aligned with
