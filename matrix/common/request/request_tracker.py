@@ -286,8 +286,8 @@ class RequestTracker:
         """
         cell_manifest_key = f"s3://{os.environ['MATRIX_QUERY_RESULTS_BUCKET']}/{self.request_id}/cell_metadata_manifest"
         reader = CellQueryResultsReader(cell_manifest_key)
-        cell_df = reader.load_results()
-        cellkeys = cell_df.index
+
+        logger.info(f"Generating request hash from {cell_manifest_key}")
 
         h = hashlib.md5()
         h.update(self.feature.encode())
@@ -296,10 +296,17 @@ class RequestTracker:
         for field in self.metadata_fields:
             h.update(field.encode())
 
-        for key in cellkeys:
-            h.update(key.encode())
+        n_slices = len(reader.manifest['part_urls'])
+        for i in range(n_slices):
+            logger.info(f"[Slice {i}] start.")
+            cell_df = reader.load_slice(i)
+            for key in cell_df.index:
+                h.update(key.encode())
+            logger.info(f"[Slice {i}] Hashed all {len(cell_df.index)} keys.")
+            del cell_df
 
         request_hash = h.hexdigest()
+        logger.info(f"Successfully generated request hash {request_hash}.")
 
         return request_hash
 

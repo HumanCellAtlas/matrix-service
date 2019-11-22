@@ -196,10 +196,13 @@ class TestRequestTracker(MatrixTestCaseUsingMockAWS):
         mock_create_cw_metric.assert_called_once()
 
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.metadata_fields", new_callable=mock.PropertyMock)
-    @mock.patch("matrix.common.query.cell_query_results_reader.CellQueryResultsReader.load_results")
+    @mock.patch("matrix.common.query.cell_query_results_reader.CellQueryResultsReader.load_slice")
     @mock.patch("matrix.common.query.query_results_reader.QueryResultsReader._parse_manifest")
-    def test_generate_request_hash(self, mock_parse_manifest, mock_load_results, mock_metadata_fields):
-        mock_load_results.return_value = pandas.DataFrame(index=["test_cell_key_1", "test_cell_key_2"])
+    def test_generate_request_hash(self, mock_parse_manifest, mock_load_slice, mock_metadata_fields):
+        mock_parse_manifest.return_value = {'part_urls': ["url_1", "url_2"]}
+        test_cell_dfs = [pandas.DataFrame(index=["test_cell_key_1"]),
+                         pandas.DataFrame(index=["test_cell_key_2"])]
+        mock_load_slice.side_effect = lambda i: test_cell_dfs[0] if i == 0 else test_cell_dfs[1]
         mock_metadata_fields.return_value = ["test_field_1", "test_field_2"]
 
         h = hashlib.md5()
