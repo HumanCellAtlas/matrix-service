@@ -1,3 +1,4 @@
+import collections
 import os
 import typing
 
@@ -161,7 +162,7 @@ class Driver:
             return tokens[0]
 
         lines = data.splitlines()[1:]
-        return list(map(_parse_line, lines))
+        return list(collections.OrderedDict.fromkeys(map(_parse_line, lines)))
 
     def _format_and_store_queries_in_s3(self, resolved_bundle_uuids: list, genus_species: str):
         feature_query = feature_query_template.format(self.query_results_bucket,
