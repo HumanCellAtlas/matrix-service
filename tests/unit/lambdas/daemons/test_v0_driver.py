@@ -129,10 +129,18 @@ class TestDriver(unittest.TestCase):
         mock_log_error.assert_called_once_with(error_msg)
 
     def test_parse_download_manifest(self):
-        test_download_manifest = "UUID\tVERSION\nbundle_id_1\tbundle_version_1\nbundle_id_2\tbundle_version_2"
+        with self.subTest("OK"):
+            test_download_manifest = "UUID\tVERSION\nbundle_id_1\tbundle_version_1\nbundle_id_2\tbundle_version_2"
 
-        parsed = self._driver._parse_download_manifest(test_download_manifest)
-        self.assertTrue(parsed, ["bundle_id_1", "bundle_id_2"])
+            parsed = self._driver._parse_download_manifest(test_download_manifest)
+            self.assertEqual(parsed, ["bundle_id_1", "bundle_id_2"])
+
+        with self.subTest("Duplicate rows"):
+            test_download_manifest = "UUID\tVERSION\nbundle_id_1\tbundle_version_1\nbundle_id_2\tbundle_version_2" \
+                                     "\nbundle_id_1\tbundle_version_1"
+
+            parsed = self._driver._parse_download_manifest(test_download_manifest)
+            self.assertEqual(parsed, ["bundle_id_1", "bundle_id_2"])
 
     @mock.patch("matrix.common.aws.sqs_handler.SQSHandler.add_message_to_queue")
     @mock.patch("matrix.common.request.request_tracker.RequestTracker.complete_subtask_execution")
