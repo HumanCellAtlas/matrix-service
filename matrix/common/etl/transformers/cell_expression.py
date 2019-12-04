@@ -155,9 +155,9 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         store = DCPZarrStore(bundle_dir=bundle_dir)
         root = zarr.group(store=store)
 
-        n_cells = root.expression_matrix.cell_id.shape[0]
-        chunk_size = root.expression_matrix.cell_id.chunks[0]
-        n_chunks = root.expression_matrix.cell_id.nchunks
+        n_cells = root.cell_id.shape[0]
+        chunk_size = root.cell_id.chunks[0]
+        n_chunks = root.cell_id.nchunks
         cell_lines = set()
         expression_lines = []
 
@@ -202,10 +202,10 @@ class CellExpressionTransformer(MetadataToPsvTransformer):
         """
         logger.info(f"Parsing rows {start_row} to {end_row}.")
         chunk_size = end_row - start_row
-        expr_values = root.expression_matrix.expression[start_row:end_row]
-        barcodes = root.expression_matrix.cell_id[start_row:end_row]
+        expr_values = root.expression[start_row:end_row]
+        barcodes = root.cell_id[start_row:end_row]
 
-        gene_ids = numpy.array([g.split(".")[0] for g in root.expression_matrix.gene_id])
+        gene_ids = numpy.array([g.split(".")[0] for g in root.gene_id])
         for i in range(chunk_size):
             if emptydrops_result[barcodes[i]]["total_umi_count"] < self.emptydrops_min_count:
                 continue
