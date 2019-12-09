@@ -21,7 +21,6 @@ class CellQueryResultsReader(QueryResultsReader):
             dataframe of cell metadata. Index is "cellkey" and other columns are metadata
             fields.
         """
-
         cell_table_columns = self._map_columns(self.manifest["columns"])
         cell_table_dtype = {c: "category" for c in cell_table_columns}
         cell_table_dtype["genes_detected"] = "uint32"
