@@ -235,8 +235,8 @@ resource "aws_ecs_service" "query_runner" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    security_groups = ["${aws_vpc.vpc.default_security_group_id}"]
-    subnets         = ["${data.aws_subnet_ids.matrix_vpc.ids}"]
+    security_groups = [aws_vpc.vpc.default_security_group_id]
+    subnets         = data.aws_subnet_ids.matrix_vpc.ids
     assign_public_ip = true
   }
 }

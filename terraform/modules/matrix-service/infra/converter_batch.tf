@@ -113,22 +113,22 @@ resource "aws_batch_compute_environment" "converter_compute_env" {
       "m4"
     ]
     image_id =  var.converter_cluster_ami_id
-    subnets = ["${data.aws_subnet_ids.matrix_vpc.ids}"]
+    subnets = data.aws_subnet_ids.matrix_vpc.ids
     security_group_ids = [
-      "${aws_vpc.vpc.default_security_group_id}"
+      aws_vpc.vpc.default_security_group_id
     ]
     ec2_key_pair = "matrix-${var.deployment_stage}"
     instance_role =  aws_iam_instance_profile.ecsInstanceRole.arn
   }
   depends_on = [
-    "aws_iam_role_policy_attachment.AWSBatchServiceRole"
+    aws_iam_role_policy_attachment.AWSBatchServiceRole
   ]
 }
 
 resource "aws_batch_job_queue" "converter_job_queue" {
   name = "dcp-matrix-converter-queue-${var.deployment_stage}"
   compute_environments = [
-    "${aws_batch_compute_environment.converter_compute_env.arn}"]
+    aws_batch_compute_environment.converter_compute_env.arn]
   priority = 1
   state = "ENABLED"
 }

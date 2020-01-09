@@ -20,11 +20,11 @@ locals {
 
 resource "null_resource" "vpc" {
   depends_on = [
-    "aws_vpc_dhcp_options_association.a",
-    "aws_internet_gateway.igw",
-    "aws_main_route_table_association.a",
-    "aws_route_table_association.a",
-    "aws_default_security_group.sg"
+    aws_vpc_dhcp_options_association.a,
+    aws_internet_gateway.igw,
+    aws_main_route_table_association.a,
+    aws_route_table_association.a,
+    aws_default_security_group.sg
   ]
 }
 
@@ -102,7 +102,7 @@ resource "aws_subnet" "sn" {
 }
 
 resource "aws_route_table_association" "a" {
-  count =  aws_subnet.sn.count
+  count =  length(aws_subnet.sn)
 
   subnet_id      =  aws_subnet.sn.*.id[count.index]
   route_table_id =  aws_route_table.rt.id

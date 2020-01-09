@@ -13,7 +13,7 @@ resource "aws_redshift_cluster" "default" {
 
 resource "aws_redshift_subnet_group" "matrix_service_redshift" {
   name = "matrix-service-redshift-subnet-${var.deployment_stage}"
-  subnet_ids = ["${data.aws_subnet_ids.matrix_vpc.ids}"]
+  subnet_ids = data.aws_subnet_ids.matrix_vpc.ids
 }
 
 resource "aws_security_group" "matrix_service_redshift_sg" {
