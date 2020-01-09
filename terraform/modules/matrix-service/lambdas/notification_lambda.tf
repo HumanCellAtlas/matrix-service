@@ -20,7 +20,7 @@ POLICY
 
 resource "aws_iam_role_policy" "matrix_service_notification_lambda" {
   name = "matrix-service-notification-daemon-${var.deployment_stage}"
-  role = "${aws_iam_role.matrix_service_notification_lambda.name}"
+  role =  aws_iam_role.matrix_service_notification_lambda.name
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -93,9 +93,9 @@ EOF
 
 resource "aws_lambda_function" "matrix_service_notification_lambda" {
   function_name    = "dcp-matrix-service-notification-${var.deployment_stage}"
-  s3_bucket        = "${var.deployment_bucket_id}"
+  s3_bucket        =  var.deployment_bucket_id
   s3_key           = "notification_daemon.zip"
-  role             = "${aws_iam_role.matrix_service_notification_lambda.arn}"
+  role             =  aws_iam_role.matrix_service_notification_lambda.arn
   handler          = "app.notification_handler"
   runtime          = "python3.6"
   timeout          = 900
@@ -103,7 +103,7 @@ resource "aws_lambda_function" "matrix_service_notification_lambda" {
 
   environment {
     variables = {
-      DEPLOYMENT_STAGE = "${var.deployment_stage}"
+      DEPLOYMENT_STAGE =  var.deployment_stage
       MATRIX_PRELOAD_BUCKET = "dcp-matrix-service-preload-${var.deployment_stage}"
       MATRIX_REDSHIFT_IAM_ROLE_ARN = "arn:aws:iam::${var.account_id}:role/matrix-service-redshift-${var.deployment_stage}"
       XDG_CONFIG_HOME = "/tmp"

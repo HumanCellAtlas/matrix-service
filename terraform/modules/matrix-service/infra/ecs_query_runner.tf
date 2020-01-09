@@ -1,8 +1,8 @@
 resource "aws_ecs_task_definition" "query_runner" {
   family                = "matrix-service-query-runner-${var.deployment_stage}"
   requires_compatibilities = ["FARGATE"]
-  execution_role_arn = "${aws_iam_role.task_executor.arn}"
-  task_role_arn = "${aws_iam_role.query_runner.arn}"
+  execution_role_arn =  aws_iam_role.task_executor.arn
+  task_role_arn =  aws_iam_role.query_runner.arn
   container_definitions = <<DEFINITION
 [
   {
@@ -98,7 +98,7 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "task_executor_ecs" {
-  role = "${aws_iam_role.task_executor.name}"
+  role =  aws_iam_role.task_executor.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -124,7 +124,7 @@ EOF
 
 resource "aws_iam_role_policy" "query_runner" {
   name = "matrix-service-query-runner-policy-${var.deployment_stage}"
-  role = "${aws_iam_role.query_runner.id}"
+  role =  aws_iam_role.query_runner.id
   policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -229,9 +229,9 @@ resource "aws_ecs_cluster" "query_runner" {
 
 resource "aws_ecs_service" "query_runner" {
   name            = "matrix-service-query-runner-${var.deployment_stage}"
-  cluster         = "${aws_ecs_cluster.query_runner.id}"
-  task_definition = "${aws_ecs_task_definition.query_runner.arn}"
-  desired_count   = "${var.query_runner_concurrency}"
+  cluster         =  aws_ecs_cluster.query_runner.id
+  task_definition =  aws_ecs_task_definition.query_runner.arn
+  desired_count   =  var.query_runner_concurrency
   launch_type     = "FARGATE"
 
   network_configuration {

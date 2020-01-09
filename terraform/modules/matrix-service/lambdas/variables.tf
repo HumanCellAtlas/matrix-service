@@ -1,19 +1,19 @@
 variable "deployment_stage" {
-  type = "string"
+  type = string
 }
 
 variable "account_id" {
-  type = "string"
+  type = string
 }
 
 variable "aws_region" {
-  type = "string"
+  type = string
 }
 
 variable "deployment_bucket_id" {
-  type = "string"
+  type = string
 }
 
 variable "results_bucket_arn" {
-  type = "string"
+  type = string
 }

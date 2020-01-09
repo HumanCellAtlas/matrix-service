@@ -3,7 +3,7 @@ resource "aws_secretsmanager_secret" "infra_secrets" {
 }
 
 resource "aws_secretsmanager_secret_version" "infra_secrets" {
-  secret_id = "${aws_secretsmanager_secret.infra_secrets.id}"
+  secret_id =  aws_secretsmanager_secret.infra_secrets.id
   secret_string = <<SECRETS_JSON
 {
   "query_job_q_url": "${aws_sqs_queue.query_queue.id}",
@@ -19,7 +19,7 @@ resource "aws_secretsmanager_secret" "database_secrets" {
 }
 
 resource "aws_secretsmanager_secret_version" "database_secrets" {
-  secret_id = "${aws_secretsmanager_secret.database_secrets.id}"
+  secret_id =  aws_secretsmanager_secret.database_secrets.id
   secret_string = <<SECRETS_JSON
 {
   "database_uri": "postgresql://${var.redshift_username}:${var.redshift_password}@${aws_redshift_cluster.default.endpoint}/matrix_service_${var.deployment_stage}",

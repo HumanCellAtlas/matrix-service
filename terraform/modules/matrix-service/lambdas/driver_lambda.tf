@@ -20,7 +20,7 @@ POLICY
 
 resource "aws_iam_role_policy" "matrix_service_driver_lambda" {
   name = "matrix-service-driver-daemon-${var.deployment_stage}"
-  role = "${aws_iam_role.matrix_service_driver_lambda.name}"
+  role =  aws_iam_role.matrix_service_driver_lambda.name
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -105,16 +105,16 @@ EOF
 
 resource "aws_lambda_function" "matrix_service_driver_v0_lambda" {
   function_name    = "dcp-matrix-service-driver-v0-${var.deployment_stage}"
-  s3_bucket        = "${var.deployment_bucket_id}"
+  s3_bucket        =  var.deployment_bucket_id
   s3_key           = "driver_v0_daemon.zip"
-  role             = "${aws_iam_role.matrix_service_driver_lambda.arn}"
+  role             =  aws_iam_role.matrix_service_driver_lambda.arn
   handler          = "app.driver_handler"
   runtime          = "python3.6"
   timeout          = 900
 
   environment {
     variables = {
-        DEPLOYMENT_STAGE = "${var.deployment_stage}"
+        DEPLOYMENT_STAGE =  var.deployment_stage
         DYNAMO_DATA_VERSION_TABLE_NAME="dcp-matrix-service-data-version-table-${var.deployment_stage}"
         DYNAMO_DEPLOYMENT_TABLE_NAME="dcp-matrix-service-deployment-table-${var.deployment_stage}"
         DYNAMO_REQUEST_TABLE_NAME="dcp-matrix-service-request-table-${var.deployment_stage}"
@@ -128,16 +128,16 @@ resource "aws_lambda_function" "matrix_service_driver_v0_lambda" {
 
 resource "aws_lambda_function" "matrix_service_driver_v1_lambda" {
   function_name    = "dcp-matrix-service-driver-v1-${var.deployment_stage}"
-  s3_bucket        = "${var.deployment_bucket_id}"
+  s3_bucket        =  var.deployment_bucket_id
   s3_key           = "driver_v1_daemon.zip"
-  role             = "${aws_iam_role.matrix_service_driver_lambda.arn}"
+  role             =  aws_iam_role.matrix_service_driver_lambda.arn
   handler          = "app.driver_handler"
   runtime          = "python3.6"
   timeout          = 300
 
   environment {
     variables = {
-        DEPLOYMENT_STAGE = "${var.deployment_stage}"
+        DEPLOYMENT_STAGE =  var.deployment_stage
         DYNAMO_DATA_VERSION_TABLE_NAME="dcp-matrix-service-data-version-table-${var.deployment_stage}"
         DYNAMO_DEPLOYMENT_TABLE_NAME="dcp-matrix-service-deployment-table-${var.deployment_stage}"
         DYNAMO_REQUEST_TABLE_NAME="dcp-matrix-service-request-table-${var.deployment_stage}"

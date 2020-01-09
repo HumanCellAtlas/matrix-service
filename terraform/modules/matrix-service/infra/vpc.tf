@@ -13,9 +13,9 @@ data "aws_availability_zones" "available" {}
 
 locals {
    // available.count == 1 so use length(names)
-  az_count = "${length(data.aws_availability_zones.available.names)}"
-  az_names = "${data.aws_availability_zones.available.names}"
-  aws_region = "${data.aws_region.current.name}"
+  az_count =  length(data.aws_availability_zones.available.names)
+  az_names =  data.aws_availability_zones.available.names
+  aws_region =  data.aws_region.current.name
 }
 
 resource "null_resource" "vpc" {
@@ -29,14 +29,14 @@ resource "null_resource" "vpc" {
 }
 
 resource "aws_vpc" "vpc" {
-  cidr_block = "${var.vpc_cidr_block}"
+  cidr_block =  var.vpc_cidr_block
   enable_dns_support = true
   enable_dns_hostnames = true
 
   tags = {
     Name = "matrix-${var.deployment_stage}"
     component = "matrix"
-    deployment_stage = "${var.deployment_stage}"
+    deployment_stage =  var.deployment_stage
   }
 }
 
@@ -47,69 +47,69 @@ resource "aws_vpc_dhcp_options" "opts" {
   tags = {
     Name = "matrix-${var.deployment_stage}"
     component = "matrix"
-    deployment_stage = "${var.deployment_stage}"
+    deployment_stage =  var.deployment_stage
   }
 }
 
 resource "aws_vpc_dhcp_options_association" "a" {
-  vpc_id          = "${aws_vpc.vpc.id}"
-  dhcp_options_id = "${aws_vpc_dhcp_options.opts.id}"
+  vpc_id          =  aws_vpc.vpc.id
+  dhcp_options_id =  aws_vpc_dhcp_options.opts.id
 }
 
 resource "aws_internet_gateway" "igw" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id =  aws_vpc.vpc.id
 
   tags = {
     Name = "matrix-${var.deployment_stage}"
     component = "matrix"
-    deployment_stage = "${var.deployment_stage}"
+    deployment_stage =  var.deployment_stage
   }
 }
 
 resource "aws_route_table" "rt" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id =  aws_vpc.vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.igw.id}"
+    gateway_id =  aws_internet_gateway.igw.id
   }
 
   tags = {
     Name = "matrix-${var.deployment_stage}"
     component = "matrix"
-    deployment_stage = "${var.deployment_stage}"
+    deployment_stage =  var.deployment_stage
   }
 }
 
 resource "aws_main_route_table_association" "a" {
-  vpc_id         = "${aws_vpc.vpc.id}"
-  route_table_id = "${aws_route_table.rt.id}"
+  vpc_id         =  aws_vpc.vpc.id
+  route_table_id =  aws_route_table.rt.id
 }
 
 resource "aws_subnet" "sn" {
-  count = "${local.az_count}"
+  count =  local.az_count
 
-  availability_zone = "${local.az_names[count.index]}"
-  cidr_block        = "${cidrsubnet(var.vpc_cidr_block, "4", count.index)}"
-  vpc_id            = "${aws_vpc.vpc.id}"
+  availability_zone =  local.az_names[count.index]
+  cidr_block        =  cidrsubnet(var.vpc_cidr_block, "4", count.index)
+  vpc_id            =  aws_vpc.vpc.id
   map_public_ip_on_launch = true
 
   tags = {
     Name = "matrix-${var.deployment_stage}-${local.az_names[count.index]}"
     component = "matrix"
-    deployment_stage = "${var.deployment_stage}"
+    deployment_stage =  var.deployment_stage
   }
 }
 
 resource "aws_route_table_association" "a" {
-  count = "${aws_subnet.sn.count}"
+  count =  aws_subnet.sn.count
 
-  subnet_id      = "${aws_subnet.sn.*.id[count.index]}"
-  route_table_id = "${aws_route_table.rt.id}"
+  subnet_id      =  aws_subnet.sn.*.id[count.index]
+  route_table_id =  aws_route_table.rt.id
 }
 
 resource "aws_default_security_group" "sg" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id =  aws_vpc.vpc.id
 
   ingress {
     protocol  = -1
@@ -128,10 +128,10 @@ resource "aws_default_security_group" "sg" {
   tags = {
     Name = "matrix-${var.deployment_stage}-default"
     component = "matrix"
-    deployment_stage = "${var.deployment_stage}"
+    deployment_stage =  var.deployment_stage
   }
 }
 
 data "aws_subnet_ids" "matrix_vpc" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id =  aws_vpc.vpc.id
 }

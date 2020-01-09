@@ -14,7 +14,7 @@ resource "aws_s3_bucket" "matrix-results" {
 }
 
 resource "aws_s3_bucket_policy" "matrix_results_bucket_policy" {
-  bucket = "${aws_s3_bucket.matrix-results.id}"
+  bucket =  aws_s3_bucket.matrix-results.id
   policy =<<POLICY
 {
   "Version": "2012-10-17",
@@ -54,11 +54,11 @@ resource "aws_s3_bucket" "matrix_service_preload" {
 }
 
 output "deployment_bucket_id" {
-  value = "${aws_s3_bucket.matrix_service_lambda_deployment_bucket.id}"
+  value =  aws_s3_bucket.matrix_service_lambda_deployment_bucket.id
 }
 
 output "results_bucket_arn" {
-  value = "${aws_s3_bucket.matrix-results.arn}"
+  value =  aws_s3_bucket.matrix-results.arn
 }
 
 resource "aws_s3_bucket" "matrix_queries" {

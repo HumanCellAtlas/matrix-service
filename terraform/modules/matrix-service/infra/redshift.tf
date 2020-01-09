@@ -1,13 +1,13 @@
 resource "aws_redshift_cluster" "default" {
   cluster_identifier = "dcp-matrix-service-cluster-${var.deployment_stage}"
   database_name      = "matrix_service_${var.deployment_stage}"
-  master_username    = "${var.redshift_username}"
-  master_password    = "${var.redshift_password}"
+  master_username    =  var.redshift_username
+  master_password    =  var.redshift_password
   node_type          = "dc2.large"
   cluster_type       = "multi-node"
   number_of_nodes    = 4
   iam_roles          = ["${aws_iam_role.matrix_service_redshift.arn}"]
-  cluster_subnet_group_name = "${aws_redshift_subnet_group.matrix_service_redshift.name}"
+  cluster_subnet_group_name =  aws_redshift_subnet_group.matrix_service_redshift.name
   vpc_security_group_ids = ["${aws_security_group.matrix_service_redshift_sg.id}"]
 }
 
@@ -17,7 +17,7 @@ resource "aws_redshift_subnet_group" "matrix_service_redshift" {
 }
 
 resource "aws_security_group" "matrix_service_redshift_sg" {
-  vpc_id = "${aws_vpc.vpc.id}"
+  vpc_id =  aws_vpc.vpc.id
   name = "matrix-service-rs-sg-${var.deployment_stage}"
 
   ingress {
@@ -58,7 +58,7 @@ POLICY
 
 resource "aws_iam_role_policy" "matrix_service_redshift" {
   name = "matrix-service-redshift-${var.deployment_stage}"
-  role = "${aws_iam_role.matrix_service_redshift.name}"
+  role =  aws_iam_role.matrix_service_redshift.name
   policy = <<EOF
 {
   "Version": "2012-10-17",
