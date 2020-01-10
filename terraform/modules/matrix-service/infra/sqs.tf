@@ -28,7 +28,7 @@ resource "aws_sqs_queue" "notification_deadletter_queue" {
 
 resource "aws_lambda_event_source_mapping" "notification_source_mapping" {
   batch_size = 1
-  event_source_arn  = "${aws_sqs_queue.notification_queue.arn}"
+  event_source_arn  =  aws_sqs_queue.notification_queue.arn
   enabled           = true
   function_name     = "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:dcp-matrix-service-notification-${var.deployment_stage}"
 }

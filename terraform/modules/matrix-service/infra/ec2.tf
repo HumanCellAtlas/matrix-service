@@ -1,6 +1,6 @@
 resource "aws_iam_instance_profile" "ec2_loader" {
   name = "matrix-service-redshift-loader-${var.deployment_stage}"
-  role = "${aws_iam_role.ec2_loader.name}"
+  role =  aws_iam_role.ec2_loader.name
 }
 
 resource "aws_iam_role" "ec2_loader" {
@@ -25,7 +25,7 @@ EOF
 
 resource "aws_iam_role_policy" "ec2_loader" {
   name = "matrix-service-redshift-loader-policy-${var.deployment_stage}"
-  role = "${aws_iam_role.ec2_loader.id}"
+  role =  aws_iam_role.ec2_loader.id
   policy = <<EOF
 {
     "Version": "2012-10-17",

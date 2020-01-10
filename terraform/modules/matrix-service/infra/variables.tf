@@ -1,44 +1,44 @@
 variable "deployment_stage" {
-  type = "string"
+  type = string
 }
 
 variable "account_id" {
-  type = "string"
+  type = string
 }
 
 variable "aws_region" {
-  type = "string"
+  type = string
 }
 
 variable "converter_cluster_ami_id" {
-  type = "string"
+  type = string
 }
 
 variable "vpc_cidr_block" {
-  type = "string"
+  type = string
 }
 
 variable "redshift_username" {
-  type = "string"
+  type = string
 }
 
 variable "redshift_password" {
-  type = "string"
+  type = string
 }
 
 variable "gcp_service_acct_creds" {
-  type = "string"
+  type = string
 }
 
 variable "query_runner_concurrency" {
-  type = "string"
+  type = string
   default = "1"
 }
 
 variable "readonly_redshift_username" {
-  type = "string"
+  type = string
 }
 
 variable "readonly_redshift_password" {
-  type = "string"
+  type = string
 }
