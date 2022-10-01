@@ -11,7 +11,7 @@ MarkupSafe==1.0
 numpy==1.15.2
 pandas==0.25.0
 psycopg2==2.7.5
-PyYAML==4.2b1
+PyYAML==5.4
 requests==2.20.0
 s3fs==0.1.6
 scipy==1.1.0
@@ -19,3 +19,5 @@ tenacity==5.0.2
 zarr==2.2.0
 
 git+git://github.com/HumanCellAtlas/metadata-api@release/1.0b13#egg=hca-metadata-api
+rsa>=4.7 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
