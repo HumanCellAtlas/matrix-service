@@ -1,8 +1,10 @@
 dcplib==2.1.0
 hca==6.3.0
-numpy==1.16.4
+numpy==1.22.2
 psycopg2-binary==2.7.7
 requests==2.20.0
 scipy==1.3.0
 zarr==2.3.2
 git+git://github.com/HumanCellAtlas/metadata-api@release/1.0b13#egg=hca-metadata-api
+rsa>=4.7 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
