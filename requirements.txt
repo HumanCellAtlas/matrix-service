@@ -19,3 +19,4 @@ tenacity==5.0.2
 zarr==2.2.0
 
 git+git://github.com/HumanCellAtlas/metadata-api@release/1.0b13#egg=hca-metadata-api
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
