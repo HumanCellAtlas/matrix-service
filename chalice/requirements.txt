@@ -12,3 +12,4 @@ tenacity==5.0.2
 psycopg2==2.7.5
 pandas==0.23.4
 s3fs==0.1.6
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability
