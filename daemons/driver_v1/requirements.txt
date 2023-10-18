@@ -4,3 +4,4 @@ psycopg2==2.7.5
 requests==2.20.0
 s3fs==0.1.6
 tenacity==5.0.2
+urllib3>=1.26.18 # not directly required, pinned by Snyk to avoid a vulnerability
